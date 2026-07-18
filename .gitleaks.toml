@@ -1,0 +1,23 @@
+# gitleaks config for pepin. Extends the default rules and acquits, TARGETED, the only
+# non-secrets that trip them: deliberately fake placeholder keys in a demo/fixtures, and the
+# scraped provider-doc cache. No real credential is ever committed (options CLI / env only).
+title = "pepin gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake placeholder keys (IMDS/SSRF demo + rule-test fixtures) and the scraped doc cache."
+# Placeholder AWS-shaped keys used to demonstrate detection — obviously fake, never live.
+regexes = [
+  '''AKIA0123456789ABCDEF''',
+  '''AKIAABCDEFGHIJKLMNOP''',
+]
+paths = [
+  # Regenerable cache of third-party provider docs (full of example keys) — gitignored too.
+  '''references/docs/.*''',
+  # IMDS/SSRF demonstration: the whole point is a token leaked via the metadata service.
+  '''examples/exoscale/lab-imds/.*''',
+  # Rego rule tests need a fake secret to assert the detector fires.
+  '''internal/commonrules/rules/.*_test\.rego''',
+]

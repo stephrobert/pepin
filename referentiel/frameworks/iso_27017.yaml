@@ -1,0 +1,37 @@
+code: iso_27017
+name: ISO/IEC 27017 — Cloud services
+version: "2015"
+url: https://www.iso.org/standard/43757.html
+description: |
+  Code de bonnes pratiques pour les contrôles de sécurité de l'information
+  fondés sur ISO/IEC 27002 pour les services cloud. Ce catalogue référence
+  les contrôles CLD.* spécifiques au cloud pertinents pour un scan IaaS.
+
+controls:
+  - id: CLD.6.3.1
+    title: Shared roles and responsibilities within a cloud computing environment
+    description: Les responsabilités partagées entre fournisseur et client cloud sont documentées.
+
+  - id: CLD.8.1.5
+    title: Removal of cloud service customer assets
+    description: Les ressources du client sont supprimées de manière sécurisée à la fin du contrat.
+
+  - id: CLD.9.5.1
+    title: Segregation in virtual computing environments
+    description: Les environnements virtuels des clients sont isolés entre eux.
+
+  - id: CLD.9.5.2
+    title: Virtual machine hardening
+    description: Les VMs sont durcies selon un référentiel documenté avant mise en production.
+
+  - id: CLD.12.1.5
+    title: Administrator's operational security
+    description: Les accès administrateur aux services cloud font l'objet d'une sécurité opérationnelle renforcée.
+
+  - id: CLD.12.4.5
+    title: Monitoring of Cloud Services
+    description: Les services cloud sont surveillés pour détecter les événements de sécurité.
+
+  - id: CLD.13.1.4
+    title: Alignment of security management for virtual and physical networks
+    description: La sécurité est gérée de manière cohérente entre les réseaux virtuels et physiques.

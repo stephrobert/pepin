@@ -1,0 +1,75 @@
+# Questions ouvertes — Scaleway. Voir README.md pour le cycle de vie.
+
+- id: SCW-Q1
+  titre: Endpoint live de l'API VPC pour lister les Private Networks
+  controle: CLD-NET-5 / network (cartographie)
+  statut: ouverte
+  contexte: >
+    Pour collecter le type normalisé `network` (cartographie CLD-NET-5), il faut
+    l'endpoint REST de l'API VPC Scaleway listant les private networks.
+  ce_quon_sait: >
+    Le schéma Terraform scaleway_vpc_private_network expose id, name, region, tags,
+    vpc_id, is_regional. La doc locale (en-docs-vpc-*) décrit le concept (VPC + PN +
+    DHCP/IPAM) mais l'endpoint exact (ex. /vpc/v2/regions/{region}/private-networks)
+    n'a pas été retrouvé tel quel dans le cache.
+  a_confirmer: >
+    Path + version exacts de l'API VPC (private-networks et/ou vpcs), pagination,
+    nom des champs de la réponse. Ancrer sur references/docs/scaleway/en-docs-vpc-api-cli
+    avant d'écrire la collecte live (le mapping Terraform, lui, est déjà ancré).
+  source:
+    - references/docs/scaleway/en-docs-vpc-api-cli.md
+    - references/docs/scaleway/en-docs-vpc-concepts.md
+
+- id: SCW-Q2
+  titre: Règles de security group sans description (NET-5 matrice)
+  controle: CLD-NET-5 / network_flow_matrix_documented
+  statut: resolue
+  contexte: >
+    Vérifier si les règles SG Scaleway portent une justification (description).
+  reponse: >
+    NON (ancré schéma) : scaleway_instance_security_group `inbound_rule` =
+    {action, ip, ip_range, port, port_range, protocol} — pas de champ description.
+    L'angle « matrice justifiée par description » (NET-5) ne s'applique donc pas à
+    Scaleway ; NET-5 y sera couvert par la cartographie (type network documenté).
+  source:
+    - "schéma terraform scaleway_instance_security_group (inbound_rule)"
+
+- id: SCW-Q3
+  titre: Détection d'un VPC peering cross-organisation (NET-7)
+  controle: CLD-NET-7 / network_peering_cross_organization
+  statut: ouverte
+  contexte: >
+    Scaleway VPC Peering permet de peer avec un VPC d'une AUTRE organisation/projet
+    (doc vpc-peering). C'est le cas que NET-7 doit détecter (flux vers un autre SI).
+  ce_quon_sait: >
+    Par conception « privacy by design », lors de la création d'un peering connector
+    « no additional information about that VPC (configuration, resources, topology)
+    is revealed » — seul l'ID du VPC cible est fourni. Il n'est donc pas certain que
+    l'API expose l'organisation/projet du VPC cible pour détecter le cross-org.
+  a_confirmer: >
+    L'API VPC Peering Scaleway expose-t-elle l'organization_id/project_id du VPC
+    cible (pour dériver source≠accepter, comme Outscale) ? Sinon, NET-7 n'est pas
+    détectable côté Scaleway et reste outscale-only. Ancrer sur references/docs/
+    scaleway/en-docs-vpc-peering-*.
+  source:
+    - references/docs/scaleway/en-docs-vpc-peering-reference-content-understanding-vpc-peering.md
+
+- id: SCW-Q4
+  titre: Élévation de privilèges via les PermissionSets (IAM-12)
+  controle: CLD-IAM-12 / iam_policy_no_privilege_escalation
+  statut: partiellement_resolue
+  contexte: >
+    IAM-12 couvert pour les 3 providers via leur modèle natif. Scaleway = Rule{
+    permission_set_names[]} : manages_iam dérivé du PermissionSet « IAMManager ».
+  reponse: >
+    ANCRÉ (doc locale + schéma TF scaleway_iam_policy.rule.permission_set_names) :
+    « IAMManager » = gestion IAM complète (escalade) ; « AllProductsFullAccess » =
+    admin total (relève d'IAM-1). Mapping TERRAFORM implémenté (manages_iam =
+    contains IAMManager). RESTE : collecte LIVE des policies IAM Scaleway (api/iam
+    Policy + Rule.PermissionSetNames) — non encore branchée (TF only pour l'instant).
+  a_confirmer: >
+    Endpoint live des policies IAM + structure des rules (PermissionSetNames) pour
+    dériver manages_iam en live comme en Terraform.
+  source:
+    - "schéma terraform scaleway_iam_policy (rule.permission_set_names)"
+    - references/docs/scaleway/  # IAMManager / AllProductsFullAccess

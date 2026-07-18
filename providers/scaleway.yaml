@@ -1,0 +1,305 @@
+# Descripteur du provider Scaleway — chargé par le provider générique
+# (internal/genprovider). Aucun code Go : identité + auth + identifiants + S3.
+name: scaleway
+description: "Scaleway — object storage, instances, IAM, security groups"
+
+# Souveraineté du fournisseur (CLD-GVN-4) — faits ancrés. Cloud français du
+# groupe Iliad (capital européen) ; qualification SecNumCloud en cours.
+souverainete:
+  eu_etabli: true             # Scaleway SAS, siège en France
+  juridiction: FR
+  controle_capitalistique: FR  # groupe Iliad (Xavier Niel / HoldCo II) — capital 100% européen
+  secnumcloud: en_cours        # processus de qualification ANSSI engagé (cible 2025)
+  exposition_extraterritoriale: false
+  sources: "iliad.fr (entrée processus SecNumCloud) ; en.wikipedia.org/wiki/Scaleway (capital européen)"
+
+auth:
+  type: header
+  header: X-Auth-Token
+  value: "{secret_key}"
+credentials:
+  env:
+    access_key: SCW_ACCESS_KEY
+    secret_key: SCW_SECRET_KEY
+    region: SCW_DEFAULT_REGION
+    zone: SCW_DEFAULT_ZONE
+    org: SCW_DEFAULT_ORGANIZATION_ID
+  file: { path: "~/.config/scw/config.yaml", format: scw }
+  defaults: { region: fr-par, zone: "{region}-1" }
+s3:
+  endpoint: "https://s3.{region}.scw.cloud"
+  sse_kms: true   # SSE-KMS via Key Manager (KEK client associée au bucket) → CLD-CHF-4 observable
+
+collecte:
+  # Spec de collecte Scaleway PILOTÉE PAR YAML (moteur internal/collect).
+  # Auth : en-tête X-Auth-Token = clé secrète (injectée au runtime). Variables de
+  # chemin {org}/{zone}/{region} substituées au runtime. Ajouter une ressource =
+  # ajouter un bloc ici (pas de code Go).
+  base_url: https://api.scaleway.com
+  resources:
+    # Clés d'accès IAM → access_key (alimente iam_accesskey_expiration_set).
+    - type: access_key
+      path: /iam/v1alpha1/api-keys?organization_id={org}
+      items: api_keys
+      id: access_key_id
+      map:
+        access_key_id: access_key
+        expiration_date: expires_at
+      paging: { style: page, param: page, size_param: page_size, size: 100 }
+  
+    # Utilisateurs IAM → iam_user (alimente iam_user_mfa_enabled). Champ natif
+    # api/iam User.mfa (booléen MFA activée).
+    - type: iam_user
+      path: /iam/v1alpha1/users?organization_id={org}
+      items: users
+      id: user_id
+      map:
+        user_id: id
+        username: email
+        mfa_enabled: mfa
+      paging: { style: page, param: page, size_param: page_size, size: 100 }
+  
+    # Règles de security group → security_group_rule. Jointure parent→enfant :
+    # lister les SG (api/instance/v1 ListSecurityGroups) puis les règles de chacun
+    # (ListSecurityGroupRules). Champs ancrés sur api/instance/v1 SecurityGroupRule.
+    - type: security_group_rule
+      for_each:
+        path: /instance/v1/zones/{zone}/security_groups
+        items: security_groups
+        as: sg
+        paging: { style: page, param: page, size_param: per_page, size: 100 }
+      path: /instance/v1/zones/{zone}/security_groups/{sg.id}/rules
+      items: rules
+      id: security_group_id
+      map:
+        security_group_id: _parent.id
+        direction: direction          # inbound|outbound (déjà commun)
+        action: action                # accept|drop (déjà commun)
+        protocol: protocol            # TCP|UDP|ICMP|ANY -> tcp|udp|icmp|all
+        port_from: dest_port_from      # *uint32 ; null pour ICMP/ANY
+        port_to: dest_port_to||dest_port_from  # null quand = from (port unique)
+        cidrs: ip_range
+      transforms:
+        protocol: { TCP: tcp, UDP: udp, ICMP: icmp, ANY: all }
+        cidrs: list
+      paging: { style: page, param: page, size_param: per_page, size: 100 }
+  
+    # Serveurs → compute_instance. Champs ancrés sur api/instance/v1 Server.
+    - type: compute_instance
+      path: /instance/v1/zones/{zone}/servers
+      items: servers
+      id: vm_id
+      map:
+        vm_id: id
+        state: state
+        public_ip: public_ips.0.address     # 1re IP publique (DÉRIVÉ : public_ips[0])
+        security_group_ids: security_group.id
+        tags: tags
+      transforms:
+        security_group_ids: list      # [SecurityGroup.ID] (vide si aucun)
+        tags: kv                       # []"clé=valeur" -> [{key,value}]
+      paging: { style: page, param: page, size_param: per_page, size: 100 }
+
+mapping_terraform:
+  # Mapping Terraform Scaleway → modèle normalisé commun, DÉCLARATIF (moteur
+  # internal/tfmap). Ancré sur le schéma réel du provider scaleway/scaleway
+  # (terraform providers schema). Le SG porte des blocs répétés inbound_rule /
+  # outbound_rule → éclatés en security_group_rule (1 SG → N règles).
+  resources:
+    - tf_type: scaleway_instance_security_group
+      type: security_group_rule
+      items: inbound_rule[*]
+      id: security_group_id
+      const: { direction: inbound, action: accept }
+      map:
+        security_group_id: _parent.id
+        protocol: protocol
+        cidrs: ip_range
+        port_from: port||port_range
+        port_to: port||port_range
+      transforms:
+        protocol: [lower, { any: all, "": all }]
+        cidrs: ["default:0.0.0.0/0", list]   # ip_range omis ⇒ toute origine
+        port_from: range_from
+        port_to: range_to
+  
+    - tf_type: scaleway_instance_security_group
+      type: security_group_rule
+      items: outbound_rule[*]
+      id: security_group_id
+      const: { direction: outbound, action: accept }
+      map:
+        security_group_id: _parent.id
+        protocol: protocol
+        cidrs: ip_range
+        port_from: port||port_range
+        port_to: port||port_range
+      transforms:
+        protocol: [lower, { any: all, "": all }]
+        cidrs: ["default:0.0.0.0/0", list]
+        port_from: range_from
+        port_to: range_to
+  
+    - tf_type: scaleway_object_bucket_acl
+      type: object_storage_bucket
+      id: name
+      map:
+        name: bucket
+        acl: acl
+
+    # Bucket → object_lock (immutabilité, CLD-STO-8).
+    - tf_type: scaleway_object_bucket
+      type: object_storage_bucket
+      id: name
+      map:
+        name: name
+        object_lock_enabled: object_lock_enabled
+  
+    - tf_type: scaleway_iam_api_key
+      type: access_key
+      id: access_key_id
+      map:
+        access_key_id: access_key
+        expiration_date: expires_at
+
+    # Réseau privé (VPC) → network (cartographie, CLD-NET-5). Collecte live en
+    # attente de l'endpoint API VPC (cf. questions-providers SCW-Q1) ; mapping TF ancré.
+    - tf_type: scaleway_vpc_private_network
+      type: network
+      id: network_id
+      region: region
+      map:
+        network_id: id
+        name: name
+        tags: tags
+      transforms:
+        tags: kv
+
+    # Politique IAM → iam_policy. Modèle Scaleway = rule{permission_set_names[]}.
+    # manages_iam DÉRIVÉ : une rule confère le PermissionSet « IAMManager » (gestion
+    # IAM) → élévation de privilèges possible (CLD-IAM-12).
+    - tf_type: scaleway_iam_policy
+      type: iam_policy
+      id: policy_name
+      map:
+        policy_name: name
+        manages_iam: rule
+      transforms:
+        manages_iam: "contains:IAMManager"
+
+    # Serveur d'instance → compute_instance. user_data Scaleway = map clé→valeur
+    # (cloud-init sous une clé) → secrets en clair (CLD-CMP-2).
+    - tf_type: scaleway_instance_server
+      type: compute_instance
+      id: vm_id
+      map:
+        vm_id: id
+        user_data: user_data
+        security_group_ids: security_group_id
+        tags: tags
+      transforms:
+        security_group_ids: list
+        tags: kv
+
+# Contrat d'API (ancrage §2) + applicabilité SCSL (non_applicable) — lu par `pepin scsl`.
+contrat:
+  types:
+    security_group_rule:
+      etat: verifie
+      source: api/instance/v1 SecurityGroupRule
+      mapping:
+        direction: Direction (inbound|outbound)
+        action: Action (accept|drop)
+        protocol: Protocol (TCP|UDP|ICMP|ANY) ; ANY → all ; minuscules
+        port_from: DestPortFrom (*uint32)
+        port_to: DestPortTo (*uint32) ; nil → DestPortFrom
+        cidrs: '[IPRange (scw.IPNet)]'
+        security_group_id: ID du security group parent
+    compute_instance:
+      etat: verifie
+      source: api/instance/v1 Server
+      mapping:
+        vm_id: ID
+        state: State
+        public_ip: PublicIPs[].Address (net.IP)
+        security_group_ids: '[SecurityGroup.ID] (SecurityGroupSummary)'
+        user_data: API séparée (GetServerUserData) — a_verifier
+        tags: Tags ([]string « clé=valeur » → {key,value})
+    blockstorage_volume:
+      etat: verifie
+      source: api/block/v1 Volume
+      mapping:
+        volume_id: ID
+        state: Status (VolumeStatus)
+        tags: Tags ([]string)
+        encrypted: 'ABSENT : le chiffrement au repos est CÔTÉ INVITÉ (LUKS/Cryptsetup dans la VM),
+          responsabilité du client (doc « Storage shared responsibility model » / « how-to-host-healthcare-data »).
+          L''API block n''expose aucun champ de chiffrement → CLD-CHF-2 non observable côté plateforme, non applicable.'
+    blockstorage_snapshot:
+      etat: a_verifier
+      source: api/block/v1 Snapshot — champs à confirmer (ID, parent volume, état)
+    object_storage_bucket:
+      etat: verifie
+      source: aws-sdk-go-v2/service/s3 (endpoint s3.<region>.scw.cloud)
+      mapping:
+        acl_grants: GetBucketAcl → Grants[].{Grantee.URI, Permission}
+        public_via_acl: 'DÉRIVÉ : grant AllUsers/AuthenticatedUsers'
+        versioning: GetBucketVersioning → Status
+        policy_public: 'DÉRIVÉ : GetBucketPolicy contient Allow Principal *'
+        tags: GetBucketTagging → TagSet[]
+        sse_kms_enabled: 'DÉRIVÉ : GetBucketEncryption → règle par défaut SSEAlgorithm=aws:kms (KEK client via Key Manager,
+          doc object-storage/api-cli/enable-sse-kms). true ⇒ clé gérée par le client (CLD-CHF-4).'
+        kms_key_id: 'GetBucketEncryption → ApplyServerSideEncryptionByDefault.KMSMasterKeyID (ID de la KEK Key Manager)'
+    access_key:
+      etat: verifie
+      source: api/iam/v1alpha1 APIKey
+      mapping:
+        access_key_id: AccessKey
+        expiration_date: ExpiresAt (*time.Time)
+        root_owned: 'DÉRIVÉ : APIKey rattachée à un UserID (vs ApplicationID) — a_verifier'
+    iam_user:
+      etat: verifie
+      source: api/iam/v1alpha1 User (GET /iam/v1alpha1/users)
+      mapping:
+        user_id: id
+        username: email
+        mfa_enabled: mfa (bool) — vérifié en live (champ présent)
+    iam_policy:
+      etat: verifie
+      source: api/iam/v1alpha1 Policy + Rule
+      mapping:
+        policy_name: Policy.Name
+        statements: 'MODÈLE DIFFÉRENT : Rule{PermissionSetNames[], PermissionSetsScopeType, ProjectIDs|OrganizationID|AccountRootUserID}.
+          Pas d''Action/Resource ; transposition PermissionSets→actions, scope→resources à formaliser avant règle.'
+    kubernetes_cluster:
+      etat: verifie
+      source: api/k8s/v1 Cluster
+      mapping:
+        name: Name
+        version: Version
+        auto_upgrade: AutoUpgrade.Enabled — a_verifier (champ exact)
+        control_plane_multi_az: non applicable tel quel (Kapsule) — a_verifier
+        private: PrivateNetworkID / type — a_verifier (exposition API)
+    load_balancer:
+      etat: a_verifier
+      source: api/lb/v1 LB{Type} + Frontend/Backend — listeners/TLS/logs à mapper
+    network:
+      etat: a_verifier
+      source: 'VPC Private Network (scaleway_vpc_private_network : id, name, region, tags, vpc_id). Mapping Terraform ANCRÉ
+        sur le schéma ; collecte LIVE en attente du path API VPC (cf. questions-providers SCW-Q1). Cartographie CLD-NET-5.'
+      mapping:
+        network_id: id
+        name: name
+        tags: tags
+    api_access_rule:
+      etat: a_verifier
+      source: équivalent restriction IP de l'API à vérifier (iam / account)
+    api_access_policy:
+      etat: a_verifier
+      source: équivalent expiration max des clés à vérifier (iam)
+  non_applicable:
+  # CHF-2 : le chiffrement au repos des volumes block est CÔTÉ INVITÉ (LUKS/Cryptsetup),
+  # responsabilité du client (modèle de responsabilité partagée) ; l'API block n'expose
+  # aucun champ de chiffrement → non observable côté plateforme.
+  - control: blockstorage_volume_encryption
+    reason: "Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2)."

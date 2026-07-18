@@ -1,0 +1,49 @@
+# Preuves de remédiation
+
+Pour **chaque règle** (`code` agnostique) et **chaque provider** qui l'implémente,
+un artefact qui montre **comment être conforme** : de préférence du **Terraform
+déployable** (vocabulaire natif du provider), à défaut une **note** pointant la
+doc officielle. Ces artefacts sont la matière première de la future **doc de
+remédiation** : la règle dit *ce qui ne va pas*, la preuve montre *le bon montage*.
+
+Pendant logique du registre [questions-providers](../questions-providers/) : on ne
+documente une remédiation qu'une fois le bon montage **ancré** (doc/SDK, cf. §2).
+
+## Structure
+
+```
+references/remediation/<provider>/<code>/      # module Terraform AUTONOME (préféré)
+references/remediation/<provider>/<code>.md    # note + doc, si pas de Terraform pertinent
+```
+
+**Un dossier = une preuve = un module Terraform autonome** (`<code>/main.tf` avec son
+bloc `terraform`/`provider` et toutes ses variables). Terraform fusionne tous les
+`.tf` d'un même dossier : mettre plusieurs preuves dans un seul dossier rendrait les
+ressources indéployables/inauditables séparément — d'où **un dossier par règle**.
+
+Le `code` est commun à tous les providers, mais le contenu est **propre au provider**
+(ressources `exoscale_*`, `outscale_*`, `scaleway_*` ; vocabulaire natif). Un même
+montage peut satisfaire plusieurs règles voisines (un `exoscale_iam_role` bien
+configuré couvre `iam_role_no_admin_privileges`, `_source_ip_restricted` et
+`_key_lifetime_bounded`) : on duplique alors le module, chacun cadré sur sa règle.
+
+## Exemples fonctionnels et complets
+
+Chaque module DOIT être **déployable tel quel** : `terraform init -backend=false`
+puis `terraform validate` passent (configuration complète, variables déclarées,
+champs requis du schéma réel présents). Le montage est CONFORME — scanné par Pépin,
+il ne déclenche pas la règle visée (cas ✓, miroir des fixtures non conformes de
+`examples/<provider>/terraform/`).
+
+## En-tête obligatoire
+
+Chaque fichier rappelle, en commentaire de tête : le `code`, l'exigence SCSL
+(`CLD-*`), le provider, **pourquoi c'est conforme** (ce que la règle vérifie), et la
+**source** ancrée (page `references/docs/<provider>/…` et/ou contrat
+`providers/<provider>.yaml`).
+
+## Statut de couverture
+
+`python3 scripts/check-remediation.py` liste, par provider, les règles **sans**
+preuve de remédiation (pendant de `make validate`). Le miroir non conforme de ces
+montages vit dans `examples/<provider>/terraform/` (fixtures de test).

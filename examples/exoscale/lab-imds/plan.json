@@ -1,0 +1,21 @@
+{
+ "format_version": "1.2",
+ "terraform_version": "1.15.4",
+ "planned_values": {
+  "root_module": {
+   "resources": [
+    {
+     "address": "exoscale_compute_instance.lab",
+     "type": "exoscale_compute_instance",
+     "name": "lab",
+     "values": {
+      "id": "094fafb5-1aaf-4c28-9a9f-f1329d8bedfc",
+      "name": "pepin-imds-lab",
+      "public_ip_address": "203.0.113.10",
+      "user_data": "#cloud-config\nwrite_files:\n  - path: /etc/app/config.env\n    content: |\n      DB_PASSWORD=Sup3rSecretP@ss\n      API_TOKEN=AKIA0123456789ABCDEF\n"
+     }
+    }
+   ]
+  }
+ }
+}

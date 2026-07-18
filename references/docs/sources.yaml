@@ -1,0 +1,37 @@
+# Sources de doc officielle à mettre en cache local (ancrage §2 « ne rien
+# affirmer sans valider »). Lu par scripts/fetch-docs.py qui extrait chaque page
+# en Markdown vers references/docs/<provider>/<slug>.md (via trafilatura).
+#
+#   pages:  pages ciblées (ancrage prioritaire, liste explicite).
+#   crawl:  TOUTE la doc via sitemap (les sitemap-index sont résolus
+#           récursivement ; include/exclude filtrent les URLs — vides = tout).
+
+pages:
+  exoscale:
+    - https://community.exoscale.com/product/storage/object-storage/how-to/bucketpolicy/
+    - https://community.exoscale.com/product/iam/how-to/policy-guide/
+    - https://community.exoscale.com/product/storage/object-storage/how-to/encryption/
+    - https://community.exoscale.com/product/storage/object-storage/overview/
+    - https://community.exoscale.com/product/compute/containers/how-to/kubernetes-audit/
+    - https://community.exoscale.com/documentation/sks/overview/
+    - https://community.exoscale.com/product/networking/nlb/overview/
+  outscale:
+    - https://docs.outscale.com/en/userguide/About-OKS.html
+    - https://docs.outscale.com/en/userguide/About-Your-API-Access-Policy.html
+  scaleway:
+    - https://www.scaleway.com/en/docs/object-storage/concepts/
+    - https://www.scaleway.com/en/docs/iam/concepts/
+
+crawl:
+  exoscale:
+    sitemaps: [https://community.exoscale.com/sitemap.xml]
+    include: []
+    exclude: []
+  outscale:
+    sitemaps: [https://docs.outscale.com/sitemap.xml]
+    include: []
+    exclude: []
+  scaleway:
+    sitemaps: [https://www.scaleway.com/en/docs/sitemap.xml]
+    include: ["/en/docs/"]
+    exclude: []

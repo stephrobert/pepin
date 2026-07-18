@@ -1,0 +1,788 @@
+{
+ "format_version": "1.2",
+ "terraform_version": "1.15.4",
+ "planned_values": {
+  "root_module": {
+   "resources": [
+    {
+     "address": "exoscale_block_storage_volume.data",
+     "mode": "managed",
+     "type": "exoscale_block_storage_volume",
+     "name": "data",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 0,
+     "values": {
+      "labels": null,
+      "name": "pepin-test-data",
+      "size": 10,
+      "snapshot_target": null,
+      "timeouts": null,
+      "zone": "ch-gva-2"
+     },
+     "sensitive_values": {}
+    },
+    {
+     "address": "exoscale_compute_instance.vm",
+     "mode": "managed",
+     "type": "exoscale_compute_instance",
+     "name": "vm",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 0,
+     "values": {
+      "anti_affinity_group_ids": null,
+      "block_storage_volume_ids": null,
+      "deploy_target_id": null,
+      "destroy_protected": null,
+      "disk_size": 10,
+      "elastic_ip_ids": null,
+      "enable_secure_boot": null,
+      "enable_tpm": false,
+      "ipv6": false,
+      "labels": null,
+      "name": "pepin-test-vm",
+      "network_interface": [],
+      "private": false,
+      "reverse_dns": null,
+      "ssh_key": null,
+      "ssh_keys": null,
+      "template_id": "f8d6fbf7-ffa7-45e2-bed8-d101d814d646",
+      "timeouts": null,
+      "type": "standard.micro",
+      "user_data": "#cloud-config\nwrite_files:\n  - path: /etc/app/config.env\n    content: |\n      DB_PASSWORD=Sup3rSecretP@ss\n      AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMIabcdefGH1234567890EXAMPLEKEY\n",
+      "zone": "ch-gva-2"
+     },
+     "sensitive_values": {
+      "network_interface": [],
+      "private_network_ids": [],
+      "security_group_ids": []
+     }
+    },
+    {
+     "address": "exoscale_iam_api_key.admin",
+     "mode": "managed",
+     "type": "exoscale_iam_api_key",
+     "name": "admin",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 0,
+     "values": {
+      "name": "pepin-test-admin-key",
+      "timeouts": null
+     },
+     "sensitive_values": {
+      "secret": true
+     }
+    },
+    {
+     "address": "exoscale_iam_role.admin",
+     "mode": "managed",
+     "type": "exoscale_iam_role",
+     "name": "admin",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 0,
+     "values": {
+      "description": "Role de test a privileges excessifs (a supprimer)",
+      "name": "pepin-test-admin",
+      "policy": {
+       "default_service_strategy": "allow",
+       "services": {}
+      },
+      "timeouts": null
+     },
+     "sensitive_values": {
+      "labels": {},
+      "permissions": [],
+      "policy": {
+       "services": {}
+      }
+     }
+    },
+    {
+     "address": "exoscale_security_group.open",
+     "mode": "managed",
+     "type": "exoscale_security_group",
+     "name": "open",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 1,
+     "values": {
+      "external_sources": null,
+      "name": "pepin-test-open",
+      "timeouts": null
+     },
+     "sensitive_values": {}
+    },
+    {
+     "address": "exoscale_security_group_rule.rdp",
+     "mode": "managed",
+     "type": "exoscale_security_group_rule",
+     "name": "rdp",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 0,
+     "values": {
+      "cidr": "0.0.0.0/0",
+      "end_port": 3389,
+      "protocol": "TCP",
+      "start_port": 3389,
+      "timeouts": null,
+      "type": "INGRESS"
+     },
+     "sensitive_values": {}
+    },
+    {
+     "address": "exoscale_security_group_rule.ssh",
+     "mode": "managed",
+     "type": "exoscale_security_group_rule",
+     "name": "ssh",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 0,
+     "values": {
+      "cidr": "0.0.0.0/0",
+      "end_port": 22,
+      "protocol": "TCP",
+      "start_port": 22,
+      "timeouts": null,
+      "type": "INGRESS"
+     },
+     "sensitive_values": {}
+    },
+    {
+     "address": "exoscale_sks_cluster.test",
+     "mode": "managed",
+     "type": "exoscale_sks_cluster",
+     "name": "test",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 0,
+     "values": {
+      "audit": [],
+      "auto_upgrade": false,
+      "cni": "calico",
+      "create_default_security_group": null,
+      "description": null,
+      "exoscale_ccm": true,
+      "exoscale_csi": false,
+      "feature_gates": null,
+      "labels": null,
+      "metrics_server": true,
+      "name": "pepin-test-sks",
+      "service_level": "starter",
+      "timeouts": null,
+      "zone": "ch-gva-2"
+     },
+     "sensitive_values": {
+      "addons": [],
+      "aggregation_ca": true,
+      "audit": [],
+      "control_plane_ca": true,
+      "kubelet_ca": true,
+      "nodepools": [],
+      "oidc": []
+     }
+    },
+    {
+     "address": "exoscale_iam_role.deployer",
+     "mode": "managed",
+     "type": "exoscale_iam_role",
+     "name": "deployer",
+     "provider_name": "registry.terraform.io/exoscale/exoscale",
+     "schema_version": 0,
+     "values": {
+      "description": "Role d'usage autorisant la gestion IAM (a corriger)",
+      "name": "pepin-test-deployer",
+      "editable": true,
+      "policy": {
+       "default_service_strategy": "deny",
+       "services": {
+        "iam": {
+         "type": "rules",
+         "rules": [
+          {
+           "action": "allow",
+           "expression": "operation in ['create-iam-role', 'update-iam-role', 'create-api-key']"
+          }
+         ]
+        }
+       }
+      },
+      "timeouts": null
+     }
+    }
+   ]
+  }
+ },
+ "resource_changes": [
+  {
+   "address": "exoscale_block_storage_volume.data",
+   "mode": "managed",
+   "type": "exoscale_block_storage_volume",
+   "name": "data",
+   "provider_name": "registry.terraform.io/exoscale/exoscale",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "labels": null,
+     "name": "pepin-test-data",
+     "size": 10,
+     "snapshot_target": null,
+     "timeouts": null,
+     "zone": "ch-gva-2"
+    },
+    "after_unknown": {
+     "blocksize": true,
+     "created_at": true,
+     "id": true,
+     "state": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {}
+   }
+  },
+  {
+   "address": "exoscale_compute_instance.vm",
+   "mode": "managed",
+   "type": "exoscale_compute_instance",
+   "name": "vm",
+   "provider_name": "registry.terraform.io/exoscale/exoscale",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "anti_affinity_group_ids": null,
+     "block_storage_volume_ids": null,
+     "deploy_target_id": null,
+     "destroy_protected": null,
+     "disk_size": 10,
+     "elastic_ip_ids": null,
+     "enable_secure_boot": null,
+     "enable_tpm": false,
+     "ipv6": false,
+     "labels": null,
+     "name": "pepin-test-vm",
+     "network_interface": [],
+     "private": false,
+     "reverse_dns": null,
+     "ssh_key": null,
+     "ssh_keys": null,
+     "template_id": "f8d6fbf7-ffa7-45e2-bed8-d101d814d646",
+     "timeouts": null,
+     "type": "standard.micro",
+     "user_data": "#cloud-config\nwrite_files:\n  - path: /etc/app/config.env\n    content: |\n      DB_PASSWORD=Sup3rSecretP@ss\n      AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMIabcdefGH1234567890EXAMPLEKEY\n",
+     "zone": "ch-gva-2"
+    },
+    "after_unknown": {
+     "created_at": true,
+     "id": true,
+     "ipv6_address": true,
+     "mac_address": true,
+     "network_interface": [],
+     "private_network_ids": true,
+     "public_ip_address": true,
+     "security_group_ids": true,
+     "state": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {
+     "network_interface": [],
+     "private_network_ids": [],
+     "security_group_ids": []
+    }
+   }
+  },
+  {
+   "address": "exoscale_iam_api_key.admin",
+   "mode": "managed",
+   "type": "exoscale_iam_api_key",
+   "name": "admin",
+   "provider_name": "registry.terraform.io/exoscale/exoscale",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "name": "pepin-test-admin-key",
+     "timeouts": null
+    },
+    "after_unknown": {
+     "id": true,
+     "key": true,
+     "role_id": true,
+     "secret": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {
+     "secret": true
+    }
+   }
+  },
+  {
+   "address": "exoscale_iam_role.admin",
+   "mode": "managed",
+   "type": "exoscale_iam_role",
+   "name": "admin",
+   "provider_name": "registry.terraform.io/exoscale/exoscale",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "description": "Role de test a privileges excessifs (a supprimer)",
+     "name": "pepin-test-admin",
+     "policy": {
+      "default_service_strategy": "allow",
+      "services": {}
+     },
+     "timeouts": null
+    },
+    "after_unknown": {
+     "editable": true,
+     "id": true,
+     "labels": true,
+     "permissions": true,
+     "policy": {
+      "services": {}
+     }
+    },
+    "before_sensitive": false,
+    "after_sensitive": {
+     "labels": {},
+     "permissions": [],
+     "policy": {
+      "services": {}
+     }
+    }
+   }
+  },
+  {
+   "address": "exoscale_security_group.open",
+   "mode": "managed",
+   "type": "exoscale_security_group",
+   "name": "open",
+   "provider_name": "registry.terraform.io/exoscale/exoscale",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "external_sources": null,
+     "name": "pepin-test-open",
+     "timeouts": null
+    },
+    "after_unknown": {
+     "description": true,
+     "id": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {}
+   }
+  },
+  {
+   "address": "exoscale_security_group_rule.rdp",
+   "mode": "managed",
+   "type": "exoscale_security_group_rule",
+   "name": "rdp",
+   "provider_name": "registry.terraform.io/exoscale/exoscale",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "cidr": "0.0.0.0/0",
+     "end_port": 3389,
+     "protocol": "TCP",
+     "start_port": 3389,
+     "timeouts": null,
+     "type": "INGRESS"
+    },
+    "after_unknown": {
+     "description": true,
+     "icmp_code": true,
+     "icmp_type": true,
+     "id": true,
+     "public_security_group": true,
+     "security_group_id": true,
+     "user_security_group_id": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {}
+   }
+  },
+  {
+   "address": "exoscale_security_group_rule.ssh",
+   "mode": "managed",
+   "type": "exoscale_security_group_rule",
+   "name": "ssh",
+   "provider_name": "registry.terraform.io/exoscale/exoscale",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "cidr": "0.0.0.0/0",
+     "end_port": 22,
+     "protocol": "TCP",
+     "start_port": 22,
+     "timeouts": null,
+     "type": "INGRESS"
+    },
+    "after_unknown": {
+     "description": true,
+     "icmp_code": true,
+     "icmp_type": true,
+     "id": true,
+     "public_security_group": true,
+     "security_group_id": true,
+     "user_security_group_id": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {}
+   }
+  },
+  {
+   "address": "exoscale_sks_cluster.test",
+   "mode": "managed",
+   "type": "exoscale_sks_cluster",
+   "name": "test",
+   "provider_name": "registry.terraform.io/exoscale/exoscale",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "audit": [],
+     "auto_upgrade": false,
+     "cni": "calico",
+     "create_default_security_group": null,
+     "description": null,
+     "exoscale_ccm": true,
+     "exoscale_csi": false,
+     "feature_gates": null,
+     "labels": null,
+     "metrics_server": true,
+     "name": "pepin-test-sks",
+     "service_level": "starter",
+     "timeouts": null,
+     "zone": "ch-gva-2"
+    },
+    "after_unknown": {
+     "addons": true,
+     "aggregation_ca": true,
+     "audit": [],
+     "control_plane_ca": true,
+     "created_at": true,
+     "default_security_group_id": true,
+     "enable_karpenter": true,
+     "enable_kube_proxy": true,
+     "endpoint": true,
+     "id": true,
+     "kubelet_ca": true,
+     "nodepools": true,
+     "oidc": true,
+     "state": true,
+     "version": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {
+     "addons": [],
+     "aggregation_ca": true,
+     "audit": [],
+     "control_plane_ca": true,
+     "kubelet_ca": true,
+     "nodepools": [],
+     "oidc": []
+    }
+   }
+  }
+ ],
+ "prior_state": {
+  "format_version": "1.0",
+  "terraform_version": "1.15.4",
+  "values": {
+   "root_module": {
+    "resources": [
+     {
+      "address": "data.exoscale_template.ubuntu",
+      "mode": "data",
+      "type": "exoscale_template",
+      "name": "ubuntu",
+      "provider_name": "registry.terraform.io/exoscale/exoscale",
+      "schema_version": 0,
+      "values": {
+       "default_user": "ubuntu",
+       "id": "f8d6fbf7-ffa7-45e2-bed8-d101d814d646",
+       "name": "Linux Ubuntu 24.04 LTS 64-bit",
+       "visibility": "public",
+       "zone": "ch-gva-2"
+      },
+      "sensitive_values": {}
+     }
+    ]
+   }
+  }
+ },
+ "configuration": {
+  "provider_config": {
+   "exoscale": {
+    "name": "exoscale",
+    "full_name": "registry.terraform.io/exoscale/exoscale"
+   }
+  },
+  "root_module": {
+   "resources": [
+    {
+     "address": "exoscale_block_storage_volume.data",
+     "mode": "managed",
+     "type": "exoscale_block_storage_volume",
+     "name": "data",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "name": {
+       "constant_value": "pepin-test-data"
+      },
+      "size": {
+       "constant_value": 10
+      },
+      "zone": {
+       "references": [
+        "local.zone"
+       ]
+      }
+     },
+     "schema_version": 0
+    },
+    {
+     "address": "exoscale_compute_instance.vm",
+     "mode": "managed",
+     "type": "exoscale_compute_instance",
+     "name": "vm",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "disk_size": {
+       "constant_value": 10
+      },
+      "name": {
+       "constant_value": "pepin-test-vm"
+      },
+      "security_group_ids": {
+       "references": [
+        "exoscale_security_group.open.id",
+        "exoscale_security_group.open"
+       ]
+      },
+      "template_id": {
+       "references": [
+        "data.exoscale_template.ubuntu.id",
+        "data.exoscale_template.ubuntu"
+       ]
+      },
+      "type": {
+       "constant_value": "standard.micro"
+      },
+      "user_data": {
+       "constant_value": "#cloud-config\nwrite_files:\n  - path: /etc/app/config.env\n    content: |\n      DB_PASSWORD=Sup3rSecretP@ss\n      AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMIabcdefGH1234567890EXAMPLEKEY\n"
+      },
+      "zone": {
+       "references": [
+        "local.zone"
+       ]
+      }
+     },
+     "schema_version": 0
+    },
+    {
+     "address": "exoscale_iam_api_key.admin",
+     "mode": "managed",
+     "type": "exoscale_iam_api_key",
+     "name": "admin",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "name": {
+       "constant_value": "pepin-test-admin-key"
+      },
+      "role_id": {
+       "references": [
+        "exoscale_iam_role.admin.id",
+        "exoscale_iam_role.admin"
+       ]
+      }
+     },
+     "schema_version": 0
+    },
+    {
+     "address": "exoscale_iam_role.admin",
+     "mode": "managed",
+     "type": "exoscale_iam_role",
+     "name": "admin",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "description": {
+       "constant_value": "Role de test a privileges excessifs (a supprimer)"
+      },
+      "name": {
+       "constant_value": "pepin-test-admin"
+      },
+      "policy": {
+       "constant_value": {
+        "default_service_strategy": "allow",
+        "services": {}
+       }
+      }
+     },
+     "schema_version": 0
+    },
+    {
+     "address": "exoscale_security_group.open",
+     "mode": "managed",
+     "type": "exoscale_security_group",
+     "name": "open",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "name": {
+       "constant_value": "pepin-test-open"
+      }
+     },
+     "schema_version": 1
+    },
+    {
+     "address": "exoscale_security_group_rule.rdp",
+     "mode": "managed",
+     "type": "exoscale_security_group_rule",
+     "name": "rdp",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "cidr": {
+       "constant_value": "0.0.0.0/0"
+      },
+      "end_port": {
+       "constant_value": 3389
+      },
+      "protocol": {
+       "constant_value": "TCP"
+      },
+      "security_group_id": {
+       "references": [
+        "exoscale_security_group.open.id",
+        "exoscale_security_group.open"
+       ]
+      },
+      "start_port": {
+       "constant_value": 3389
+      },
+      "type": {
+       "constant_value": "INGRESS"
+      }
+     },
+     "schema_version": 0
+    },
+    {
+     "address": "exoscale_security_group_rule.ssh",
+     "mode": "managed",
+     "type": "exoscale_security_group_rule",
+     "name": "ssh",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "cidr": {
+       "constant_value": "0.0.0.0/0"
+      },
+      "end_port": {
+       "constant_value": 22
+      },
+      "protocol": {
+       "constant_value": "TCP"
+      },
+      "security_group_id": {
+       "references": [
+        "exoscale_security_group.open.id",
+        "exoscale_security_group.open"
+       ]
+      },
+      "start_port": {
+       "constant_value": 22
+      },
+      "type": {
+       "constant_value": "INGRESS"
+      }
+     },
+     "schema_version": 0
+    },
+    {
+     "address": "exoscale_sks_cluster.test",
+     "mode": "managed",
+     "type": "exoscale_sks_cluster",
+     "name": "test",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "auto_upgrade": {
+       "constant_value": false
+      },
+      "cni": {
+       "constant_value": "calico"
+      },
+      "name": {
+       "constant_value": "pepin-test-sks"
+      },
+      "service_level": {
+       "constant_value": "starter"
+      },
+      "zone": {
+       "references": [
+        "local.zone"
+       ]
+      }
+     },
+     "schema_version": 0
+    },
+    {
+     "address": "data.exoscale_template.ubuntu",
+     "mode": "data",
+     "type": "exoscale_template",
+     "name": "ubuntu",
+     "provider_config_key": "exoscale",
+     "expressions": {
+      "name": {
+       "constant_value": "Linux Ubuntu 24.04 LTS 64-bit"
+      },
+      "zone": {
+       "references": [
+        "local.zone"
+       ]
+      }
+     },
+     "schema_version": 0
+    }
+   ]
+  }
+ },
+ "relevant_attributes": [
+  {
+   "resource": "exoscale_iam_role.admin",
+   "attribute": [
+    "id"
+   ]
+  },
+  {
+   "resource": "data.exoscale_template.ubuntu",
+   "attribute": [
+    "id"
+   ]
+  },
+  {
+   "resource": "exoscale_security_group.open",
+   "attribute": [
+    "id"
+   ]
+  }
+ ],
+ "timestamp": "2026-06-12T11:20:16Z",
+ "applyable": true,
+ "complete": true,
+ "errored": false
+}

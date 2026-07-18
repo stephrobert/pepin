@@ -1,0 +1,72 @@
+# Questions ouvertes — Outscale. Voir README.md pour le cycle de vie.
+# Principe : décrire Outscale avec son vocabulaire NATIF (Net, Subnet, Net Peering,
+# EIM, OOS, BSU…), jamais « AWS-like / AWS-compatible » (cf. mémoire pas-de-comparaison-aws).
+
+- id: OSC-Q3
+  titre: Format réel des policies EIM (transform awspolicy)
+  controle: CLD-IAM-1 / iam_policy_*
+  statut: ouverte
+  contexte: >
+    Le mapping outscale.yaml parse les politiques EIM via le transform `awspolicy`
+    (document JSON statements effect/action/resource) — décrit auparavant à tort
+    comme « AWS-compatible » SANS ancrage sur la doc Outscale.
+  a_confirmer: >
+    Vérifier sur la doc LOCALE (references/docs/outscale/) la structure EXACTE d'une
+    politique EIM Outscale (champs, casse, NotAction/NotResource) et confirmer que le
+    transform awspolicy la couvre fidèlement. Décrire avec le vocabulaire EIM natif,
+    pas par référence à un autre cloud.
+  source:
+    - references/docs/outscale/   # pages EIM / policy à identifier
+
+- id: OSC-Q4
+  titre: Collecte du type network (Net) et cartographie NET-5
+  controle: CLD-NET-5 / network (cartographie)
+  statut: ouverte
+  contexte: >
+    Pour la cartographie (CLD-NET-5), collecter le type normalisé `network` depuis
+    les Net Outscale (vocabulaire natif : Net, Subnet, Net Peering).
+  ce_quon_sait: >
+    Doc locale (about-nets) : un Net porte un IpRange en CIDR (RFC 1918), un State et
+    des Tags ; on y crée des Subnets. L'opération de liste est ReadNets (API OAPI,
+    POST) → Nets[] {NetId, IpRange, State, Tags, DhcpOptionsSetId}.
+  a_confirmer: >
+    Noms EXACTS des champs de la réponse ReadNets (casse PascalCase) et structure des
+    Tags. Les règles SG Outscale n'ayant pas de description par règle, NET-5 y sera
+    couvert par la cartographie (network documenté), pas par la matrice justifiée.
+  source:
+    - references/docs/outscale/en-userguide-about-nets-html.md
+
+- id: OSC-Q1
+  titre: Schéma exact d'un cluster OKS (champs de posture)
+  controle: CLD-K8S-1/2/3 / kubernetes_cluster_*
+  statut: ouverte
+  contexte: >
+    Le contrat outscale.yaml a kubernetes_cluster en etat: a_verifier ; OKS n'est
+    ni collecté en live ni mappé en Terraform.
+  ce_quon_sait: >
+    OKS a sa propre API (oks, distincte de oapi). La page oks.html (API v1.0) rend
+    en JS et n'a pas été extraite proprement.
+  a_confirmer: >
+    Noms EXACTS des champs : admin_whitelist (restriction API server, CLD-K8S-1),
+    control_plane multi-AZ (K8S-2), auto_upgrade / version supportée (K8S-3),
+    deletion_protection. Disponibilité Terraform (ressource outscale OKS ?).
+  source:
+    - https://docs.outscale.com/oks.html
+
+- id: OSC-Q2
+  titre: Journalisation OKS (logs d'audit/infra) et OOSAccess
+  controle: CLD-LOG-1
+  statut: ouverte
+  contexte: >
+    LOG-1 est déjà ✓ pour Outscale via loadbalancer_logging_enabled. La journalisation
+    OKS est un angle supplémentaire possible (protection des logs plutôt qu'activation).
+  ce_quon_sait: >
+    Doc « Managing Cluster Logs » : les logs d'audit ET d'infrastructure du cluster
+    sont générés AUTOMATIQUEMENT et stockés dans des buckets OOS ; l'accès se gère
+    via la ressource OOSAccess (comptes autorisés en lecture). Audit automatique
+    (≠ opt-in Exoscale) → un check « audit activé » serait creux.
+  a_confirmer: >
+    Schéma exact d'OOSAccess (champs : comptes autorisés, bucket cible). Pertinence
+    d'un check distinct kubernetes_cluster_logs_access_restricted (protection des logs).
+  source:
+    - references/docs/outscale/en-userguide-about-oks-html.md

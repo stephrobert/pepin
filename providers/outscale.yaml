@@ -1,0 +1,395 @@
+# Descripteur du provider Outscale — chargé par le provider générique.
+# OAPI : signature V4 (en-tête AWS4-HMAC-SHA256 imposé par l'API ; service « oapi »,
+# région de signature « eu-west-2 »).
+name: outscale
+description: "Outscale (3DS) — VM, BSU, OOS, EIM, security groups, OKS, LBU"
+
+# Souveraineté du fournisseur (CLD-GVN-4) — faits ancrés. Cloud souverain FR,
+# qualifié SecNumCloud 3.2 (immunité extraterritoriale reconnue par l'ANSSI).
+souverainete:
+  eu_etabli: true             # 3DS OUTSCALE, siège à Saint-Cloud (France)
+  juridiction: FR
+  controle_capitalistique: FR  # marque/filiale de Dassault Systèmes (France)
+  secnumcloud: qualifie        # SecNumCloud 3.2 (ANSSI, déc. 2023) — 1er cloud public qualifié
+  exposition_extraterritoriale: false
+  sources: "3ds.com/newsroom (Outscale 1er cloud SecNumCloud 3.2) ; en.outscale.com/our-certifications"
+
+auth:
+  type: sigv4
+  service: oapi
+  region: eu-west-2
+credentials:
+  env:
+    access_key: OSC_ACCESS_KEY
+    secret_key: OSC_SECRET_KEY
+    region: OSC_REGION
+  file: { path: "~/.osc/config.json", format: osc }
+  defaults: { region: eu-west-2, host: outscale.com }
+s3:
+  endpoint: "https://oos.{region}.outscale.com"
+
+collecte:
+  # Collecte live Outscale PILOTÉE PAR YAML (moteur internal/collect, SigV4).
+  # API OAPI : POST /api/v1/<Action> avec body JSON ; réponses en PascalCase.
+  # Signature V4 (en-tête AWS4-HMAC-SHA256) : service "oapi", région "eu-west-2".
+  # Ancré sur le contrat OAPI (github.com/outscale/osc-api). Plus de dépendance osc-sdk-go.
+  base_url: https://api.{region}.{host}/api/v1
+  resources:
+    # Règles de security group (blocs InboundRules/OutboundRules de chaque SG).
+    - type: security_group_rule
+      path: /ReadSecurityGroups
+      method: POST
+      body: "{}"
+      items: SecurityGroups[*].InboundRules[*]
+      id: security_group_id
+      const: { direction: inbound, action: accept }
+      map:
+        security_group_id: _parent.SecurityGroupId
+        protocol: IpProtocol
+        cidrs: IpRanges
+        port_from: FromPortRange
+        port_to: ToPortRange
+      transforms:
+        protocol: [lower, { "-1": all, any: all, "": all }]
+        cidrs: list
+    - type: security_group_rule
+      path: /ReadSecurityGroups
+      method: POST
+      body: "{}"
+      items: SecurityGroups[*].OutboundRules[*]
+      id: security_group_id
+      const: { direction: outbound, action: accept }
+      map:
+        security_group_id: _parent.SecurityGroupId
+        protocol: IpProtocol
+        cidrs: IpRanges
+        port_from: FromPortRange
+        port_to: ToPortRange
+      transforms:
+        protocol: [lower, { "-1": all, any: all, "": all }]
+        cidrs: list
+  
+    # Machines.
+    - type: compute_instance
+      path: /ReadVms
+      method: POST
+      body: "{}"
+      items: Vms
+      id: vm_id
+      map:
+        vm_id: VmId
+        state: State
+        public_ip: PublicIp
+        security_group_ids: SecurityGroups
+        user_data: UserData
+        tags: Tags
+      transforms:
+        security_group_ids: pluck:SecurityGroupId
+        tags: kv
+  
+    # Clés d'accès.
+    - type: access_key
+      path: /ReadAccessKeys
+      method: POST
+      body: "{}"
+      items: AccessKeys
+      id: access_key_id
+      map:
+        access_key_id: AccessKeyId
+        state: State
+        expiration_date: ExpirationDate
+  
+    # Règles d'accès API (par IP).
+    - type: api_access_rule
+      path: /ReadApiAccessRules
+      method: POST
+      body: "{}"
+      items: ApiAccessRules
+      id: api_access_rule_id
+      map:
+        api_access_rule_id: ApiAccessRuleId
+        ip_ranges: IpRanges
+  
+    # Résumé : nombre de règles d'accès API (agrégat → "aucune règle définie").
+    - type: api_access_summary
+      path: /ReadApiAccessRules
+      method: POST
+      body: "{}"
+      items: ApiAccessRules
+      aggregate: rule_count
+      id: id
+      const: { id: api-access }
+  
+    # Politique d'accès API (objet unique).
+    - type: api_access_policy
+      path: /ReadApiAccessPolicy
+      method: POST
+      body: "{}"
+      items: ApiAccessPolicy
+      id: id
+      const: { id: api-access-policy }
+      map:
+        max_access_key_expiration_seconds: MaxAccessKeyExpirationSeconds
+        require_trusted_env: RequireTrustedEnv
+  
+    # Volumes.
+    - type: blockstorage_volume
+      path: /ReadVolumes
+      method: POST
+      body: "{}"
+      items: Volumes
+      id: volume_id
+      map:
+        volume_id: VolumeId
+        state: State
+        tags: Tags
+      transforms:
+        tags: kv
+  
+    # Snapshots (partage public via PermissionsToCreateVolume.GlobalPermission).
+    - type: blockstorage_snapshot
+      path: /ReadSnapshots
+      method: POST
+      body: "{}"
+      items: Snapshots
+      id: snapshot_id
+      map:
+        snapshot_id: SnapshotId
+        volume_id: VolumeId
+        creation_date: CreationDate
+        global_permission: PermissionsToCreateVolume.GlobalPermission
+  
+    # Politiques EIM : ReadPolicies puis ReadPolicyVersion (document JSON → statements).
+    - type: iam_policy
+      for_each:
+        path: /ReadPolicies
+        method: POST
+        body: '{"Filters":{"Scope":"LOCAL"}}'
+        items: Policies
+        as: p
+      path: /ReadPolicyVersion
+      method: POST
+      body: '{"PolicyOrn":"{p.Orn}","VersionId":"{p.PolicyDefaultVersionId}"}'
+      items: PolicyVersion
+      id: policy_id
+      map:
+        policy_name: _parent.PolicyName
+        policy_id: _parent.PolicyId
+        statements: Body
+      transforms:
+        statements: awspolicy
+
+    # Réseaux → network (cartographie, CLD-NET-5). Net = réseau virtuel Outscale
+    # (IpRange en CIDR, State, Tags) ; on y crée des Subnets. Vocabulaire natif OAPI.
+    - type: network
+      path: /ReadNets
+      method: POST
+      body: "{}"
+      items: Nets
+      id: network_id
+      map:
+        network_id: NetId
+        cidr: IpRange
+        state: State
+        tags: Tags
+      transforms:
+        tags: kv
+
+    # Appairages de Nets → network_peering (cloisonnement, CLD-NET-7). Un Net Peering
+    # peut relier des Nets de comptes Outscale DIFFÉRENTS (doc about-net-peerings) :
+    # source_account ≠ accepter_account ⇒ flux ouverts vers un autre SI.
+    - type: network_peering
+      path: /ReadNetPeerings
+      method: POST
+      body: "{}"
+      items: NetPeerings
+      id: peering_id
+      map:
+        peering_id: NetPeeringId
+        source_account: SourceNet.AccountId
+        accepter_account: AccepterNet.AccountId
+        state: State.Name
+
+mapping_terraform:
+  # Mapping Terraform Outscale → modèle normalisé commun, DÉCLARATIF (moteur
+  # internal/tfmap). Ancré sur le schéma réel du provider outscale/outscale.
+  # Les règles de security group sont des ressources séparées (1:1) ; la policy EIM
+  # porte un document JSON (effect/action/resource), normalisé en statements.
+  resources:
+    - tf_type: outscale_security_group_rule
+      type: security_group_rule
+      id: security_group_id
+      const: { action: accept }
+      map:
+        security_group_id: security_group_id
+        direction: flow                  # Inbound|Outbound
+        protocol: ip_protocol            # -1/any/"" -> all
+        cidrs: ip_range                  # plage d'adresses (schéma : ip_range, pas ip_ranges)
+        port_from: from_port_range
+        port_to: to_port_range
+      transforms:
+        direction: { Inbound: inbound, Outbound: outbound }
+        protocol: [lower, { "-1": all, any: all, "": all }]
+        cidrs: list                      # idempotent : liste gardée, string -> [string]
+        port_from: range_from
+        port_to: range_to
+  
+    - tf_type: outscale_vm
+      type: compute_instance
+      id: vm_id
+      map:
+        vm_id: vm_id
+        public_ip: public_ip
+        security_group_ids: security_group_ids
+        state: state
+        tags: tags
+  
+    - tf_type: outscale_policy
+      type: iam_policy
+      id: policy_name
+      map:
+        policy_name: policy_name
+        statements: document             # document JSON {Statement:[...]}
+      transforms:
+        statements: awspolicy
+
+    # Réseau → network (cartographie, CLD-NET-5).
+    - tf_type: outscale_net
+      type: network
+      id: network_id
+      map:
+        network_id: net_id
+        cidr: ip_range
+        tags: tags
+      transforms:
+        tags: kv
+
+# Contrat d'API (ancrage §2) + applicabilité SCSL (non_applicable) — lu par `pepin scsl`.
+contrat:
+  types:
+    security_group_rule:
+      etat: verifie
+      source: SecurityGroup.{InboundRules,OutboundRules}[] (SecurityGroupRule)
+      mapping:
+        direction: Inbound|Outbound (liste) → inbound|outbound
+        action: implicite « accept »
+        protocol: IpProtocol (tcp|udp|icmp|-1) ; -1 → all
+        port_from: FromPortRange (*int32)
+        port_to: ToPortRange (*int32)
+        cidrs: IpRanges (*[]string)
+        security_group_id: SecurityGroupId
+    compute_instance:
+      etat: verifie
+      source: Vm
+      mapping:
+        vm_id: VmId
+        state: State
+        public_ip: PublicIp
+        security_group_ids: SecurityGroups[].SecurityGroupId
+        user_data: UserData (base64)
+        tags: Tags[] (ResourceTag{Key,Value})
+    blockstorage_volume:
+      etat: verifie
+      source: Volume
+      mapping:
+        volume_id: VolumeId
+        state: State
+        tags: Tags[]
+        encrypted: 'ABSENT : osc-sdk-go/v2 Volume n''expose AUCUN champ de chiffrement (vérifié sur le SDK).
+          Le chiffrement au repos est CÔTÉ INVITÉ (EncFS/LUKS dans la VM), responsabilité du client
+          (doc « Encrypting Data on Your Volumes ») → CLD-CHF-2 non observable côté plateforme, non applicable.'
+    blockstorage_snapshot:
+      etat: verifie
+      source: Snapshot
+      mapping:
+        snapshot_id: SnapshotId
+        volume_id: VolumeId
+        creation_date: CreationDate
+        global_permission: PermissionsToCreateVolume.GlobalPermission
+    object_storage_bucket:
+      etat: verifie
+      source: aws-sdk-go-v2/service/s3 (endpoint oos.<region>.outscale.com)
+      mapping:
+        acl_grants: GetBucketAcl → Grants[].{Grantee.URI, Permission}
+        public_via_acl: 'DÉRIVÉ : grant AllUsers/AuthenticatedUsers'
+        versioning: GetBucketVersioning → Status
+        policy_public: 'DÉRIVÉ : GetBucketPolicy contient Allow Principal *'
+        tags: GetBucketTagging → TagSet[]
+    access_key:
+      etat: verifie
+      source: AccessKey
+      mapping:
+        access_key_id: AccessKeyId
+        state: State
+        expiration_date: ExpirationDate
+        root_owned: non exposé directement (notion root via EIM) — a_verifier
+    iam_user:
+      etat: absent
+      source: osc-sdk-go User
+      mapping:
+        mfa_enabled: 'ABSENT par utilisateur : l''API EIM n''expose pas de statut MFA par user. La MFA Outscale s''impose
+          au COMPTE via ApiAccessPolicy.RequireTrustedEnv (cf. type api_access_policy + contrôle iam_account_mfa_enforced).
+          Source : docs.outscale.com (Multi-Factor Authentication).'
+    iam_policy:
+      etat: verifie
+      source: Policy + PolicyVersion.Body (document JSON)
+      mapping:
+        policy_name: PolicyName
+        statements: 'DÉRIVÉ : Body parsé → [{effect, actions[], resources[], not_action[], not_resource[]}]'
+    load_balancer:
+      etat: verifie
+      source: LoadBalancer
+      mapping:
+        load_balancer_name: LoadBalancerName
+        load_balancer_type: LoadBalancerType (internet-facing|internal)
+        listeners: Listeners[].{LoadBalancerProtocol, LoadBalancerPort}
+        access_log: AccessLog.IsEnabled
+    network:
+      etat: verifie
+      source: 'Net (ReadNets → Nets[]) : réseau virtuel Outscale. Doc locale about-nets.'
+      mapping:
+        network_id: NetId
+        cidr: IpRange (CIDR RFC 1918)
+        state: State
+        tags: Tags[] (ResourceTag{Key,Value}) → cartographie CLD-NET-5
+    network_peering:
+      etat: verifie
+      source: 'Net Peering (ReadNetPeerings → NetPeerings[]) : {NetPeeringId, SourceNet.AccountId, AccepterNet.AccountId,
+        State.Name}. Un peering peut relier des comptes Outscale différents (doc about-net-peerings) → CLD-NET-7.'
+      mapping:
+        peering_id: NetPeeringId
+        source_account: SourceNet.AccountId
+        accepter_account: AccepterNet.AccountId
+        state: State.Name
+    api_access_rule:
+      etat: verifie
+      source: ApiAccessRule
+      mapping:
+        api_access_rule_id: ApiAccessRuleId
+        ip_ranges: IpRanges (*[]string)
+    api_access_policy:
+      etat: verifie
+      source: ApiAccessPolicy
+      mapping:
+        max_access_key_expiration_seconds: MaxAccessKeyExpirationSeconds (*int64)
+        require_trusted_env: 'RequireTrustedEnv (*bool) ; true ⇒ MFA imposée à tous les EIM users (WebAuthn/OTP). Source :
+          docs.outscale.com (About Your API Access Policy).'
+    kubernetes_cluster:
+      etat: a_verifier
+      source: API REST OKS — champs admin_whitelist/control_plane_multi_az/auto_upgrade/deletion_protection/version à confirmer
+      journalisation: 'CAPACITÉ CONFIRMÉE (doc OKS « Managing Cluster Logs ») : les logs d''audit ET d''infrastructure du
+        cluster sont générés AUTOMATIQUEMENT et stockés dans des buckets OOS ; l''accès se gère via la ressource OOSAccess
+        (comptes autorisés en lecture, emplacement de stockage). Sémantique DIFFÉRENTE d''Exoscale (audit opt-in via endpoint) :
+        l''audit OKS étant automatique, le check kubernetes_cluster_audit_logging_enabled (« audit activé », CLD-LOG-1) serait
+        toujours satisfait et n''apporterait rien ; l''angle pertinent pour Outscale serait la PROTECTION des logs (OOSAccess),
+        à formaliser en check distinct si visé. Nom exact des champs API OKS à confirmer (schéma oks.html rendu en JS).'
+  non_applicable:
+  # CHF-2 : osc-sdk-go/v2 Volume n'expose aucun champ de chiffrement ; le chiffrement
+  # au repos est CÔTÉ INVITÉ (EncFS/LUKS), responsabilité du client → non observable
+  # côté plateforme.
+  - control: blockstorage_volume_encryption
+    reason: "osc-sdk-go/v2 Volume n'expose aucun champ de chiffrement ; le chiffrement au repos est côté invité (EncFS/LUKS), responsabilité du client → non observable côté plateforme (CHF-2)."
+  # CHF-4 : OOS ServerSideEncryption est TOUJOURS AES256 (clé fournisseur) ; aucun
+  # service KMS ni clé client au niveau objet (doc OOS) → BYOK non applicable.
+  - control: objectstorage_bucket_kms_encryption
+    reason: "OOS ServerSideEncryption est toujours AES256 (clé fournisseur) ; aucun service KMS ni clé client au niveau objet (doc OOS) → BYOK non applicable (CHF-4)."

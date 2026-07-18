@@ -1,0 +1,59 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+      - id: go-vet
+      - id: go-mod-tidy
+
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v2.1.6
+    hooks:
+      - id: golangci-lint
+        args: [--timeout=5m]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.27.2
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.44.0
+    hooks:
+      - id: markdownlint
+        args: [--disable, MD013]
+
+  - repo: local
+    hooks:
+      - id: opa-fmt
+        name: opa fmt (Rego)
+        language: system
+        entry: bash -c 'test -z "$(opa fmt --list providers)" || (opa fmt --list providers && exit 1)'
+        pass_filenames: false
+        files: \.rego$
+
+      - id: osv-scanner
+        name: OSV-Scanner (go.mod / go.sum)
+        language: system
+        entry: osv-scanner scan -L go.mod
+        pass_filenames: false
+        files: ^go\.(mod|sum)$
+
+      - id: plumber
+        name: plumber (GitHub Actions security audit)
+        language: script
+        entry: .pre-commit-plumber.sh
+        pass_filenames: false
+        files: ^\.github/workflows/.*\.yml$

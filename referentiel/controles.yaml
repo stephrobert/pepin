@@ -1,0 +1,811 @@
+# Référentiel commun de posture cloud de Pépin.
+#
+# Chaque entrée est un CONTRÔLE agnostique (indépendant du fournisseur) identifié
+# par un `code` COMMUN à tous les providers, suivant la convention
+# <service>_<resource>_<check> avec un préfixe service neutre (network_, compute_,
+# objectstorage_, blockstorage_, iam_, kubernetes_, loadbalancer_, governance_).
+# Les règles Rego (providers/<nom>/policies/) émettent ce `code` ; le contenu
+# (message, remédiation, fixtures) reste propre au fournisseur.
+#
+# Schéma d'un contrôle :
+#   code         : identifiant agnostique commun (= champ `code` des findings)
+#   famille      : iam | reseau | compute | stockage | chiffrement | journalisation | gouvernance
+#   titre        : libellé court (FR)
+#   severite     : critical | high | medium | low
+#   description, remediation : prose (FR, vouvoiement dans les livrables)
+#   scsl         : exigence(s) de l'index SCSL — module SCSL-C « Posture cloud »
+#                  (framework-scsl/api/v1/exigences.json, domaine CLD ; l'ID SCSL-
+#                  CLD-* est lu dépréfixé en CLD-*). NE PAS inventer : si
+#                  l'exigence CLD-* manque, l'ajouter d'abord à la source SCSL.
+#   frameworks   : correspondances (cf. referentiel/frameworks/*.yaml)
+#   fournisseurs : [<provider>…] qui implémentent une règle pour ce contrôle
+#                  (vide = au catalogue, pas encore implémenté)
+
+familles:
+  - { code: iam,            nom: "IAM & accès" }
+  - { code: reseau,         nom: "Réseau & exposition" }
+  - { code: compute,        nom: "Compute & orchestration" }
+  - { code: stockage,       nom: "Stockage & données" }
+  - { code: chiffrement,    nom: "Chiffrement & clés" }
+  - { code: journalisation, nom: "Journalisation & audit" }
+  - { code: gouvernance,    nom: "Gouvernance & inventaire" }
+
+controles:
+  # ─────────────────────────── IAM & accès ───────────────────────────
+  - code: iam_policy_no_administrative_privileges
+    famille: iam
+    titre: Politique IAM à privilèges administratifs (action joker)
+    severite: critical
+    description: >
+      Une politique IAM accorde une action joker « * » (ou l'anti-pattern
+      NotAction/NotResource), contournant le moindre privilège.
+    remediation: >
+      Restreindre la politique aux actions/ressources strictement nécessaires.
+    scsl: [CLD-IAM-1]
+    frameworks:
+      anssi_bp_028: ["R10", "R13"]
+      secnumcloud_3_2: ["19.1", "19.3"]
+      cis_controls_v8: ["6.7", "6.8"]
+      iso_27001_2022: ["A.5.15", "A.5.18", "A.8.2", "A.8.3"]
+    fournisseurs: [outscale]
+
+  - code: iam_policy_no_wildcard_resource
+    famille: iam
+    titre: Politique IAM avec ressource joker
+    severite: high
+    description: >
+      Un Statement Allow porte une ressource joker « * » : il s'applique à
+      toutes les ressources du compte, au-delà du strict nécessaire.
+    remediation: >
+      Restreindre Resource aux identifiants (ORN) que la politique doit
+      réellement couvrir.
+    scsl: [CLD-IAM-1]
+    frameworks:
+      anssi_bp_028: ["R10", "R13"]
+      secnumcloud_3_2: ["19.1", "19.3"]
+      cis_controls_v8: ["6.7", "6.8"]
+      iso_27001_2022: ["A.5.15", "A.8.3"]
+    fournisseurs: [outscale]
+
+  - code: iam_policy_no_notaction_notresource
+    famille: iam
+    titre: Politique IAM avec NotAction/NotResource (anti-pattern)
+    severite: critical
+    description: >
+      Un Statement Allow emploie NotAction ou NotResource : ce pattern
+      d'inversion autorise tout sauf une liste, ouvrant des permissions
+      imprévues à chaque nouveau service/ressource.
+    remediation: >
+      Réécrire en liste d'autorisations explicite (Action/Resource).
+      NotAction/NotResource n'est acceptable qu'avec Effect Deny.
+    scsl: [CLD-IAM-1]
+    frameworks:
+      anssi_bp_028: ["R10", "R13"]
+      secnumcloud_3_2: ["19.1", "19.3"]
+      cis_controls_v8: ["6.7", "6.8"]
+      iso_27001_2022: ["A.5.15", "A.5.18"]
+    fournisseurs: [outscale]
+
+  - code: iam_policy_no_privilege_escalation
+    famille: iam
+    titre: Politique IAM permettant une élévation de privilèges
+    severite: high
+    description: >
+      Une politique autorise des actions de gestion d'identité (attacher ou créer
+      une politique, créer/réactiver une clé d'accès) qui permettent à un principal
+      de s'octroyer lui-même des droits supplémentaires — chemin d'élévation de
+      privilèges.
+    remediation: >
+      Retirer les actions de gestion d'identité des politiques d'usage courant ;
+      les réserver à un rôle d'administration dédié, scopé aux ressources légitimes.
+    scsl: [CLD-IAM-12]
+    frameworks:
+      anssi_bp_028: ["R10"]
+      secnumcloud_3_2: ["19.1", "19.3"]
+      cis_controls_v8: ["6.8"]
+      iso_27001_2022: ["A.5.15"]
+    fournisseurs: [outscale, exoscale, scaleway]
+
+  - code: iam_no_root_access_key
+    famille: iam
+    titre: Clé d'accès rattachée au compte root
+    severite: high
+    description: >
+      Une clé d'API/d'accès est rattachée au compte root de l'organisation, ce
+      qui contourne les politiques IAM et le moindre privilège.
+    remediation: >
+      Créer une identité/application dédiée à moindre privilège et révoquer la
+      clé root.
+    scsl: [CLD-IAM-1]
+    frameworks:
+      anssi_bp_028: ["R10", "R13"]
+      secnumcloud_3_2: ["19.1", "19.3"]
+      cis_controls_v8: ["6.7", "6.8"]
+      iso_27001_2022: ["A.5.15", "A.5.18"]
+    fournisseurs: [outscale, scaleway]
+
+  - code: iam_accesskey_expiration_set
+    famille: iam
+    titre: Clé d'accès sans expiration ni rotation
+    severite: critical
+    description: >
+      Une clé d'accès longue durée n'a pas de date d'expiration : une fuite
+      reste exploitable indéfiniment.
+    remediation: >
+      Imposer une expiration et une rotation des clés ; préférer une identité
+      courte (OIDC) aux secrets statiques.
+    scsl: [CLD-IAM-2]
+    frameworks:
+      anssi_bp_028: ["R11", "R13"]
+      secnumcloud_3_2: ["19.1", "19.5"]
+      cis_controls_v8: ["5.3", "5.6"]
+      iso_27001_2022: ["A.5.17", "A.8.2"]
+    fournisseurs: [outscale, scaleway]
+
+  - code: iam_user_mfa_enabled
+    famille: iam
+    titre: MFA non activée sur un compte
+    severite: high
+    description: >
+      Un compte utilisateur cloud n'a pas l'authentification multifacteur (MFA)
+      activée : un mot de passe compromis suffit à accéder à la console ou à l'API.
+    remediation: >
+      Activer la MFA sur tous les comptes, en priorité les accès d'administration
+      et la console ; l'imposer par politique au niveau de l'organisation.
+    scsl: [CLD-IAM-3]
+    frameworks:
+      secnumcloud_3_2: ["9.5", "9.6"]
+      cis_controls_v8: ["6.5"]
+      iso_27001_2022: ["A.5.17"]
+    fournisseurs: [scaleway, exoscale]
+
+  - code: iam_account_mfa_enforced
+    famille: iam
+    titre: MFA non imposée au niveau du compte
+    severite: high
+    description: >
+      La politique d'accès API du compte n'impose pas la MFA à l'ensemble des
+      utilisateurs (environnement de confiance désactivé) : un mot de passe
+      compromis suffit. Angle compte, complémentaire du MFA par utilisateur.
+    remediation: >
+      Activer l'exigence d'environnement de confiance (RequireTrustedEnv) pour
+      imposer la MFA (WebAuthn/OTP) à tous les utilisateurs du compte.
+    scsl: [CLD-IAM-3]
+    frameworks:
+      secnumcloud_3_2: ["9.5", "9.6"]
+      cis_controls_v8: ["6.5"]
+      iso_27001_2022: ["A.5.17"]
+    fournisseurs: [outscale]
+
+  - code: iam_apiaccesspolicy_max_key_expiration
+    famille: iam
+    titre: Politique d'accès API sans expiration maximale des clés
+    severite: medium
+    description: >
+      La politique d'accès API du compte n'impose pas d'expiration maximale aux
+      clés d'accès : rien ne force leur rotation.
+    remediation: >
+      Configurer une expiration maximale des clés d'accès (ex. 90 jours).
+    scsl: [CLD-IAM-2]
+    frameworks:
+      anssi_bp_028: ["R11"]
+      secnumcloud_3_2: ["19.5"]
+      cis_controls_v8: ["5.3"]
+      iso_27001_2022: ["A.5.17"]
+    fournisseurs: [outscale]
+
+  - code: iam_apiaccessrule_no_public_cidr
+    famille: iam
+    titre: Règle d'accès API ouverte à un CIDR public
+    severite: high
+    description: >
+      Une règle d'accès API autorise les appels depuis 0.0.0.0/0 ou ::/0 : une
+      clé d'accès fuitée serait exploitable depuis n'importe où.
+    remediation: >
+      Restreindre les plages IP de la règle aux adresses légitimes ; supprimer
+      toute règle ouverte à Internet.
+    scsl: [CLD-IAM-4]
+    frameworks:
+      anssi_bp_028: ["R67"]
+      secnumcloud_3_2: ["13.2"]
+      cis_controls_v8: ["4.4"]
+      iso_27001_2022: ["A.8.20"]
+    fournisseurs: [outscale]
+
+  - code: iam_apiaccessrule_defined
+    famille: iam
+    titre: Aucune règle d'accès API définie
+    severite: high
+    description: >
+      Aucune règle d'accès API n'est définie : l'API du compte est joignable
+      depuis n'importe où avec une clé d'accès valide.
+    remediation: >
+      Créer au moins une règle d'accès API restreignant les appels à des plages
+      IP légitimes.
+    scsl: [CLD-IAM-4]
+    frameworks:
+      anssi_bp_028: ["R67"]
+      secnumcloud_3_2: ["13.2"]
+      cis_controls_v8: ["4.4"]
+      iso_27001_2022: ["A.8.20"]
+    fournisseurs: [outscale]
+
+  - code: iam_role_no_admin_privileges
+    famille: iam
+    titre: Rôle IAM aux privilèges excessifs
+    severite: high
+    description: >
+      La politique d'un rôle IAM autorise tout par défaut (stratégie de service
+      « allow ») : sauf interdictions ciblées, une clé assumant ce rôle dispose de
+      privilèges étendus, à l'encontre du moindre privilège.
+    remediation: >
+      Reposer la politique du rôle sur une stratégie de service « deny » par défaut,
+      puis n'autoriser explicitement que les opérations et ressources nécessaires.
+    scsl: [CLD-IAM-1]
+    frameworks:
+      anssi_bp_028: ["R34"]
+      secnumcloud_3_2: ["8.1"]
+      cis_controls_v8: ["6.8"]
+      iso_27001_2022: ["A.8.2"]
+    fournisseurs: [exoscale]
+
+  - code: iam_role_source_ip_restricted
+    famille: iam
+    titre: Rôle IAM sans restriction d'IP source
+    severite: high
+    description: >
+      La politique d'un rôle IAM ne borne pas les IP sources autorisées : une clé
+      assumant ce rôle est utilisable depuis n'importe quelle adresse, y compris en
+      cas de fuite du secret.
+    remediation: >
+      Ajouter à la politique du rôle une condition sur l'IP source (plages
+      d'administration légitimes) afin de restreindre l'usage des accès.
+    scsl: [CLD-IAM-4]
+    frameworks:
+      anssi_bp_028: ["R67"]
+      secnumcloud_3_2: ["13.2"]
+      cis_controls_v8: ["4.4"]
+      iso_27001_2022: ["A.8.20"]
+    fournisseurs: [exoscale]
+
+  - code: iam_role_key_lifetime_bounded
+    famille: iam
+    titre: Rôle IAM sans borne de durée de vie des accès
+    severite: critical
+    description: >
+      La politique d'un rôle IAM ne borne pas la durée de vie des accès (ni TTL de
+      session maximal, ni expiration dans la politique) : une clé assumant ce rôle
+      conserve indéfiniment ses droits, contrairement au principe de secrets à durée
+      limitée.
+    remediation: >
+      Borner la durée de vie : définir un TTL de session maximal sur le rôle ou une
+      condition d'expiration dans sa politique (au-delà d'une durée, les accès sont
+      refusés).
+    scsl: [CLD-IAM-2]
+    frameworks:
+      anssi_bp_028: ["R31"]
+      secnumcloud_3_2: ["10.1"]
+      cis_controls_v8: ["5.3"]
+      iso_27001_2022: ["A.8.15"]
+    fournisseurs: [exoscale]
+
+  # ─────────────────────── Réseau & exposition ───────────────────────
+  - code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
+    famille: reseau
+    titre: SSH (port 22) ouvert à Internet
+    severite: high
+    description: >
+      Une règle de filtrage accepte le port 22 (SSH) depuis 0.0.0.0/0 ou ::/0,
+      exposant l'administration à tout Internet.
+    remediation: >
+      Restreindre la source à un CIDR d'administration ; passer par un bastion
+      ou un VPN.
+    scsl: [CLD-NET-1, CLD-IAM-6, CLD-NET-6]
+    frameworks:
+      anssi_bp_028: ["R65", "R67"]
+      secnumcloud_3_2: ["13.2", "13.3"]
+      cis_controls_v8: ["4.4", "12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389
+    famille: reseau
+    titre: RDP (port 3389) ouvert à Internet
+    severite: high
+    description: >
+      Une règle de filtrage accepte le port 3389 (RDP) depuis 0.0.0.0/0 ou ::/0,
+      exposant l'administration Windows à tout Internet.
+    remediation: >
+      Restreindre la source à un CIDR d'administration ; passer par un bastion
+      ou un VPN.
+    scsl: [CLD-NET-1, CLD-IAM-6, CLD-NET-6]
+    frameworks:
+      anssi_bp_028: ["R65", "R67"]
+      secnumcloud_3_2: ["13.2", "13.3"]
+      cis_controls_v8: ["4.4", "12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: network_securitygroup_allow_ingress_from_internet_to_all_ports
+    famille: reseau
+    titre: Tout le trafic entrant autorisé depuis Internet (any/any)
+    severite: critical
+    description: >
+      Une règle autorise l'ensemble des ports/protocoles depuis 0.0.0.0/0 —
+      exposition maximale.
+    remediation: >
+      Remplacer la règle par des autorisations explicites, port par port,
+      restreintes aux sources légitimes.
+    scsl: [CLD-NET-2]
+    frameworks:
+      anssi_bp_028: ["R65", "R67"]
+      secnumcloud_3_2: ["13.2", "13.3"]
+      cis_controls_v8: ["4.4", "12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports
+    famille: reseau
+    titre: Port sensible (base de données, annuaire…) ouvert à Internet
+    severite: high
+    description: >
+      Une règle de filtrage accepte depuis 0.0.0.0/0 ou ::/0 un port sensible
+      (PostgreSQL, MySQL, Redis, MongoDB, Elasticsearch, MS-SQL, RDP…), exposant
+      un service critique à tout Internet.
+    remediation: >
+      Restreindre la source à un CIDR d'administration / d'application ; ne jamais
+      exposer une base de données ou un annuaire directement sur Internet.
+    scsl: [CLD-NET-1]
+    frameworks:
+      anssi_bp_028: ["R65", "R67"]
+      secnumcloud_3_2: ["13.2", "13.3"]
+      cis_controls_v8: ["4.4", "12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: network_securitygroup_unrestricted_egress
+    famille: reseau
+    titre: Filtrage sortant non restreint
+    severite: medium
+    description: >
+      Un groupe de sécurité autorise tout le trafic sortant vers 0.0.0.0/0 sans
+      restriction, facilitant l'exfiltration de données et les rappels C2.
+    remediation: >
+      Restreindre les règles de sortie aux destinations et ports légitimes.
+    scsl: [CLD-NET-4]
+    frameworks:
+      anssi_bp_028: ["R67"]
+      secnumcloud_3_2: ["13.2"]
+      cis_controls_v8: ["4.4"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: network_flow_matrix_documented
+    famille: reseau
+    titre: Flux entrant sans justification dans la matrice des flux
+    severite: medium
+    description: >
+      Une règle de flux entrant n'a pas de justification (description) : la matrice
+      des flux autorisés (services, protocoles, ports + justification) n'est pas
+      tenue, ce qui empêche la revue et l'imputabilité des ouvertures réseau.
+    remediation: >
+      Documenter chaque règle de security group (service desservi, raison) via sa
+      description ; tenir à jour la matrice des flux et la réviser périodiquement.
+    scsl: [CLD-NET-5]
+    frameworks:
+      secnumcloud_3_2: ["13.1", "13.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [exoscale]
+
+  - code: network_documented
+    famille: reseau
+    titre: Réseau non documenté (cartographie non tenue)
+    severite: low
+    description: >
+      Un réseau (VPC / Net / réseau privé) n'a pas de nom ou d'étiquettes de
+      gouvernance : la cartographie réseau (inventaire, propriétaire, projet) n'est
+      pas tenue à jour, ce qui nuit à la revue et à la réponse aux incidents.
+    remediation: >
+      Nommer et étiqueter chaque réseau (propriétaire, projet, environnement) ;
+      tenir à jour la cartographie réseau et la réviser périodiquement.
+    scsl: [CLD-NET-5]
+    frameworks:
+      secnumcloud_3_2: ["13.1"]
+      iso_27001_2022: ["A.8.9"]
+    fournisseurs: [exoscale, outscale, scaleway]
+
+  - code: network_peering_cross_organization
+    famille: reseau
+    titre: Appairage réseau vers un autre système d'information
+    severite: high
+    description: >
+      Un appairage réseau (peering) relie deux comptes/organisations différents :
+      les flux internes sont ouverts vers un autre système d'information, à
+      l'encontre du cloisonnement, sauf justification et restriction des routes.
+    remediation: >
+      Limiter les appairages aux réseaux du même SI ; pour un partenaire, justifier
+      l'appairage et restreindre les routes/flux échangés (matrice de flux).
+    scsl: [CLD-NET-7]
+    frameworks:
+      secnumcloud_3_2: ["13.2", "13.3"]
+      iso_27001_2022: ["A.8.22"]
+    fournisseurs: [outscale]
+
+  - code: compute_instance_public_ip_with_open_securitygroup
+    famille: reseau
+    titre: Machine exposée publiquement sans filtrage restrictif
+    severite: critical
+    description: >
+      Une instance porte une IP publique et un groupe de sécurité ouvert à
+      0.0.0.0/0 : elle est directement atteignable depuis Internet.
+    remediation: >
+      Retirer l'IP publique si inutile ; restreindre le groupe de sécurité ;
+      placer la machine derrière un répartiteur ou un VPN.
+    scsl: [CLD-NET-3]
+    frameworks:
+      anssi_bp_028: ["R65", "R67", "R68"]
+      secnumcloud_3_2: ["13.1", "13.2", "13.3"]
+      cis_controls_v8: ["4.4", "12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+      iso_27017: ["CLD.9.5.2", "CLD.13.1.4"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  # ────────────────────── Compute & orchestration ────────────────────
+  - code: compute_instance_has_security_group
+    famille: compute
+    titre: Machine sans filtrage réseau
+    severite: critical
+    description: >
+      Une instance n'est associée à aucun groupe de sécurité : aucun filtrage
+      réseau ne s'applique.
+    remediation: >
+      Associer un groupe de sécurité restrictif (refus par défaut) à chaque
+      instance.
+    scsl: [CLD-CMP-1]
+    frameworks:
+      anssi_bp_028: ["R37", "R65"]
+      secnumcloud_3_2: ["13.1", "13.3"]
+      cis_controls_v8: ["4.4"]
+      iso_27001_2022: ["A.8.20"]
+      iso_27017: ["CLD.9.5.2"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: compute_instance_no_secrets_in_user_data
+    famille: compute
+    titre: Secret en clair dans les données utilisateur (user-data)
+    severite: high
+    description: >
+      Les données utilisateur (user-data/cloud-init) contiennent un secret en
+      clair : un SSRF ou un accès aux métadonnées peut l'exfiltrer.
+    remediation: >
+      Bannir les secrets des données utilisateur ; utiliser un coffre de secrets
+      et l'injection au démarrage.
+    scsl: [CLD-CMP-2]
+    frameworks:
+      secnumcloud_3_2: ["19.1", "19.5"]
+      anssi_bp_028: ["R12"]
+      cis_controls_v8: ["4.4"]
+    fournisseurs: [outscale, exoscale, scaleway]
+
+  - code: kubernetes_cluster_not_publicly_accessible
+    famille: compute
+    titre: API server Kubernetes exposé à Internet
+    severite: critical
+    description: >
+      Le serveur d'API du cluster managé est joignable depuis 0.0.0.0/0 (liste
+      d'autorisation ouverte), exposant le plan de contrôle.
+    remediation: >
+      Restreindre la liste d'autorisation de l'API server aux CIDR
+      d'administration ; activer un accès privé.
+    scsl: [CLD-K8S-1]
+    frameworks:
+      anssi_bp_028: ["R12"]
+      secnumcloud_3_2: ["12.1"]
+      cis_controls_v8: ["4.4", "13.4"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [outscale]
+
+  - code: kubernetes_cluster_control_plane_highly_available
+    famille: compute
+    titre: Plan de contrôle Kubernetes non hautement disponible
+    severite: high
+    description: >
+      Le plan de contrôle du cluster managé n'est pas réparti sur plusieurs zones
+      (mono-master / mono-AZ) : la perte d'une zone interrompt le plan de contrôle.
+    remediation: >
+      Activer un plan de contrôle multi-AZ / multi-master sur le cluster managé.
+    scsl: [CLD-K8S-2]
+    frameworks:
+      secnumcloud_3_2: ["12.1"]
+      cis_controls_v8: ["11.1"]
+      iso_27001_2022: ["A.8.14"]
+    fournisseurs: [outscale, exoscale]
+
+  - code: kubernetes_cluster_auto_upgrade_enabled
+    famille: compute
+    titre: Mises à jour automatiques du cluster Kubernetes désactivées
+    severite: medium
+    description: >
+      Les mises à jour / patches automatiques du cluster managé sont désactivés :
+      les correctifs de sécurité ne sont pas appliqués en temps voulu.
+    remediation: >
+      Activer la maintenance / mise à jour automatique du cluster.
+    scsl: [CLD-K8S-3]
+    frameworks:
+      anssi_bp_028: ["R12"]
+      secnumcloud_3_2: ["12.6"]
+      cis_controls_v8: ["7.3"]
+    fournisseurs: [outscale, exoscale]
+
+  - code: kubernetes_cluster_deletion_protection
+    famille: compute
+    titre: Cluster Kubernetes sans protection contre la suppression
+    severite: medium
+    description: >
+      Le cluster managé n'a pas de protection contre la suppression : une action
+      accidentelle ou malveillante peut détruire le cluster.
+    remediation: >
+      Activer la protection contre la suppression sur le cluster.
+    scsl: [CLD-K8S-3]
+    frameworks:
+      secnumcloud_3_2: ["12.6"]
+      iso_27001_2022: ["A.8.14"]
+    fournisseurs: [outscale]
+
+  # ─────────────────────── Stockage & données ────────────────────────
+  - code: objectstorage_bucket_versioning_enabled
+    famille: stockage
+    titre: Versioning du stockage objet désactivé
+    severite: high
+    description: >
+      Un bucket de stockage objet n'a pas le versioning activé : une suppression
+      ou un écrasement (accidentel ou malveillant, ex. rançongiciel) est
+      irréversible.
+    remediation: >
+      Activer le versioning sur les buckets de données critiques (PutBucketVersioning).
+    scsl: [CLD-STO-4]
+    frameworks:
+      secnumcloud_3_2: ["12.3"]
+      cis_controls_v8: ["11.1"]
+      iso_27001_2022: ["A.8.13"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: objectstorage_bucket_object_lock_enabled
+    famille: stockage
+    titre: Object Lock (immutabilité) désactivé sur le stockage objet
+    severite: low
+    description: >
+      Un bucket de stockage objet n'a pas l'Object Lock (WORM) activé : ses objets
+      peuvent être supprimés ou écrasés (accidentellement ou par un rançongiciel),
+      sans garantie d'immutabilité. Recommandé pour les buckets de sauvegarde et
+      les objets critiques.
+    remediation: >
+      Activer l'Object Lock (mode conformité ou gouvernance) sur les buckets de
+      sauvegarde et d'objets critiques, avec une période de rétention adaptée.
+    scsl: [CLD-STO-8]
+    frameworks:
+      secnumcloud_3_2: ["12.3", "17.6"]
+      cis_controls_v8: ["11.1"]
+      iso_27001_2022: ["A.8.13"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: objectstorage_bucket_public_access
+    famille: stockage
+    titre: Stockage objet exposé publiquement
+    severite: critical
+    description: >
+      Un bucket de stockage objet est accessible publiquement (ACL au groupe
+      AllUsers, ACL « canned » public-read/-write, ou politique publique).
+    remediation: >
+      Retirer l'accès public de l'ACL/la politique ; servir le contenu via des
+      URLs signées si un accès externe est requis.
+    scsl: [CLD-STO-1]
+    frameworks:
+      anssi_bp_028: ["R1", "R65"]
+      secnumcloud_3_2: ["9.2", "13.1"]
+      cis_controls_v8: ["3.3", "3.11"]
+      iso_27001_2022: ["A.5.15", "A.8.3", "A.8.11"]
+      iso_27017: ["CLD.8.1.5", "CLD.9.5.1"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: blockstorage_snapshot_not_public
+    famille: stockage
+    titre: Instantané ou image partagé publiquement
+    severite: high
+    description: >
+      Un instantané (snapshot) ou une image disque est partagé publiquement,
+      exposant potentiellement des données ou des secrets.
+    remediation: >
+      Retirer le partage public ; restreindre le partage aux comptes légitimes.
+    scsl: [CLD-STO-2]
+    frameworks:
+      anssi_bp_028: ["R1", "R71"]
+      secnumcloud_3_2: ["9.2", "18.1"]
+      cis_controls_v8: ["3.3", "3.11"]
+      iso_27001_2022: ["A.5.15", "A.8.3", "A.8.24"]
+      iso_27017: ["CLD.8.1.5", "CLD.9.5.1"]
+    fournisseurs: [outscale]
+
+  - code: blockstorage_volume_snapshots_exist
+    famille: stockage
+    titre: Absence de sauvegarde récente
+    severite: high
+    description: >
+      Un volume de données en usage n'a pas d'instantané/sauvegarde récent : la
+      restauration après incident n'est pas garantie.
+    remediation: >
+      Mettre en place une politique de sauvegarde régulière avec test de
+      restauration ; chiffrer et appliquer une rétention documentée.
+    scsl: [CLD-STO-3]
+    frameworks:
+      anssi_bp_028: ["R69", "R70"]
+      secnumcloud_3_2: ["12.3"]
+      cis_controls_v8: ["11.1", "11.4"]
+      iso_27001_2022: ["A.8.13"]
+    fournisseurs: [outscale, exoscale]
+
+  # ───────────────────────── Chiffrement & clés ──────────────────────
+  - code: loadbalancer_ssl_listeners
+    famille: chiffrement
+    titre: Chiffrement en transit absent
+    severite: high
+    description: >
+      Un répartiteur de charge exposé n'impose pas de listener TLS/HTTPS : le
+      trafic transite en clair.
+    remediation: >
+      Configurer un listener HTTPS/SSL (TLS ≥ 1.2) ; rediriger le trafic en
+      clair vers HTTPS.
+    scsl: [CLD-CHF-1]
+    frameworks:
+      anssi_bp_028: ["R72"]
+      secnumcloud_3_2: ["10.2", "13.1"]
+      cis_controls_v8: ["3.11", "16.11"]
+      iso_27001_2022: ["A.8.24", "A.8.21"]
+    fournisseurs: [outscale]
+
+  - code: loadbalancer_http_redirect_to_https
+    famille: chiffrement
+    titre: Listener HTTP sans redirection HTTPS
+    severite: medium
+    description: >
+      Un répartiteur de charge expose un listener HTTP (port 80) : sans
+      redirection vers HTTPS, le trafic peut transiter en clair.
+    remediation: >
+      Mettre en place une redirection 301 du listener HTTP:80 vers HTTPS.
+    scsl: [CLD-CHF-1]
+    frameworks:
+      anssi_bp_028: ["R72"]
+      secnumcloud_3_2: ["10.2"]
+      cis_controls_v8: ["3.11"]
+      iso_27001_2022: ["A.8.24"]
+    fournisseurs: [outscale]
+
+  - code: blockstorage_volume_encryption
+    famille: chiffrement
+    titre: Chiffrement au repos désactivé
+    severite: medium
+    description: >
+      Un volume block storage n'a pas le chiffrement au repos activé. Le modèle
+      diffère selon le fournisseur : chiffrement transparent toujours actif
+      (Exoscale, conforme par construction), ou chiffrement côté invité à la
+      charge du client et non exposé par l'API (Outscale, Scaleway : non
+      applicable côté plateforme).
+    remediation: >
+      Activer le chiffrement au repos du volume (transparent côté fournisseur, ou
+      chiffrement client EncFS/LUKS selon le modèle de responsabilité partagée).
+    scsl: [CLD-CHF-2]
+    frameworks:
+      secnumcloud_3_2: ["10.1"]
+      iso_27001_2022: ["A.8.24"]
+    fournisseurs: [exoscale]
+
+  - code: objectstorage_bucket_kms_encryption
+    famille: chiffrement
+    titre: Clé de chiffrement gérée par le client absente (BYOK) sur un bucket sensible
+    severite: medium
+    description: >
+      Un bucket de stockage objet portant des données classées sensibles n'utilise
+      pas de clé de chiffrement gérée par le client (SSE-KMS / BYOK) : ses données
+      restent sous le contrôle exclusif du fournisseur. Observable seulement là où
+      l'API expose le chiffrement par défaut du bucket (Scaleway, via Key Manager) ;
+      non applicable chez les fournisseurs sans clé client au niveau objet.
+    remediation: >
+      Créer une clé dans le gestionnaire de clés du fournisseur (Key Manager) et
+      l'associer au bucket comme clé de chiffrement par défaut (SSE-KMS).
+    scsl: [CLD-CHF-4]
+    frameworks:
+      secnumcloud_3_2: ["10.5"]
+      iso_27001_2022: ["A.8.24"]
+    fournisseurs: [scaleway]
+
+  # ─────────────────────── Journalisation & audit ────────────────────
+  - code: loadbalancer_logging_enabled
+    famille: journalisation
+    titre: Journalisation des accès désactivée
+    severite: medium
+    description: >
+      La piste d'audit / les journaux d'accès aux services exposés ne sont pas
+      activés : un incident ne pourrait pas être investigué.
+    remediation: >
+      Activer la journalisation (piste d'audit, journaux d'accès) ; centraliser
+      et conserver selon une politique de rétention.
+    scsl: [CLD-LOG-1]
+    frameworks:
+      secnumcloud_3_2: ["12.1", "12.4", "12.4.1"]
+      iso_27001_2022: ["A.8.15", "A.8.16"]
+    fournisseurs: [outscale]
+
+  - code: kubernetes_cluster_audit_logging_enabled
+    famille: journalisation
+    titre: Journalisation d'audit du cluster Kubernetes désactivée
+    severite: medium
+    description: >
+      L'audit Kubernetes du cluster managé n'est pas configuré (aucun endpoint
+      d'audit) : les événements de sécurité du plan de contrôle ne sont pas
+      collectés et un incident ne pourrait pas être investigué.
+    remediation: >
+      Configurer l'audit Kubernetes du cluster (endpoint de collecte) ;
+      centraliser et conserver les journaux selon une politique de rétention.
+    scsl: [CLD-LOG-1]
+    frameworks:
+      secnumcloud_3_2: ["12.1", "12.4", "12.4.1"]
+      iso_27001_2022: ["A.8.15", "A.8.16"]
+    fournisseurs: [exoscale]
+
+  # ───────────────────── Gouvernance & inventaire ────────────────────
+  - code: governance_resource_required_tags
+    famille: gouvernance
+    titre: Inventaire et étiquetage incomplets
+    severite: medium
+    description: >
+      Des ressources n'ont pas les étiquettes de gouvernance (propriétaire,
+      projet, environnement) : l'inventaire et la responsabilité ne sont pas tenus.
+    remediation: >
+      Imposer des étiquettes obligatoires (propriétaire, projet, environnement) ;
+      contrôler leur présence à la création.
+    scsl: [CLD-GVN-1]
+    frameworks:
+      anssi_bp_028: ["R1"]
+      secnumcloud_3_2: ["19.3"]
+      cis_controls_v8: ["3.3"]
+      iso_27001_2022: ["A.5.15", "A.8.9"]
+      iso_27017: ["CLD.6.3.1"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: governance_resource_region_in_eu
+    famille: gouvernance
+    titre: Ressource hébergée hors Union européenne
+    severite: high
+    description: >
+      Une ressource est hébergée hors de l'Union européenne : la localisation des
+      données, du traitement et de l'administration doit rester dans l'UE
+      (souveraineté). Deux niveaux : l'espace européen de confiance (EEE + Suisse),
+      adéquat et sans loi extraterritoriale, est un écart mineur ; le reste (US,
+      Asie…) est un écart majeur. L'exposition extraterritoriale relève de CLD-GVN-4.
+    remediation: >
+      Recréer ou migrer la ressource dans une région de l'Union européenne ;
+      restreindre les régions autorisées au niveau de l'organisation.
+    scsl: [CLD-GVN-3]
+    frameworks:
+      secnumcloud_3_2: ["19.2"]
+      iso_27017: ["CLD.6.3.1"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
+  - code: governance_provider_sovereignty
+    famille: gouvernance
+    titre: Souveraineté du fournisseur non établie
+    severite: high
+    description: >
+      Le fournisseur cloud n'est pas établi dans l'Union européenne, ou son contrôle
+      capitalistique extra-UE est déterminant, ou il est exposé à une loi
+      extraterritoriale sans immunité reconnue (qualification SecNumCloud) : les
+      données et le plan de contrôle sont susceptibles d'être soumis à une juridiction
+      étrangère.
+    remediation: >
+      Pour une exigence souveraine, retenir un fournisseur établi dans l'UE, au
+      contrôle capitalistique européen, idéalement qualifié SecNumCloud (immunité
+      reconnue par l'ANSSI).
+    scsl: [CLD-GVN-4]
+    frameworks:
+      secnumcloud_3_2: ["19.2", "19.6"]
+    fournisseurs: [exoscale, outscale, scaleway]

@@ -1,0 +1,8 @@
+# Paths excluded from the TruffleHog secret scan (referenced by .github/workflows/trufflehog.yml).
+# The CI scan already runs with --only-verified (a live API must confirm the credential), so
+# these carry no verified secret; excluding them keeps the scan fast and noise-free.
+
+# Regenerable cache of scraped third-party provider docs (example API keys in prose).
+references/docs/
+# IMDS/SSRF demonstration example: a deliberately fake token leaked via the metadata service.
+examples/exoscale/lab-imds/

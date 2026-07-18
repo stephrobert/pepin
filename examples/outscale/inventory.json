@@ -1,0 +1,73 @@
+{
+  "provider": "outscale",
+  "resources": [
+    {
+      "provider": "outscale",
+      "type": "security_group",
+      "id": "sg-12345678",
+      "name": "web-front",
+      "region": "eu-west-2",
+      "attributes": {
+        "security_group_id": "sg-12345678",
+        "security_group_name": "web-front",
+        "net_id": "vpc-aaaa1111",
+        "description": "Front web"
+      }
+    },
+    {
+      "provider": "outscale",
+      "type": "security_group_rule",
+      "id": "sg-12345678-in-0",
+      "name": "sg-12345678-in-0",
+      "region": "eu-west-2",
+      "attributes": {
+        "direction": "inbound",
+        "action": "accept",
+        "security_group_id": "sg-12345678",
+        "protocol": "tcp",
+        "cidrs": ["0.0.0.0/0"],
+        "port_from": 22,
+        "port_to": 22
+      }
+    },
+    {
+      "provider": "outscale",
+      "type": "compute_instance",
+      "id": "i-0abc1234",
+      "name": "i-0abc1234",
+      "region": "eu-west-2",
+      "attributes": {
+        "vm_id": "i-0abc1234",
+        "state": "running",
+        "public_ip": "203.0.113.42",
+        "net_id": "vpc-aaaa1111",
+        "subnet_id": "subnet-bbbb2222",
+        "security_group_ids": ["sg-12345678"]
+      }
+    },
+    {
+      "provider": "outscale",
+      "type": "object_storage_bucket",
+      "id": "backups-prod",
+      "name": "backups-prod",
+      "region": "eu-west-2",
+      "attributes": {
+        "name": "backups-prod",
+        "acl": "public-read"
+      }
+    },
+    {
+      "provider": "outscale",
+      "type": "iam_policy",
+      "id": "ORN-policy-admin",
+      "name": "ci-admin",
+      "attributes": {
+        "policy_name": "ci-admin",
+        "policy_id": "policy-1111",
+        "statements": [
+          { "effect": "Allow", "actions": ["*"], "resources": ["*"] }
+        ]
+      }
+    }
+  ]
+}

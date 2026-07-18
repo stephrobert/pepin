@@ -1,0 +1,194 @@
+# Catalogue des contrôles de posture transposés — LISTE COMPLÈTE (roadmap).
+#
+# Codes agnostiques dérivés du corpus de checks de posture des services
+# mappables (réseau/compute/stockage/iam/kubernetes/loadbalancer). C'est la
+# liste cible exhaustive ; chaque entrée est à TRIER contre les contrats réels
+# (referentiel/contrats-api.yaml) avant de devenir un contrôle actif.
+#
+# statut :
+#   implemente : contrôle actif dans controles.yaml (règle + exigence SCSL).
+#   a_trier    : à valider contre le contrat d'API du/des provider(s), puis
+#                normaliser et rattacher à une exigence SCSL CLD-* (jamais
+#                supposer applicable ni inventer de CLD).
+# Le titre FR et le mapping SCSL/frameworks sont rédigés au passage en actif.
+#
+# Total : 168 contrôles (10 implémentés, 158 à trier).
+catalogue:
+
+  # ── chiffrement ──
+  - { code: loadbalancer_alb_drop_invalid_header_fields_enabled, severite: medium, statut: a_trier }
+  - { code: loadbalancer_connection_draining_enabled, severite: medium, statut: a_trier }
+  - { code: loadbalancer_cross_zone_load_balancing_enabled, severite: medium, statut: a_trier }
+  - { code: loadbalancer_deletion_protection, severite: medium, statut: a_trier }
+  - { code: loadbalancer_desync_mitigation_mode, severite: medium, statut: a_trier }
+  - { code: loadbalancer_insecure_ssl_ciphers, severite: medium, statut: a_trier }
+  - { code: loadbalancer_internet_facing, severite: medium, statut: a_trier }
+  - { code: loadbalancer_is_in_multiple_az, severite: medium, statut: a_trier }
+  - { code: loadbalancer_listeners_underneath, severite: medium, statut: a_trier }
+  - { code: loadbalancer_logging_enabled, severite: medium, statut: implemente }
+  - { code: loadbalancer_nlb_tls_termination_enabled, severite: medium, statut: a_trier }
+  - { code: loadbalancer_ssl_listeners, severite: medium, statut: implemente }
+  - { code: loadbalancer_ssl_listeners_use_acm_certificate, severite: medium, statut: a_trier }
+  - { code: loadbalancer_waf_acl_attached, severite: medium, statut: a_trier }
+
+  # ── compute ──
+  - { code: compute_image_public, severite: critical, statut: a_trier }
+  - { code: compute_instance_account_imdsv2_enabled, severite: high, statut: a_trier }
+  - { code: compute_instance_detailed_monitoring_enabled, severite: low, statut: a_trier }
+  - { code: compute_instance_imdsv2_enabled, severite: high, statut: a_trier }
+  - { code: compute_instance_internet_facing_with_instance_profile, severite: high, statut: a_trier }
+  - { code: compute_instance_managed_by_ssm, severite: medium, statut: a_trier }
+  - { code: compute_instance_paravirtual_type, severite: medium, statut: a_trier }
+  - { code: compute_instance_port_cassandra_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_cifs_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_elasticsearch_kibana_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_ftp_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_kafka_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_kerberos_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_ldap_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_memcached_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_mongodb_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_mysql_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_oracle_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_postgresql_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_rdp_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_redis_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_sqlserver_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_ssh_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_port_telnet_exposed_to_internet, severite: critical, statut: a_trier }
+  - { code: compute_instance_profile_attached, severite: medium, statut: a_trier }
+  - { code: compute_instance_public_ip, severite: medium, statut: a_trier }
+  - { code: compute_instance_secrets_user_data, severite: high, statut: a_trier }
+  - { code: compute_instance_uses_single_eni, severite: low, statut: a_trier }
+  - { code: compute_instance_with_outdated_ami, severite: medium, statut: a_trier }
+  - { code: compute_launch_template_imdsv2_required, severite: high, statut: a_trier }
+  - { code: compute_launch_template_no_public_ip, severite: high, statut: a_trier }
+  - { code: compute_launch_template_no_secrets, severite: high, statut: a_trier }
+  - { code: kubernetes_cluster_deletion_protection_enabled, severite: high, statut: a_trier }
+  - { code: kubernetes_cluster_kms_cmk_encryption_in_secrets_enabled, severite: medium, statut: a_trier }
+  - { code: kubernetes_cluster_network_policy_enabled, severite: high, statut: a_trier }
+  - { code: kubernetes_cluster_not_publicly_accessible, severite: high, statut: implemente }
+  - { code: kubernetes_cluster_private_nodes_enabled, severite: high, statut: a_trier }
+  - { code: kubernetes_cluster_uses_a_supported_version, severite: high, statut: a_trier }
+  - { code: kubernetes_control_plane_logging_all_types_enabled, severite: medium, statut: a_trier }
+
+  # ── iam ──
+  - { code: iam_administrator_access_with_mfa, severite: high, statut: a_trier }
+  - { code: iam_avoid_root_usage, severite: high, statut: a_trier }
+  - { code: iam_attached_policy_no_administrative_privileges, severite: critical, statut: a_trier }
+  - { code: iam_check_saml_providers_sts, severite: low, statut: a_trier }
+  - { code: iam_customer_attached_policy_no_administrative_privileges, severite: high, statut: a_trier }
+  - { code: iam_customer_unattached_policy_no_administrative_privileges, severite: medium, statut: a_trier }
+  - { code: iam_group_administrator_access_policy, severite: high, statut: a_trier }
+  - { code: iam_inline_policy_allows_privilege_escalation, severite: high, statut: a_trier }
+  - { code: iam_inline_policy_no_administrative_privileges, severite: critical, statut: a_trier }
+  - { code: iam_inline_policy_no_full_access_to_cloudtrail, severite: high, statut: a_trier }
+  - { code: iam_inline_policy_no_full_access_to_kms, severite: medium, statut: a_trier }
+  - { code: iam_inline_policy_no_wildcard_marketplace_subscribe, severite: medium, statut: a_trier }
+  - { code: iam_no_custom_policy_permissive_role_assumption, severite: high, statut: a_trier }
+  - { code: iam_no_expired_server_certificates_stored, severite: high, statut: a_trier }
+  - { code: iam_no_root_access_key, severite: critical, statut: implemente }
+  - { code: iam_password_policy_expires_passwords_within_90_days_or_less, severite: medium, statut: a_trier }
+  - { code: iam_password_policy_lowercase, severite: low, statut: a_trier }
+  - { code: iam_password_policy_minimum_length_14, severite: medium, statut: a_trier }
+  - { code: iam_password_policy_number, severite: medium, statut: a_trier }
+  - { code: iam_password_policy_reuse_24, severite: medium, statut: a_trier }
+  - { code: iam_password_policy_symbol, severite: medium, statut: a_trier }
+  - { code: iam_password_policy_uppercase, severite: medium, statut: a_trier }
+  - { code: iam_policy_allows_privilege_escalation, severite: high, statut: a_trier }
+  - { code: iam_policy_attached_only_to_group_or_roles, severite: low, statut: a_trier }
+  - { code: iam_policy_cloudshell_admin_not_attached, severite: medium, statut: a_trier }
+  - { code: iam_policy_no_full_access_to_cloudtrail, severite: medium, statut: a_trier }
+  - { code: iam_policy_no_full_access_to_kms, severite: medium, statut: a_trier }
+  - { code: iam_policy_no_wildcard_marketplace_subscribe, severite: medium, statut: a_trier }
+  - { code: iam_role_access_not_stale_to_bedrock, severite: medium, statut: a_trier }
+  - { code: iam_role_administratoraccess_policy, severite: high, statut: a_trier }
+  - { code: iam_role_cross_account_readonlyaccess_policy, severite: high, statut: a_trier }
+  - { code: iam_role_cross_service_confused_deputy_prevention, severite: high, statut: a_trier }
+  - { code: iam_root_credentials_management_enabled, severite: high, statut: a_trier }
+  - { code: iam_root_hardware_mfa_enabled, severite: critical, statut: a_trier }
+  - { code: iam_root_mfa_enabled, severite: critical, statut: a_trier }
+  - { code: iam_rotate_access_key_90_days, severite: medium, statut: a_trier }
+  - { code: iam_securityaudit_role_created, severite: low, statut: a_trier }
+  - { code: iam_support_role_created, severite: low, statut: a_trier }
+  - { code: iam_user_access_not_stale_to_bedrock, severite: medium, statut: a_trier }
+  - { code: iam_user_access_not_stale_to_sagemaker, severite: medium, statut: a_trier }
+  - { code: iam_user_administrator_access_policy, severite: critical, statut: a_trier }
+  - { code: iam_user_hardware_mfa_enabled, severite: high, statut: a_trier }
+  - { code: iam_user_mfa_enabled_console_access, severite: high, statut: a_trier }
+  - { code: iam_user_no_setup_initial_access_key, severite: medium, statut: a_trier }
+  - { code: iam_user_two_active_access_key, severite: medium, statut: a_trier }
+  - { code: iam_user_with_temporary_credentials, severite: high, statut: a_trier }
+
+  # ── reseau ──
+  - { code: network_client_vpn_endpoint_connection_logging_enabled, severite: low, statut: a_trier }
+  - { code: network_different_regions, severite: medium, statut: a_trier }
+  - { code: network_elastic_ip_shodan, severite: medium, statut: a_trier }
+  - { code: network_elastic_ip_unassigned, severite: low, statut: a_trier }
+  - { code: network_endpoint_connections_trust_boundaries, severite: high, statut: a_trier }
+  - { code: network_endpoint_for_ec2_enabled, severite: medium, statut: a_trier }
+  - { code: network_endpoint_multi_az_enabled, severite: medium, statut: a_trier }
+  - { code: network_endpoint_services_allowed_principals_trust_boundaries, severite: high, statut: a_trier }
+  - { code: network_flow_logs_enabled, severite: medium, statut: a_trier }
+  - { code: network_networkacl_allow_ingress_any_port, severite: high, statut: a_trier }
+  - { code: network_networkacl_allow_ingress_tcp_port_22, severite: medium, statut: a_trier }
+  - { code: network_networkacl_allow_ingress_tcp_port_3389, severite: medium, statut: a_trier }
+  - { code: network_peering_routing_tables_with_least_privilege, severite: medium, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_all_ports, severite: critical, statut: implemente }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_any_port, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_any_port_from_ip, severite: medium, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports, severite: high, statut: implemente }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_22, severite: high, statut: implemente }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389, severite: high, statut: implemente }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_cassandra_7199_9160_8888, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_elasticsearch_kibana_9200_9300_5601, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_ftp_20_21, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_kafka_9092, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_memcached_11211, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_mongodb_27017_27018, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_mysql_3306, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_oracle_1521_2483, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_postgres_5432, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_redis_6379, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_sql_server_1433_1434, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_telnet_23, severite: high, statut: a_trier }
+  - { code: network_securitygroup_allow_wide_open_public_ipv4, severite: high, statut: a_trier }
+  - { code: network_securitygroup_default_restrict_traffic, severite: high, statut: a_trier }
+  - { code: network_securitygroup_from_launch_wizard, severite: medium, statut: a_trier }
+  - { code: network_securitygroup_not_used, severite: low, statut: a_trier }
+  - { code: network_securitygroup_with_many_ingress_egress_rules, severite: medium, statut: a_trier }
+  - { code: network_subnet_different_az, severite: medium, statut: a_trier }
+  - { code: network_subnet_no_public_ip_by_default, severite: high, statut: a_trier }
+  - { code: network_subnet_separate_private_public, severite: medium, statut: a_trier }
+  - { code: network_transitgateway_auto_accept_vpc_attachments, severite: high, statut: a_trier }
+  - { code: network_vpn_connection_tunnels_up, severite: medium, statut: a_trier }
+
+  # ── stockage ──
+  - { code: blockstorage_default_encryption, severite: high, statut: a_trier }
+  - { code: blockstorage_public_snapshot, severite: critical, statut: a_trier }
+  - { code: blockstorage_snapshot_account_block_public_access, severite: high, statut: a_trier }
+  - { code: blockstorage_snapshots_encrypted, severite: high, statut: a_trier }
+  - { code: blockstorage_volume_encryption, severite: high, statut: implemente }
+  - { code: blockstorage_volume_protected_by_backup_plan, severite: medium, statut: a_trier }
+  - { code: blockstorage_volume_snapshots_exists, severite: high, statut: a_trier }
+  - { code: objectstorage_access_point_public_access_block, severite: critical, statut: a_trier }
+  - { code: objectstorage_account_level_public_access_blocks, severite: high, statut: a_trier }
+  - { code: objectstorage_bucket_acl_prohibited, severite: medium, statut: a_trier }
+  - { code: objectstorage_bucket_cross_account_access, severite: high, statut: a_trier }
+  - { code: objectstorage_bucket_cross_region_replication, severite: low, statut: a_trier }
+  - { code: objectstorage_bucket_default_encryption, severite: medium, statut: a_trier }
+  - { code: objectstorage_bucket_event_notifications_enabled, severite: low, statut: a_trier }
+  - { code: objectstorage_bucket_kms_encryption, severite: medium, statut: implemente }
+  - { code: objectstorage_bucket_level_public_access_block, severite: high, statut: a_trier }
+  - { code: objectstorage_bucket_lifecycle_enabled, severite: low, statut: a_trier }
+  - { code: objectstorage_bucket_no_mfa_delete, severite: medium, statut: a_trier }
+  - { code: objectstorage_bucket_object_lock, severite: low, statut: a_trier }
+  - { code: objectstorage_bucket_object_versioning, severite: medium, statut: a_trier }
+  - { code: objectstorage_bucket_policy_public_write_access, severite: critical, statut: a_trier }
+  - { code: objectstorage_bucket_public_access, severite: critical, statut: implemente }
+  - { code: objectstorage_bucket_public_list_acl, severite: critical, statut: a_trier }
+  - { code: objectstorage_bucket_public_write_acl, severite: critical, statut: a_trier }
+  - { code: objectstorage_bucket_secure_transport_policy, severite: medium, statut: a_trier }
+  - { code: objectstorage_bucket_server_access_logging_enabled, severite: medium, statut: a_trier }
+  - { code: objectstorage_bucket_shadow_resource_vulnerability, severite: high, statut: a_trier }
+  - { code: objectstorage_multi_region_access_point_public_access_block, severite: high, statut: a_trier }

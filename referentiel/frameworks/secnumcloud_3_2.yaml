@@ -1,0 +1,82 @@
+code: secnumcloud_3_2
+name: SecNumCloud — Prestataires de services cloud
+version: "3.2"
+url: https://cyber.gouv.fr/secnumcloud-pour-les-fournisseurs-de-services-cloud
+description: |
+  Référentiel de qualification des prestataires cloud (PSCaaS), publié par
+  l'ANSSI. Ce catalogue référence les chapitres pertinents pour un périmètre
+  Cloud IaaS Outscale (région cloudgouv-eu-west-1). Les exigences citées
+  ciblent la sécurité opérationnelle observable au niveau des ressources.
+
+controls:
+  - id: "8.1"
+    title: Inventaire des actifs
+    description: Un inventaire complet, précis et tenu à jour des actifs est maintenu, avec un propriétaire par actif.
+
+  - id: "8.2"
+    title: Gestion des actifs tout au long de leur cycle de vie
+    description: Les actifs sont gérés de leur création à leur destruction (provisionnement, usage, retrait).
+
+  - id: "9.2"
+    title: Cloisonnement logique
+    description: Les ressources de chaque commanditaire sont isolées logiquement des autres commanditaires.
+
+  - id: "10.1"
+    title: Cryptographie au repos
+    description: Les données stockées sont protégées par chiffrement conforme au RGS.
+
+  - id: "10.2"
+    title: Cryptographie en transit
+    description: Les communications sont protégées par chiffrement conforme au RGS (TLS ≥ 1.2).
+
+  - id: "12.1"
+    title: Politique de journalisation
+    description: Les événements de sécurité sont journalisés, horodatés et centralisés.
+
+  - id: "12.4"
+    title: Surveillance des événements
+    description: Les journaux sont analysés pour détecter les événements de sécurité.
+
+  - id: "13.1"
+    title: Cloisonnement réseau
+    description: Les flux entre zones de confiance différentes sont filtrés par défaut.
+
+  - id: "13.2"
+    title: Flux d'administration
+    description: Les interfaces d'administration ne sont pas directement accessibles depuis Internet.
+
+  - id: "13.3"
+    title: Filtrage réseau entrant
+    description: Les flux entrants sont restreints aux seules sources légitimes.
+
+  - id: "18.1"
+    title: Gestion des sauvegardes
+    description: Les sauvegardes sont chiffrées, testées et conservées selon une politique de rétention documentée.
+
+  - id: "19.1"
+    title: Gestion des accès privilégiés
+    description: Les accès privilégiés sont nominatifs, tracés et strictement limités au nécessaire.
+
+  - id: "19.2"
+    title: Authentification forte
+    description: L'authentification aux interfaces d'administration utilise un second facteur (MFA).
+
+  - id: "19.3"
+    title: Revue des accès
+    description: Les droits d'accès sont revus périodiquement et révoqués sans délai en cas de départ ou de changement de mission.
+
+  - id: "19.5"
+    title: Gestion des secrets
+    description: Les secrets (clés API, mots de passe) sont stockés dans un gestionnaire dédié et tournés régulièrement.
+
+  - id: "20.1"
+    title: Durcissement des systèmes
+    description: Les systèmes sont configurés selon des référentiels de durcissement et les services inutiles sont désactivés.
+
+  - id: "12.3"
+    title: Sauvegarde et restauration
+    description: Le client implémente une politique de sauvegarde des données critiques avec test de restauration périodique.
+
+  - id: "12.4.1"
+    title: Journalisation des accès aux services
+    description: Les accès aux services exposés sont journalisés et conservés pour audit.

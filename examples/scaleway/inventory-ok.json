@@ -1,0 +1,58 @@
+{
+  "provider": "scaleway",
+  "resources": [
+    {
+      "provider": "scaleway",
+      "type": "object_storage_bucket",
+      "id": "backups-prod",
+      "name": "backups-prod",
+      "region": "fr-par",
+      "attributes": {
+        "name": "backups-prod",
+        "acl_grants": [
+          { "grantee": { "type": "CanonicalUser", "id": "owner-id" }, "permission": "FULL_CONTROL" }
+        ],
+        "versioning": "Enabled"
+      }
+    },
+    {
+      "provider": "scaleway",
+      "type": "access_key",
+      "id": "SCWYYYYYYYYYYYYYYYYY",
+      "name": "ci-deploy",
+      "attributes": { "access_key": "SCWYYYYYYYYYYYYYYYYY", "application_id": "22222222-2222-2222-2222-222222222222", "root_owned": false }
+    },
+    {
+      "provider": "scaleway",
+      "type": "security_group_rule",
+      "id": "sg-1-inbound-0",
+      "name": "sg-1-inbound-0",
+      "region": "fr-par",
+      "attributes": {
+        "direction": "inbound",
+        "action": "accept",
+        "security_group_id": "sg-1",
+        "protocol": "tcp",
+        "cidrs": ["10.0.0.0/8"],
+        "port_from": 22,
+        "port_to": 22
+      }
+    },
+    {
+      "provider": "scaleway",
+      "type": "security_group_rule",
+      "id": "sg-1-inbound-1",
+      "name": "sg-1-inbound-1",
+      "region": "fr-par",
+      "attributes": {
+        "direction": "inbound",
+        "action": "accept",
+        "security_group_id": "sg-1",
+        "protocol": "tcp",
+        "cidrs": ["0.0.0.0/0"],
+        "port_from": 443,
+        "port_to": 443
+      }
+    }
+  ]
+}

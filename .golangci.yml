@@ -1,0 +1,33 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosec
+    - revive
+    - unconvert
+  # misspell n'est pas activé : c'est un linter anglais-only qui prend les mots
+  # français (commentaires en FR par mandat du projet) pour des fautes en faisant
+  # du matching de sous-chaînes (« démarrage » → marriage, « normalisé » → normals).
+  # Sur ce code francophone il ne produit que des faux positifs.
+  settings:
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - disableStutteringCheck
+  exclusions:
+    rules:
+      # Les tests peuvent ignorer certaines vérifications de sécurité.
+      - path: _test\.go
+        linters:
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

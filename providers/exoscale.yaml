@@ -1,0 +1,403 @@
+# Descripteur du provider Exoscale — chargé par le provider générique.
+# La « région » CLI alimente la zone (region_key). Auth EXO2-HMAC.
+name: exoscale
+description: "Exoscale (CH) — instances, security groups, block storage, SKS, SOS"
+region_key: zone
+
+# Souveraineté du fournisseur (CLD-GVN-4) — faits ancrés, projetés en ressource
+# governance_provider. Siège en Suisse (hors UE) → écart GVN-4 attendu.
+souverainete:
+  eu_etabli: false            # Akenes SA, siège en Suisse — hors Union européenne
+  juridiction: CH
+  controle_capitalistique: a_verifier   # A1 Digital (A1 Telekom Austria, Autriche/UE) ; actionnariat ultime à confirmer
+  secnumcloud: non
+  exposition_extraterritoriale: false   # hors Cloud Act US ; cadre juridique suisse
+  sources: "exoscale.com/about-us ; a1.digital/european-cloud (acquisition A1 Digital 2017)"
+auth:
+  type: exoscale-hmac
+credentials:
+  env:
+    access_key: EXOSCALE_API_KEY
+    secret_key: EXOSCALE_API_SECRET
+    zone: EXOSCALE_ZONE
+  file: { path: "~/.config/exoscale/exoscale.toml", format: exoscale }
+  defaults: { zone: ch-gva-2 }
+s3:
+  endpoint: "https://sos-{zone}.exo.io"
+  region: "{zone}"
+
+collecte:
+  # Collecte live Exoscale PILOTÉE PAR YAML (moteur internal/collect, auth
+  # EXO2-HMAC). API Compute v2 (REST GET). Ancré sur le contrat OpenAPI v2
+  # (= structs egoscale/v3) : base api-<zone>.exoscale.com/v2, ressources au
+  # singulier dans le path, pluriel dans la réponse. Plus de dépendance egoscale.
+  base_url: https://api-{zone}.exoscale.com/v2
+  resources:
+    # Règles de security group → security_group_rule. Les règles sont imbriquées
+    # dans chaque SG (security-groups[].rules[]). Champs : flow-direction,
+    # protocol, start-port, end-port, network (vide = cible un autre SG, pas un CIDR).
+    - type: security_group_rule
+      path: /security-group
+      items: security-groups[*].rules[*]
+      id: security_group_id
+      const: { action: accept }
+      map:
+        security_group_id: _parent.id
+        direction: flow-direction
+        protocol: protocol
+        port_from: start-port
+        port_to: end-port
+        cidrs: network
+        description: description   # justification du flux (matrice des flux, CLD-NET-5)
+      transforms:
+        direction: { ingress: inbound, egress: outbound }
+        protocol: lower
+        cidrs: list
+
+    # Réseaux privés → network (cartographie réseau, CLD-NET-5). Exoscale : réseaux
+    # privés L2 (pas de VPC/peering/VPN). Schéma : id, name, start-ip/end-ip/netmask
+    # (plage DHCP du réseau managé), vni (VXLAN ID).
+    - type: network
+      path: /private-network
+      items: private-networks
+      id: network_id
+      map:
+        network_id: id
+        name: name
+        description: description
+        tags: labels
+      transforms:
+        tags: kv   # labels (map) → [{key,value}] (cartographie, CLD-NET-5)
+
+    # Instances → compute_instance. La LISTE (/instance) n'expose PAS user-data ;
+    # on récupère donc le détail par instance (GET /instance/{id} → objet racine,
+    # items ".") pour ramener user-data (base64) et couvrir CLD-CMP-2 en live.
+    - type: compute_instance
+      for_each:
+        path: /instance
+        items: instances
+        as: vm
+      path: /instance/{vm.id}
+      items: "."
+      id: vm_id
+      map:
+        vm_id: id
+        public_ip: public-ip
+        security_group_ids: security-groups
+        state: state
+        user_data: user-data
+      transforms:
+        security_group_ids: pluck:id   # [{id,...}] -> [id]
+  
+    # Utilisateurs de l'organisation → iam_user (MFA).
+    - type: iam_user
+      path: /user
+      items: users
+      id: user_id
+      map:
+        user_id: id
+        username: email
+        mfa_enabled: two-factor-authentication
+
+    # Clusters Kubernetes managés SKS → kubernetes_cluster. Réponse v2 :
+    # sks-clusters[] avec name, version, level (starter|pro), auto-upgrade, et
+    # objet audit{endpoint,...} (bearer-token exclu en lecture). audit_enabled
+    # est DÉRIVÉ de la présence de l'endpoint d'audit (CLD-LOG-1).
+    - type: kubernetes_cluster
+      path: /sks-cluster
+      items: sks-clusters
+      id: name
+      map:
+        name: name
+        version: version
+        auto_upgrade: auto-upgrade
+        control_plane_multi_az: level
+        audit_enabled: audit.endpoint
+      transforms:
+        control_plane_multi_az: "equals:pro"
+        audit_enabled: nonempty
+
+    # Rôles IAM → iam_role. Le modèle Exoscale est CEL : policy
+    # {default-service-strategy, services{rules:[{action, expression}]}} + max-session-ttl.
+    # On DÉRIVE des drapeaux normalisés (la complexité CEL reste ici, §0) :
+    #   source_ip_restricted = la policy borne par IP source (expression source_ip…).
+    #   policy_has_expiration = la policy borne la durée de vie (expression duration(…)).
+    #   max_session_ttl = TTL max d'une session assumée (0 = non borné).
+    - type: iam_role
+      path: /iam-role
+      items: iam-roles
+      id: role_id
+      map:
+        role_id: id
+        name: name
+        editable: editable
+        max_session_ttl: max-session-ttl
+        admin_privileges: policy.default-service-strategy
+        source_ip_restricted: policy
+        policy_has_expiration: policy
+        manages_iam: policy
+      transforms:
+        max_session_ttl: ["default:0", to_int]
+        admin_privileges: "equals:allow"   # default allow = tout autorisé sauf deny ciblés (CLD-IAM-1)
+        source_ip_restricted: "contains:source_ip"
+        policy_has_expiration: "contains:duration("
+        manages_iam: "contains:iam-role"   # autorise la gestion des rôles IAM = escalade (CLD-IAM-12)
+
+    # Volumes block storage → blockstorage_volume. state natif (block-storage-volume) :
+    # attached|detached|creating|... ; « attached » = rattaché à une instance (en usage,
+    # CLD-STO-3). encrypted const true : chiffrement transparent toujours actif (CLD-CHF-2,
+    # conforme par construction — même fait qu'en Terraform).
+    - type: blockstorage_volume
+      path: /block-storage
+      items: block-storage-volumes
+      id: volume_id
+      const: { encrypted: true }
+      map:
+        volume_id: id
+        state: state
+
+    # Snapshots block storage → blockstorage_snapshot. Liaison au volume via la ref
+    # block-storage-volume.id ; date de création created-at (ISO 8601). Alimente
+    # blockstorage_volume_snapshots_exist (CLD-STO-3).
+    - type: blockstorage_snapshot
+      path: /block-storage-snapshot
+      items: block-storage-snapshots
+      id: snapshot_id
+      map:
+        snapshot_id: id
+        volume_id: block-storage-volume.id
+        creation_date: created-at
+
+mapping_terraform:
+  # Mapping Terraform Exoscale → modèle normalisé commun, DÉCLARATIF (moteur
+  # internal/tfmap). Ancré sur le schéma réel du provider exoscale/exoscale
+  # (terraform providers schema) ; sémantique confirmée en doc officielle.
+  # Ajouter un type = ajouter un bloc ici (pas de code Go).
+  resources:
+    # Règle de security group (ressource séparée chez Exoscale).
+    - tf_type: exoscale_security_group_rule
+      type: security_group_rule
+      id: security_group_id
+      map:
+        security_group_id: security_group_id
+        direction: type            # INGRESS|EGRESS
+        protocol: protocol         # TCP|UDP|... -> minuscules
+        port_from: start_port
+        port_to: end_port
+        cidrs: cidr
+        description: description    # justification du flux (matrice des flux, CLD-NET-5)
+      transforms:
+        direction: { INGRESS: inbound, EGRESS: outbound }
+        protocol: lower
+        cidrs: list                # cidr (string) -> [cidr]
+      const:
+        action: accept             # Exoscale : refus par défaut, règles = autorisations
+  
+    # Instance de calcul.
+    - tf_type: exoscale_compute_instance
+      type: compute_instance
+      id: vm_id
+      region: zone
+      map:
+        vm_id: id
+        public_ip: public_ip_address
+        security_group_ids: security_group_ids
+        user_data: user_data       # cloud-init (CLD-CMP-2)
+        tags: labels
+      transforms:
+        tags: kv                   # map labels -> [{key,value}]
+  
+    # Cluster Kubernetes managé SKS. service_level "pro" = control plane HA (doc
+    # officielle containers/overview). SKS n'expose pas de liste d'IP sur l'API.
+    - tf_type: exoscale_sks_cluster
+      type: kubernetes_cluster
+      id: name
+      region: zone
+      map:
+        name: name
+        version: version
+        auto_upgrade: auto_upgrade
+        control_plane_multi_az: service_level
+        audit_enabled: audit.0.endpoint   # bloc audit{endpoint} → DÉRIVÉ présence (CLD-LOG-1)
+      transforms:
+        control_plane_multi_az: "equals:pro"
+        audit_enabled: nonempty
+  
+    # Volume block storage (état "in-use" connu seulement au runtime → CLD-STO-3 en live).
+    # encrypted const true : chiffrement AES-256 XTS transparent au niveau hyperviseur,
+    # toujours actif, sans configuration possible (doc storage/block-storage) → CLD-CHF-2
+    # conforme par construction.
+    - tf_type: exoscale_block_storage_volume
+      type: blockstorage_volume
+      id: volume_id
+      region: zone
+      const: { encrypted: true }
+      map:
+        volume_id: id
+        state: state
+
+    # Réseau privé → network (cartographie réseau, CLD-NET-5).
+    - tf_type: exoscale_private_network
+      type: network
+      id: network_id
+      region: zone
+      map:
+        network_id: id
+        name: name
+        description: description
+        tags: labels
+      transforms:
+        tags: kv
+
+    # Rôle IAM. Le schéma exoscale_iam_role expose `policy` (drapeaux source_ip /
+    # expiration dérivés par contains) mais PAS max-session-ttl → en Terraform la
+    # borne de durée de vie ne s'évalue que via l'expiration de la policy.
+    - tf_type: exoscale_iam_role
+      type: iam_role
+      id: role_id
+      map:
+        role_id: id
+        name: name
+        editable: editable
+        admin_privileges: policy.default_service_strategy   # snake_case côté schéma TF
+        source_ip_restricted: policy
+        policy_has_expiration: policy
+        manages_iam: policy
+      transforms:
+        admin_privileges: "equals:allow"
+        source_ip_restricted: "contains:source_ip"
+        policy_has_expiration: "contains:duration("
+        manages_iam: "contains:iam-role"
+
+# Contrat d'API (ancrage §2) + applicabilité SCSL (non_applicable) — lu par `pepin scsl`.
+contrat:
+  types:
+    security_group_rule:
+      etat: verifie
+      source: egoscale/v3 SecurityGroupRule
+      mapping:
+        direction: FlowDirection (ingress|egress) → inbound|outbound
+        action: implicite « accept » (les règles SG Exoscale sont une liste d'autorisations)
+        protocol: Protocol (tcp|udp|icmp|…) ; minuscules
+        port_from: StartPort (int64)
+        port_to: EndPort (int64)
+        cidrs: '[Network (string CIDR)]'
+        security_group_id: SecurityGroup.ID (parent)
+        description: Description (string, max 255) — justification du flux → network_flow_matrix_documented (CLD-NET-5)
+    network:
+      etat: verifie
+      source: 'API v2 GET /private-network (private-networks[]) ; schéma Private Network = {id, name, description,
+        start-ip/end-ip/netmask (plage DHCP du réseau managé), vni (VXLAN ID)}. Exoscale = réseaux privés L2 plats,
+        sans VPC hiérarchique ni Net Peering ni VPN site-à-site (doc networking/private-network).'
+      mapping:
+        network_id: id
+        name: name
+        description: description
+    compute_instance:
+      etat: verifie
+      source: egoscale/v3 Instance
+      mapping:
+        vm_id: ID (UUID)
+        state: State (InstanceState)
+        public_ip: PublicIP (net.IP)
+        security_group_ids: SecurityGroups[].ID
+        user_data: UserData (base64)
+        tags: Labels (map[string]string) — a_verifier (champ exact)
+    blockstorage_volume:
+      etat: verifie
+      source: 'API v2 GET /block-storage (block-storage-volumes[]) ; schéma block-storage-volume = {id, state, size, instance (ref), block-storage-snapshots[]}.'
+      mapping:
+        volume_id: id (UUID)
+        state: 'state ∈ attached|detached|creating|... ; « attached » = rattaché à une instance = en usage (CLD-STO-3, normalisé via volume_in_use)'
+        tags: Labels — a_verifier
+        encrypted: 'DÉRIVÉ const true : chiffrement AES-256 XTS transparent au niveau hyperviseur, toujours
+          actif, aucune configuration possible (doc officielle storage/block-storage) → CLD-CHF-2 conforme par construction.'
+    blockstorage_snapshot:
+      etat: verifie
+      source: 'API v2 GET /block-storage-snapshot (block-storage-snapshots[]) ; schéma block-storage-snapshot =
+        {id, block-storage-volume (ref volume), created-at (ISO 8601), state, size}.'
+      mapping:
+        snapshot_id: id
+        volume_id: block-storage-volume.id (ref vers le volume cible)
+        creation_date: created-at (ISO 8601 → recence, CLD-STO-3)
+        global_permission: 'NON APPLICABLE : les snapshots block storage Exoscale ne sont ni exportables ni partageables publiquement
+          (doc officielle storage/block-storage/operation/snapshot) → blockstorage_snapshot_not_public (CLD-STO-2) sans objet.'
+    object_storage_bucket:
+      etat: verifie
+      source: aws-sdk-go-v2/service/s3 (SOS, endpoint sos-<zone>.exo.io)
+      mapping:
+        acl_grants: GetBucketAcl → Grants[].{Grantee.URI, Permission}
+        public_via_acl: 'DÉRIVÉ : grant AllUsers/AuthenticatedUsers'
+        versioning: GetBucketVersioning → Status
+        policy_public: 'DÉRIVÉ : GetBucketPolicy contient Allow Principal *'
+        tags: GetBucketTagging → TagSet[]
+        secure_transport: 'ÉCART STRUCTUREL (CLD-CHF-1) — NON CODABLE : SOS sert en HTTP OU HTTPS (overview SOS) et le
+          langage de bucket policy (CEL) n''expose AUCUN binding de protocole/TLS (bindings : service/zone/now/source_ip/
+          api_key/operation/identity/parameters/headers[if-match,if-none-match,sse-c-customer-algorithm]/resources — cf.
+          references/docs/exoscale/product-iam-how-to-policy-guide.md). Pas d''équivalent aws:SecureTransport : on NE PEUT PAS
+          refuser le HTTP en clair par configuration. CHF-1 reste donc non satisfaisable côté SOS — pas un check de posture.'
+    iam_role:
+      etat: verifie
+      source: 'API v2 GET /iam-role (réponse iam-roles[]) ; schéma iam-role = {id, name, max-session-ttl, policy,
+        permissions[]}. Policy = {default-service-strategy (allow|deny), services{<svc>:{type, rules:[{action, expression,
+        resources}]}}} ; expression en CEL. Réf : references/docs/exoscale/reference-api-schemas-iam-role.md + iam-policy.md.'
+      mapping:
+        role_id: id
+        name: name
+        editable: 'editable (bool) : un rôle PRÉDÉFINI (non éditable, ex. « Billing », « Owner ») a une policy non modifiable
+          par le client → exclu des checks iam_role_* (non actionnable). Seuls les rôles éditables sont audités.'
+        admin_privileges: 'DÉRIVÉ (equals:allow sur default-service-strategy) : policy en allow par défaut = tout autorisé
+          sauf deny ciblés = privilèges étendus (équivalent CEL du joker admin) → iam_role_no_admin_privileges (CLD-IAM-1).'
+        max_session_ttl: 'max-session-ttl (entier, sec ; TTL max d''une session assumée ; 0/absent = non borné) → DÉRIVÉ
+          (avec policy_has_expiration) iam_role_key_lifetime_bounded (CLD-IAM-2). Absent du schéma Terraform exoscale_iam_role.'
+        source_ip_restricted: 'DÉRIVÉ (contains:source_ip) : la policy borne par IP source (source_ip.inIpRange/==/in,
+          policy-guide) → iam_role_source_ip_restricted (CLD-IAM-4).'
+        policy_has_expiration: 'DÉRIVÉ (contains:duration() ) : la policy borne la durée de vie (ex. officiel
+          timestamp(identity.created) < timestamp(now) - duration(…), policy-guide) → iam_role_key_lifetime_bounded (CLD-IAM-2).'
+    iam_user:
+      etat: verifie
+      source: egoscale/v3 User (client.ListUsers ; membres de l'organisation)
+      mapping:
+        user_id: ID (UUID)
+        username: Email
+        mfa_enabled: TwoFactorAuthentication (*bool ; nil ⇒ false)
+    kubernetes_cluster:
+      etat: verifie
+      source: egoscale/v3 SKSCluster
+      mapping:
+        name: Name
+        version: Version
+        auto_upgrade: AutoUpgrade (*bool) → kubernetes_cluster_auto_upgrade_enabled (CLD-K8S-3)
+        service_level: ServiceLevel (starter|pro) ; pro = HA multi-master → kubernetes_cluster_control_plane_highly_available
+          (CLD-K8S-2)
+        private: 'ÉCART STRUCTUREL : l''endpoint de l''API SKS est TOUJOURS public, aucune allow-list IP ni cluster privé
+          (OpenAPI create/get-sks-cluster : pas de champ de restriction ; « Private Clusters » concerne les nodes, pas le
+          control plane). → kubernetes_cluster_not_publicly_accessible (CLD-K8S-1) NON SATISFAIT, pas « non applicable ».'
+        audit_enabled: 'DÉRIVÉ : présence d''un endpoint d''audit (objet audit.endpoint en API v2 SKS, exposé en GET ;
+          bloc audit{endpoint} côté Terraform) → kubernetes_cluster_audit_logging_enabled (CLD-LOG-1). Doc :
+          community.exoscale.com/product/compute/containers/how-to/kubernetes-audit/.'
+    load_balancer:
+      etat: absent
+      note: 'NLB Exoscale = couche 4 (TCP/UDP) : PAS de terminaison TLS ni d''access logs (doc officielle networking/nlb/overview) ;
+        les checks loadbalancer_ssl_listeners / loadbalancer_logging_enabled ne s''appliquent donc pas au NLB. CE N''EST PAS
+        une exemption d''exigence : CLD-CHF-1 (chiffrement en transit) est couvert par le stockage objet SOS (HTTPS/TLS) et
+        CLD-LOG-1 (journalisation) par l''audit SKS (kubernetes_cluster_audit_logging_enabled).'
+      source: egoscale/v3 LoadBalancer (NLB) + Services[] — listeners/TLS/logs à mapper
+    access_key:
+      etat: verifie
+      source: 'Schéma iam-api-key = {key, name, role-id} (references/docs/exoscale/reference-api-schemas-iam-api-key.md).
+        La clé API Exoscale est PERMANENTE (aucun champ d''expiration propre) et délègue ses droits au RÔLE référencé
+        (role-id). IAM-2 (durée de vie) et IAM-4 (restriction IP) s''évaluent donc sur le type iam_role, pas sur la clé.'
+  non_applicable:
+  # STO-2 : risque structurellement absent (snapshots block storage non
+  # exportables/partageables — doc officielle), donc conforme par construction.
+  # K8S-1 N'EST PLUS marqué non applicable : l'API server SKS étant toujours
+  # exposée (aucune allow-list IP, OpenAPI create/get-sks-cluster), le contrôle
+  # est NON SATISFAIT (écart), pas « sans objet » — à exposer comme tel ultérieurement.
+  - control: blockstorage_snapshot_not_public
+    reason: "Snapshots block-storage Exoscale non exportables/partageables (doc officielle) : le risque d'exposition publique est structurellement absent, conforme par construction (STO-2)."
+  # CHF-4 : SOS n'offre que SSE-C (clé client PAR-OBJET, non observable au niveau
+  # bucket ; Exoscale ne stocke pas la clé) ; SSE-KMS « planned », absent à ce jour
+  # (doc storage/object-storage/how-to/encryption) → BYOK non observable au niveau bucket.
+  - control: objectstorage_bucket_kms_encryption
+    reason: "SOS n'offre que SSE-C (clé client par-objet, non observable au niveau bucket ; Exoscale ne stocke pas la clé) ; SSE-KMS annoncé mais absent à ce jour (doc object-storage/encryption) → BYOK non observable au niveau bucket (CHF-4)."

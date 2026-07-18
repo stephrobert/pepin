@@ -1,0 +1,103 @@
+code: anssi_bp_028
+name: ANSSI — Guide d'hygiène informatique (BP-028)
+version: "2.0"
+url: https://www.ssi.gouv.fr/administration/guide/guide-dhygiene-informatique/
+description: |
+  Règles d'hygiène informatique publiées par l'ANSSI. Ce catalogue référence
+  le sous-ensemble des 42 règles pertinent pour un périmètre Cloud IaaS
+  (filtrage réseau, gestion des comptes, journalisation, chiffrement).
+  À réconcilier avec la version officielle du guide pour toute publication
+  de conformité.
+
+controls:
+  - id: R1
+    title: Identifier les informations et serveurs sensibles
+    description: Cartographier les ressources sensibles est un préalable à toute politique de sécurité.
+
+  - id: R9
+    title: Identifier nommément chaque personne accédant au système
+    description: Proscrire les comptes génériques. Chaque administrateur doit disposer de son propre compte.
+
+  - id: R10
+    title: Séparer les usages nominaux et d'administration
+    description: Un compte dédié est utilisé pour les tâches d'administration ; il n'est pas utilisé pour les tâches courantes.
+
+  - id: R11
+    title: Choisir des mots de passe robustes
+    description: Politique de mot de passe alignée sur les recommandations ANSSI (longueur, complexité, rotation).
+
+  - id: R13
+    title: Appliquer le principe du moindre privilège
+    description: Chaque acteur ne dispose que des droits strictement nécessaires à l'exercice de ses missions.
+
+  - id: R22
+    title: Journaliser les événements
+    description: Les événements de sécurité sont horodatés, conservés et protégés contre l'altération.
+
+  - id: R24
+    title: Centraliser et analyser les journaux
+    description: Les journaux sont centralisés et corrélés pour détecter les comportements anormaux.
+
+  - id: R37
+    title: Mettre en œuvre un pare-feu local
+    description: Les flux réseau sont filtrés par défaut et les flux autorisés sont explicitement listés.
+
+  - id: R40
+    title: Maintenir à jour les systèmes et applications
+    description: Les mises à jour de sécurité sont appliquées dans des délais maîtrisés.
+
+  - id: R65
+    title: Filtrer les flux réseau
+    description: Les flux réseau sont filtrés à l'entrée et à la sortie des zones de confiance.
+
+  - id: R66
+    title: Cloisonner les zones réseau
+    description: Segmenter le réseau en zones de sensibilité et appliquer un filtrage strict entre les zones.
+
+  - id: R67
+    title: Restreindre les flux d'administration
+    description: Les accès d'administration (SSH, RDP, bases) ne sont pas exposés depuis des réseaux non maîtrisés.
+
+  - id: R68
+    title: Protéger les services exposés par une DMZ ou un reverse proxy
+    description: Les services publiés sur Internet sont exposés derrière une DMZ ou un relais applicatif.
+
+  - id: R71
+    title: Chiffrer les supports de stockage contenant des informations sensibles
+    description: Les volumes, snapshots et sauvegardes contenant des données sensibles sont chiffrés au repos.
+
+  - id: R72
+    title: Chiffrer les communications sensibles
+    description: Les communications transportant des données sensibles utilisent TLS ≥ 1.2 avec suites cipher fortes.
+
+  - id: R12
+    title: Restreindre les flux d'administration aux IPs autorisées
+    description: Les interfaces d'administration (API server, console) ne sont accessibles que depuis un sous-ensemble d'IPs documenté.
+
+  - id: R31
+    title: Ne pas stocker de secrets en clair dans les configurations
+    description: Les credentials, clés et mots de passe ne doivent jamais apparaître en clair dans les fichiers de configuration, scripts d'init ou variables d'environnement long-lived.
+
+  - id: R45
+    title: Dimensionner les plages d'adressage IP au juste besoin
+    description: Les CIDR des Nets et Subnets sont dimensionnés selon la capacité cible pour éviter les chevauchements et limiter l'espace inutilisé.
+
+  - id: R63
+    title: Activer les protections contre la suppression accidentelle
+    description: Les ressources critiques (clusters, volumes, buckets) ont une protection contre la suppression directe via API (disable_api_termination ou équivalent).
+
+  - id: R69
+    title: Mettre en place une politique de sauvegarde différenciée
+    description: Les volumes critiques ont des sauvegardes (snapshots) régulières avec une fréquence et une rétention adaptées à leur RPO.
+
+  - id: R70
+    title: Tester périodiquement la restauration des sauvegardes
+    description: Les sauvegardes sont testées en restauration au moins trimestriellement pour valider leur intégrité.
+
+  - id: R75
+    title: Activer la journalisation des accès aux services exposés
+    description: Les load balancers et reverse proxies enregistrent les accès dans un système de log centralisé pour forensic et détection.
+
+  - id: R79
+    title: Mettre en place une rotation régulière des secrets
+    description: Access keys, certificats et credentials applicatifs sont rotés périodiquement (90 jours typiques pour les access keys).

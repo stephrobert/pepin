@@ -1,0 +1,101 @@
+# Pépin — outillage et tâches, pilotés par mise (https://mise.jdx.dev).
+# Remplace le Makefile : `mise run <tâche>` (ou `mise run` pour la liste).
+# Build/test/audit/validate sont les portes de qualité (cf. CLAUDE.md §1).
+
+[tools]
+opa = "1.17.1"        # tests des règles Rego (aligné sur la CI)
+terraform = "1.15.4"  # validation des preuves de remédiation + mapping TF
+
+[tasks.build]
+description = "Compile le binaire (version injectée)"
+run = 'go build -ldflags "-s -w -X github.com/stephrobert/pepin/cmd.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)" -o pepin .'
+
+[tasks.test]
+description = "Tests Go (data races) + tests des règles Rego"
+depends = ["test-go", "test-rego"]
+
+[tasks.test-go]
+description = "Tests unitaires Go avec détecteur de data races"
+run = "go test ./... -race"
+
+[tasks.test-rego]
+description = "Tests des politiques Rego (toutes communes)"
+run = "opa test internal/commonrules/rules -v"
+
+[tasks.validate]
+description = "Cohérence des référentiels (codes ↔ règles ↔ index SCSL gelé ↔ catalogue)"
+run = "go test ./referentiel/ -run 'Control|Rule|SCSL|Catalogue|Lookup|Coherent' -v"
+
+# NB : check-remediation est volontairement DÉCOUPLÉ de `validate` tant que toutes
+# les règles ne sont pas écrites (les preuves de remédiation sont rédigées en bloc
+# à la fin). À rebrancher dans `validate` (depends) une fois la couverture complète.
+[tasks.check-remediation]
+description = "Présence d'une preuve de remédiation par (contrôle, fournisseur) sous references/remediation/"
+run = "python3 scripts/check-remediation.py"
+
+[tasks.scsl]
+description = "Rapport de cohérence avec l'index SCSL + roadmap"
+depends = ["build"]
+run = "./pepin scsl"
+
+[tasks.gen-scsl]
+description = "(Re)génère les exigences SCSL fines dans framework-scsl"
+run = "python3 scripts/gen-scsl-cloud.py"
+
+[tasks.fetch-docs]
+description = "Met en cache la doc officielle des providers en Markdown (trafilatura)"
+run = "python3 scripts/fetch-docs.py"
+
+[tasks.vet]
+description = "Analyse statique du compilateur"
+run = "go vet ./..."
+
+[tasks.lint]
+description = "Méta-linter (golangci-lint)"
+run = "golangci-lint run"
+
+[tasks.sec]
+description = "Analyse de sécurité du code (gosec)"
+run = "gosec -quiet ./..."
+
+[tasks.vuln]
+description = "Vulnérabilités des dépendances Go appelées (govulncheck)"
+run = "govulncheck ./..."
+
+[tasks.osv]
+description = "Dépendances vulnérables ET paquets malveillants (OSV-Scanner)"
+run = "osv-scanner scan -L go.mod"
+
+[tasks.audit]
+description = "Qualité complète (vet + lint + sécurité + vulnérabilités + OSV)"
+depends = ["vet", "lint", "sec", "vuln", "osv"]
+
+[tasks.fmt]
+description = "Formatage Go et Rego"
+run = [
+  "gofmt -w .",
+  "opa fmt -w internal/commonrules/rules",
+]
+
+[tasks.run]
+description = "Scan de démonstration (hors-ligne, aucun compte requis)"
+depends = ["build"]
+run = "./pepin scan scaleway examples/scaleway/inventory.json"
+
+[tasks.providers]
+description = "Liste les providers déclaratifs enregistrés"
+depends = ["build"]
+run = "./pepin provider list"
+
+[tasks.clean]
+description = "Retire le binaire"
+run = "rm -f pepin"
+
+[tasks.tools]
+description = "Installe les outils Go de dev (lint + sécurité + vulnérabilités)"
+run = [
+  "go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest",
+  "go install github.com/securego/gosec/v2/cmd/gosec@latest",
+  "go install golang.org/x/vuln/cmd/govulncheck@latest",
+  "go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest",
+]

@@ -1,0 +1,25 @@
+# Binary
+/pepin
+dist/
+
+# Go
+*.out
+*.test
+
+# Terraform working artifacts under examples/ — never commit state or provider caches:
+# state can embed secrets in plaintext, and .terraform/ is a multi-MB provider mirror.
+# pepin's examples only need the .tf sources, the sanitized plan.json and inventory.json.
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# Scraped provider-doc cache (regenerable via `mise run fetch-docs`): ~39 MB of
+# third-party HTML-to-Markdown, full of example API keys that trip secret scanners.
+# Only the source list (references/docs/sources.yaml) is versioned.
+references/docs/*/
+
+# Editor / OS
+.DS_Store
+*.swp

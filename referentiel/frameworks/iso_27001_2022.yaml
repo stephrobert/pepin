@@ -1,0 +1,101 @@
+code: iso_27001_2022
+name: ISO/IEC 27001:2022 — Annexe A
+version: "2022"
+url: https://www.iso.org/standard/27001
+description: |
+  Contrôles de l'annexe A d'ISO/IEC 27001:2022. Ce catalogue référence le
+  sous-ensemble pertinent pour un périmètre Cloud IaaS Outscale (thèmes 5
+  Organisationnels, 6 People — partiel, 7 Physical — exclu, 8 Technological).
+
+controls:
+  - id: A.5.9
+    title: Inventory of information and other associated assets
+    description: Les actifs d'information sont inventoriés, maintenus à jour et un propriétaire est assigné.
+
+  - id: A.5.10
+    title: Acceptable use of information and other associated assets
+    description: Les règles d'usage acceptable des actifs sont documentées, communiquées et appliquées.
+
+  - id: A.5.15
+    title: Access control
+    description: Les règles de contrôle d'accès sont établies et appliquées en fonction du besoin.
+
+  - id: A.5.17
+    title: Authentication information
+    description: L'attribution et la gestion des informations d'authentification sont contrôlées.
+
+  - id: A.5.18
+    title: Access rights
+    description: Les droits d'accès sont attribués, revus et révoqués selon la politique d'accès.
+
+  - id: A.5.23
+    title: Information security for use of cloud services
+    description: L'utilisation de services cloud est régie par des exigences de sécurité documentées.
+
+  - id: A.8.2
+    title: Privileged access rights
+    description: L'attribution et la gestion des droits d'accès privilégiés sont restreintes et contrôlées.
+
+  - id: A.8.3
+    title: Information access restriction
+    description: L'accès aux informations est restreint en fonction de la politique de contrôle d'accès.
+
+  - id: A.8.5
+    title: Secure authentication
+    description: Des procédures d'authentification sûres sont mises en œuvre (MFA, politique de mots de passe).
+
+  - id: A.8.9
+    title: Configuration management
+    description: Les configurations, y compris de sécurité, sont établies, documentées, appliquées et revues.
+
+  - id: A.8.13
+    title: Information backup
+    description: Les copies de sauvegarde des informations, des logiciels et des systèmes sont maintenues et testées.
+
+  - id: A.8.10
+    title: Information deletion
+    description: Les informations stockées sont supprimées lorsqu'elles ne sont plus nécessaires.
+
+  - id: A.8.11
+    title: Data masking
+    description: Les données sensibles sont masquées ou anonymisées lorsque possible.
+
+  - id: A.8.15
+    title: Logging
+    description: Les événements de sécurité sont journalisés, protégés et analysés.
+
+  - id: A.8.16
+    title: Monitoring activities
+    description: Les réseaux, systèmes et applications sont surveillés pour détecter les comportements anormaux.
+
+  - id: A.8.20
+    title: Networks security
+    description: Les réseaux sont sécurisés, gérés et contrôlés pour protéger les informations.
+
+  - id: A.8.21
+    title: Security of network services
+    description: Les mécanismes de sécurité, niveaux de service et exigences des services réseau sont identifiés.
+
+  - id: A.8.22
+    title: Segregation of networks
+    description: Les groupes de services d'information, d'utilisateurs et de systèmes sont séparés.
+
+  - id: A.8.23
+    title: Web filtering
+    description: L'accès aux sites web externes est contrôlé pour réduire l'exposition aux contenus malveillants.
+
+  - id: A.8.24
+    title: Use of cryptography
+    description: La cryptographie est utilisée pour protéger la confidentialité, l'authenticité et l'intégrité.
+
+  - id: A.8.25
+    title: Secure development life cycle
+    description: Les règles de développement sécurisé sont établies et appliquées.
+
+  - id: A.5.12
+    title: Classification de l'information
+    description: L'information est classifiée selon son niveau de sensibilité et étiquetée pour piloter sa protection.
+
+  - id: A.8.14
+    title: Redondance des installations de traitement de l'information
+    description: Les composants critiques sont déployés avec redondance suffisante pour garantir la disponibilité (multi-AZ, multi-master).

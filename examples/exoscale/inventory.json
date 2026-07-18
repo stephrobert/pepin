@@ -1,0 +1,27 @@
+{
+  "provider": "exoscale",
+  "resources": [
+    {
+      "provider": "exoscale",
+      "type": "security_group_rule",
+      "id": "sg-abc-0",
+      "name": "sg-abc-0",
+      "attributes": {
+        "direction": "inbound",
+        "action": "accept",
+        "security_group_id": "sg-abc",
+        "protocol": "tcp",
+        "cidrs": ["0.0.0.0/0"],
+        "port_from": 22,
+        "port_to": 22
+      }
+    },
+    {
+      "provider": "exoscale",
+      "type": "object_storage_bucket",
+      "id": "data-public",
+      "name": "data-public",
+      "attributes": { "name": "data-public", "public_via_acl": true, "versioning": "" }
+    }
+  ]
+}

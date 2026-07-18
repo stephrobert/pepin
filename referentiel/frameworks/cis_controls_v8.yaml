@@ -1,0 +1,117 @@
+code: cis_controls_v8
+name: CIS Critical Security Controls
+version: "v8"
+url: https://www.cisecurity.org/controls/v8
+description: |
+  18 contrôles critiques de sécurité du Center for Internet Security.
+  Ce catalogue référence les safeguards pertinents pour un périmètre Cloud
+  IaaS Outscale (pas d'endpoint utilisateur, pas d'applicatif métier).
+
+controls:
+  - id: "1.1"
+    title: Establish and Maintain Detailed Enterprise Asset Inventory
+    description: Un inventaire précis et tenu à jour de tous les actifs connectés au réseau est maintenu.
+
+  - id: "2.3"
+    title: Address Unauthorized Software
+    description: Les logiciels et versions non autorisés sont identifiés et retirés ou mis à jour.
+
+  - id: "3.3"
+    title: Configure Data Access Control Lists
+    description: Restreindre l'accès aux données sensibles via des ACL documentées et revues.
+
+  - id: "3.6"
+    title: Encrypt Data on End-User Devices
+    description: Appliqué ici aux volumes persistants de VM et aux snapshots.
+
+  - id: "3.11"
+    title: Encrypt Sensitive Data at Rest
+    description: Les données sensibles sont chiffrées au repos (volumes, snapshots, buckets).
+
+  - id: "4.4"
+    title: Implement and Manage a Firewall on Servers
+    description: Filtrage réseau au niveau des VMs (security groups) avec règles explicites de moindre privilège.
+
+  - id: "4.8"
+    title: Uninstall or Disable Unnecessary Services
+    description: Les services inutiles sont désactivés pour réduire la surface d'attaque.
+
+  - id: "5.3"
+    title: Disable Dormant Accounts
+    description: Les comptes inactifs sont désactivés automatiquement après une période définie.
+
+  - id: "5.6"
+    title: Centralize Account Management
+    description: La gestion des comptes est centralisée (EIM) et les accès directs par compte racine sont proscrits.
+
+  - id: "6.3"
+    title: Require MFA for Externally-Exposed Applications
+    description: Toute application exposée à Internet requiert une authentification multifacteur.
+
+  - id: "6.5"
+    title: Require MFA for Administrative Access
+    description: Les comptes administrateurs utilisent un second facteur d'authentification.
+
+  - id: "6.7"
+    title: Centralize Access Control
+    description: Les autorisations sont gérées via un système central (EIM, SSO).
+
+  - id: "6.8"
+    title: Define and Maintain Role-Based Access Control
+    description: Les permissions sont attribuées via des rôles basés sur le besoin, en respectant le moindre privilège.
+
+  - id: "11.2"
+    title: Perform Automated Backups
+    description: Des sauvegardes automatisées des actifs sont effectuées régulièrement.
+
+  - id: "11.3"
+    title: Protect Recovery Data
+    description: Les données de restauration sont chiffrées et protégées de l'altération.
+
+  - id: "8.2"
+    title: Collect Audit Logs
+    description: Les journaux d'audit des systèmes sont collectés et conservés.
+
+  - id: "8.5"
+    title: Collect Detailed Audit Logs
+    description: Les journaux incluent suffisamment de détails pour les investigations (qui, quoi, où, quand).
+
+  - id: "12.2"
+    title: Establish and Maintain a Secure Network Architecture
+    description: L'architecture réseau applique une segmentation par zone de confiance et une approche deny-by-default.
+
+  - id: "12.4"
+    title: Establish and Maintain Architecture Diagrams
+    description: Les diagrammes d'architecture sont tenus à jour et reflètent la segmentation effective.
+
+  - id: "13.1"
+    title: Centralize Security Event Alerting
+    description: Les alertes de sécurité sont centralisées pour permettre la corrélation et l'intervention.
+
+  - id: "13.3"
+    title: Deploy a Network Intrusion Detection Solution
+    description: Un système de détection d'intrusion est déployé sur les segments sensibles.
+
+  - id: "13.6"
+    title: Collect Network Traffic Flow Logs
+    description: Les flux réseau sont journalisés pour permettre l'analyse a posteriori.
+
+  - id: "16.11"
+    title: Leverage Vetted Modules or Services for Application Security Components
+    description: Les composants de sécurité applicative (chiffrement, authentification) proviennent de modules éprouvés.
+
+  - id: "5.2"
+    title: Use unique passwords
+    description: Use unique, strong credentials for each system. Enforce credential rotation and avoid shared accounts.
+
+  - id: "11.1"
+    title: Establish and maintain a data recovery process
+    description: Establish and maintain a data recovery process with regular backups and restoration tests.
+
+  - id: "11.4"
+    title: Establish and maintain an isolated instance of recovery data
+    description: Maintain at least one offsite or air-gapped backup copy to recover from ransomware and physical disasters.
+
+  - id: "13.4"
+    title: Perform traffic filtering between network segments
+    description: Filter traffic between network segments to enforce the principle of least privilege at the network layer.

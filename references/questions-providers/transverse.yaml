@@ -1,0 +1,102 @@
+# Questions/qualifications TRANSVERSES (non liées à un seul provider).
+# Qualification des exigences SCSL : vérifiable par scan de posture (outillable
+# Pépin) vs gouvernance/process (hors scan). Ancré sur la doc locale references/docs/.
+# Sert à ajuster l'`outillage` de l'index SCSL (Pépin: <code> si vérifiable ; sinon
+# marqueur organisationnel / outil dédié).
+
+- id: SCSL-IAM-12
+  exigence: CLD-IAM-12
+  titre: Élévation de privilèges (PassRole non scopé, actions admin)
+  verdict: VÉRIFIABLE
+  ancrage: >
+    Analyse des politiques déjà collectées : statements Outscale (Body→effect/action/
+    resource), policy CEL Exoscale, rules Scaleway. Détecter PassRole non scopé,
+    actions iam:* / wildcard administratif, NotAction/NotResource.
+  suite: >
+    Implémentable en règle commune (ex. iam_policy_no_privilege_escalation), sur le
+    type iam_policy / iam_role. Garder « Pépin: <code> » dans l'index.
+
+- id: SCSL-IAM-13
+  exigence: CLD-IAM-13
+  titre: Désactivation des identifiants inutilisés (clés inactives, comptes dormants)
+  verdict: GOUVERNANCE (détection de dormance non outillable)
+  ancrage: >
+    Ancré doc locale : Outscale expose l'ÉTAT active/inactive d'une clé mais AUCUN des
+    3 providers n'expose de date de dernière utilisation (last_used). La dormance
+    (clé active mais inutilisée) n'est donc pas détectable par scan de posture.
+    L'expiration des clés est déjà couverte par CLD-IAM-2.
+  suite: >
+    Hors scan (revue périodique) — retirer « Pépin » de l'index, sauf si une API
+    d'audit/usage exposant last_used est identifiée (à confirmer).
+
+- id: SCSL-IAM-14
+  exigence: CLD-IAM-14
+  titre: Chemins d'attaque IAM / combinaisons toxiques
+  verdict: GOUVERNANCE / OUTIL DÉDIÉ
+  ancrage: >
+    Corrélation multi-ressources (graphe d'identités/permissions/ressources) pour
+    détecter des combinaisons toxiques — ce n'est pas un check de posture déclaratif
+    sur une ressource isolée.
+  suite: >
+    Hors périmètre Pépin (posture cloud) — relève d'un outil d'analyse de chemins
+    d'attaque IAM dédié. Retirer « Pépin » de l'index.
+
+- id: SCSL-CMP-2-metadata
+  exigence: CLD-CMP-2
+  titre: Protection du service de métadonnées (exploit SSRF 169.254.169.254)
+  verdict: PARTIELLEMENT OUTILLABLE (l'angle « IMDSv2/legacy » est sans objet chez les souverains)
+  ancrage: >
+    Doc locale : Outscale et Exoscale servent les métadonnées sur http://169.254.169.254
+    en clair ; AUCUN n'expose une protection configurable type IMDSv2 (session token),
+    désactivation de l'endpoint hérité, ni hop-limit (concept AWS). Le risque SSRF
+    existe mais la PARADE configurable n'existe pas → non vérifiable.
+  suite: >
+    Angles outillables réels de CMP-2 : (1) aucun secret dans user-data — DÉJÀ couvert
+    (compute_instance_no_secrets_in_user_data) ; (2) Exoscale : « instance privée »
+    (métadonnées servies via disque read-only, pas le réseau) = atténuation, attribut
+    potentiellement vérifiable. NE PAS forger compute_instance_legacy_metadata_endpoint_disabled
+    (sans objet ici). Retirer cet angle AWS de l'outillage CMP-2 dans l'index.
+  source:
+    - references/docs/outscale/en-userguide-accessing-the-metadata-and-user-data-of-a-vm-html.md
+    - references/docs/exoscale/product-compute-instances-how-to-private-instances.md
+
+- id: SCSL-LOG-6
+  exigence: CLD-LOG-6
+  titre: Journaux de flux réseau (VPC/Net flow logs)
+  verdict: NON OUTILLABLE EN L'ÉTAT
+  ancrage: >
+    Aucun des 3 providers n'expose de « flow logs » réseau dans la doc locale
+    (recherche flow.log/flowlog/journaux de flux : 0 résultat). Capacité absente ou
+    non documentée.
+  suite: >
+    À confirmer (vérifier d'autres termes : traffic mirroring, observabilité/cockpit).
+    Si la capacité n'existe pas, l'exigence est sans objet pour ces providers →
+    retirer « Pépin » de l'index ; sinon ancrer le champ exact avant d'implémenter.
+
+- id: SCSL-LOG-2
+  exigence: CLD-LOG-2
+  titre: Conservation des journaux ≥ 6 mois
+  verdict: GOUVERNANCE (non outillable en posture)
+  ancrage: >
+    Aucun des 3 providers n'expose de configuration de RÉTENTION de journaux
+    observable par ressource via l'API (recherche log retention / rétention journaux /
+    6 mois : 0 résultat pertinent ; seuls Cockpit/observability ressortent, produits
+    de monitoring sans contrat de rétention posture-lisible). La durée de conservation
+    est un paramètre opérationnel/contractuel, pas un attribut de ressource cloud.
+  suite: >
+    Laisser CLD-LOG-2 hors périmètre Pépin (pas de règle). Réévaluer si un service
+    expose une rétention lisible (ex. politique de cycle de vie d'un bucket de logs
+    dédié) — alors angle « bucket de journaux avec rétention ≥ 6 mois » envisageable.
+
+- id: SCSL-LOG-3
+  exigence: CLD-LOG-3
+  titre: Centralisation des journaux sur machine dédiée
+  verdict: GOUVERNANCE (non outillable en posture)
+  ancrage: >
+    Exigence ARCHITECTURALE (transfert des journaux vers un serveur central distinct
+    de la machine émettrice, intégrité/confidentialité protégées). Rien d'observable
+    via une API de posture cloud : c'est une propriété de l'architecture de journalisation,
+    pas un attribut de ressource. Même nature que LOG-6 (flow logs) et LOG-2 (rétention).
+  suite: >
+    Laisser CLD-LOG-3 hors périmètre Pépin (pas de règle). Relève d'un audit
+    d'architecture / preuve documentaire, pas d'un check CSPM.

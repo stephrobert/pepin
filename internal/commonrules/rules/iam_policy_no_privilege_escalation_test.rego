@@ -1,0 +1,56 @@
+package pepin.rules
+
+import rego.v1
+
+_pol(stmts) := {"resources": [{"provider": "outscale", "type": "iam_policy", "id": "p1", "attributes": {"policy_name": "p1", "statements": stmts}}]}
+
+# ✗ allow d'une action d'escalade (préfixe de service ignoré) → finding IAM-12.
+test_escalation_allowed_denied if {
+	some f in deny with input as _pol([{"effect": "Allow", "actions": ["api:AttachUserPolicy"], "resources": ["*"]}])
+	f.code == "iam_policy_no_privilege_escalation"
+}
+
+# ✗ CreateAccessKey autorisé → finding.
+test_create_access_key_denied if {
+	some f in deny with input as _pol([{"effect": "allow", "actions": ["CreateAccessKey"], "resources": ["*"]}])
+	f.code == "iam_policy_no_privilege_escalation"
+}
+
+# ✓ action non sensible (lecture S3) → pas de finding.
+test_benign_action_ok if {
+	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _pol([{"effect": "Allow", "actions": ["s3:GetObject"], "resources": ["*"]}])
+}
+
+# ✓ action d'escalade en Deny → pas de finding.
+test_escalation_denied_effect_ok if {
+	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _pol([{"effect": "Deny", "actions": ["AttachUserPolicy"], "resources": ["*"]}])
+}
+
+# ✓ pas de statements → pas de finding.
+test_no_statements_ok if {
+	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _pol([])
+}
+
+_role(attrs) := {"resources": [{"provider": "exoscale", "type": "iam_role", "id": "r1", "attributes": attrs}]}
+
+# ✗ rôle éditable dont la policy autorise la gestion des rôles IAM → finding IAM-12.
+test_role_iam_management_denied if {
+	some f in deny with input as _role({"name": "deployer", "editable": true, "manages_iam": true})
+	f.code == "iam_policy_no_privilege_escalation"
+}
+
+# ✓ rôle prédéfini (non éditable) → hors scope.
+test_role_predefined_ok if {
+	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _role({"name": "Billing", "editable": false, "manages_iam": true})
+}
+
+# ✓ rôle sans gestion IAM → pas de finding.
+test_role_no_iam_management_ok if {
+	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _role({"name": "ci", "editable": true, "manages_iam": false})
+}
+
+# ✗ politique conférant la gestion IAM (PermissionSet, ex. Scaleway) → finding.
+test_policy_manages_iam_denied if {
+	some f in deny with input as {"resources": [{"provider": "scaleway", "type": "iam_policy", "id": "p", "attributes": {"policy_name": "p", "manages_iam": true}}]}
+	f.code == "iam_policy_no_privilege_escalation"
+}

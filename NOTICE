@@ -1,0 +1,19 @@
+Pépin
+Copyright 2026 Stéphane Robert
+
+This product includes software developed by Stéphane Robert.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+This product depends on third-party software licensed under their own terms:
+
+  - github.com/open-policy-agent/opa (Apache-2.0) — Rego policy engine (via scankit).
+  - github.com/stephrobert/scankit (Apache-2.0) — shared engine/findings/scoring/report.
+  - github.com/spf13/cobra (Apache-2.0) — CLI framework.
+  - github.com/charmbracelet/lipgloss (MIT) — terminal styling (via scankit).
+  - github.com/aws/aws-sdk-go-v2 (Apache-2.0) — S3-compatible object-storage collection.
+  - github.com/pelletier/go-toml (MIT) — GitLab Runner config parsing.

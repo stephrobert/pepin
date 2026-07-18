@@ -1,0 +1,75 @@
+{
+ "format_version": "1.2",
+ "terraform_version": "1.9.0",
+ "values": {
+  "root_module": {
+   "resources": [
+    {
+     "address": "outscale_security_group.web",
+     "type": "outscale_security_group",
+     "name": "web",
+     "values": {
+      "id": "sg-12345678",
+      "security_group_id": "sg-12345678",
+      "security_group_name": "web-front",
+      "net_id": "vpc-aaaa1111",
+      "description": "Front web"
+     }
+    },
+    {
+     "address": "outscale_security_group_rule.ssh_world",
+     "type": "outscale_security_group_rule",
+     "name": "ssh_world",
+     "values": {
+      "id": "sgr-0abc",
+      "flow": "Inbound",
+      "security_group_id": "sg-12345678",
+      "from_port_range": 22,
+      "to_port_range": 22,
+      "ip_protocol": "tcp",
+      "ip_range": "0.0.0.0/0"
+     }
+    },
+    {
+     "address": "outscale_vm.web",
+     "type": "outscale_vm",
+     "name": "web",
+     "values": {
+      "id": "i-0abc1234",
+      "vm_id": "i-0abc1234",
+      "image_id": "ami-12345678",
+      "vm_type": "tinav5.c1r1p2",
+      "subnet_id": "subnet-bbbb2222",
+      "security_group_ids": [
+       "sg-12345678"
+      ],
+      "public_ip": "203.0.113.42",
+      "state": "running"
+     }
+    },
+    {
+     "address": "outscale_policy.ci_admin",
+     "type": "outscale_policy",
+     "name": "ci_admin",
+     "values": {
+      "id": "orn:policy:ci-admin",
+      "policy_name": "ci-admin",
+      "path": "/",
+      "document": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"*\",\"Resource\":\"*\"}]}"
+     }
+    },
+    {
+     "address": "outscale_policy.ci_deployer",
+     "type": "outscale_policy",
+     "name": "ci_deployer",
+     "values": {
+      "id": "orn:policy:ci-deployer",
+      "policy_name": "ci-deployer",
+      "path": "/",
+      "document": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": [\"AttachUserPolicy\", \"CreateAccessKey\"], \"Resource\": \"*\"}]}"
+     }
+    }
+   ]
+  }
+ }
+}

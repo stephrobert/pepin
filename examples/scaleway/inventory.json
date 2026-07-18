@@ -1,0 +1,41 @@
+{
+  "provider": "scaleway",
+  "resources": [
+    {
+      "provider": "scaleway",
+      "type": "object_storage_bucket",
+      "id": "backups-prod",
+      "name": "backups-prod",
+      "region": "fr-par",
+      "attributes": {
+        "name": "backups-prod",
+        "acl_grants": [
+          { "grantee": { "type": "Group", "uri": "http://acs.amazonaws.com/groups/global/AllUsers" }, "permission": "READ" }
+        ]
+      }
+    },
+    {
+      "provider": "scaleway",
+      "type": "access_key",
+      "id": "SCWXXXXXXXXXXXXXXXXX",
+      "name": "ci-deploy",
+      "attributes": { "access_key": "SCWXXXXXXXXXXXXXXXXX", "user_id": "11111111-1111-1111-1111-111111111111", "root_owned": true }
+    },
+    {
+      "provider": "scaleway",
+      "type": "security_group_rule",
+      "id": "sg-1-inbound-0",
+      "name": "sg-1-inbound-0",
+      "region": "fr-par",
+      "attributes": {
+        "direction": "inbound",
+        "action": "accept",
+        "security_group_id": "sg-1",
+        "protocol": "tcp",
+        "cidrs": ["0.0.0.0/0"],
+        "port_from": 22,
+        "port_to": 22
+      }
+    }
+  ]
+}

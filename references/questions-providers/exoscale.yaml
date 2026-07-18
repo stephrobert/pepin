@@ -1,0 +1,115 @@
+# Questions ouvertes — Exoscale. Voir README.md pour le cycle de vie.
+
+- id: EXO-Q1
+  titre: Expiration / durée de vie limitée des clés d'API
+  controle: CLD-IAM-2 / iam_accesskey_expiration_set
+  statut: resolue
+  contexte: >
+    CLD-IAM-2 demande des clés d'API à durée de vie limitée.
+  reponse: >
+    ANCRÉ (cache local, 2026-06-12). Les clés API Exoscale sont PERMANENTES : le
+    schéma iam-api-key ne porte que {key, name, role-id} (aucune date d'expiration).
+    La durée de vie se borne au niveau du RÔLE référencé, par DEUX moyens documentés :
+    (1) champ structuré `max-session-ttl` du rôle (TTL max d'une session assumée) ;
+    (2) expression CEL dans la policy du rôle, ex. action deny si
+    `timestamp(identity.created) < timestamp(now) - duration('5m')`
+    (exemple officiel « time-expiring IAM Key », policy-guide). Donc IAM-2 est
+    COMBLABLE chez Exoscale, mais via le rôle (sessions), pas via la clé elle-même —
+    nuance de sémantique à acter pour la modélisation du check.
+  source:
+    - references/docs/exoscale/product-iam-how-to-policy-guide.md   # ex. expiration L478-499
+    - references/docs/exoscale/reference-api-schemas-iam-api-key.md  # {key,name,role-id}
+    - references/docs/exoscale/reference-api-schemas-iam-role.md     # policy + max-session-ttl
+
+- id: EXO-Q3
+  titre: Clé de chiffrement gérée par le client au niveau bucket (SSE-KMS / BYOK)
+  controle: CLD-CHF-4 / objectstorage_bucket_kms_encryption
+  statut: a_surveiller
+  contexte: >
+    CLD-CHF-4 demande des clés de chiffrement gérées par le client (BYOK/HYOK) pour
+    les données sensibles. L'angle observable retenu = chiffrement par défaut du
+    bucket via clé client (SSE-KMS), lu via GetBucketEncryption.
+  reponse: >
+    ANCRÉ (cache local). SOS n'offre aujourd'hui que SSE-C (clé fournie par le client
+    PAR-OBJET, non observable au niveau bucket ; « Exoscale does not store your keys »).
+    SSE-KMS est explicitement « planned for future release » → CHF-4 marqué non
+    applicable pour Exoscale (capacité bucket-level absente à ce jour).
+  suite: >
+    RÉÉVALUER quand le KMS Exoscale sortira (la doc encryption sera mise à jour) :
+    activer alors `s3.sse_kms: true` dans providers/exoscale.yaml et retirer
+    objectstorage_bucket_kms_encryption de contrat.non_applicable.
+  source:
+    - references/docs/exoscale/product-storage-object-storage-how-to-encryption.md
+    - references/docs/exoscale/reference-api-kms-kms-key.md
+
+- id: EXO-Q2
+  titre: Restriction d'accès par IP source
+  controle: CLD-IAM-4 / iam_apiaccessrule_no_public_cidr
+  statut: resolue
+  contexte: >
+    CLD-IAM-4 demande une restriction d'accès par CIDR ; pas d'« ApiAccessRule par
+    IP » dédiée chez Exoscale.
+  reponse: >
+    ANCRÉ (cache local, 2026-06-12). La restriction par IP s'exprime DANS la policy
+    CEL du rôle IAM, via les bindings `source_ip` : `source_ip.inIpRange('<CIDR>')`,
+    `source_ip == '<ip>'`, ou `source_ip in ['<ip>', …]` (policy-guide, bindings +
+    exemples). Lisible en collecte via list-iam-roles → policy. Le check consiste à
+    détecter l'ABSENCE de borne source_ip dans la policy d'un rôle.
+  source:
+    - references/docs/exoscale/product-iam-how-to-policy-guide.md   # bindings L52/L155, ex. L242
+
+- id: EXO-Q3
+  titre: Non-partage public des snapshots block storage
+  controle: CLD-STO-2 / blockstorage_snapshot_not_public
+  statut: en_attente
+  contexte: >
+    On marque STO-2 « conforme par construction » (snapshots non exportables).
+  ce_quon_sait: >
+    Overview block storage : « It is not possible to directly download or export a
+    snapshot ». La page operation/snapshot n'a pas été extraite (fetch vide) — URL à
+    retrouver pour confirmation explicite.
+  a_confirmer: >
+    Confirmation officielle qu'aucun partage public inter-organisations n'existe
+    (pas d'équivalent ModifySnapshotAttribute).
+  source:
+    - references/docs/exoscale/  # page snapshot à recharger
+
+- id: EXO-Q4
+  titre: Contrôle capitalistique ultime (souveraineté GOV-4)
+  controle: CLD-GOV-4 / governance_provider_sovereignty
+  statut: ouverte
+  contexte: >
+    GOV-4 exige un fournisseur soustrait à un contrôle capitalistique extra-UE
+    déterminant. Exoscale (Akenes SA, CH) appartient à A1 Digital / A1 Telekom
+    Austria (Autriche, UE). Le siège CH (hors UE) déclenche déjà GOV-4.
+  ce_quon_sait: >
+    A1 Telekom Austria Group est coté à Vienne ; un actionnaire de référence
+    extra-UE (América Móvil, Mexique) est notoirement présent — à confirmer et
+    qualifier (part de contrôle « déterminante » ?).
+  a_confirmer: >
+    L'actionnariat ultime d'A1 Telekom Austria constitue-t-il un contrôle extra-UE
+    déterminant ? Si oui, passer controle_capitalistique=extra_ue dans
+    providers/exoscale.yaml (actuellement a_verifier, pas de faux positif).
+  source:
+    - https://www.exoscale.com/about-us/
+    - https://www.a1.digital/european-cloud/
+
+- id: EXO-Q5
+  titre: Audit des rôles IAM prédéfinis (non éditables)
+  controle: CLD-IAM-1/2/4 / iam_role_*
+  statut: ouverte
+  contexte: >
+    Le scan live remonte des findings IAM-4/1/2 sur des rôles PRÉDÉFINIS Exoscale
+    (ex. « Billing », « Owner ») dont la policy n'est pas modifiable par le client.
+  decision_provisoire: >
+    Les checks iam_role_* ne s'appliquent qu'aux rôles éditables (editable=true) ;
+    les rôles prédéfinis (editable=false) sont exclus comme non actionnables — la
+    doc role-mgmt confirme « policy modifiable seulement si Editable (défaut true) ».
+  a_confirmer: >
+    (1) Liste exhaustive des rôles prédéfinis Exoscale et leur permissivité réelle
+    (Billing/Owner/Read-only…) — la doc ne l'énumère pas. (2) Faut-il les IGNORER
+    totalement (choix actuel) ou les signaler en INFORMATION ? Un rôle prédéfini
+    permissif assigné à une clé reste un risque — le risque est alors dans
+    l'ASSIGNATION de la clé au rôle, pas dans le rôle lui-même.
+  source:
+    - references/docs/exoscale/product-iam-how-to-role-mgmt.md
