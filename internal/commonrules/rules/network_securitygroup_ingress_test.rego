@@ -38,6 +38,18 @@ test_high_risk_denied if {
 	f.code == _hr
 }
 
+# ✗ Port nouvellement listé (Kubernetes API 6443) ouvert → high_risk.
+test_high_risk_k8s_api_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["0.0.0.0/0"], "port_from": 6443, "port_to": 6443})
+	f.code == _hr
+}
+
+# ✗ Daemon Docker exposé (2375) ouvert → high_risk.
+test_high_risk_docker_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["0.0.0.0/0"], "port_from": 2375, "port_to": 2375})
+	f.code == _hr
+}
+
 # ✗ any/any entrant depuis Internet → all_ports (critical).
 test_all_ports_denied if {
 	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "all", "cidrs": ["0.0.0.0/0"], "port_from": 0, "port_to": 0})

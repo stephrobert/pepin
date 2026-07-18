@@ -59,8 +59,18 @@ _is_base64(s) if {
 _secret_patterns(s) := patterns if {
 	by_regex := {label |
 		some label, re in {
-			"clé d'accès (AKIA…)": `AKIA[0-9A-Z]{16}`,
-			"mot de passe en clair": `(?i)password\s*[:=]\s*\S`,
+			# Clés d'accès cloud, y compris SOUVERAINES (préfixes documentés).
+			"clé d'accès AWS/Outscale (AKIA…)": `AKIA[0-9A-Z]{16}`,
+			"clé d'accès Scaleway (SCW…)": `SCW[A-Z0-9]{17,}`,
+			"clé d'accès Exoscale (EXO…)": `EXO[A-Za-z0-9]{16,}`,
+			# Jetons de forge / d'identité fréquemment collés dans le user-data.
+			"jeton GitHub": `(gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,})`,
+			"jeton GitLab (glpat-)": `glpat-[A-Za-z0-9_-]{20}`,
+			"jeton JWT": `eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}`,
+			"en-tête Authorization Bearer": `(?i)authorization\s*:\s*bearer\s+[A-Za-z0-9._-]{12,}`,
+			# Affectations en clair (mot de passe ou clé/API générique).
+			"mot de passe en clair": `(?i)(password|passwd|pwd)\s*[:=]\s*\S`,
+			"clé/API générique affectée": `(?i)(api[_-]?key|secret[_-]?key|access[_-]?key|secret[_-]?access[_-]?key|auth[_-]?token|api[_-]?token)\s*[:=]\s*['"]?[A-Za-z0-9/+._-]{16,}`,
 		}
 		regex.match(re, s)
 	}

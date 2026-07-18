@@ -63,9 +63,39 @@ sg_inbound_from_internet(rule) if {
 	is_public_cidr(cidr)
 }
 
-# sensitive_ports — ports d'administration / bases de données à ne jamais
-# exposer à Internet (SSH, RDP, PostgreSQL, MySQL, Redis, MongoDB, ES, MSSQL).
-sensitive_ports := {22, 3389, 5432, 3306, 6379, 27017, 9200, 1433}
+# sensitive_ports — ports d'administration distante, de partage de fichiers, de
+# bases de données et d'orchestration à ne jamais exposer à Internet (0.0.0.0/0).
+# Sourcé sur les benchmarks CIS et les listings CSPM courants.
+sensitive_ports := {
+	22, # SSH
+	23, # Telnet
+	3389, # RDP
+	5900, # VNC
+	5985, 5986, # WinRM (HTTP/HTTPS)
+	21, # FTP
+	445, # SMB
+	139, # NetBIOS
+	389, 636, # LDAP / LDAPS
+	2049, # NFS
+	3306, # MySQL/MariaDB
+	5432, # PostgreSQL
+	1433, # MSSQL
+	1521, # Oracle
+	27017, 27018, 27019, # MongoDB
+	6379, # Redis
+	11211, # Memcached
+	9200, 9300, # Elasticsearch (HTTP / transport)
+	5601, # Kibana
+	5984, # CouchDB
+	9042, # Cassandra
+	8086, # InfluxDB
+	9092, # Kafka
+	5672, 15672, # RabbitMQ (AMQP / management)
+	2375, 2376, # Docker daemon (plain / TLS)
+	2379, 2380, # etcd
+	6443, # Kubernetes API server
+	10250, # Kubelet
+}
 
 # required_tags — étiquettes de gouvernance obligatoires.
 required_tags := ["CostCenter", "Project", "Env", "Owner"]

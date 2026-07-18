@@ -60,3 +60,23 @@ test_userdata_secret_denied if {
 test_userdata_clean_ok if {
 	count({f | some f in deny; f.code == "compute_instance_no_secrets_in_user_data"}) == 0 with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": {"vm_id": "i-1", "security_group_ids": ["sg-1"], "user_data": "echo bonjour le monde"}}]}
 }
+
+test_userdata_scaleway_key_denied if {
+	some f in deny with input as {"resources": [{"provider": "scaleway", "type": "compute_instance", "id": "i-2", "attributes": {"vm_id": "i-2", "security_group_ids": ["sg-1"], "user_data": "export SCW_ACCESS_KEY=SCWABCDEFGHIJKLMNOPQ"}}]}
+	f.code == "compute_instance_no_secrets_in_user_data"
+}
+
+test_userdata_github_token_denied if {
+	some f in deny with input as {"resources": [{"provider": "exoscale", "type": "compute_instance", "id": "i-3", "attributes": {"vm_id": "i-3", "security_group_ids": ["sg-1"], "user_data": "git clone https://ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@github.com/x/y"}}]}
+	f.code == "compute_instance_no_secrets_in_user_data"
+}
+
+test_userdata_jwt_denied if {
+	some f in deny with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-4", "attributes": {"vm_id": "i-4", "security_group_ids": ["sg-1"], "user_data": "TOKEN=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3In0.abcdefghij"}}]}
+	f.code == "compute_instance_no_secrets_in_user_data"
+}
+
+test_userdata_generic_apikey_denied if {
+	some f in deny with input as {"resources": [{"provider": "scaleway", "type": "compute_instance", "id": "i-5", "attributes": {"vm_id": "i-5", "security_group_ids": ["sg-1"], "user_data": "api_key: 0123456789abcdef0123"}}]}
+	f.code == "compute_instance_no_secrets_in_user_data"
+}

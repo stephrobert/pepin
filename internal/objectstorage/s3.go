@@ -8,6 +8,7 @@ package objectstorage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -134,18 +135,97 @@ func grantsToMap(grants []types.Grant) []any {
 	return out
 }
 
-// policyAllowsPublic détecte un Statement Allow avec Principal « * » (heuristique
-// alignée sur l'analyse fine déléguée aux règles Rego).
+// policyAllowsPublic analyse la policy de bucket (JSON) et détecte une exposition publique :
+// un Statement `Effect: Allow` avec un Principal (ou NotPrincipal) joker « * », SANS condition
+// restreignant réellement la source (SourceIp/Vpc/PrincipalOrgID…). Le parsing structuré
+// remplace l'ancien matching de chaînes, fragile au formatage et aveugle aux conditions.
 func policyAllowsPublic(policy string) bool {
-	if !strings.Contains(policy, `"Allow"`) {
+	var doc struct {
+		Statement json.RawMessage `json:"Statement"`
+	}
+	if json.Unmarshal([]byte(policy), &doc) != nil || len(doc.Statement) == 0 {
 		return false
 	}
-	for _, p := range []string{
-		`"Principal":"*"`, `"Principal": "*"`,
-		`"Principal":{"AWS":"*"}`, `"Principal": {"AWS": "*"}`,
-		`"AWS":["*"]`, `"AWS": ["*"]`,
-	} {
-		if strings.Contains(policy, p) {
+	stmts := statementList(doc.Statement)
+	for _, st := range stmts {
+		if statementIsPublic(st) {
+			return true
+		}
+	}
+	return false
+}
+
+// statementList normalise le champ Statement (objet unique OU tableau) en une liste.
+func statementList(raw json.RawMessage) []map[string]json.RawMessage {
+	var arr []map[string]json.RawMessage
+	if json.Unmarshal(raw, &arr) == nil {
+		return arr
+	}
+	var one map[string]json.RawMessage
+	if json.Unmarshal(raw, &one) == nil {
+		return []map[string]json.RawMessage{one}
+	}
+	return nil
+}
+
+// statementIsPublic : Effect=Allow + Principal/NotPrincipal joker, sans condition restreignant
+// la source (une condition SecureTransport seule ne « déprivatise » pas — le bucket reste public).
+func statementIsPublic(st map[string]json.RawMessage) bool {
+	var effect string
+	if json.Unmarshal(st["Effect"], &effect) != nil || !strings.EqualFold(effect, "Allow") {
+		return false
+	}
+	if conditionRestrictsSource(st["Condition"]) {
+		return false
+	}
+	return principalIsWildcard(st["Principal"]) || principalIsWildcard(st["NotPrincipal"])
+}
+
+// principalIsWildcard reconnaît « * » sous toutes ses formes : "*", {"AWS":"*"}, {"AWS":["*"]}.
+func principalIsWildcard(raw json.RawMessage) bool {
+	if len(raw) == 0 {
+		return false
+	}
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return s == "*"
+	}
+	var obj map[string]json.RawMessage
+	if json.Unmarshal(raw, &obj) != nil {
+		return false
+	}
+	for _, v := range obj {
+		var one string
+		if json.Unmarshal(v, &one) == nil && one == "*" {
+			return true
+		}
+		var arr []string
+		if json.Unmarshal(v, &arr) == nil {
+			for _, x := range arr {
+				if x == "*" {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// conditionRestrictsSource : vrai si la condition borne réellement l'origine de l'appel
+// (IP, VPC, organisation, compte, principal). Les autres conditions (ex. SecureTransport)
+// n'empêchent pas l'accès public et ne comptent donc pas comme restriction.
+func conditionRestrictsSource(raw json.RawMessage) bool {
+	if len(raw) == 0 {
+		return false
+	}
+	restrictKeys := []string{
+		"aws:sourceip", "aws:sourcevpc", "aws:sourcevpce", "aws:vpcsourceip",
+		"aws:principalorgid", "aws:principalorgpaths", "aws:principalaccount",
+		"aws:principalarn", "aws:sourceaccount", "aws:sourcearn", "aws:sourceowner",
+	}
+	lower := strings.ToLower(string(raw))
+	for _, k := range restrictKeys {
+		if strings.Contains(lower, k) {
 			return true
 		}
 	}
