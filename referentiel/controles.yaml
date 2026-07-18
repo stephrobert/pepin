@@ -363,6 +363,25 @@ controles:
       iso_27001_2022: ["A.8.20", "A.8.22"]
     fournisseurs: [outscale, scaleway, exoscale]
 
+  - code: network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports
+    famille: reseau
+    titre: Service UDP sensible (amplification, non authentifié) ouvert à Internet
+    severite: high
+    description: >
+      Une règle de filtrage accepte depuis 0.0.0.0/0 ou ::/0 un service UDP
+      sensible (DNS, NTP, SNMP, memcached, NFS, LDAP/CLDAP…), vecteur classique
+      d'amplification DDoS et souvent non authentifié.
+    remediation: >
+      Restreindre la source à un CIDR légitime ; ne jamais exposer un service UDP
+      d'amplification ou non authentifié directement sur Internet.
+    scsl: [CLD-NET-1]
+    frameworks:
+      anssi_bp_028: ["R65", "R67"]
+      secnumcloud_3_2: ["13.2", "13.3"]
+      cis_controls_v8: ["4.4", "12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [outscale, scaleway, exoscale]
+
   - code: network_securitygroup_unrestricted_egress
     famille: reseau
     titre: Filtrage sortant non restreint

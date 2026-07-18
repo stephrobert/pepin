@@ -12,10 +12,24 @@ import rego.v1
 # Le collecteur live et le parseur Terraform projettent tous deux vers ces types.
 resources_of_type(t) := [r | some r in input.resources; r.type == t]
 
-# is_public_cidr — le CIDR couvre l'Internet public (IPv4 ou IPv6).
-is_public_cidr(cidr) if cidr == "0.0.0.0/0"
+# is_public_cidr — le CIDR couvre l'Internet public (IPv4 ou IPv6). On PARSE la longueur de
+# préfixe au lieu de comparer des littéraux : un préfixe /0 couvre tout l'espace d'adressage
+# quelle que soit l'écriture (`0.0.0.0/0`, `::/0`, `::0/0`, `0000::/0`). Un /1 IPv4
+# (`0.0.0.0/1` ou `128.0.0.0/1`) couvre la moitié d'Internet : contournement CSPM connu, jamais
+# légitime comme source « restreinte » → également public.
+is_public_cidr(cidr) if _cidr_prefix(cidr) == 0
 
-is_public_cidr(cidr) if cidr == "::/0"
+is_public_cidr(cidr) if {
+	not contains(cidr, ":") # IPv4 uniquement
+	_cidr_prefix(cidr) == 1
+}
+
+_cidr_prefix(cidr) := n if {
+	parts := split(cidr, "/")
+	count(parts) == 2
+	regex.match(`^[0-9]+$`, parts[1])
+	n := to_number(parts[1])
+}
 
 # has_tag — true si la liste de tags ({key,value}) porte la clé avec une valeur
 # non vide. Contrat natif : Tag{Key, Value} (snake_case normalisé).
@@ -38,15 +52,40 @@ get_tag(tags, key) := v if {
 # usage (pas de faux positif).
 volume_in_use(v) if object.get(v.attributes, "state", "") in {"in-use", "attached"}
 
-# covers_port — la règle de filtrage couvre le port p (schéma SG commun :
-# port_from/port_to). Plage [port_from, port_to] ; port_to absent ou < port_from
-# (ex. règle à port unique, to non renseigné) ⇒ borne haute = port_from.
+# covers_port — la règle de filtrage couvre le port p (schéma SG commun : port_from/port_to).
+# Deux cas :
+#   1. au moins une borne numérique définie ⇒ plage [from, to] (to = from si absent : port unique) ;
+#   2. AUCUNE borne (règle « tous les ports », p. ex. le collecteur live projette port_from/to en
+#      chaîne vide) ⇒ couvre TOUT port. Sans ce cas, une règle tcp sans ports ouverte à Internet
+#      (= any/any TCP) échappait à tous les checks (faux négatif).
 covers_port(rule, p) if {
-	from := object.get(rule, "port_from", 0)
-	to := max([from, object.get(rule, "port_to", from)])
+	from := _port_bound(rule, "port_from")
+	to := _to_bound(rule, from)
 	from <= p
 	p <= to
 }
+
+covers_port(rule, _) if {
+	not _port_bound(rule, "port_from")
+	not _port_bound(rule, "port_to")
+}
+
+# _port_bound — borne de port numérique, défensif face au typage : accepte un nombre ou une
+# chaîne purement numérique ; undefined si absente/vide/non numérique (le « » du moteur live).
+_port_bound(rule, key) := v if {
+	v := object.get(rule, key, "")
+	is_number(v)
+}
+
+_port_bound(rule, key) := to_number(v) if {
+	v := object.get(rule, key, "")
+	is_string(v)
+	regex.match(`^[0-9]+$`, v)
+}
+
+_to_bound(rule, from) := max([from, _port_bound(rule, "port_to")])
+
+_to_bound(rule, from) := from if not _port_bound(rule, "port_to")
 
 # proto_covers — la règle couvre le protocole `want` (ou « all »). Schéma SG
 # commun : protocol ∈ tcp|udp|icmp|all.
@@ -95,6 +134,21 @@ sensitive_ports := {
 	2379, 2380, # etcd
 	6443, # Kubernetes API server
 	10250, # Kubelet
+}
+
+# sensitive_udp_ports — services UDP à ne jamais exposer à Internet : vecteurs d'amplification
+# DDoS et services non authentifiés (sourcé CIS + advisories US-CERT sur l'amplification).
+sensitive_udp_ports := {
+	53, # DNS
+	123, # NTP
+	161, # SNMP
+	111, # rpcbind / portmapper
+	389, # LDAP (CLDAP amplification)
+	500, # IKE/IPsec
+	1900, # SSDP/UPnP
+	2049, # NFS
+	11211, # Memcached
+	5353, # mDNS
 }
 
 # required_tags — étiquettes de gouvernance obligatoires.

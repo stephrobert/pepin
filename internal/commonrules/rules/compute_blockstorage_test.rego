@@ -80,3 +80,14 @@ test_userdata_generic_apikey_denied if {
 	some f in deny with input as {"resources": [{"provider": "scaleway", "type": "compute_instance", "id": "i-5", "attributes": {"vm_id": "i-5", "security_group_ids": ["sg-1"], "user_data": "api_key: 0123456789abcdef0123"}}]}
 	f.code == "compute_instance_no_secrets_in_user_data"
 }
+
+test_userdata_password_inline_denied if {
+	some f in deny with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-6", "attributes": {"vm_id": "i-6", "security_group_ids": ["sg-1"], "user_data": "DB_PASSWORD=Sup3rSecret!"}}]}
+	f.code == "compute_instance_no_secrets_in_user_data"
+}
+
+# ✓ FP-3 : bloc cloud-init `chpasswd` (valeur en bloc YAML, pas de secret en clair sur la
+# ligne) ne doit PAS déclencher — le motif exigeait auparavant seulement `\S` après le séparateur.
+test_userdata_cloudinit_chpasswd_ok if {
+	count({f | some f in deny; f.code == "compute_instance_no_secrets_in_user_data"}) == 0 with input as {"resources": [{"provider": "scaleway", "type": "compute_instance", "id": "i-7", "attributes": {"vm_id": "i-7", "security_group_ids": ["sg-1"], "user_data": "#cloud-config\nchpasswd:\n  expire: true\nssh_pwauth: false\n"}}]}
+}

@@ -249,3 +249,34 @@ func TestLookupDotted(t *testing.T) {
 		t.Fatal("champ absent devrait être nil")
 	}
 }
+
+func TestAwsPolicyStatementsSingleObject(t *testing.T) {
+	// Statement en OBJET unique (pas un tableau) : grammaire AWS/IAM valide, doit parser.
+	got := awsPolicyStatements(`{"Statement":{"Effect":"Allow","Action":"*","Resource":"*"}}`)
+	if len(got) != 1 {
+		t.Fatalf("Statement objet unique : %d statements, attendu 1", len(got))
+	}
+	st := got[0].(map[string]any)
+	if st["effect"] != "Allow" {
+		t.Errorf("effect = %v, attendu Allow", st["effect"])
+	}
+	if acts := st["actions"].([]any); len(acts) != 1 || acts[0] != "*" {
+		t.Errorf("actions = %v, attendu [*]", st["actions"])
+	}
+}
+
+func TestAwsPolicyStatementsArray(t *testing.T) {
+	got := awsPolicyStatements(`{"Statement":[{"Effect":"Allow","Action":["s3:*"]},{"Effect":"Deny","Action":"*"}]}`)
+	if len(got) != 2 {
+		t.Fatalf("Statement tableau : %d, attendu 2", len(got))
+	}
+}
+
+func TestAwsPolicyStatementsInvalid(t *testing.T) {
+	if got := awsPolicyStatements("not json"); len(got) != 0 {
+		t.Errorf("policy invalide : %d, attendu 0", len(got))
+	}
+	if got := awsPolicyStatements(""); len(got) != 0 {
+		t.Errorf("policy vide : %d, attendu 0", len(got))
+	}
+}

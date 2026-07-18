@@ -26,14 +26,25 @@ deny contains f if {
 	f := _sg_finding(r, "network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389", "high", "RDP (port 3389)")
 }
 
-# Port sensible (BD, annuaire…) ouvert à Internet → CLD-NET-1.
+# Ports sensibles TCP (BD, annuaire, orchestration…) ouverts à Internet → CLD-NET-1.
+# AGRÉGÉ : une règle « tous ports » ouverte ne produit qu'UN finding listant les ports, pas ~38.
 deny contains f if {
 	some r in resources_of_type("security_group_rule")
 	sg_inbound_from_internet(r.attributes)
 	proto_covers(r.attributes, "tcp")
-	some port in (sensitive_ports - {22, 3389})
-	covers_port(r.attributes, port)
-	f := _sg_finding(r, "network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports", "high", sprintf("port sensible %d", [port]))
+	ports := sort([p | some p in (sensitive_ports - {22, 3389}); covers_port(r.attributes, p)])
+	count(ports) > 0
+	f := _sg_finding(r, "network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports", "high", sprintf("ports sensibles TCP %v", [ports]))
+}
+
+# Ports sensibles UDP (amplification DDoS, services non authentifiés) ouverts à Internet → CLD-NET-1.
+deny contains f if {
+	some r in resources_of_type("security_group_rule")
+	sg_inbound_from_internet(r.attributes)
+	proto_covers(r.attributes, "udp")
+	ports := sort([p | some p in sensitive_udp_ports; covers_port(r.attributes, p)])
+	count(ports) > 0
+	f := _sg_finding(r, "network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports", "high", sprintf("ports sensibles UDP %v", [ports]))
 }
 
 # Tout le trafic entrant depuis Internet (any/any) → CLD-NET-2.

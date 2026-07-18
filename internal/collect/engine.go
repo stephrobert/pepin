@@ -350,13 +350,24 @@ func awsPolicyStatements(v any) []any {
 		return []any{}
 	}
 	var parsed struct {
-		Statement []map[string]any `json:"Statement"`
+		Statement json.RawMessage `json:"Statement"`
 	}
-	if json.Unmarshal([]byte(doc), &parsed) != nil {
+	if json.Unmarshal([]byte(doc), &parsed) != nil || len(parsed.Statement) == 0 {
 		return []any{}
 	}
-	out := make([]any, 0, len(parsed.Statement))
-	for _, st := range parsed.Statement {
+	// La grammaire AWS/IAM admet Statement comme TABLEAU ou comme OBJET unique : sans gérer le
+	// second cas, json.Unmarshal échouait et renvoyait [] -> toutes les règles iam_policy
+	// passaient au vert en silence (faux négatif). On accepte les deux formes.
+	var stmts []map[string]any
+	if json.Unmarshal(parsed.Statement, &stmts) != nil {
+		var one map[string]any
+		if json.Unmarshal(parsed.Statement, &one) != nil {
+			return []any{}
+		}
+		stmts = []map[string]any{one}
+	}
+	out := make([]any, 0, len(stmts))
+	for _, st := range stmts {
 		out = append(out, map[string]any{
 			"effect":       st["Effect"],
 			"actions":      toAnyList(st["Action"]),

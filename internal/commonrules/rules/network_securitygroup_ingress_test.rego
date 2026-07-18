@@ -50,6 +50,36 @@ test_high_risk_docker_denied if {
 	f.code == _hr
 }
 
+# ✗ FN-1 : règle TCP SANS bornes de port (le moteur live projette port_from/to en "") = tous
+# ports ouverts → doit être flaguée (auparavant : faux négatif silencieux).
+test_tcp_no_port_bounds_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["0.0.0.0/0"], "port_from": "", "port_to": ""})
+	f.code == _hr
+}
+
+# ✗ FN-9 : /0 IPv6 écrit « ::0/0 » reconnu public (parsing du préfixe, pas littéral).
+test_ipv6_zero_public_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["::0/0"], "port_from": 22, "port_to": 22})
+	f.code == _ssh
+}
+
+# ✗ FN-9 : contournement « moitié d'Internet » 0.0.0.0/1 reconnu public.
+test_ipv4_half_internet_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["0.0.0.0/1"], "port_from": 22, "port_to": 22})
+	f.code == _ssh
+}
+
+# ✗ FN-2 : NFS/UDP (2049) ouvert à Internet → high_risk UDP.
+test_udp_nfs_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "udp", "cidrs": ["0.0.0.0/0"], "port_from": 2049, "port_to": 2049})
+	f.code == "network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports"
+}
+
+# ✓ Source restreinte en /24 : non publique, aucun finding.
+test_restricted_24_ok if {
+	count({f | some f in deny; f.code == _ssh}) == 0 with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["203.0.113.0/24"], "port_from": 22, "port_to": 22})
+}
+
 # ✗ any/any entrant depuis Internet → all_ports (critical).
 test_all_ports_denied if {
 	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "all", "cidrs": ["0.0.0.0/0"], "port_from": 0, "port_to": 0})

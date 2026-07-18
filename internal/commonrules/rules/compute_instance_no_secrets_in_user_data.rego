@@ -68,8 +68,10 @@ _secret_patterns(s) := patterns if {
 			"jeton GitLab (glpat-)": `glpat-[A-Za-z0-9_-]{20}`,
 			"jeton JWT": `eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}`,
 			"en-tête Authorization Bearer": `(?i)authorization\s*:\s*bearer\s+[A-Za-z0-9._-]{12,}`,
-			# Affectations en clair (mot de passe ou clé/API générique).
-			"mot de passe en clair": `(?i)(password|passwd|pwd)\s*[:=]\s*\S`,
+			# Affectation de mot de passe EN CLAIR. La valeur doit suivre le séparateur SUR LA MÊME
+			# LIGNE (>=4 caractères non blancs) : évite le faux positif sur les blocs cloud-init
+			# `chpasswd:` / `password:` suivis d'un bloc YAML (la valeur passe alors à la ligne).
+			"mot de passe en clair": `(?i)(password|passwd|pwd)[ \t]*[:=][ \t]*['"]?[^\s'"]{4,}`,
 			"clé/API générique affectée": `(?i)(api[_-]?key|secret[_-]?key|access[_-]?key|secret[_-]?access[_-]?key|auth[_-]?token|api[_-]?token)\s*[:=]\s*['"]?[A-Za-z0-9/+._-]{16,}`,
 		}
 		regex.match(re, s)
