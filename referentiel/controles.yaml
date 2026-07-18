@@ -480,7 +480,9 @@ controles:
     remediation: >
       Bannir les secrets des données utilisateur ; utiliser un coffre de secrets
       et l'injection au démarrage.
-    scsl: [CLD-CMP-2]
+    # Ce contrôle VÉRIFIE l'absence de secret en clair dans le user-data = CLD-CMP-9
+    # (et non la protection IMDSv2 de CLD-CMP-2, qui reste un trou faute d'attribut exposé).
+    scsl: [CLD-CMP-9]
     frameworks:
       secnumcloud_3_2: ["19.1", "19.5"]
       anssi_bp_028: ["R12"]
