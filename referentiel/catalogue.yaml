@@ -1,22 +1,26 @@
-# Catalogue des contrôles de posture transposés — LISTE COMPLÈTE (roadmap).
+# Catalogue des contrôles de posture — backlog de TRI (pas une roadmap souveraine).
 #
-# Codes agnostiques dérivés du corpus de checks de posture des services
-# mappables (réseau/compute/stockage/iam/kubernetes/loadbalancer). C'est la
-# liste cible exhaustive ; chaque entrée est à TRIER contre les contrats réels
-# (referentiel/contrats-api.yaml) avant de devenir un contrôle actif.
+# Codes agnostiques dérivés d'un corpus de checks de posture cloud (réseau/compute/
+# stockage/iam/kubernetes/loadbalancer). ATTENTION : ce corpus vient largement de la
+# littérature CSPM centrée AWS (Prowler). Une entrée `a_trier` n'est PAS un contrôle
+# souverain promis : elle DOIT être validée contre le contrat d'API réel d'un provider
+# souverain avant tout, et beaucoup n'ont aucun équivalent chez Exoscale/Outscale/Scaleway.
+# Les concepts strictement AWS (Bedrock, SageMaker, CloudShell, CloudTrail, ALB/NLB/ACM/WAF,
+# Transit Gateway, Elastic IP/Shodan, VPC endpoints…) ont été RETIRÉS de ce backlog : ils
+# n'ont pas leur place dans une roadmap souveraine. Ce qui reste est « candidat à trier »,
+# pas « prévu ».
 #
 # statut :
 #   implemente : contrôle actif dans controles.yaml (règle + exigence SCSL).
-#   a_trier    : à valider contre le contrat d'API du/des provider(s), puis
-#                normaliser et rattacher à une exigence SCSL CLD-* (jamais
-#                supposer applicable ni inventer de CLD).
+#   a_trier    : candidat à valider contre le contrat d'API du/des provider(s) souverain(s),
+#                puis normaliser et rattacher à une exigence SCSL CLD-* (jamais supposer
+#                applicable ni inventer de CLD ; beaucoup seront écartés faute d'équivalent).
 # Le titre FR et le mapping SCSL/frameworks sont rédigés au passage en actif.
 #
-# Total : 168 contrôles (10 implémentés, 158 à trier).
+# Total : 152 candidats (11 implémentés, 141 à trier) — après retrait des checks AWS-only.
 catalogue:
 
   # ── chiffrement ──
-  - { code: loadbalancer_alb_drop_invalid_header_fields_enabled, severite: medium, statut: a_trier }
   - { code: loadbalancer_connection_draining_enabled, severite: medium, statut: a_trier }
   - { code: loadbalancer_cross_zone_load_balancing_enabled, severite: medium, statut: a_trier }
   - { code: loadbalancer_deletion_protection, severite: medium, statut: a_trier }
@@ -26,10 +30,7 @@ catalogue:
   - { code: loadbalancer_is_in_multiple_az, severite: medium, statut: a_trier }
   - { code: loadbalancer_listeners_underneath, severite: medium, statut: a_trier }
   - { code: loadbalancer_logging_enabled, severite: medium, statut: implemente }
-  - { code: loadbalancer_nlb_tls_termination_enabled, severite: medium, statut: a_trier }
   - { code: loadbalancer_ssl_listeners, severite: medium, statut: implemente }
-  - { code: loadbalancer_ssl_listeners_use_acm_certificate, severite: medium, statut: a_trier }
-  - { code: loadbalancer_waf_acl_attached, severite: medium, statut: a_trier }
 
   # ── compute ──
   - { code: compute_image_public, severite: critical, statut: a_trier }
@@ -82,7 +83,6 @@ catalogue:
   - { code: iam_group_administrator_access_policy, severite: high, statut: a_trier }
   - { code: iam_inline_policy_allows_privilege_escalation, severite: high, statut: a_trier }
   - { code: iam_inline_policy_no_administrative_privileges, severite: critical, statut: a_trier }
-  - { code: iam_inline_policy_no_full_access_to_cloudtrail, severite: high, statut: a_trier }
   - { code: iam_inline_policy_no_full_access_to_kms, severite: medium, statut: a_trier }
   - { code: iam_inline_policy_no_wildcard_marketplace_subscribe, severite: medium, statut: a_trier }
   - { code: iam_no_custom_policy_permissive_role_assumption, severite: high, statut: a_trier }
@@ -97,11 +97,8 @@ catalogue:
   - { code: iam_password_policy_uppercase, severite: medium, statut: a_trier }
   - { code: iam_policy_allows_privilege_escalation, severite: high, statut: a_trier }
   - { code: iam_policy_attached_only_to_group_or_roles, severite: low, statut: a_trier }
-  - { code: iam_policy_cloudshell_admin_not_attached, severite: medium, statut: a_trier }
-  - { code: iam_policy_no_full_access_to_cloudtrail, severite: medium, statut: a_trier }
   - { code: iam_policy_no_full_access_to_kms, severite: medium, statut: a_trier }
   - { code: iam_policy_no_wildcard_marketplace_subscribe, severite: medium, statut: a_trier }
-  - { code: iam_role_access_not_stale_to_bedrock, severite: medium, statut: a_trier }
   - { code: iam_role_administratoraccess_policy, severite: high, statut: a_trier }
   - { code: iam_role_cross_account_readonlyaccess_policy, severite: high, statut: a_trier }
   - { code: iam_role_cross_service_confused_deputy_prevention, severite: high, statut: a_trier }
@@ -111,8 +108,6 @@ catalogue:
   - { code: iam_rotate_access_key_90_days, severite: medium, statut: a_trier }
   - { code: iam_securityaudit_role_created, severite: low, statut: a_trier }
   - { code: iam_support_role_created, severite: low, statut: a_trier }
-  - { code: iam_user_access_not_stale_to_bedrock, severite: medium, statut: a_trier }
-  - { code: iam_user_access_not_stale_to_sagemaker, severite: medium, statut: a_trier }
   - { code: iam_user_administrator_access_policy, severite: critical, statut: a_trier }
   - { code: iam_user_hardware_mfa_enabled, severite: high, statut: a_trier }
   - { code: iam_user_mfa_enabled_console_access, severite: high, statut: a_trier }
@@ -123,12 +118,7 @@ catalogue:
   # ── reseau ──
   - { code: network_client_vpn_endpoint_connection_logging_enabled, severite: low, statut: a_trier }
   - { code: network_different_regions, severite: medium, statut: a_trier }
-  - { code: network_elastic_ip_shodan, severite: medium, statut: a_trier }
-  - { code: network_elastic_ip_unassigned, severite: low, statut: a_trier }
-  - { code: network_endpoint_connections_trust_boundaries, severite: high, statut: a_trier }
-  - { code: network_endpoint_for_ec2_enabled, severite: medium, statut: a_trier }
   - { code: network_endpoint_multi_az_enabled, severite: medium, statut: a_trier }
-  - { code: network_endpoint_services_allowed_principals_trust_boundaries, severite: high, statut: a_trier }
   - { code: network_flow_logs_enabled, severite: medium, statut: a_trier }
   - { code: network_networkacl_allow_ingress_any_port, severite: high, statut: a_trier }
   - { code: network_networkacl_allow_ingress_tcp_port_22, severite: medium, statut: a_trier }
@@ -160,7 +150,6 @@ catalogue:
   - { code: network_subnet_different_az, severite: medium, statut: a_trier }
   - { code: network_subnet_no_public_ip_by_default, severite: high, statut: a_trier }
   - { code: network_subnet_separate_private_public, severite: medium, statut: a_trier }
-  - { code: network_transitgateway_auto_accept_vpc_attachments, severite: high, statut: a_trier }
   - { code: network_vpn_connection_tunnels_up, severite: medium, statut: a_trier }
 
   # ── stockage ──
