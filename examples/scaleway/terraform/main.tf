@@ -39,6 +39,19 @@ resource "scaleway_instance_security_group" "open_default" {
   outbound_default_policy = "accept"
 }
 
+# ✗ ACL de base de données managée autorisant 0.0.0.0/0 : base joignable depuis Internet
+#   → database_service_not_open_to_internet (CLD-NET-1)
+#   Forme reprise de scaleway/dagster-scaleway et Qovery/engine (acl_rules ip=0.0.0.0/0).
+#   instance_id littéral : aucune instance (ni mot de passe) provisionnée pour le plan.
+resource "scaleway_rdb_acl" "public_db" {
+  instance_id = "fr-par/11111111-1111-1111-1111-111111111111"
+
+  acl_rules {
+    ip          = "0.0.0.0/0"
+    description = "ouvert à Internet"
+  }
+}
+
 # ✗ Bucket exposé publiquement (ACL canned public-read)
 #   → objectstorage_bucket_public_access
 resource "scaleway_object_bucket" "backups" {

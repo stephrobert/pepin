@@ -149,6 +149,19 @@ mapping_terraform:
         security_group_id: name
         inbound_default_policy: inbound_default_policy
 
+    # ACL d'une base de données managée (RDB) → managed_database. Chaque acl_rule
+    # autorise un CIDR ; ip_filter agrège les CIDR (transform list). Un 0.0.0.0/0
+    # ⇒ base joignable depuis Internet (CLD-NET-1).
+    - tf_type: scaleway_rdb_acl
+      type: managed_database
+      items: acl_rules[*]
+      id: database_id
+      map:
+        database_id: _parent.instance_id
+        ip_filter: ip
+      transforms:
+        ip_filter: [list]
+
     - tf_type: scaleway_object_bucket_acl
       type: object_storage_bucket
       id: name
@@ -233,6 +246,15 @@ contrat:
       mapping:
         security_group_id: nom du security group (id null au stade plan)
         inbound_default_policy: InboundDefaultPolicy (accept|drop)
+    managed_database:
+      etat: verifie
+      source: >
+        Terraform scaleway_rdb_acl (mapping validé par un plan réel : acl_rules[].ip
+        agrégés en ip_filter ; formes reprises de scaleway/dagster-scaleway et
+        Qovery/engine, ip=0.0.0.0/0). API live api/rdb/v1 ACLRule.IP à câbler en collecte.
+      mapping:
+        database_id: instance_id du RDB parent
+        ip_filter: '[acl_rules[].ip] (CIDR autorisés ; transform list)'
     compute_instance:
       etat: verifie
       source: api/instance/v1 Server
