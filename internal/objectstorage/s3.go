@@ -77,30 +77,33 @@ func collectBucket(ctx context.Context, client *s3.Client, provider, region, nam
 		}
 		attrs["tags"] = tags
 	}
-	// Object Lock (immutabilité/WORM, CLD-STO-8) : absent ⇒ non activé (l'API
-	// renvoie une erreur si le verrou n'a jamais été configuré sur le bucket).
-	attrs["object_lock_enabled"] = false
-	if ol, err := client.GetObjectLockConfiguration(ctx, &s3.GetObjectLockConfigurationInput{Bucket: &name}); err == nil &&
-		ol.ObjectLockConfiguration != nil {
-		attrs["object_lock_enabled"] = ol.ObjectLockConfiguration.ObjectLockEnabled == types.ObjectLockEnabledEnabled
-	}
+	// Object Lock (immutabilité/WORM, CLD-STO-8). On distingue TROIS cas pour ne pas produire
+	// un faux FAIL : verrou lu (valeur réelle), « jamais configuré » (NotFound ⇒ non activé),
+	// ou ERREUR de collecte (403/timeout ⇒ attribut ABSENT ⇒ contrôle non-évalué, pas un FAIL).
+	if ol, err := client.GetObjectLockConfiguration(ctx, &s3.GetObjectLockConfigurationInput{Bucket: &name}); err == nil {
+		attrs["object_lock_enabled"] = ol.ObjectLockConfiguration != nil &&
+			ol.ObjectLockConfiguration.ObjectLockEnabled == types.ObjectLockEnabledEnabled
+	} else if isNotConfigured(err) {
+		attrs["object_lock_enabled"] = false
+	} // sinon : attribut non renseigné → garde de capacité → not-evaluated.
 
-	// Clé de chiffrement gérée par le client (SSE-KMS / BYOK, CLD-CHF-4) : renseigné
-	// UNIQUEMENT pour les providers exposant cette capacité (sseKMS). Le chiffrement
-	// par défaut du bucket utilise une clé client quand la règle par défaut porte
-	// SSEAlgorithm=aws:kms + KMSMasterKeyID (GetBucketEncryption).
+	// Clé de chiffrement gérée par le client (SSE-KMS / BYOK, CLD-CHF-4) : renseigné UNIQUEMENT
+	// pour les providers exposant cette capacité (sseKMS). Même discrimination d'erreur.
 	if sseKMS {
-		attrs["sse_kms_enabled"] = false
-		if enc, err := client.GetBucketEncryption(ctx, &s3.GetBucketEncryptionInput{Bucket: &name}); err == nil &&
-			enc.ServerSideEncryptionConfiguration != nil {
-			for _, rule := range enc.ServerSideEncryptionConfiguration.Rules {
-				d := rule.ApplyServerSideEncryptionByDefault
-				if d != nil && d.SSEAlgorithm == types.ServerSideEncryptionAwsKms {
-					attrs["sse_kms_enabled"] = true
-					attrs["kms_key_id"] = deref(d.KMSMasterKeyID)
+		if enc, err := client.GetBucketEncryption(ctx, &s3.GetBucketEncryptionInput{Bucket: &name}); err == nil {
+			attrs["sse_kms_enabled"] = false
+			if enc.ServerSideEncryptionConfiguration != nil {
+				for _, rule := range enc.ServerSideEncryptionConfiguration.Rules {
+					d := rule.ApplyServerSideEncryptionByDefault
+					if d != nil && d.SSEAlgorithm == types.ServerSideEncryptionAwsKms {
+						attrs["sse_kms_enabled"] = true
+						attrs["kms_key_id"] = deref(d.KMSMasterKeyID)
+					}
 				}
 			}
-		}
+		} else if isNotConfigured(err) {
+			attrs["sse_kms_enabled"] = false
+		} // sinon : attribut non renseigné → not-evaluated.
 	}
 
 	return model.Resource{Provider: provider, Type: "object_storage_bucket", ID: name, Name: name, Region: region, Attributes: attrs}
@@ -237,4 +240,20 @@ func deref(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// isNotConfigured distingue « la fonctionnalité n'a jamais été configurée sur ce bucket »
+// (réponse LÉGITIME de l'API : le verrou/chiffrement est simplement absent = non activé) d'une
+// erreur de collecte (403/timeout). Seul le premier cas autorise à conclure « non activé » ;
+// une erreur réelle laisse l'attribut absent, pour que le contrôle soit non-évalué, pas en échec.
+func isNotConfigured(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "NotFoundError") ||
+		strings.Contains(msg, "ConfigurationNotFound") ||
+		strings.Contains(msg, "ObjectLockConfigurationNotFound") ||
+		strings.Contains(msg, "NoSuchObjectLockConfiguration") ||
+		strings.Contains(msg, "ServerSideEncryptionConfigurationNotFound")
 }
