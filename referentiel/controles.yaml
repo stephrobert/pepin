@@ -554,7 +554,7 @@ controles:
   - code: objectstorage_bucket_versioning_enabled
     famille: stockage
     titre: Versioning du stockage objet désactivé
-    severite: high
+    severite: medium
     description: >
       Un bucket de stockage objet n'a pas le versioning activé : une suppression
       ou un écrasement (accidentel ou malveillant, ex. rançongiciel) est

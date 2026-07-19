@@ -126,6 +126,58 @@ func TestCatalogueConsistency(t *testing.T) {
 	}
 }
 
+// TestRegoSeverityMatchesReferentiel : la sévérité émise par une règle (.rego) doit
+// être IDENTIQUE à la sévérité du contrôle dans controles.yaml. Les deux existent
+// (le .rego alimente scankit/engine, le référentiel alimente scoring/assess) : une
+// divergence ment au lecteur d'un des deux rapports. Ce test fige l'unicité de fait.
+func TestRegoSeverityMatchesReferentiel(t *testing.T) {
+	entries, err := os.ReadDir(rulesDir)
+	if err != nil {
+		t.Fatalf("lecture de %s : %v", rulesDir, err)
+	}
+	reCode := regexp.MustCompile(`"code":\s*"([a-z0-9_]+)"`)
+	reSev := regexp.MustCompile(`"severity":\s*"(critical|high|medium|low)"`)
+	// Forme helper positionnelle : _xxx(r, "code", "severity", …).
+	reHelper := regexp.MustCompile(`\(r,\s*"([a-z0-9_]+)",\s*"(critical|high|medium|low)"`)
+
+	sevOf := map[string]string{}
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".rego") || strings.HasSuffix(e.Name(), "_test.rego") {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(rulesDir, e.Name()))
+		if err != nil {
+			t.Fatalf("lecture de %s : %v", e.Name(), err)
+		}
+		text := string(b)
+		for _, m := range reHelper.FindAllStringSubmatch(text, -1) {
+			sevOf[m[1]] = m[2]
+		}
+		// Forme objet : apparier chaque "code" avec la "severity" suivante (même
+		// objet finding ; le code précède toujours la sévérité dans un objet).
+		codeLocs := reCode.FindAllStringSubmatchIndex(text, -1)
+		sevLocs := reSev.FindAllStringSubmatchIndex(text, -1)
+		for _, c := range codeLocs {
+			code := text[c[2]:c[3]]
+			for _, s := range sevLocs {
+				if s[0] > c[1] {
+					sevOf[code] = text[s[2]:s[3]]
+					break
+				}
+			}
+		}
+	}
+	for code, sev := range sevOf {
+		ctl, ok := byCode[code]
+		if !ok {
+			continue // couvert par TestRuleCodesAreControlled
+		}
+		if ctl.Severite != sev {
+			t.Errorf("sévérité divergente %q : rego=%s, controles.yaml=%s", code, sev, ctl.Severite)
+		}
+	}
+}
+
 // frameworksDir : catalogues de normes (une vue par norme), relatif au package.
 const frameworksDir = "frameworks"
 
