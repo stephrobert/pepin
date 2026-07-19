@@ -1,5 +1,9 @@
 # Catalogue des contrôles de posture — backlog de TRI (pas une roadmap souveraine).
 #
+# NB : ceci est une liste de TRIAGE PARTIELLE (152 candidats), distincte des ~50 contrôles
+# ACTIFS de controles.yaml : les « 11 implémentés » ci-dessous sont les candidats de CETTE
+# liste qui ont été implémentés, pas le total des contrôles actifs (beaucoup n'y figurent pas).
+#
 # Codes agnostiques dérivés d'un corpus de checks de posture cloud (réseau/compute/
 # stockage/iam/kubernetes/loadbalancer). ATTENTION : 
 # Une entrée `a_trier` n'est PAS un contrôle
