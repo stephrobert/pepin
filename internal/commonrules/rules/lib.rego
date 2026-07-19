@@ -26,6 +26,17 @@ _cidr_prefix(cidr) := n if {
 	n := to_number(parts[1])
 }
 
+# _eval_now_ns — instant d'ÉVALUATION en nanosecondes. Si le scan a injecté
+# `input.evaluated_at` (RFC3339, horodatage du run porté par le bundle), on l'utilise : une
+# règle sensible au temps (fenêtres de fraîcheur) redonne alors le MÊME verdict au rejeu du
+# bundle (reproductibilité/opposabilité). À défaut (opa test direct), on retombe sur l'horloge.
+_eval_now_ns := time.parse_rfc3339_ns(ts) if {
+	ts := object.get(input, "evaluated_at", "")
+	ts != ""
+}
+
+_eval_now_ns := time.now_ns() if object.get(input, "evaluated_at", "") == ""
+
 # truthy — valeur booléenne vraie, que la source la donne en bool (API live, ex. OAPI
 # *bool) OU en chaîne « true » (plan Terraform : certains attributs de schéma sont des
 # strings). Insensible à la casse. false / "false" / absent → faux.

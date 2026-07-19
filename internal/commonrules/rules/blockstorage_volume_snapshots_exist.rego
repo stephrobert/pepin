@@ -34,5 +34,5 @@ _has_recent_snapshot(vid) if {
 	date := object.get(s.attributes, "creation_date", "")
 	is_string(date)
 	date != ""
-	time.now_ns() - time.parse_rfc3339_ns(date) <= _recent_window_ns
+	_eval_now_ns - time.parse_rfc3339_ns(date) <= _recent_window_ns
 }

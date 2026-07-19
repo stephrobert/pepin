@@ -38,6 +38,7 @@ var (
 	scanProfile    string
 	scanS3Endpoint string
 	scanSeal       string
+	scanTimestamp  string // instant d'évaluation (RFC3339 UTC), partagé input.evaluated_at + Run.Timestamp
 )
 
 var scanCmd = &cobra.Command{
@@ -60,6 +61,7 @@ var scanCmd = &cobra.Command{
 		if !scanLive && path == "" {
 			return fmt.Errorf("préciser un fichier (export JSON ou plan Terraform), ou utiliser --live")
 		}
+		scanTimestamp = time.Now().UTC().Format(time.RFC3339) // un seul instant, partagé input + run
 
 		opts := scanReportOptions(name, scanSource(path))
 
@@ -76,6 +78,11 @@ var scanCmd = &cobra.Command{
 		// Injecte la ressource synthétique de souveraineté (CLD-GVN-4), métadonnée
 		// du fournisseur indépendante de l'inventaire collecté/importé.
 		input = withGovernance(p, input)
+		// Horodatage d'évaluation porté PAR l'input : les règles sensibles au temps s'y
+		// ancrent (au lieu de l'horloge), donc le bundle (input.json) rejoue le même verdict.
+		if m, ok := input.(map[string]any); ok {
+			m["evaluated_at"] = scanTimestamp
+		}
 
 		// Toutes les règles sont communes ; le provider ne fournit que la
 		// collecte (la source). On peut ajouter des règles externes via --policy-dir.
@@ -291,7 +298,7 @@ func buildRun(provider string, rtypes map[string]bool) assessment.Run {
 		Tool:      assessment.Component{Name: "pepin", Version: version},
 		Ruleset:   assessment.Component{Name: "pepin-config", Digest: configDigest()},
 		Target:    assessment.Target{Provider: provider, Region: scanRegion, Platform: provider},
-		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		Timestamp: scanTimestamp,
 		Source:    source,
 		Scope:     assessment.Scope{Included: included},
 	}

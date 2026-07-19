@@ -26,6 +26,32 @@ test_volume_recent_snapshot_ok if {
 	count({f | some f in deny; f.code == "blockstorage_volume_snapshots_exist"}) == 0 with input as doc
 }
 
+# ✗ Reproductibilité : avec un instant d'évaluation FIGÉ (evaluated_at) et un snapshot vieux
+#   de plus de 7 jours par rapport à cet instant → finding DÉTERMINISTE (rejeu du bundle).
+test_volume_snapshot_window_uses_evaluated_at if {
+	doc := {
+		"evaluated_at": "2026-07-19T12:00:00Z",
+		"resources": [
+			{"provider": "outscale", "type": "blockstorage_volume", "id": "vol-1", "attributes": {"volume_id": "vol-1", "state": "in-use"}},
+			{"provider": "outscale", "type": "blockstorage_snapshot", "id": "snap-1", "attributes": {"volume_id": "vol-1", "creation_date": "2026-07-01T00:00:00Z"}},
+		],
+	}
+	some f in deny with input as doc
+	f.code == "blockstorage_volume_snapshots_exist"
+}
+
+# ✓ Même instant figé, snapshot dans la fenêtre (2 jours avant) → pas de finding.
+test_volume_snapshot_recent_with_evaluated_at if {
+	doc := {
+		"evaluated_at": "2026-07-19T12:00:00Z",
+		"resources": [
+			{"provider": "outscale", "type": "blockstorage_volume", "id": "vol-1", "attributes": {"volume_id": "vol-1", "state": "in-use"}},
+			{"provider": "outscale", "type": "blockstorage_snapshot", "id": "snap-1", "attributes": {"volume_id": "vol-1", "creation_date": "2026-07-17T12:00:00Z"}},
+		],
+	}
+	count({f | some f in deny; f.code == "blockstorage_volume_snapshots_exist"}) == 0 with input as doc
+}
+
 test_volume_available_ok if {
 	count({f | some f in deny; f.code == "blockstorage_volume_snapshots_exist"}) == 0 with input as {"resources": [{"provider": "outscale", "type": "blockstorage_volume", "id": "vol-1", "attributes": {"volume_id": "vol-1", "state": "available"}}]}
 }
