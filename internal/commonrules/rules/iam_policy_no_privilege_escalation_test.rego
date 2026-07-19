@@ -21,6 +21,22 @@ test_benign_action_ok if {
 	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _pol([{"effect": "Allow", "actions": ["s3:GetObject"], "resources": ["*"]}])
 }
 
+# ✗ M5 : joker de service d'identité `eim:*` (resource scopée) → escalade détectée.
+test_eim_service_wildcard_denied if {
+	some f in deny with input as _pol([{"effect": "Allow", "actions": ["eim:*"], "resources": ["orn:scoped"]}])
+	f.code == "iam_policy_no_privilege_escalation"
+}
+
+test_iam_service_wildcard_denied if {
+	some f in deny with input as _pol([{"effect": "Allow", "actions": ["iam:*"], "resources": ["orn:scoped"]}])
+	f.code == "iam_policy_no_privilege_escalation"
+}
+
+# ✓ joker d'un service NON-identité (s3:*) → pas d'escalade (couvert ailleurs si Resource=*).
+test_non_identity_service_wildcard_ok if {
+	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _pol([{"effect": "Allow", "actions": ["s3:*"], "resources": ["orn:scoped"]}])
+}
+
 # ✓ action d'escalade en Deny → pas de finding.
 test_escalation_denied_effect_ok if {
 	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _pol([{"effect": "Deny", "actions": ["AttachUserPolicy"], "resources": ["*"]}])

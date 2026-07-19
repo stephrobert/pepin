@@ -14,7 +14,7 @@ import rego.v1
 deny contains f if {
 	some r in input.resources
 	r.type == "api_access_policy"
-	object.get(r.attributes, "require_trusted_env", true) == false
+	not truthy(object.get(r.attributes, "require_trusted_env", true))
 	name := object.get(r, "name", r.id)
 	f := {
 		"code": "iam_account_mfa_enforced",

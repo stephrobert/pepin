@@ -17,7 +17,17 @@ resources_of_type(t) := [r | some r in input.resources; r.type == t]
 # quelle que soit l'écriture (`0.0.0.0/0`, `::/0`, `::0/0`, `0000::/0`). Un /1 (IPv4
 # `0.0.0.0/1`|`128.0.0.0/1`, ou IPv6 `::/1`) couvre la MOITIÉ de l'espace d'adressage :
 # contournement CSPM connu, jamais légitime comme source « restreinte » → également public.
-is_public_cidr(cidr) if _cidr_prefix(cidr) <= 1
+is_public_cidr(cidr) if _cidr_prefix(trim_space(cidr)) <= 1
+
+# Littéraux « toute origine » SANS masque (certaines API/UI : une source vide/`0.0.0.0`/`*`).
+is_public_cidr(cidr) if trim_space(cidr) in {"0.0.0.0", "::", "::0", "*"}
+
+# IPv6 mappé-IPv4 couvrant TOUT l'espace IPv4 (`::ffff:0.0.0.0/<=96`) : contournement connu.
+is_public_cidr(cidr) if {
+	t := trim_space(cidr)
+	startswith(lower(t), "::ffff:0.0.0.0")
+	_cidr_prefix(t) <= 96
+}
 
 _cidr_prefix(cidr) := n if {
 	parts := split(cidr, "/")

@@ -12,7 +12,7 @@ import rego.v1
 deny contains f if {
 	some r in input.resources
 	r.type == "iam_user"
-	object.get(r.attributes, "mfa_enabled", true) == false
+	not truthy(object.get(r.attributes, "mfa_enabled", true))
 	name := object.get(r.attributes, "username", object.get(r, "name", r.id))
 	f := {
 		"code": "iam_user_mfa_enabled",

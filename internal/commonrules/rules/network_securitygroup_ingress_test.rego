@@ -75,6 +75,18 @@ test_ipv6_half_internet_denied if {
 	f.code == _ssh
 }
 
+# ✗ IPv6 mappé-IPv4 couvrant tout l'IPv4 (::ffff:0.0.0.0/96) → public (contournement).
+test_ipv4_mapped_ipv6_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["::ffff:0.0.0.0/96"], "port_from": 22, "port_to": 22})
+	f.code == _ssh
+}
+
+# ✗ Littéral « toute origine » sans masque + espaces parasites → public.
+test_bare_any_with_spaces_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": [" 0.0.0.0 "], "port_from": 22, "port_to": 22})
+	f.code == _ssh
+}
+
 # ✗ Sentinelle -1/-1 (Outscale OAPI = tous ports) ouverte à Internet → all/any TCP high_risk.
 test_port_sentinel_minus_one_denied if {
 	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["0.0.0.0/0"], "port_from": -1, "port_to": -1})

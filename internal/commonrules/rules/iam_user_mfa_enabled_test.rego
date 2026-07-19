@@ -18,3 +18,9 @@ test_user_with_mfa_ok if {
 test_user_mfa_unknown_skipped if {
 	count([f | some f in deny; f.code == "iam_user_mfa_enabled"]) == 0 with input as {"resources": [{"provider": "outscale", "type": "iam_user", "id": "u-3", "name": "carol", "attributes": {}}]}
 }
+
+# ✗ Coercition : source chaîne « false » (plan Terraform) → toujours détecté.
+test_user_mfa_string_false_denied if {
+	some f in deny with input as {"resources": [{"provider": "scaleway", "type": "iam_user", "id": "u-4", "attributes": {"mfa_enabled": "false"}}]}
+	f.code == "iam_user_mfa_enabled"
+}

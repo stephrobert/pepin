@@ -9,6 +9,7 @@ import rego.v1
 
 deny contains f if {
 	some vm in resources_of_type("compute_instance")
+
 	# Garde de capacité : l'attribut a été COLLECTÉ. Sur un plan Terraform, security_group_ids
 	# référence souvent un SG créé dans le même plan (« known after apply ») → absent des
 	# planned_values ; sans cette garde, une VM pourtant rattachée serait faussement « sans SG ».

@@ -40,6 +40,14 @@ _escalation_action(a) if {
 	contains(lower(a), esc)
 }
 
+# Joker de SERVICE d'identité (`eim:*`, `iam:*`) : il confère TOUTES les actions de gestion
+# d'identité (dont attacher une policy / créer une clé) → auto-élévation, même si la Resource
+# est scopée (donc non attrapé par iam_policy_no_wildcard_resource).
+_escalation_action(a) if {
+	some svc in {"eim", "iam"}
+	lower(a) == sprintf("%s:*", [svc])
+}
+
 # Modèle par rôle (ex. Exoscale, policy CEL) : un rôle ÉDITABLE dont la policy
 # autorise la gestion des rôles IAM (attribut dérivé manages_iam) permet
 # l'auto-élévation. Les rôles prédéfinis (non éditables) sont hors scope.

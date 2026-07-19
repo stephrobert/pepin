@@ -11,7 +11,7 @@ import rego.v1
 
 deny contains f if {
 	some r in resources_of_type("blockstorage_snapshot")
-	object.get(r.attributes, "global_permission", false) == true
+	truthy(object.get(r.attributes, "global_permission", false))
 	id := object.get(r.attributes, "snapshot_id", r.id)
 	f := {
 		"code": "blockstorage_snapshot_not_public",
