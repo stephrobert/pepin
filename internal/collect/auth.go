@@ -20,7 +20,7 @@ import (
 // emptyPayloadHash est le SHA-256 d'un corps vide (requêtes GET sans body).
 const emptyPayloadHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
-// SigV4Auth signe les requêtes en AWS Signature V4. Couvre l'API Outscale (OAPI,
+// SigV4Auth signe les requêtes en Signature V4 (SigV4). Couvre l'API Outscale (OAPI,
 // service "oapi") et tout stockage objet S3-compatible (service "s3"). Le SDK
 // natif Outscale (osc-sdk-go) signe en SigV4 ; on reproduit la même signature.
 type SigV4Auth struct {

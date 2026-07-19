@@ -48,14 +48,14 @@
   ancrage: >
     Doc locale : Outscale et Exoscale servent les métadonnées sur http://169.254.169.254
     en clair ; AUCUN n'expose une protection configurable type IMDSv2 (session token),
-    désactivation de l'endpoint hérité, ni hop-limit (concept AWS). Le risque SSRF
+    désactivation de l'endpoint hérité, ni hop-limit (concept d'hyperscaler). Le risque SSRF
     existe mais la PARADE configurable n'existe pas → non vérifiable.
   suite: >
     Angles outillables réels de CMP-2 : (1) aucun secret dans user-data — DÉJÀ couvert
     (compute_instance_no_secrets_in_user_data) ; (2) Exoscale : « instance privée »
     (métadonnées servies via disque read-only, pas le réseau) = atténuation, attribut
     potentiellement vérifiable. NE PAS forger compute_instance_legacy_metadata_endpoint_disabled
-    (sans objet ici). Retirer cet angle AWS de l'outillage CMP-2 dans l'index.
+    (sans objet ici). Retirer cet angle hyperscaler de l'outillage CMP-2 dans l'index.
   source:
     - references/docs/outscale/en-userguide-accessing-the-metadata-and-user-data-of-a-vm-html.md
     - references/docs/exoscale/product-compute-instances-how-to-private-instances.md

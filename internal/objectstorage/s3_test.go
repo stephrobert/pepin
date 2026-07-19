@@ -14,12 +14,12 @@ func TestPolicyAllowsPublic(t *testing.T) {
 			want:   true,
 		},
 		{
-			name:   "principal AWS wildcard object",
+			name:   "principal wildcard (clé S3) objet",
 			policy: `{"Statement":[{"Effect":"Allow","Principal":{"AWS":"*"},"Action":"s3:GetObject"}]}`,
 			want:   true,
 		},
 		{
-			name:   "principal AWS wildcard array",
+			name:   "principal wildcard (clé S3) tableau",
 			policy: `{"Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":"s3:GetObject"}]}`,
 			want:   true,
 		},

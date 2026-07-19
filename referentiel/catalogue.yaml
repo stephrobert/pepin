@@ -1,12 +1,12 @@
 # Catalogue des contrôles de posture — backlog de TRI (pas une roadmap souveraine).
 #
 # Codes agnostiques dérivés d'un corpus de checks de posture cloud (réseau/compute/
-# stockage/iam/kubernetes/loadbalancer). ATTENTION : ce corpus vient largement de la
-# littérature CSPM centrée AWS (Prowler). Une entrée `a_trier` n'est PAS un contrôle
+# stockage/iam/kubernetes/loadbalancer). ATTENTION : 
+# Une entrée `a_trier` n'est PAS un contrôle
 # souverain promis : elle DOIT être validée contre le contrat d'API réel d'un provider
 # souverain avant tout, et beaucoup n'ont aucun équivalent chez Exoscale/Outscale/Scaleway.
-# Les concepts strictement AWS (Bedrock, SageMaker, CloudShell, CloudTrail, ALB/NLB/ACM/WAF,
-# Transit Gateway, Elastic IP/Shodan, VPC endpoints…) ont été RETIRÉS de ce backlog : ils
+# Les concepts propres aux hyperscalers non souverains (services ML managés, consoles cloud,
+# passerelles de transit, IP élastiques, endpoints privés…) ont été RETIRÉS de ce backlog : ils
 # n'ont pas leur place dans une roadmap souveraine. Ce qui reste est « candidat à trier »,
 # pas « prévu ».
 #
@@ -17,7 +17,7 @@
 #                applicable ni inventer de CLD ; beaucoup seront écartés faute d'équivalent).
 # Le titre FR et le mapping SCSL/frameworks sont rédigés au passage en actif.
 #
-# Total : 152 candidats (11 implémentés, 141 à trier) — après retrait des checks AWS-only.
+# Total : 152 candidats (11 implémentés, 141 à trier) — après retrait des checks propres aux hyperscalers non souverains.
 catalogue:
 
   # ── chiffrement ──

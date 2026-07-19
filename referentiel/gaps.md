@@ -49,7 +49,7 @@ kubeconfig** (introspection du cluster), distinct des collecteurs providers actu
 Exigences **organisationnelles, procédurales ou contractuelles** : elles se prouvent par des
 processus, des politiques ou la **qualification SecNumCloud du fournisseur**, jamais par la
 lecture d'une configuration de tenant. Les fabriquer en « contrôles » serait malhonnête (le
-travers Prowler-AWS déjà retiré du catalogue). À traiter par attestation/documentation, pas
+travers déjà retiré du catalogue (checks propres aux hyperscalers non souverains)). À traiter par attestation/documentation, pas
 par une règle.
 
 - **Compute/durcissement** : `CLD-CMP-3` (séparation prod/hors-prod), `CLD-CMP-4` (anti-maliciel),

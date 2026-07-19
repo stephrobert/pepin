@@ -8,7 +8,7 @@ useDefault = true
 
 [allowlist]
 description = "Fake placeholder keys (IMDS/SSRF demo + rule-test fixtures) and the scraped doc cache."
-# Placeholder AWS-shaped keys used to demonstrate detection — obviously fake, never live.
+# Placeholder AKIA-format keys used to demonstrate detection — obviously fake, never live.
 regexes = [
   '''AKIA0123456789ABCDEF''',
   '''AKIAABCDEFGHIJKLMNOP''',

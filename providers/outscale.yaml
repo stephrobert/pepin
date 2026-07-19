@@ -177,7 +177,7 @@ collecte:
         policy_id: _parent.PolicyId
         statements: Body
       transforms:
-        statements: awspolicy
+        statements: iampolicy
 
     # Réseaux → network (cartographie, CLD-NET-5). Net = réseau virtuel Outscale
     # (IpRange en CIDR, State, Tags) ; on y crée des Subnets. Vocabulaire natif OAPI.
@@ -251,7 +251,7 @@ mapping_terraform:
         policy_name: policy_name
         statements: document             # document JSON {Statement:[...]}
       transforms:
-        statements: awspolicy
+        statements: iampolicy
 
     # Réseau → network (cartographie, CLD-NET-5).
     - tf_type: outscale_net

@@ -5,7 +5,7 @@
 #   du contrat) ne produit aucun faux positif.
 #   Type normalisé `blockstorage_volume`, attribut encrypted (bool).
 #
-# Modèle de chiffrement au repos par provider (ANCRÉ — diffère d'AWS EBS où le
+# Modèle de chiffrement au repos par provider (ANCRÉ — le
 # chiffrement est un drapeau optionnel détectable) :
 #   - Exoscale : AES-256 XTS transparent au niveau hyperviseur, TOUJOURS actif,
 #     sans configuration (doc storage/block-storage) → encrypted const true,

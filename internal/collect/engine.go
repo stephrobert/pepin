@@ -343,12 +343,12 @@ func splitRange(s string) (int64, int64, bool) {
 	return from, to, true
 }
 
-// awsPolicyStatements parse un document de politique au format JSON de statements
+// iamPolicyStatements parse un document de politique au format JSON de statements
 // (string {Statement:[{Effect, Action, Resource, NotAction, NotResource}]}) en
 // statements normalisés [{effect, actions[], resources[], not_action[],
 // not_resource[]}]. Helper COMMUN aux providers dont les politiques suivent ce
 // format de statements (ex. Outscale EIM).
-func awsPolicyStatements(v any) []any {
+func iamPolicyStatements(v any) []any {
 	doc, ok := v.(string)
 	if !ok || doc == "" {
 		return []any{}
@@ -359,7 +359,7 @@ func awsPolicyStatements(v any) []any {
 	if json.Unmarshal([]byte(doc), &parsed) != nil || len(parsed.Statement) == 0 {
 		return []any{}
 	}
-	// La grammaire AWS/IAM admet Statement comme TABLEAU ou comme OBJET unique : sans gérer le
+	// La grammaire des policies IAM admet Statement comme TABLEAU ou comme OBJET unique : sans gérer le
 	// second cas, json.Unmarshal échouait et renvoyait [] -> toutes les règles iam_policy
 	// passaient au vert en silence (faux négatif). On accepte les deux formes.
 	var stmts []map[string]any
@@ -523,8 +523,8 @@ func applyTransform(v any, spec any) any {
 		case "range_to":
 			_, to := splitPortRange(v)
 			return to
-		case "awspolicy":
-			return awsPolicyStatements(v)
+		case "iampolicy":
+			return iamPolicyStatements(v)
 		case "list":
 			if arr, ok := v.([]any); ok {
 				return arr // idempotent : déjà une liste

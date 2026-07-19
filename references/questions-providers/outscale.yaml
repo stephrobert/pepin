@@ -1,19 +1,19 @@
 # Questions ouvertes — Outscale. Voir README.md pour le cycle de vie.
 # Principe : décrire Outscale avec son vocabulaire NATIF (Net, Subnet, Net Peering,
-# EIM, OOS, BSU…), jamais « AWS-like / AWS-compatible » (cf. mémoire pas-de-comparaison-aws).
+# EIM, OOS, BSU…), jamais « compatible avec un hyperscaler » (cf. mémoire pas-de-comparaison).
 
 - id: OSC-Q3
-  titre: Format réel des policies EIM (transform awspolicy)
+  titre: Format réel des policies EIM (transform iampolicy)
   controle: CLD-IAM-1 / iam_policy_*
   statut: ouverte
   contexte: >
-    Le mapping outscale.yaml parse les politiques EIM via le transform `awspolicy`
+    Le mapping outscale.yaml parse les politiques EIM via le transform `iampolicy`
     (document JSON statements effect/action/resource) — décrit auparavant à tort
-    comme « AWS-compatible » SANS ancrage sur la doc Outscale.
+    comme « compatible hyperscaler » SANS ancrage sur la doc Outscale.
   a_confirmer: >
     Vérifier sur la doc LOCALE (references/docs/outscale/) la structure EXACTE d'une
     politique EIM Outscale (champs, casse, NotAction/NotResource) et confirmer que le
-    transform awspolicy la couvre fidèlement. Décrire avec le vocabulaire EIM natif,
+    transform iampolicy la couvre fidèlement. Décrire avec le vocabulaire EIM natif,
     pas par référence à un autre cloud.
   source:
     - references/docs/outscale/   # pages EIM / policy à identifier

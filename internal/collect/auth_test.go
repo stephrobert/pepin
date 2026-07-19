@@ -50,7 +50,7 @@ func TestExoscaleAuthSignature(t *testing.T) {
 	}
 }
 
-// Vérifie que SigV4Auth pose une signature AWS V4 valide (en-têtes attendus +
+// Vérifie que SigV4Auth pose une signature SigV4 valide (en-têtes attendus +
 // scope service/région) via le signer officiel aws-sdk-go-v2.
 func TestSigV4AuthHeaders(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "https://api.eu-west-2.outscale.com/api/v1/ReadVms", nil)

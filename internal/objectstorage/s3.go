@@ -22,7 +22,7 @@ import (
 
 // CollectBuckets liste les buckets d'un endpoint S3-compatible et projette
 // chacun dans le modèle normalisé. `provider` étiquette les ressources ;
-// `endpoint` vide = endpoint AWS par défaut (sinon endpoint souverain custom).
+// `endpoint` vide = endpoint S3 par défaut (sinon endpoint souverain custom).
 // `sseKMS` indique que le provider expose le chiffrement par défaut du bucket via
 // une clé client (SSE-KMS) : seul un tel provider renseigne `sse_kms_enabled`
 // (CLD-CHF-4) ; les autres laissent l'attribut absent (capacité inexistante).

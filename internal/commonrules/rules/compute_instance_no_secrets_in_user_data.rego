@@ -60,7 +60,7 @@ _secret_patterns(s) := patterns if {
 	by_regex := {label |
 		some label, re in {
 			# Clés d'accès cloud, y compris SOUVERAINES (préfixes documentés).
-			"clé d'accès AWS/Outscale (AKIA…)": `AKIA[0-9A-Z]{16}`,
+			"clé d'accès Outscale (format AKIA…)": `AKIA[0-9A-Z]{16}`,
 			"clé d'accès Scaleway (SCW…)": `SCW[A-Z0-9]{17,}`,
 			"clé d'accès Exoscale (EXO…)": `EXO[A-Za-z0-9]{16,}`,
 			# Jetons de forge / d'identité fréquemment collés dans le user-data.

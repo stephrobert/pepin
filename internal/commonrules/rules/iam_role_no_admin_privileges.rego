@@ -3,7 +3,7 @@
 #   admin_privileges (bool) = la politique autorise tout par défaut.
 # Ancrage Exoscale : policy CEL du rôle (GET /iam-role). `default-service-strategy`
 #   vaut `allow` ou `deny` ; `allow` = tout autorisé sauf deny ciblés = privilèges
-#   étendus (équivalent CEL du joker admin AWS). Réf : references/docs/exoscale/
+#   étendus (équivalent CEL du joker admin des policies IAM). Réf : references/docs/exoscale/
 #   product-iam-how-to-policy-guide.md. Schéma TF : policy.default_service_strategy.
 # SCSL : CLD-IAM-1 (interdire les identités/clés à privilèges excessifs).
 package pepin.rules
