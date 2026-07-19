@@ -226,7 +226,7 @@ contrat:
         user_data: API séparée (GetServerUserData) — a_verifier
         tags: Tags ([]string « clé=valeur » → {key,value})
     blockstorage_volume:
-      etat: verifie
+      etat: a_verifier
       source: api/block/v1 Volume
       mapping:
         volume_id: ID
@@ -272,7 +272,7 @@ contrat:
         statements: 'MODÈLE DIFFÉRENT : Rule{PermissionSetNames[], PermissionSetsScopeType, ProjectIDs|OrganizationID|AccountRootUserID}.
           Pas d''Action/Resource ; transposition PermissionSets→actions, scope→resources à formaliser avant règle.'
     kubernetes_cluster:
-      etat: verifie
+      etat: a_verifier
       source: api/k8s/v1 Cluster
       mapping:
         name: Name

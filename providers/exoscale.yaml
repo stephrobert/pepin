@@ -384,7 +384,7 @@ contrat:
         CLD-LOG-1 (journalisation) par l''audit SKS (kubernetes_cluster_audit_logging_enabled).'
       source: egoscale/v3 LoadBalancer (NLB) + Services[] — listeners/TLS/logs à mapper
     access_key:
-      etat: verifie
+      etat: a_verifier
       source: 'Schéma iam-api-key = {key, name, role-id} (references/docs/exoscale/reference-api-schemas-iam-api-key.md).
         La clé API Exoscale est PERMANENTE (aucun champ d''expiration propre) et délègue ses droits au RÔLE référencé
         (role-id). IAM-2 (durée de vie) et IAM-4 (restriction IP) s''évaluent donc sur le type iam_role, pas sur la clé.'

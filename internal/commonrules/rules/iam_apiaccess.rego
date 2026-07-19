@@ -39,7 +39,8 @@ deny contains f if {
 # Politique d'accès API sans expiration maximale des clés.
 deny contains f if {
 	some r in resources_of_type("api_access_policy")
-	object.get(r.attributes, "max_access_key_expiration_seconds", 0) <= 0
+	"max_access_key_expiration_seconds" in object.keys(r.attributes) # provider EXPOSANT le réglage
+	object.get(r.attributes, "max_access_key_expiration_seconds", 0) <= 0 # 0 = aucune limite (sémantique OAPI)
 	f := {
 		"code": "iam_apiaccesspolicy_max_key_expiration",
 		"severity": "medium",

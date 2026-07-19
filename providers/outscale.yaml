@@ -337,7 +337,7 @@ contrat:
         policy_name: PolicyName
         statements: 'DÉRIVÉ : Body parsé → [{effect, actions[], resources[], not_action[], not_resource[]}]'
     load_balancer:
-      etat: verifie
+      etat: a_verifier
       source: LoadBalancer
       mapping:
         load_balancer_name: LoadBalancerName

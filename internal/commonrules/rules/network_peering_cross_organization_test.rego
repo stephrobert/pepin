@@ -24,3 +24,8 @@ test_peering_expired_ok if {
 test_peering_unknown_accounts_ok if {
 	count({f | some f in deny; f.code == "network_peering_cross_organization"}) == 0 with input as _peer({"peering_id": "pcx-1", "state": "active"})
 }
+
+# ✓ FP-4 : peering « pending-acceptance » (proposé, non accepté → aucun flux) → aucun finding.
+test_peering_pending_ok if {
+	count({f | some f in deny; f.code == "network_peering_cross_organization"}) == 0 with input as _peer({"peering_id": "pcx-2", "source_account": "111", "accepter_account": "222", "state": "pending-acceptance"})
+}

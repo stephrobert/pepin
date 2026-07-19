@@ -17,7 +17,7 @@ deny contains f if {
 	src != ""
 	acc != ""
 	src != acc
-	not peering_inactive(p)
+	not _peering_inactive(p)
 	f := {
 		"code": "network_peering_cross_organization",
 		"severity": "high",
@@ -29,4 +29,4 @@ deny contains f if {
 }
 
 # Un appairage non actif (rejeté/expiré/supprimé) ne crée pas de flux.
-peering_inactive(p) if object.get(p.attributes, "state", "active") in {"rejected", "failed", "expired", "deleted"}
+_peering_inactive(p) if object.get(p.attributes, "state", "active") in {"rejected", "failed", "expired", "deleted", "pending-acceptance"}

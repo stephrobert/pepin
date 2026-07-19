@@ -34,3 +34,9 @@ test_apiaccesspolicy_no_expiration_denied if {
 test_apiaccesspolicy_expiration_ok if {
 	count({f | some f in deny; f.code == "iam_apiaccesspolicy_max_key_expiration"}) == 0 with input as {"resources": [{"provider": "outscale", "type": "api_access_policy", "id": "pol", "attributes": {"max_access_key_expiration_seconds": 7776000}}]}
 }
+
+# ✓ FP-6 : politique d'accès API n'exposant PAS le réglage d'expiration (clé absente) → aucun
+# finding (garde de capacité ; 0 présent = « aucune limite » reste flaguée).
+test_apiaccesspolicy_expiration_absent_ok if {
+	count({f | some f in deny; f.code == "iam_apiaccesspolicy_max_key_expiration"}) == 0 with input as {"resources": [{"provider": "outscale", "type": "api_access_policy", "id": "ap-1", "attributes": {"name": "default"}}]}
+}

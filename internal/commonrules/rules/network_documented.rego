@@ -10,7 +10,7 @@ import rego.v1
 
 deny contains f if {
 	some n in resources_of_type("network")
-	not network_documented(n)
+	not _network_documented(n)
 	name := object.get(n.attributes, "name", n.id)
 	f := {
 		"code": "network_documented",
@@ -24,4 +24,4 @@ deny contains f if {
 
 # Réseau documenté : porte au moins une étiquette de gouvernance. (Le nom est, selon
 # le provider, un champ natif ou un tag « Name » — on s'appuie donc sur les tags.)
-network_documented(n) if count(object.get(n.attributes, "tags", [])) > 0
+_network_documented(n) if count(object.get(n.attributes, "tags", [])) > 0

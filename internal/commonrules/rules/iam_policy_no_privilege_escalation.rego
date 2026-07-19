@@ -23,7 +23,7 @@ deny contains f if {
 	some s in object.get(p.attributes, "statements", [])
 	lower(object.get(s, "effect", "")) == "allow"
 	some a in object.get(s, "actions", [])
-	escalation_action(a)
+	_escalation_action(a)
 	name := object.get(p.attributes, "policy_name", p.id)
 	f := {
 		"code": "iam_policy_no_privilege_escalation",
@@ -35,7 +35,7 @@ deny contains f if {
 	}
 }
 
-escalation_action(a) if {
+_escalation_action(a) if {
 	some esc in _escalation_actions
 	contains(lower(a), esc)
 }
