@@ -24,6 +24,10 @@ controls:
     title: Encrypt Data on End-User Devices
     description: Appliqué ici aux volumes persistants de VM et aux snapshots.
 
+  - id: "3.10"
+    title: Encrypt Sensitive Data in Transit
+    description: Les données sensibles en transit sont chiffrées (TLS ≥ 1.2, suites robustes).
+
   - id: "3.11"
     title: Encrypt Sensitive Data at Rest
     description: Les données sensibles sont chiffrées au repos (volumes, snapshots, buckets).
@@ -39,6 +43,10 @@ controls:
   - id: "5.3"
     title: Disable Dormant Accounts
     description: Les comptes inactifs sont désactivés automatiquement après une période définie.
+
+  - id: "5.4"
+    title: Restrict Administrator Privileges to Dedicated Administrator Accounts
+    description: Les privilèges d'administration sont réservés à des comptes d'administration dédiés, distincts des comptes d'usage courant.
 
   - id: "5.6"
     title: Centralize Account Management
@@ -71,6 +79,10 @@ controls:
   - id: "7.3"
     title: Perform Automated Operating System Patch Management
     description: Les correctifs de sécurité du système d'exploitation sont appliqués automatiquement dans des délais maîtrisés.
+
+  - id: "7.4"
+    title: Perform Automated Application Patch Management
+    description: Les correctifs de sécurité des applications (dont un plan de contrôle managé) sont appliqués automatiquement.
 
   - id: "8.2"
     title: Collect Audit Logs
