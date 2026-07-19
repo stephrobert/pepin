@@ -47,6 +47,12 @@ func ControlType(code string) string {
 	switch {
 	case strings.HasPrefix(code, "network_securitygroup"):
 		return "security_group_rule"
+	case code == "network_flow_matrix_documented":
+		return "security_group_rule"
+	case code == "network_documented":
+		return "network"
+	case code == "network_peering_cross_organization":
+		return "network_peering"
 	case strings.HasPrefix(code, "compute_instance"):
 		return "compute_instance"
 	case strings.HasPrefix(code, "kubernetes_cluster"):

@@ -100,7 +100,9 @@ controles:
       secnumcloud_3_2: ["9.1", "9.3"]
       cis_controls_v8: ["6.8"]
       iso_27001_2022: ["A.5.15"]
-    fournisseurs: [outscale, exoscale, scaleway]
+    # exoscale retiré : son modèle IAM est CEL (policy embarquée dans iam_role), il ne
+    # collecte pas de type iam_policy — les 3 autres iam_policy_* ne le listent pas non plus.
+    fournisseurs: [outscale, scaleway]
 
   - code: iam_no_root_access_key
     famille: iam

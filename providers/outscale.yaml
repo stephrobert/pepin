@@ -367,6 +367,11 @@ contrat:
       mapping:
         api_access_rule_id: ApiAccessRuleId
         ip_ranges: IpRanges (*[]string)
+    api_access_summary:
+      etat: verifie
+      source: ReadApiAccessRules (agrégat rule_count sur la même réponse que api_access_rule)
+      mapping:
+        rule_count: len(ApiAccessRules)
     api_access_policy:
       etat: verifie
       source: ApiAccessPolicy
