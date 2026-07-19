@@ -10,6 +10,7 @@ import (
 	"os"
 	"runtime/debug"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
@@ -39,6 +40,8 @@ var (
 	scanProfile    string
 	scanS3Endpoint string
 	scanSeal       string
+	scanRedact     bool   // caviarder les valeurs sensibles de l'input.json embarqué
+	scanStrict     bool   // porte CI stricte : échec sur couverture nulle ou écart medium/low
 	scanTimestamp  string // instant d'évaluation (RFC3339 UTC), partagé input.evaluated_at + Run.Timestamp
 )
 
@@ -109,13 +112,24 @@ var scanCmd = &cobra.Command{
 
 		// Bundle de preuve horodaté et hashé (opposabilité : intégrité + non-répudiation).
 		if scanSeal != "" {
-			inputJSON, merr := json.MarshalIndent(input, "", "  ") // l'inventaire EXACT évalué
+			bundleInput := input
+			if scanRedact {
+				// Caviarde les valeurs sensibles (user-data, documents de policy) de l'inventaire
+				// embarqué : un bundle remis à un tiers ne doit pas exfiltrer les secrets détectés.
+				// INCOMPATIBLE avec `verify --re-derive` (la détection ne rejoue pas sur du caviardé)
+				// → un bundle caviardé s'appuie sur la SIGNATURE cosign, pas sur la re-dérivation.
+				bundleInput = redactInventory(input)
+			}
+			inputJSON, merr := json.MarshalIndent(bundleInput, "", "  ")
 			if merr != nil {
 				return fmt.Errorf("sérialisation de l'inventaire évalué : %w", merr)
 			}
 			cs, err := assess.WriteBundle(scanSeal, asmt, inputJSON)
 			if err != nil {
 				return err
+			}
+			if !scanRedact {
+				_, _ = fmt.Fprintln(os.Stderr, "pepin: ⚠ input.json embarque l'inventaire BRUT (peut contenir des secrets : user-data, policies). Traiter le bundle comme SENSIBLE, ou utiliser --redact pour le partager.")
 			}
 			_, _ = fmt.Fprintf(os.Stderr, "pepin: bundle de preuve écrit dans %s — sceller : cosign sign-blob %s\n", scanSeal, cs)
 		}
@@ -149,8 +163,90 @@ var scanCmd = &cobra.Command{
 		if !res.Conforme {
 			os.Exit(1)
 		}
+		// --strict : porte CI honnête. Sort ≠ 0 si un scan n'a RIEN mesuré (couverture nulle hors
+		// gouvernance) ou s'il subsiste des écarts medium/low (que le code de sortie normal ignore).
+		if scanStrict && (evaluatedNonGov(asmt) == 0 || res.Medium+res.Low > 0) {
+			os.Exit(3)
+		}
 		return nil
 	},
+}
+
+// sensitiveAttrs : attributs dont la VALEUR peut porter un secret et qu'on caviarde dans le
+// bundle partageable (l'outil détecte les secrets ; il ne doit pas les ré-exfiltrer).
+var sensitiveAttrs = map[string]bool{
+	"user_data": true, "document": true, "statements": true, "policy": true,
+}
+
+// redactInventory retourne une COPIE de l'inventaire dont les valeurs des attributs sensibles
+// sont remplacées par une empreinte (le finding reste, la valeur brute disparaît). Ne mute pas
+// l'input évalué (la détection a déjà eu lieu en amont).
+func redactInventory(input any) any {
+	m, ok := input.(map[string]any)
+	if !ok {
+		return input
+	}
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	redactAttrs := func(attrs map[string]any) map[string]any {
+		ac := make(map[string]any, len(attrs))
+		for k, v := range attrs {
+			if sensitiveAttrs[k] && v != nil {
+				b, _ := json.Marshal(v)
+				sum := sha256.Sum256(b)
+				ac[k] = "[REDACTED sha256:" + hex.EncodeToString(sum[:])[:16] + "]"
+			} else {
+				ac[k] = v
+			}
+		}
+		return ac
+	}
+	switch rs := m["resources"].(type) {
+	case []model.Resource: // source live/terraform (typée)
+		nr := make([]model.Resource, len(rs))
+		for i, r := range rs {
+			r.Attributes = redactAttrs(r.Attributes)
+			nr[i] = r
+		}
+		out["resources"] = nr
+	case []any: // source export JSON générique
+		nr := make([]any, len(rs))
+		for i, r := range rs {
+			rm, ok := r.(map[string]any)
+			if !ok {
+				nr[i] = r
+				continue
+			}
+			rc := make(map[string]any, len(rm))
+			for k, v := range rm {
+				rc[k] = v
+			}
+			if attrs, ok := rm["attributes"].(map[string]any); ok {
+				rc["attributes"] = redactAttrs(attrs)
+			}
+			nr[i] = rc
+		}
+		out["resources"] = nr
+	default:
+		return input
+	}
+	return out
+}
+
+// evaluatedNonGov compte les contrôles réellement mesurés (pass/fail) hors gouvernance.
+func evaluatedNonGov(asmt assessment.Assessment) int {
+	n := 0
+	for _, r := range asmt.Results {
+		if strings.HasPrefix(r.Control, "governance_") {
+			continue
+		}
+		if r.Status == assessment.Pass || r.Status == assessment.Fail {
+			n++
+		}
+	}
+	return n
 }
 
 func init() {
@@ -165,6 +261,8 @@ func init() {
 	scanCmd.Flags().StringVar(&scanProfile, "profile", "", "profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)")
 	scanCmd.Flags().StringVar(&scanS3Endpoint, "s3-endpoint", "", "endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)")
 	scanCmd.Flags().StringVar(&scanSeal, "seal", "", "écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier")
+	scanCmd.Flags().BoolVar(&scanStrict, "strict", false, "porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance) ou s'il subsiste un écart medium/low")
+	scanCmd.Flags().BoolVar(&scanRedact, "redact", false, "caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive")
 }
 
 // enrichFromReferentiel rattache chaque finding à l'index SCSL. Les règles Rego
@@ -522,15 +620,23 @@ func docURL(f finding.Finding) string {
 // « CONFORME », et un verdict sur un plan Terraform est qualifié « périmètre déclaré » (état
 // planifié, pas configuration effective). Le code de sortie reste piloté par res.Conforme.
 func verdictHeadline(res scoring.Result, asmt assessment.Assessment, source string) string {
-	var pass, fail, evaluated int
+	// `evaluated` ne compte QUE des contrôles mesurés sur des ressources collectées : les
+	// contrôles de gouvernance passent sur des faits AUTO-DÉCLARÉS (souveraineté) et ne doivent
+	// pas empêcher INDÉTERMINÉ sur un inventaire par ailleurs vide (sinon un tenant vidé de ses
+	// ressources s'afficherait « conforme »).
+	var pass, evaluated int
 	for _, r := range asmt.Results {
+		gov := strings.HasPrefix(r.Control, "governance_")
 		switch r.Status {
 		case assessment.Pass:
 			pass++
-			evaluated++
+			if !gov {
+				evaluated++
+			}
 		case assessment.Fail:
-			fail++
-			evaluated++
+			if !gov {
+				evaluated++
+			}
 		}
 	}
 	scope := "périmètre évalué"
@@ -539,11 +645,14 @@ func verdictHeadline(res scoring.Result, asmt assessment.Assessment, source stri
 	}
 	switch {
 	case evaluated == 0:
-		return "Verdict : INDÉTERMINÉ — aucun contrôle évalué sur le " + scope
+		return "Verdict : INDÉTERMINÉ — aucun contrôle mesuré sur des ressources (le " + scope + " est vide ou non collecté)"
 	case !res.Conforme:
 		return "Verdict : NON CONFORME"
+	case res.Medium+res.Low > 0:
+		// Pas d'écart critique/haut, MAIS des écarts medium/low subsistent : ne pas laisser lire « conforme ».
+		return fmt.Sprintf("Verdict : aucun écart critique/haut, mais %d écart(s) medium/low sur le %s (%d conformes)", res.Medium+res.Low, scope, pass)
 	default:
-		return fmt.Sprintf("Verdict : aucune non-conformité critique ou haute sur le %s (%d conformes)", scope, pass)
+		return fmt.Sprintf("Verdict : conforme sur le %s (aucune non-conformité détectée, %d contrôles conformes)", scope, pass)
 	}
 }
 

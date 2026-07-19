@@ -156,10 +156,13 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			case verified[code] && applicable(code, controlType, resourceTypes) && attrCollected(code, typ, attrsByType):
 				// A Pass carries WHAT was checked (basis of the assertion), not just a status.
 				res.Status = assessment.Pass
-				res.Evidence = assessment.Evidence{
-					Observed: fmt.Sprintf("aucune non-conformité détectée sur les ressources de type « %s » collectées (contrat vérifié)", typ),
-					Source:   run.Source,
+				observed := "aucune non-conformité détectée (contrat vérifié)"
+				if typ != "" {
+					observed = fmt.Sprintf("aucune non-conformité détectée sur les ressources de type « %s » collectées (contrat vérifié)", typ)
+				} else if strings.HasPrefix(code, "governance_") {
+					observed = "conforme selon les faits de souveraineté déclarés au descripteur du fournisseur (attestation, non mesuré sur le tenant)"
 				}
+				res.Evidence = assessment.Evidence{Observed: observed, Source: run.Source}
 			default:
 				res.Status = assessment.NotEvaluated
 				res.Evidence = assessment.Evidence{Observed: notEvaluatedReason(code, typ, verified[code], resourceTypes, attrsByType), Source: run.Source}
