@@ -31,19 +31,6 @@ var frameworkSlug = map[string]string{
 	"iso_27017":       "iso-27017",
 }
 
-// serviceHints maps a control's service prefix (the `<service>_` head of its code) to the
-// resource-type substrings that indicate the service is present in the inventory. Used to tell
-// "evaluated and compliant" (pass) from "nothing of this type to check" (not-evaluated).
-var serviceHints = map[string][]string{
-	"objectstorage": {"object_storage", "bucket"},
-	"network":       {"security_group", "network", "firewall", "subnet", "vpc", "nic"},
-	"compute":       {"compute", "instance", "server", "vm"},
-	"iam":           {"iam", "access_key", "user", "policy", "role", "credential"},
-	"kubernetes":    {"kubernetes", "sks", "k8s", "cluster", "kapsule"},
-	"loadbalancer":  {"load", "_lb", "nlb", "alb"},
-	"blockstorage":  {"block", "volume", "disk", "snapshot"},
-}
-
 // References converts a control's framework + SCSL mappings into exact, versioned references.
 func References(c referentiel.Control) []assessment.Reference {
 	var refs []assessment.Reference
@@ -68,28 +55,21 @@ func References(c referentiel.Control) []assessment.Reference {
 	return refs
 }
 
-// applicable reports whether a control's service is present in the collected resource types.
-// Governance controls are evaluated via a synthetic sovereignty resource and always apply.
-func applicable(code string, resourceTypes map[string]bool) bool {
-	service := code
-	if i := strings.IndexByte(code, '_'); i >= 0 {
-		service = code[:i]
-	}
-	if service == "governance" {
+// applicable reports whether the EXACT resource type a control evaluates is present in the
+// collected inventory. `controlType[code]` is the normalized type the control reads (from
+// genprovider.ControlType). Matching the exact type — not a service-family substring — is
+// what prevents a false Pass: a compute_image control must not be deemed evaluated just
+// because compute_instance resources are present. Governance controls read a synthetic
+// resource and are gated by `verified` instead, so they always apply here.
+func applicable(code string, controlType map[string]string, resourceTypes map[string]bool) bool {
+	if strings.HasPrefix(code, "governance_") {
 		return true
 	}
-	hints := serviceHints[service]
-	if len(hints) == 0 {
+	t := controlType[code]
+	if t == "" {
 		return false
 	}
-	for rt := range resourceTypes {
-		for _, h := range hints {
-			if strings.Contains(rt, h) {
-				return true
-			}
-		}
-	}
-	return false
+	return resourceTypes[t]
 }
 
 // Build derives the assessment for one provider scan. `findings` must carry the AGNOSTIC
@@ -102,7 +82,7 @@ func applicable(code string, resourceTypes map[string]bool) bool {
 // control whose resource is present, so a capability guard that silently skipped evaluation
 // (attribute not collected) surfaces as NotEvaluated, never a false "compliant". `run`
 // supplies the provenance.
-func Build(provider string, controls map[string]referentiel.Control, findings []finding.Finding, resourceTypes map[string]bool, naReasons map[string]string, verified map[string]bool, run assessment.Run) assessment.Assessment {
+func Build(provider string, controls map[string]referentiel.Control, findings []finding.Finding, resourceTypes map[string]bool, naReasons map[string]string, verified map[string]bool, controlType map[string]string, run assessment.Run) assessment.Assessment {
 	// One Fail result per finding (a control may fail on several subjects).
 	failedControls := map[string]bool{}
 	var results []assessment.Result
@@ -150,7 +130,7 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			// the needed data is collected (verified) AND a resource of that service is present.
 			// Otherwise the control could not actually be evaluated (attribute not collected, or
 			// nothing of this type in scope) — NotEvaluated, never a silent Pass.
-			if verified[code] && applicable(code, resourceTypes) {
+			if verified[code] && applicable(code, controlType, resourceTypes) {
 				res.Status = assessment.Pass
 			} else {
 				res.Status = assessment.NotEvaluated

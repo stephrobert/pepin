@@ -90,7 +90,7 @@ var scanCmd = &cobra.Command{
 		// rewrites Code to the SCSL id: typed statuses (fail/pass/not-evaluated), exact
 		// normative references, and run provenance (tool/ruleset digests, target, timestamp).
 		rtypes := resourceTypesOf(input)
-		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), providerVerified(name), buildRun(name, rtypes))
+		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), providerVerified(name), controlTypes(), buildRun(name, rtypes))
 
 		// Bundle de preuve horodaté et hashé (opposabilité : intégrité + non-répudiation).
 		if scanSeal != "" {
@@ -233,6 +233,17 @@ func providerNAReasons(provider string) map[string]string {
 var governanceProviderReaders = map[string]bool{
 	"governance_resource_region_in_eu": true,
 	"governance_provider_sovereignty":  true,
+}
+
+// controlTypes retourne, par code de contrôle, le type de ressource normalisé qu'il évalue
+// (genprovider.ControlType). assess s'en sert pour tester la présence du TYPE EXACT dans
+// l'inventaire — un « pass » exige une ressource du type visé, pas d'une famille voisine.
+func controlTypes() map[string]string {
+	out := map[string]string{}
+	for code := range referentiel.All() {
+		out[code] = genprovider.ControlType(code)
+	}
+	return out
 }
 
 // providerVerified indique, par contrôle, si le contrat du provider CONFIRME que la donnée

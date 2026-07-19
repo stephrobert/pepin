@@ -30,6 +30,10 @@ func testControls() map[string]referentiel.Control {
 			Code: "compute_tags_present", Titre: "Étiquettes présentes", Severite: "medium",
 			Fournisseurs: []string{"outscale"},
 		},
+		"compute_image_only": { // verified for outscale, but its exact type is absent from the inventory
+			Code: "compute_image_only", Titre: "Image publique", Severite: "high",
+			Fournisseurs: []string{"outscale"},
+		},
 		"iam_policy_no_wildcard": { // implemented for another provider only
 			Code: "iam_policy_no_wildcard", Titre: "IAM sans joker", Severite: "high",
 			Fournisseurs: []string{"scaleway"},
@@ -53,17 +57,24 @@ func TestReferences(t *testing.T) {
 }
 
 func TestApplicable(t *testing.T) {
-	present := map[string]bool{"object_storage_bucket": true, "security_group": true}
-	if !applicable("objectstorage_bucket_public_access", present) {
+	present := map[string]bool{"object_storage_bucket": true, "compute_instance": true}
+	ct := map[string]string{
+		"objectstorage_bucket_public_access": "object_storage_bucket",
+		"kubernetes_api_private":             "kubernetes_cluster",
+		"compute_image_not_public":           "compute_image",
+	}
+	if !applicable("objectstorage_bucket_public_access", ct, present) {
 		t.Error("objectstorage control must be applicable when a bucket is present")
 	}
-	if !applicable("network_sg_open_22", present) {
-		t.Error("network control must be applicable when a security group is present")
-	}
-	if applicable("kubernetes_api_private", present) {
+	if applicable("kubernetes_api_private", ct, present) {
 		t.Error("kubernetes control must NOT be applicable without a cluster resource")
 	}
-	if !applicable("governance_provider_sovereignty", present) {
+	// Regression (proven false-pass): compute_image control is NOT applicable just because
+	// compute_instance is present — the EXACT type must match, not the service family.
+	if applicable("compute_image_not_public", ct, present) {
+		t.Error("compute_image control must NOT be applicable on a compute_instance-only inventory")
+	}
+	if !applicable("governance_provider_sovereignty", ct, present) {
 		t.Error("governance controls always apply (synthetic resource)")
 	}
 }
@@ -76,10 +87,18 @@ func TestBuildStatuses(t *testing.T) {
 	rtypes := map[string]bool{"object_storage_bucket": true, "security_group": true, "compute_instance": true}
 	run := assessment.Run{Target: assessment.Target{ID: "acct-1"}, Source: "export"}
 
+	ct := map[string]string{
+		"objectstorage_bucket_public_access": "object_storage_bucket",
+		"network_sg_open_22":                 "security_group",
+		"kubernetes_api_private":             "kubernetes_cluster",
+		"compute_tags_present":               "compute_instance",
+		"compute_image_only":                 "compute_image",
+	}
 	// Only the bucket control is contract-verified; compute_tags_present is applicable
 	// (a compute_instance is present) but NOT verified — its data may not be collected.
-	verified := map[string]bool{"objectstorage_bucket_public_access": true}
-	a := Build("outscale", controls, findings, rtypes, nil, verified, run)
+	// compute_image_only is verified but its EXACT type is absent (only compute_instance).
+	verified := map[string]bool{"objectstorage_bucket_public_access": true, "compute_image_only": true}
+	a := Build("outscale", controls, findings, rtypes, nil, verified, ct, run)
 	byControl := map[string]assessment.Result{}
 	for _, r := range a.Results {
 		byControl[r.Control] = r
@@ -99,6 +118,11 @@ func TestBuildStatuses(t *testing.T) {
 	if byControl["compute_tags_present"].Status != assessment.NotEvaluated {
 		t.Errorf("applicable but unverified control = %s, want not-evaluated", byControl["compute_tags_present"].Status)
 	}
+	// Regression (proven false-pass): verified but the EXACT type is absent (only
+	// compute_instance present, not compute_image) → NotEvaluated, never Pass.
+	if byControl["compute_image_only"].Status != assessment.NotEvaluated {
+		t.Errorf("verified but exact type absent = %s, want not-evaluated", byControl["compute_image_only"].Status)
+	}
 	// A control implemented only for another provider is out of THIS provider's assessment.
 	if _, present := byControl["iam_policy_no_wildcard"]; present {
 		t.Error("controls not implemented for the scanned provider must be excluded")
@@ -116,7 +140,7 @@ func TestBuildNotApplicableWithJustification(t *testing.T) {
 	reason := "SKS API endpoint is always public by construction (doc containers/overview)"
 	na := map[string]string{"kubernetes_api_private": reason}
 
-	a := Build("outscale", controls, nil, rtypes, na, nil, run)
+	a := Build("outscale", controls, nil, rtypes, na, nil, nil, run)
 	var got *assessment.Result
 	for i := range a.Results {
 		if a.Results[i].Control == "kubernetes_api_private" {
