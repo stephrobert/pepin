@@ -59,7 +59,7 @@ var scanCmd = &cobra.Command{
 			return fmt.Errorf("préciser un fichier (export JSON ou plan Terraform), ou utiliser --live")
 		}
 
-		opts := scanReportOptions(name, scanSource(path), true)
+		opts := scanReportOptions(name, scanSource(path))
 
 		// En mode terminal, afficher le bandeau dès le lancement (avant la
 		// collecte/évaluation, qui peut être longue en live), pas à la fin.
@@ -103,7 +103,7 @@ var scanCmd = &cobra.Command{
 
 		enrichFromReferentiel(findings)
 		res := scoring.Summarize(findings)
-		opts.SummaryHeadline = verdictHeadline(res.Conforme)
+		opts.SummaryHeadline = verdictHeadline(res, asmt, asmt.Run.Source)
 
 		switch scanFormat {
 		case "json":
@@ -373,17 +373,39 @@ func docURL(f finding.Finding) string {
 	return scslDocBase + f.Code
 }
 
-// verdictHeadline est le bandeau de verdict du résumé (renseigné après analyse).
-func verdictHeadline(conforme bool) string {
-	if conforme {
-		return "Verdict : CONFORME"
+// verdictHeadline dérive le bandeau de verdict de l'ASSESSMENT, pas des seuls findings :
+// un scan où RIEN n'a été évalué (collecte vide, gardes de capacité) ne doit jamais s'afficher
+// « CONFORME », et un verdict sur un plan Terraform est qualifié « périmètre déclaré » (état
+// planifié, pas configuration effective). Le code de sortie reste piloté par res.Conforme.
+func verdictHeadline(res scoring.Result, asmt assessment.Assessment, source string) string {
+	var pass, fail, evaluated int
+	for _, r := range asmt.Results {
+		switch r.Status {
+		case assessment.Pass:
+			pass++
+			evaluated++
+		case assessment.Fail:
+			fail++
+			evaluated++
+		}
 	}
-	return "Verdict : NON CONFORME"
+	scope := "périmètre évalué"
+	if source == "terraform-plan" {
+		scope = "périmètre déclaré (plan Terraform, état planifié)"
+	}
+	switch {
+	case evaluated == 0:
+		return "Verdict : INDÉTERMINÉ — aucun contrôle évalué sur le " + scope
+	case !res.Conforme:
+		return "Verdict : NON CONFORME"
+	default:
+		return fmt.Sprintf("Verdict : aucune non-conformité critique ou haute sur le %s (%d conformes)", scope, pass)
+	}
 }
 
-// scanReportOptions assemble les options de rendu scankit pour Pépin.
-func scanReportOptions(provName, path string, conforme bool) screport.Options {
-	headline := verdictHeadline(conforme)
+// scanReportOptions assemble les options de rendu scankit pour Pépin. Le bandeau de verdict
+// (SummaryHeadline) est renseigné plus tard, une fois l'assessment calculé (verdictHeadline).
+func scanReportOptions(provName, path string) screport.Options {
 	mode := "scan " + provName
 	if scanTF {
 		mode += " (terraform)"
@@ -392,16 +414,15 @@ func scanReportOptions(provName, path string, conforme bool) screport.Options {
 		mode += " (live)"
 	}
 	return screport.Options{
-		ToolName:        "pepin",
-		Version:         version,
-		Mode:            mode,
-		Source:          path,
-		Banner:          pepinBanner(),
-		Tagline:         "scanner de posture cloud (sécurité · conformité)",
-		Brand:           lipgloss.Color("#C792EA"),
-		TierOf:          func(f finding.Finding) string { return f.Label("provider") },
-		DocURL:          docURL,
-		SummaryHeadline: headline,
+		ToolName: "pepin",
+		Version:  version,
+		Mode:     mode,
+		Source:   path,
+		Banner:   pepinBanner(),
+		Tagline:  "scanner de posture cloud (sécurité · conformité)",
+		Brand:    lipgloss.Color("#C792EA"),
+		TierOf:   func(f finding.Finding) string { return f.Label("provider") },
+		DocURL:   docURL,
 	}
 }
 
