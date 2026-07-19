@@ -30,6 +30,13 @@ test_star_star_denied if {
 	f.code == _eim_code
 }
 
+# ✗ Casse : `Api:*` / `API:*` (les noms d'action EIM sont insensibles à la casse) doivent
+#   être attrapés — sinon contournement trivial, resource scopée (les autres règles ne voient rien).
+test_api_wildcard_uppercase_denied if {
+	some f in deny with input as _eim([{"effect": "Allow", "actions": ["Api:*"], "resources": ["orn:scoped"]}])
+	f.code == _eim_code
+}
+
 # ✗ Effet en minuscules (« allow ») accepté (comparaison insensible à la casse).
 test_lowercase_effect_denied if {
 	some f in deny with input as _eim([{"effect": "allow", "actions": ["*"], "resources": ["*"]}])

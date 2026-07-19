@@ -29,8 +29,9 @@ deny contains f if {
 # _grants_all_actions — l'Action accorde TOUTES les actions : le joker global « * », la forme
 # « *:* », ou « api:* » (joker de service de l'API unifiée Outscale, qui couvre l'ensemble des
 # actions). Auparavant seul « * » était détecté (faux négatifs sur api:* et *:*).
-_grants_all_actions(actions) if "*" in actions
-
-_grants_all_actions(actions) if "*:*" in actions
-
-_grants_all_actions(actions) if "api:*" in actions
+# Insensible à la casse : les noms d'action EIM/IAM le sont, donc `Api:*`/`API:*`/`*:*`
+# doivent être attrapés comme `api:*`/`*` (sinon contournement trivial du contrôle critique).
+_grants_all_actions(actions) if {
+	some a in actions
+	lower(a) in {"*", "*:*", "api:*"}
+}

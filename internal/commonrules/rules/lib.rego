@@ -22,11 +22,24 @@ is_public_cidr(cidr) if _cidr_prefix(trim_space(cidr)) <= 1
 # Littéraux « toute origine » SANS masque (certaines API/UI : une source vide/`0.0.0.0`/`*`).
 is_public_cidr(cidr) if trim_space(cidr) in {"0.0.0.0", "::", "::0", "*"}
 
-# IPv6 mappé-IPv4 couvrant TOUT l'espace IPv4 (`::ffff:0.0.0.0/<=96`) : contournement connu.
+# IPv6 mappé-IPv4 couvrant TOUT l'espace IPv4 (`::ffff:0.0.0.0/<=96` ou sa forme compressée
+# `::ffff:0:0/<=96`) : contournement connu.
 is_public_cidr(cidr) if {
-	t := trim_space(cidr)
-	startswith(lower(t), "::ffff:0.0.0.0")
+	t := lower(trim_space(cidr))
+	_ipv4_mapped_all(t)
 	_cidr_prefix(t) <= 96
+}
+
+_ipv4_mapped_all(t) if startswith(t, "::ffff:0.0.0.0")
+
+_ipv4_mapped_all(t) if startswith(t, "::ffff:0:0")
+
+# `2000::/<=3` couvre tout l'IPv6 global-unicast (= l'Internet IPv6 alloué) : source non
+# restreinte, jamais légitime → public.
+is_public_cidr(cidr) if {
+	t := lower(trim_space(cidr))
+	startswith(t, "2000::")
+	_cidr_prefix(t) <= 3
 }
 
 _cidr_prefix(cidr) := n if {

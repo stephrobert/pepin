@@ -75,9 +75,20 @@ test_ipv6_half_internet_denied if {
 	f.code == _ssh
 }
 
-# ✗ IPv6 mappé-IPv4 couvrant tout l'IPv4 (::ffff:0.0.0.0/96) → public (contournement).
+# ✗ IPv6 mappé-IPv4 couvrant tout l'IPv4 (::ffff:0.0.0.0/96 ET forme compressée ::ffff:0:0/96).
 test_ipv4_mapped_ipv6_denied if {
 	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["::ffff:0.0.0.0/96"], "port_from": 22, "port_to": 22})
+	f.code == _ssh
+}
+
+test_ipv4_mapped_ipv6_compressed_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["::ffff:0:0/96"], "port_from": 22, "port_to": 22})
+	f.code == _ssh
+}
+
+# ✗ 2000::/3 = tout l'IPv6 global-unicast (l'Internet IPv6) → public.
+test_ipv6_global_unicast_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["2000::/3"], "port_from": 22, "port_to": 22})
 	f.code == _ssh
 }
 

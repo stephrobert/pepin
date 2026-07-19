@@ -263,6 +263,7 @@ mapping_terraform:
         public_ip: public_ip
         security_group_ids: security_group_ids
         state: state
+        user_data: user_data              # Outscale UserData (base64) : secrets en clair (CLD-CMP-9)
         tags: tags
   
     - tf_type: outscale_policy

@@ -587,12 +587,13 @@ func applyTransform(v any, spec any) any {
 			// de durée de vie). Heuristique d'ancrage, documentée dans le contrat.
 			return strings.Contains(toStr(v), sub)
 		}
-		// Garde nil : un transform de VALEUR appliqué à une source absente renvoie nil, pour
-		// NE PAS fabriquer une valeur concrète (0, [], "") qui court-circuiterait le nil-skip de
-		// Project — celui-là même qui fonde les gardes de capacité `"k" in object.keys(attrs)`.
-		// Les préfixes de dérivation (default:/equals:/contains:/pluck:) ont déjà été traités
-		// au-dessus ; `nonempty` dérive volontairement un booléen d'absence (nil → false).
-		if v == nil && t != "nonempty" {
+		// Garde nil : un transform SCALAIRE appliqué à une source absente renvoie nil, pour NE PAS
+		// fabriquer une valeur concrète (0, "") qui court-circuiterait le nil-skip de Project —
+		// celui-là même qui fonde les gardes de capacité `"k" in object.keys(attrs)`. Les préfixes
+		// de dérivation (default:/equals:/contains:/pluck:) sont déjà traités au-dessus ; `nonempty`
+		// dérive un booléen d'absence ; `kv`/`list` produisent une COLLECTION vide (l'attribut EST
+		// collecté, juste vide) — sémantique légitime à préserver (ex. tags[] présents mais vides).
+		if v == nil && t != "nonempty" && t != "kv" && t != "list" {
 			return nil
 		}
 		switch t {
