@@ -78,9 +78,9 @@ par une règle.
 | A — comblé (mapping) | 1 | fait |
 | B — backlog technique (nouvelle collecte + scan réel) | 10 | roadmap outil |
 | C — internes Kubernetes (kubeconfig) | 9 | roadmap outil (mode k8s) |
-| D — hors périmètre outil (organisationnel/contractuel) | 28 | attestation, pas une règle |
+| D — hors périmètre outil (organisationnel/contractuel) | 29 | attestation, pas une règle |
 
-La priorité honnête n'est **pas** d'atteindre « 82/82 » : ~28 exigences ne sont pas
+La priorité honnête n'est **pas** d'atteindre « 82/82 » : ~29 exigences ne sont pas
 vérifiables par lecture de configuration. La cible réaliste est de couvrir les buckets **B**
 et **C** (identité machine, politiques de compte, clés inactives, flow logs, durcissement
 k8s) au fil des contrats providers vérifiés, et de **déclarer explicitement** le bucket D
