@@ -9,7 +9,27 @@ terraform {
     scaleway = {
       source = "scaleway/scaleway"
     }
+    random = {
+      source = "hashicorp/random"
+    }
   }
+}
+
+# ✗ Base de données managée sans chiffrement au repos + sauvegardes désactivées
+#   → database_encryption_at_rest_enabled (CLD-CHF-2), database_backup_enabled (CLD-STO-3)
+#   Mot de passe généré (random_password) : aucun secret en dur dans la fixture.
+resource "random_password" "db" {
+  length = 20
+}
+
+resource "scaleway_rdb_instance" "insecure" {
+  name               = "pepin-test-rdb"
+  node_type          = "DB-DEV-S"
+  engine             = "PostgreSQL-15"
+  user_name          = "admin"
+  password           = random_password.db.result
+  encryption_at_rest = false
+  disable_backup     = true
 }
 
 # ✗ SSH (22) accepté depuis 0.0.0.0/0 (ip_range omis ⇒ toute origine)

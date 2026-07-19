@@ -875,3 +875,37 @@ controles:
       iso_27017: ["CLD.13.1.4"]
     # scaleway : mapping Terraform (scaleway_rdb_acl) validé par un plan réel.
     fournisseurs: [scaleway]
+
+  - code: database_encryption_at_rest_enabled
+    famille: chiffrement
+    titre: Base de données managée sans chiffrement au repos
+    severite: high
+    description: >
+      Une base de données managée n'a pas le chiffrement au repos activé : en cas
+      d'accès au support de stockage, les données sont lisibles en clair.
+    remediation: >
+      Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
+    scsl: [CLD-CHF-2]
+    frameworks:
+      secnumcloud_3_2: ["10.1"]
+      cis_controls_v8: ["3.11"]
+      iso_27001_2022: ["A.8.24"]
+    # scaleway : mapping Terraform (scaleway_rdb_instance) validé par un plan réel.
+    fournisseurs: [scaleway]
+
+  - code: database_backup_enabled
+    famille: stockage
+    titre: Sauvegardes automatiques d'une base managée désactivées
+    severite: high
+    description: >
+      Les sauvegardes automatiques d'une base de données managée sont désactivées :
+      pas de restauration garantie après incident ou suppression.
+    remediation: >
+      Réactiver les sauvegardes automatiques et fixer une rétention adaptée au RPO.
+    scsl: [CLD-STO-3]
+    frameworks:
+      secnumcloud_3_2: ["12.5"]
+      cis_controls_v8: ["11.2"]
+      iso_27001_2022: ["A.8.13"]
+    # scaleway : mapping Terraform (scaleway_rdb_instance) validé par un plan réel.
+    fournisseurs: [scaleway]

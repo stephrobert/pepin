@@ -207,6 +207,17 @@ mapping_terraform:
       transforms:
         ip_filter: [list]
 
+    # Instance de base managée → managed_database (chiffrement au repos + sauvegardes).
+    # Distincte des ressources ACL ci-dessus (mêmes type, attributs complémentaires) ;
+    # chaque règle DB porte une garde de capacité sur SON attribut.
+    - tf_type: scaleway_rdb_instance
+      type: managed_database
+      id: database_id
+      map:
+        database_id: name
+        encryption_at_rest: encryption_at_rest
+        disable_backup: disable_backup
+
     - tf_type: scaleway_object_bucket_acl
       type: object_storage_bucket
       id: name
