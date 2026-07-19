@@ -278,6 +278,16 @@ func providerVerified(provider string) map[string]bool {
 	return out
 }
 
+// targetID identifie la cible du scan (le tenant audité) pour les sujets des résultats et
+// l'OSCAL. À défaut d'un identifiant de compte exposé par la source, on compose un identifiant
+// stable provider(/région) — jamais vide, pour qu'un résultat « pass » porte un sujet.
+func targetID(provider string) string {
+	if scanRegion != "" {
+		return provider + "/" + scanRegion
+	}
+	return provider
+}
+
 // buildRun assemble l'enveloppe de provenance du scan : empreintes outil + jeu de règles,
 // cible, horodatage, source et périmètre (types de ressources audités). C'est ce qui rend le
 // résultat attribuable et reproductible — donc opposable.
@@ -297,7 +307,7 @@ func buildRun(provider string, rtypes map[string]bool) assessment.Run {
 	return assessment.Run{
 		Tool:      assessment.Component{Name: "pepin", Version: version},
 		Ruleset:   assessment.Component{Name: "pepin-config", Digest: configDigest()},
-		Target:    assessment.Target{Provider: provider, Region: scanRegion, Platform: provider},
+		Target:    assessment.Target{ID: targetID(provider), Provider: provider, Region: scanRegion, Platform: provider},
 		Timestamp: scanTimestamp,
 		Source:    source,
 		Scope:     assessment.Scope{Included: included},

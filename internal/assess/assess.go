@@ -14,6 +14,7 @@ package assess
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io/fs"
 	"sort"
 	"strings"
@@ -120,6 +121,7 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			Subject:    run.Target.ID,
 			References: References(c),
 		}
+		typ := controlType[code]
 		switch {
 		case naReasons[code] != "":
 			// Contract-declared not-applicable, with its justification — the auditor gold.
@@ -130,10 +132,17 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			// the needed data is collected (verified) AND a resource of that service is present.
 			// Otherwise the control could not actually be evaluated (attribute not collected, or
 			// nothing of this type in scope) — NotEvaluated, never a silent Pass.
-			if verified[code] && applicable(code, controlType, resourceTypes) {
+			switch {
+			case verified[code] && applicable(code, controlType, resourceTypes):
+				// A Pass carries WHAT was checked (basis of the assertion), not just a status.
 				res.Status = assessment.Pass
-			} else {
+				res.Evidence = assessment.Evidence{
+					Observed: fmt.Sprintf("aucune non-conformité détectée sur les ressources de type « %s » collectées (contrat vérifié)", typ),
+					Source:   run.Source,
+				}
+			default:
 				res.Status = assessment.NotEvaluated
+				res.Evidence = assessment.Evidence{Observed: notEvaluatedReason(code, typ, verified[code], resourceTypes), Source: run.Source}
 			}
 		default:
 			continue // implemented for other providers and not N/A here — out of this scan's scope
@@ -142,6 +151,18 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 	}
 
 	return assessment.Assessment{Run: run, Results: results}
+}
+
+// notEvaluatedReason explique POURQUOI un contrôle n'a pas pu être évalué — un « non évalué »
+// opposable dit sur quoi il bute (donnée non collectée, ou aucune ressource du type en scope).
+func notEvaluatedReason(code, typ string, verified bool, resourceTypes map[string]bool) string {
+	if !verified {
+		return "collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « vérifié »)"
+	}
+	if typ != "" && !resourceTypes[typ] {
+		return fmt.Sprintf("aucune ressource de type « %s » dans l'inventaire évalué", typ)
+	}
+	return "contrôle non évaluable sur cet inventaire"
 }
 
 // RulesetDigest hashes the embedded rule set so the assessment's provenance pins exactly which
