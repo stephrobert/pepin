@@ -70,6 +70,14 @@ Codes de sortie : `0` conforme · `1` non-conformité · `2` erreur (exploitable
 Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour ajouter un provider ou une règle, et
 [SECURITY.md](SECURITY.md) pour la divulgation de vulnérabilités.
 
+## Portée
+
+Pépin évalue la configuration d'un **tenant** (côté commanditaire). Les
+correspondances normatives citées (SecNumCloud, ISO, CIS) sont **indicatives** :
+un rapport Pépin n'est **pas** une preuve de qualification ou de certification,
+lesquelles portent sur le **prestataire** de service cloud, pas sur un scan de
+tenant.
+
 ## Licence
 
 Apache-2.0 — voir [LICENSE](LICENSE) et [NOTICE](NOTICE).

@@ -70,6 +70,13 @@ Exit codes: `0` compliant · `1` non-compliance · `2` error (CI-friendly).
 See [CONTRIBUTING.md](CONTRIBUTING.md) to add a provider or a rule, and
 [SECURITY.md](SECURITY.md) for vulnerability disclosure.
 
+## Scope
+
+Pépin evaluates the configuration of a **tenant** (the cloud customer's side). The
+normative mappings it reports (SecNumCloud, ISO, CIS) are **indicative
+correspondences**: a Pépin report is **not** a proof of qualification or
+certification — those bear on the cloud **service provider**, not on a tenant scan.
+
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).

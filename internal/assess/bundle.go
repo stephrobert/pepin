@@ -16,18 +16,27 @@ import (
 // bundleFormat identifies the tamper-evident evidence bundle schema.
 const bundleFormat = "pepin-assessment-bundle/v1"
 
+// ScopeDisclaimer : avertissement de PORTÉE, obligatoire pour l'opposabilité. pepin évalue la
+// configuration d'un TENANT (périmètre commanditaire) ; les référentiels cités (SecNumCloud,
+// ISO, CIS) portent, eux, sur le PRESTATAIRE ou sont des correspondances thématiques. Un rapport
+// pepin ne prouve donc jamais une qualification/certification, seulement la posture du tenant.
+const ScopeDisclaimer = "Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). " +
+	"Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent " +
+	"pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud."
+
 // Manifest is the opposable envelope of an evidence bundle: the run provenance, a summary by
 // status, and the digest of every artifact. Sealing it (a detached signature over
 // checksums.txt) is left to the operator's own identity — see `pepin verify`.
 type Manifest struct {
-	Format    string               `json:"format"`
-	Generated string               `json:"generated"` // Run.Timestamp (RFC3339 UTC)
-	Tool      assessment.Component `json:"tool"`
-	Ruleset   assessment.Component `json:"ruleset"`
-	Target    assessment.Target    `json:"target"`
-	Source    string               `json:"source"`
-	Summary   map[string]int       `json:"summary"` // status -> count
-	Artifacts []Artifact           `json:"artifacts"`
+	Format     string               `json:"format"`
+	Disclaimer string               `json:"disclaimer"` // portée prestataire/commanditaire (opposabilité)
+	Generated  string               `json:"generated"`  // Run.Timestamp (RFC3339 UTC)
+	Tool       assessment.Component `json:"tool"`
+	Ruleset    assessment.Component `json:"ruleset"`
+	Target     assessment.Target    `json:"target"`
+	Source     string               `json:"source"`
+	Summary    map[string]int       `json:"summary"` // status -> count
+	Artifacts  []Artifact           `json:"artifacts"`
 }
 
 // Artifact is one file of the bundle with its digest, so any tampering is detectable.
@@ -109,13 +118,14 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string,
 	}
 
 	manifest := Manifest{
-		Format:    bundleFormat,
-		Generated: a.Run.Timestamp,
-		Tool:      a.Run.Tool,
-		Ruleset:   a.Run.Ruleset,
-		Target:    a.Run.Target,
-		Source:    a.Run.Source,
-		Summary:   summaryOf(a),
+		Format:     bundleFormat,
+		Disclaimer: ScopeDisclaimer,
+		Generated:  a.Run.Timestamp,
+		Tool:       a.Run.Tool,
+		Ruleset:    a.Run.Ruleset,
+		Target:     a.Run.Target,
+		Source:     a.Run.Source,
+		Summary:    summaryOf(a),
 	}
 	var checksums string
 	for _, f := range files {

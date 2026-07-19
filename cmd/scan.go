@@ -160,6 +160,9 @@ var scanCmd = &cobra.Command{
 		default:
 			_ = screport.Terminal(os.Stdout, opts, findings, scscoring.Summarize(findings)) // best-effort render
 		}
+		// Portée prestataire/commanditaire : obligatoire pour l'opposabilité (un rapport pepin
+		// ne prouve pas une qualification, seulement la posture d'un tenant).
+		_, _ = fmt.Fprintf(os.Stderr, "\nⓘ %s\n", assess.ScopeDisclaimer)
 		if !res.Conforme {
 			os.Exit(1)
 		}
