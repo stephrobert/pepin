@@ -12,7 +12,7 @@ import rego.v1
 
 deny contains f if {
 	some r in resources_of_type("subnet")
-	object.get(r.attributes, "map_public_ip_on_launch", false) == true
+	truthy(object.get(r.attributes, "map_public_ip_on_launch", false))
 	id := object.get(r.attributes, "subnet_id", r.id)
 	f := {
 		"code": "network_subnet_no_public_ip_by_default",

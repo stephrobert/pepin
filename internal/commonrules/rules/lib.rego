@@ -26,6 +26,11 @@ _cidr_prefix(cidr) := n if {
 	n := to_number(parts[1])
 }
 
+# truthy — valeur booléenne vraie, que la source la donne en bool (API live, ex. OAPI
+# *bool) OU en chaîne « true » (plan Terraform : certains attributs de schéma sont des
+# strings). Insensible à la casse. false / "false" / absent → faux.
+truthy(v) if lower(sprintf("%v", [v])) == "true"
+
 # has_tag — true si la liste de tags ({key,value}) porte la clé avec une valeur
 # non vide. Contrat natif : Tag{Key, Value} (snake_case normalisé).
 has_tag(tags, key) if {

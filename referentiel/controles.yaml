@@ -822,7 +822,8 @@ controles:
       cis_controls_v8: ["3.3"]
       iso_27001_2022: ["A.5.15", "A.8.3"]
       iso_27017: ["CLD.9.5.1"]
-    fournisseurs: []
+    # outscale : mapping Terraform (outscale_image_launch_permission) validé par un plan réel.
+    fournisseurs: [outscale]
 
   - code: network_securitygroup_default_deny
     famille: reseau
@@ -860,7 +861,8 @@ controles:
       cis_controls_v8: ["12.2"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
       iso_27017: ["CLD.13.1.4"]
-    fournisseurs: []
+    # outscale : mapping Terraform (outscale_subnet) validé par un plan réel.
+    fournisseurs: [outscale]
 
   - code: database_service_not_open_to_internet
     famille: reseau

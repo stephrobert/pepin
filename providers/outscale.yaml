@@ -264,6 +264,23 @@ mapping_terraform:
       transforms:
         tags: kv
 
+    # Sous-réseau → subnet. map_public_ip_on_launch=true ⇒ IP publique auto (CLD-NET-3).
+    - tf_type: outscale_subnet
+      type: subnet
+      id: subnet_id
+      map:
+        subnet_id: ip_range
+        map_public_ip_on_launch: map_public_ip_on_launch
+
+    # Permission de lancement d'OMI → compute_image. permission_additions[].global_permission
+    # (string "true"/"false" côté plan) ⇒ image publique (CLD-STO-2).
+    - tf_type: outscale_image_launch_permission
+      type: compute_image
+      id: image_id
+      map:
+        image_id: image_id
+        public: permission_additions.0.global_permission
+
 # Contrat d'API (ancrage §2) + applicabilité SCSL (non_applicable) — lu par `pepin scsl`.
 contrat:
   types:
@@ -388,6 +405,24 @@ contrat:
         l''audit OKS étant automatique, le check kubernetes_cluster_audit_logging_enabled (« audit activé », CLD-LOG-1) serait
         toujours satisfait et n''apporterait rien ; l''angle pertinent pour Outscale serait la PROTECTION des logs (OOSAccess),
         à formaliser en check distinct si visé. Nom exact des champs API OKS à confirmer (schéma oks.html rendu en JS).'
+    subnet:
+      etat: verifie
+      source: >
+        Terraform outscale_subnet (mapping validé par un plan réel : attribut
+        map_public_ip_on_launch, doc outscale/terraform-provider-outscale). API live
+        ReadSubnets MapPublicIpOnLaunch à câbler en collecte.
+      mapping:
+        subnet_id: ip_range du subnet (subnet_id computed, null au stade plan)
+        map_public_ip_on_launch: MapPublicIpOnLaunch (bool)
+    compute_image:
+      etat: verifie
+      source: >
+        Terraform outscale_image_launch_permission (mapping validé par un plan réel :
+        permission_additions[].global_permission="true" ⇒ image publique, doc officielle).
+        API live ReadImages PermissionsToLaunch.GlobalPermission à câbler en collecte.
+      mapping:
+        image_id: ImageId
+        public: PermissionsToLaunch.GlobalPermission (bool ; "true"/"false" côté plan)
   non_applicable:
   # CHF-2 : osc-sdk-go/v2 Volume n'expose aucun champ de chiffrement ; le chiffrement
   # au repos est CÔTÉ INVITÉ (EncFS/LUKS), responsabilité du client → non observable

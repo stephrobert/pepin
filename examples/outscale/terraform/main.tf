@@ -13,6 +13,30 @@ terraform {
   }
 }
 
+resource "outscale_net" "net" {
+  ip_range = "10.0.0.0/16"
+}
+
+# ✗ Sous-réseau attribuant une IP publique par défaut à toute NIC créée
+#   → network_subnet_no_public_ip_by_default (CLD-NET-3)
+#   Attribut map_public_ip_on_launch : doc officielle outscale/terraform-provider-outscale.
+resource "outscale_subnet" "subnet" {
+  net_id                  = outscale_net.net.net_id
+  ip_range                = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+}
+
+# ✗ Image machine (OMI) partagée publiquement (global_permission = true)
+#   → compute_image_not_public (CLD-STO-2)
+#   Forme reprise de la doc officielle outscale_image_launch_permission.
+resource "outscale_image_launch_permission" "public_omi" {
+  image_id = "ami-12345678"
+
+  permission_additions {
+    global_permission = true
+  }
+}
+
 resource "outscale_security_group" "web" {
   description         = "Front web"
   security_group_name = "web-front"

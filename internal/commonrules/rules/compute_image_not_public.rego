@@ -10,7 +10,7 @@ import rego.v1
 
 deny contains f if {
 	some r in resources_of_type("compute_image")
-	object.get(r.attributes, "public", false) == true
+	truthy(object.get(r.attributes, "public", false))
 	id := object.get(r.attributes, "image_id", r.id)
 	f := {
 		"code": "compute_image_not_public",
