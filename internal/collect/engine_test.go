@@ -356,3 +356,21 @@ func TestFetchItemsPageBoundGuardsInfiniteLoop(t *testing.T) {
 		t.Error("un serveur qui ignore la pagination doit provoquer une ERREUR de borne, pas une boucle infinie")
 	}
 }
+
+func TestNilTransformSemantics(t *testing.T) {
+	// Collections : nil → collection VIDE (attribut collecté mais vide) — la garde de capacité
+	// d'une règle doit voir l'attribut présent (ex. tags:[] → required_tags flague les manquants).
+	if got := applyTransform(nil, "kv"); got == nil {
+		t.Error("kv(nil) doit produire [] (collecté, vide), pas nil")
+	}
+	if got := applyTransform(nil, "list"); got == nil {
+		t.Error("list(nil) doit produire [] (collecté, vide), pas nil")
+	}
+	// Scalaires : nil → nil (attribut absent), pour préserver le nil-skip des gardes.
+	if got := applyTransform(nil, "range_from"); got != nil {
+		t.Errorf("range_from(nil) doit rester nil, pas %v", got)
+	}
+	if got := applyTransform(nil, "lower"); got != nil {
+		t.Errorf("lower(nil) doit rester nil, pas %v", got)
+	}
+}

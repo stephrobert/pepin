@@ -42,14 +42,14 @@ var frameworkSlug = map[string]string{
 // in sync with the rules' capability guards (TestRequiredAttrGuardsExist checks it).
 var requiredAttr = map[string]string{
 	"compute_instance_no_secrets_in_user_data": "user_data",
-	"iam_user_mfa_enabled":                      "mfa_enabled",
-	"iam_account_mfa_enforced":                  "require_trusted_env",
-	"blockstorage_volume_encryption":            "encrypted",
-	"objectstorage_bucket_object_lock_enabled":  "object_lock_enabled",
-	"objectstorage_bucket_kms_encryption":       "sse_kms_enabled",
-	"database_encryption_at_rest_enabled":       "encryption_at_rest",
-	"loadbalancer_http_redirect_to_https":       "redirect_to_https",
-	"iam_apiaccesspolicy_max_key_expiration":    "max_access_key_expiration_seconds",
+	"iam_user_mfa_enabled":                     "mfa_enabled",
+	"iam_account_mfa_enforced":                 "require_trusted_env",
+	"blockstorage_volume_encryption":           "encrypted",
+	"objectstorage_bucket_object_lock_enabled": "object_lock_enabled",
+	"objectstorage_bucket_kms_encryption":      "sse_kms_enabled",
+	"database_encryption_at_rest_enabled":      "encryption_at_rest",
+	"loadbalancer_http_redirect_to_https":      "redirect_to_https",
+	"iam_apiaccesspolicy_max_key_expiration":   "max_access_key_expiration_seconds",
 }
 
 // References converts a control's framework + SCSL mappings into exact, versioned references.
