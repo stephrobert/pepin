@@ -4,9 +4,11 @@
 // defensible before an auditor — "no finding" is never confused with "compliant", and every
 // result carries its SecNumCloud/ANSSI/CIS/ISO reference.
 //
-// Increment 1 covers fail (from findings), pass and not-evaluated (from applicability), the
-// references and the provenance. Not-applicable justified by the provider contracts, and
-// structured per-resource observed/expected evidence, come in later increments.
+// Statuses: fail (from findings), pass (ONLY when the provider contract confirms the data is
+// collected AND a resource is present), not-applicable (justified by the provider contract),
+// and not-evaluated (implemented but the data source is unconfirmed or absent). Each result
+// carries its exact normative references and the run provenance. Structured per-resource
+// observed/expected evidence comes in a later increment.
 package assess
 
 import (
@@ -95,8 +97,12 @@ func applicable(code string, resourceTypes map[string]bool) bool {
 // resource types present in the evaluated inventory. `naReasons` maps a control code to the
 // justification of its not-applicability for this provider (from the provider contract) —
 // an unjustified N/A is not opposable, so a control is only marked NotApplicable when a
-// reason is present. `run` supplies the provenance.
-func Build(provider string, controls map[string]referentiel.Control, findings []finding.Finding, resourceTypes map[string]bool, naReasons map[string]string, run assessment.Run) assessment.Assessment {
+// reason is present. `verified[code]` is true only when the provider contract CONFIRMS the
+// data this control needs is actually collected: a Pass is asserted ONLY for a verified
+// control whose resource is present, so a capability guard that silently skipped evaluation
+// (attribute not collected) surfaces as NotEvaluated, never a false "compliant". `run`
+// supplies the provenance.
+func Build(provider string, controls map[string]referentiel.Control, findings []finding.Finding, resourceTypes map[string]bool, naReasons map[string]string, verified map[string]bool, run assessment.Run) assessment.Assessment {
 	// One Fail result per finding (a control may fail on several subjects).
 	failedControls := map[string]bool{}
 	var results []assessment.Result
@@ -140,8 +146,11 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			res.Status = assessment.NotApplicable
 			res.Waiver = &assessment.Waiver{Justification: naReasons[code]}
 		case contains(c.Fournisseurs, provider):
-			// Implemented for this provider: pass if its service is present, else nothing to check.
-			if applicable(code, resourceTypes) {
+			// Implemented for this provider. Pass is asserted ONLY when the contract confirms
+			// the needed data is collected (verified) AND a resource of that service is present.
+			// Otherwise the control could not actually be evaluated (attribute not collected, or
+			// nothing of this type in scope) — NotEvaluated, never a silent Pass.
+			if verified[code] && applicable(code, resourceTypes) {
 				res.Status = assessment.Pass
 			} else {
 				res.Status = assessment.NotEvaluated

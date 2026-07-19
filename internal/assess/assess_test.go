@@ -26,6 +26,10 @@ func testControls() map[string]referentiel.Control {
 			Code: "kubernetes_api_private", Titre: "API K8s privée", Severite: "high",
 			Fournisseurs: []string{"outscale"},
 		},
+		"compute_tags_present": { // implemented for outscale, resource present, but NOT verified
+			Code: "compute_tags_present", Titre: "Étiquettes présentes", Severite: "medium",
+			Fournisseurs: []string{"outscale"},
+		},
 		"iam_policy_no_wildcard": { // implemented for another provider only
 			Code: "iam_policy_no_wildcard", Titre: "IAM sans joker", Severite: "high",
 			Fournisseurs: []string{"scaleway"},
@@ -72,7 +76,10 @@ func TestBuildStatuses(t *testing.T) {
 	rtypes := map[string]bool{"object_storage_bucket": true, "security_group": true, "compute_instance": true}
 	run := assessment.Run{Target: assessment.Target{ID: "acct-1"}, Source: "export"}
 
-	a := Build("outscale", controls, findings, rtypes, nil, run)
+	// Only the bucket control is contract-verified; compute_tags_present is applicable
+	// (a compute_instance is present) but NOT verified — its data may not be collected.
+	verified := map[string]bool{"objectstorage_bucket_public_access": true}
+	a := Build("outscale", controls, findings, rtypes, nil, verified, run)
 	byControl := map[string]assessment.Result{}
 	for _, r := range a.Results {
 		byControl[r.Control] = r
@@ -82,10 +89,15 @@ func TestBuildStatuses(t *testing.T) {
 		t.Errorf("failed control status = %s, want fail", byControl["network_sg_open_22"].Status)
 	}
 	if byControl["objectstorage_bucket_public_access"].Status != assessment.Pass {
-		t.Errorf("applicable, non-failing control = %s, want pass", byControl["objectstorage_bucket_public_access"].Status)
+		t.Errorf("verified, applicable, non-failing control = %s, want pass", byControl["objectstorage_bucket_public_access"].Status)
 	}
 	if byControl["kubernetes_api_private"].Status != assessment.NotEvaluated {
 		t.Errorf("non-applicable control = %s, want not-evaluated", byControl["kubernetes_api_private"].Status)
+	}
+	// A6: applicable resource present, but the contract does NOT confirm the data is
+	// collected → NotEvaluated, never a silent Pass.
+	if byControl["compute_tags_present"].Status != assessment.NotEvaluated {
+		t.Errorf("applicable but unverified control = %s, want not-evaluated", byControl["compute_tags_present"].Status)
 	}
 	// A control implemented only for another provider is out of THIS provider's assessment.
 	if _, present := byControl["iam_policy_no_wildcard"]; present {
@@ -104,7 +116,7 @@ func TestBuildNotApplicableWithJustification(t *testing.T) {
 	reason := "SKS API endpoint is always public by construction (doc containers/overview)"
 	na := map[string]string{"kubernetes_api_private": reason}
 
-	a := Build("outscale", controls, nil, rtypes, na, run)
+	a := Build("outscale", controls, nil, rtypes, na, nil, run)
 	var got *assessment.Result
 	for i := range a.Results {
 		if a.Results[i].Control == "kubernetes_api_private" {

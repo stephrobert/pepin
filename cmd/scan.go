@@ -90,7 +90,7 @@ var scanCmd = &cobra.Command{
 		// rewrites Code to the SCSL id: typed statuses (fail/pass/not-evaluated), exact
 		// normative references, and run provenance (tool/ruleset digests, target, timestamp).
 		rtypes := resourceTypesOf(input)
-		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), buildRun(name, rtypes))
+		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), providerVerified(name), buildRun(name, rtypes))
 
 		// Bundle de preuve horodaté et hashé (opposabilité : intégrité + non-répudiation).
 		if scanSeal != "" {
@@ -221,6 +221,34 @@ func providerNAReasons(provider string) map[string]string {
 	for code := range referentiel.All() {
 		if r := genprovider.NonApplicableReason(provider, code); r != "" {
 			out[code] = r
+		}
+	}
+	return out
+}
+
+// governanceProviderReaders : contrôles de gouvernance dont la donnée est la ressource
+// synthétique `governance_provider` (toujours construite depuis le descripteur). Leur source
+// est donc intrinsèquement collectée ; les autres contrôles de gouvernance (ex. étiquettes,
+// qui dépendent de la collecte d'attributs par ressource) ne sont PAS présumés vérifiés.
+var governanceProviderReaders = map[string]bool{
+	"governance_resource_region_in_eu": true,
+	"governance_provider_sovereignty":  true,
+}
+
+// providerVerified indique, par contrôle, si le contrat du provider CONFIRME que la donnée
+// nécessaire est réellement collectée (état `verifie` du type visé). C'est le verrou d'un
+// « pass » opposable : sans confirmation, assess reste sur NotEvaluated plutôt que d'affirmer
+// une conformité qu'une garde de capacité a pu court-circuiter silencieusement.
+func providerVerified(provider string) map[string]bool {
+	out := map[string]bool{}
+	for code := range referentiel.All() {
+		switch {
+		case governanceProviderReaders[code]:
+			out[code] = true
+		case genprovider.ControlType(code) != "":
+			out[code] = genprovider.TypeEtat(provider, genprovider.ControlType(code)) == "verifie"
+		default:
+			out[code] = false
 		}
 	}
 	return out
