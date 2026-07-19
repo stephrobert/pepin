@@ -48,3 +48,10 @@ test_tags_complete_ok if {
 	doc := {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": {"vm_id": "i-1", "security_group_ids": ["sg-1"], "tags": [{"key": "CostCenter", "value": "42"}, {"key": "Project", "value": "p"}, {"key": "Env", "value": "prod"}, {"key": "Owner", "value": "sre"}]}}]}
 	count({f | some f in deny; f.code == "governance_resource_required_tags"}) == 0 with input as doc
 }
+
+# ✓ FP-1 : ressource facturable dont le provider N'EXPOSE PAS les étiquettes (clé `tags`
+# absente, ex. Exoscale live) → aucun finding grâce à la garde de capacité (sinon : tempête de
+# faux positifs « 4 étiquettes manquantes » sur chaque ressource).
+test_tags_not_exposed_ok if {
+	count({f | some f in deny; f.code == "governance_resource_required_tags"}) == 0 with input as {"resources": [{"provider": "exoscale", "type": "compute_instance", "id": "i-9", "attributes": {"vm_id": "i-9", "security_group_ids": ["sg-1"]}}]}
+}

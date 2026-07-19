@@ -15,7 +15,9 @@ deny contains f if {
 	bucket := object.get(r.attributes, "name", r.id)
 	f := {
 		"code": "objectstorage_bucket_versioning_enabled",
-		"severity": "high",
+		# medium : l'absence de versioning est une lacune de résilience, pas une exposition
+		# directe ; les référentiels CSPM la classent medium (high réservé à l'exposition/fuite).
+		"severity": "medium",
 		"subject": bucket,
 		"message": sprintf("Bucket « %s » sans versioning activé (statut %q) — suppression/écrasement irréversible.", [bucket, versioning]),
 		"remediation": "Activer le versioning du bucket, au moins pour les données critiques.",

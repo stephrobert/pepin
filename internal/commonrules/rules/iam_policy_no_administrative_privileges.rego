@@ -13,8 +13,8 @@ import rego.v1
 deny contains f if {
 	some p in resources_of_type("iam_policy")
 	some stmt in object.get(p.attributes, "statements", [])
-	object.get(stmt, "effect", "") == "Allow"
-	"*" in object.get(stmt, "actions", [])
+	lower(object.get(stmt, "effect", "")) == "allow"
+	_grants_all_actions(object.get(stmt, "actions", []))
 	name := object.get(p.attributes, "policy_name", p.id)
 	f := {
 		"code": "iam_policy_no_administrative_privileges",
@@ -25,3 +25,12 @@ deny contains f if {
 		"labels": {"provider": provider_of(p), "category": "security"},
 	}
 }
+
+# _grants_all_actions — l'Action accorde TOUTES les actions : le joker global « * », la forme
+# « *:* », ou « api:* » (joker de service de l'API unifiée Outscale, qui couvre l'ensemble des
+# actions). Auparavant seul « * » était détecté (faux négatifs sur api:* et *:*).
+_grants_all_actions(actions) if "*" in actions
+
+_grants_all_actions(actions) if "*:*" in actions
+
+_grants_all_actions(actions) if "api:*" in actions

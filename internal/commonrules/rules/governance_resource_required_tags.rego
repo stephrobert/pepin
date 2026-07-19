@@ -12,6 +12,10 @@ _billable_types := {"compute_instance", "blockstorage_volume", "load_balancer", 
 deny contains f if {
 	some r in input.resources
 	r.type in _billable_types
+	"tags" in object.keys(r.attributes) # garde de capacité : le provider EXPOSE les étiquettes
+
+	# (sinon, un provider qui ne collecte pas les tags — ex. Exoscale live — déclencherait un
+	# finding « 4 étiquettes manquantes » sur CHAQUE ressource : tempête de faux positifs).
 	tags := object.get(r.attributes, "tags", [])
 	missing := [t | some t in required_tags; not has_tag(tags, t)]
 	count(missing) > 0
