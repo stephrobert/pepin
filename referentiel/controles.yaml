@@ -43,7 +43,7 @@ controles:
       Restreindre la politique aux actions/ressources strictement nécessaires.
     scsl: [CLD-IAM-1]
     frameworks:
-      secnumcloud_3_2: ["19.1", "19.3"]
+      secnumcloud_3_2: ["9.1", "9.3"]
       cis_controls_v8: ["6.7", "6.8"]
       iso_27001_2022: ["A.5.15", "A.5.18", "A.8.2", "A.8.3"]
     fournisseurs: [outscale]
@@ -60,7 +60,7 @@ controles:
       réellement couvrir.
     scsl: [CLD-IAM-1]
     frameworks:
-      secnumcloud_3_2: ["19.1", "19.3"]
+      secnumcloud_3_2: ["9.1", "9.3"]
       cis_controls_v8: ["6.7", "6.8"]
       iso_27001_2022: ["A.5.15", "A.8.3"]
     fournisseurs: [outscale]
@@ -78,7 +78,7 @@ controles:
       NotAction/NotResource n'est acceptable qu'avec Effect Deny.
     scsl: [CLD-IAM-1]
     frameworks:
-      secnumcloud_3_2: ["19.1", "19.3"]
+      secnumcloud_3_2: ["9.1", "9.3"]
       cis_controls_v8: ["6.7", "6.8"]
       iso_27001_2022: ["A.5.15", "A.5.18"]
     fournisseurs: [outscale]
@@ -97,7 +97,7 @@ controles:
       les réserver à un rôle d'administration dédié, scopé aux ressources légitimes.
     scsl: [CLD-IAM-12]
     frameworks:
-      secnumcloud_3_2: ["19.1", "19.3"]
+      secnumcloud_3_2: ["9.1", "9.3"]
       cis_controls_v8: ["6.8"]
       iso_27001_2022: ["A.5.15"]
     fournisseurs: [outscale, exoscale, scaleway]
@@ -114,7 +114,7 @@ controles:
       clé root.
     scsl: [CLD-IAM-1]
     frameworks:
-      secnumcloud_3_2: ["19.1", "19.3"]
+      secnumcloud_3_2: ["9.3", "9.6"]
       cis_controls_v8: ["6.7", "6.8"]
       iso_27001_2022: ["A.5.15", "A.5.18"]
     fournisseurs: [outscale, scaleway]
@@ -131,7 +131,7 @@ controles:
       courte (OIDC) aux secrets statiques.
     scsl: [CLD-IAM-2]
     frameworks:
-      secnumcloud_3_2: ["19.1", "19.5"]
+      secnumcloud_3_2: ["9.5", "10.5"]
       cis_controls_v8: ["5.3", "5.6"]
       iso_27001_2022: ["A.5.17", "A.8.2"]
     fournisseurs: [outscale, scaleway]
@@ -182,7 +182,7 @@ controles:
       Configurer une expiration maximale des clés d'accès (ex. 90 jours).
     scsl: [CLD-IAM-2]
     frameworks:
-      secnumcloud_3_2: ["19.5"]
+      secnumcloud_3_2: ["9.5", "10.5"]
       cis_controls_v8: ["5.3"]
       iso_27001_2022: ["A.5.17"]
     fournisseurs: [outscale]
@@ -199,7 +199,7 @@ controles:
       toute règle ouverte à Internet.
     scsl: [CLD-IAM-4]
     frameworks:
-      secnumcloud_3_2: ["13.2"]
+      secnumcloud_3_2: ["9.6", "13.2"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20"]
     fournisseurs: [outscale]
@@ -216,7 +216,7 @@ controles:
       IP légitimes.
     scsl: [CLD-IAM-4]
     frameworks:
-      secnumcloud_3_2: ["13.2"]
+      secnumcloud_3_2: ["9.6", "13.2"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20"]
     fournisseurs: [outscale]
@@ -234,7 +234,7 @@ controles:
       puis n'autoriser explicitement que les opérations et ressources nécessaires.
     scsl: [CLD-IAM-1]
     frameworks:
-      secnumcloud_3_2: ["8.1"]
+      secnumcloud_3_2: ["9.3"]
       cis_controls_v8: ["6.8"]
       iso_27001_2022: ["A.8.2"]
     fournisseurs: [exoscale]
@@ -252,7 +252,7 @@ controles:
       d'administration légitimes) afin de restreindre l'usage des accès.
     scsl: [CLD-IAM-4]
     frameworks:
-      secnumcloud_3_2: ["13.2"]
+      secnumcloud_3_2: ["9.6", "13.2"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20"]
     fournisseurs: [exoscale]
@@ -272,7 +272,7 @@ controles:
       refusés).
     scsl: [CLD-IAM-2]
     frameworks:
-      secnumcloud_3_2: ["10.1"]
+      secnumcloud_3_2: ["9.5", "10.5"]
       cis_controls_v8: ["5.3"]
       iso_27001_2022: ["A.8.15"]
     fournisseurs: [exoscale]
@@ -463,7 +463,7 @@ controles:
       instance.
     scsl: [CLD-CMP-1]
     frameworks:
-      secnumcloud_3_2: ["13.1", "13.3"]
+      secnumcloud_3_2: ["13.1", "13.2"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20"]
       iso_27017: ["CLD.9.5.2"]
@@ -483,7 +483,7 @@ controles:
     # (et non la protection IMDSv2 de CLD-CMP-2, qui reste un trou faute d'attribut exposé).
     scsl: [CLD-CMP-9]
     frameworks:
-      secnumcloud_3_2: ["19.1", "19.5"]
+      secnumcloud_3_2: ["10.5"]
       cis_controls_v8: ["4.4"]
     fournisseurs: [outscale, exoscale, scaleway]
 
@@ -499,7 +499,7 @@ controles:
       d'administration ; activer un accès privé.
     scsl: [CLD-K8S-1]
     frameworks:
-      secnumcloud_3_2: ["12.1"]
+      secnumcloud_3_2: ["9.6", "13.2"]
       cis_controls_v8: ["4.4", "13.4"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
     fournisseurs: [outscale]
@@ -515,7 +515,7 @@ controles:
       Activer un plan de contrôle multi-AZ / multi-master sur le cluster managé.
     scsl: [CLD-K8S-2]
     frameworks:
-      secnumcloud_3_2: ["12.1"]
+      secnumcloud_3_2: ["17.4"]
       cis_controls_v8: ["11.1"]
       iso_27001_2022: ["A.8.14"]
     fournisseurs: [outscale, exoscale]
@@ -531,7 +531,7 @@ controles:
       Activer la maintenance / mise à jour automatique du cluster.
     scsl: [CLD-K8S-3]
     frameworks:
-      secnumcloud_3_2: ["12.6"]
+      secnumcloud_3_2: ["12.11"]
       cis_controls_v8: ["7.3"]
     fournisseurs: [outscale, exoscale]
 
@@ -546,7 +546,7 @@ controles:
       Activer la protection contre la suppression sur le cluster.
     scsl: [CLD-K8S-3]
     frameworks:
-      secnumcloud_3_2: ["12.6"]
+      secnumcloud_3_2: ["17.4"]
       iso_27001_2022: ["A.8.14"]
     fournisseurs: [outscale]
 
@@ -563,7 +563,7 @@ controles:
       Activer le versioning sur les buckets de données critiques (PutBucketVersioning).
     scsl: [CLD-STO-4]
     frameworks:
-      secnumcloud_3_2: ["12.3"]
+      secnumcloud_3_2: ["12.5", "17.6"]
       cis_controls_v8: ["11.1"]
       iso_27001_2022: ["A.8.13"]
     fournisseurs: [outscale, scaleway, exoscale]
@@ -582,7 +582,7 @@ controles:
       sauvegarde et d'objets critiques, avec une période de rétention adaptée.
     scsl: [CLD-STO-8]
     frameworks:
-      secnumcloud_3_2: ["12.3", "17.6"]
+      secnumcloud_3_2: ["12.5", "17.6"]
       cis_controls_v8: ["11.1"]
       iso_27001_2022: ["A.8.13"]
     fournisseurs: [outscale, scaleway, exoscale]
@@ -599,7 +599,7 @@ controles:
       URLs signées si un accès externe est requis.
     scsl: [CLD-STO-1]
     frameworks:
-      secnumcloud_3_2: ["9.2", "13.1"]
+      secnumcloud_3_2: ["9.7", "13.2"]
       cis_controls_v8: ["3.3", "3.11"]
       iso_27001_2022: ["A.5.15", "A.8.3", "A.8.11"]
       iso_27017: ["CLD.8.1.5", "CLD.9.5.1"]
@@ -616,7 +616,7 @@ controles:
       Retirer le partage public ; restreindre le partage aux comptes légitimes.
     scsl: [CLD-STO-2]
     frameworks:
-      secnumcloud_3_2: ["9.2", "18.1"]
+      secnumcloud_3_2: ["9.7", "13.2"]
       cis_controls_v8: ["3.3", "3.11"]
       iso_27001_2022: ["A.5.15", "A.8.3", "A.8.24"]
       iso_27017: ["CLD.8.1.5", "CLD.9.5.1"]
@@ -634,7 +634,7 @@ controles:
       restauration ; chiffrer et appliquer une rétention documentée.
     scsl: [CLD-STO-3]
     frameworks:
-      secnumcloud_3_2: ["12.3"]
+      secnumcloud_3_2: ["12.5", "17.6"]
       cis_controls_v8: ["11.1", "11.4"]
       iso_27001_2022: ["A.8.13"]
     fournisseurs: [outscale, exoscale]
@@ -707,7 +707,7 @@ controles:
       l'associer au bucket comme clé de chiffrement par défaut (SSE-KMS).
     scsl: [CLD-CHF-4]
     frameworks:
-      secnumcloud_3_2: ["10.5"]
+      secnumcloud_3_2: ["10.1", "10.5"]
       iso_27001_2022: ["A.8.24"]
     fournisseurs: [scaleway]
 
@@ -724,7 +724,7 @@ controles:
       et conserver selon une politique de rétention.
     scsl: [CLD-LOG-1]
     frameworks:
-      secnumcloud_3_2: ["12.1", "12.4", "12.4.1"]
+      secnumcloud_3_2: ["12.6", "12.7"]
       iso_27001_2022: ["A.8.15", "A.8.16"]
     fournisseurs: [outscale]
 
@@ -741,7 +741,7 @@ controles:
       centraliser et conserver les journaux selon une politique de rétention.
     scsl: [CLD-LOG-1]
     frameworks:
-      secnumcloud_3_2: ["12.1", "12.4", "12.4.1"]
+      secnumcloud_3_2: ["12.6", "12.7"]
       iso_27001_2022: ["A.8.15", "A.8.16"]
     fournisseurs: [exoscale]
 
@@ -758,7 +758,7 @@ controles:
       contrôler leur présence à la création.
     scsl: [CLD-GVN-1]
     frameworks:
-      secnumcloud_3_2: ["19.3"]
+      secnumcloud_3_2: ["8.1"]
       cis_controls_v8: ["3.3"]
       iso_27001_2022: ["A.5.15", "A.8.9"]
       iso_27017: ["CLD.6.3.1"]

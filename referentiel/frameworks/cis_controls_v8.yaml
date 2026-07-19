@@ -68,6 +68,10 @@ controls:
     title: Protect Recovery Data
     description: Les données de restauration sont chiffrées et protégées de l'altération.
 
+  - id: "7.3"
+    title: Perform Automated Operating System Patch Management
+    description: Les correctifs de sécurité du système d'exploitation sont appliqués automatiquement dans des délais maîtrisés.
+
   - id: "8.2"
     title: Collect Audit Logs
     description: Les journaux d'audit des systèmes sont collectés et conservés.

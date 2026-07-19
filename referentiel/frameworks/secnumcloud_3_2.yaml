@@ -1,82 +1,89 @@
 code: secnumcloud_3_2
 name: SecNumCloud — Prestataires de services cloud
 version: "3.2"
-url: https://cyber.gouv.fr/secnumcloud-pour-les-fournisseurs-de-services-cloud
+url: https://cyber.gouv.fr/sites/default/files/document/secnumcloud-referentiel-exigences-v3.2.pdf
 description: |
-  Référentiel de qualification des prestataires cloud (PSCaaS), publié par
-  l'ANSSI. Ce catalogue référence les chapitres pertinents pour un périmètre
-  Cloud IaaS Outscale (région cloudgouv-eu-west-1). Les exigences citées
-  ciblent la sécurité opérationnelle observable au niveau des ressources.
+  Référentiel d'exigences applicables aux prestataires de services d'informatique
+  en nuage (SecNumCloud), version 3.2 du 08/03/2022, publié par l'ANSSI. 354
+  exigences réparties sur 19 chapitres (structure calquée sur l'annexe A d'ISO/IEC
+  27001, augmentée d'exigences additionnelles au chapitre 19).
+  Ce catalogue ne référence QUE les sous-sections observables au niveau de la
+  configuration d'un tenant IaaS : les intitulés sont repris VERBATIM de la table
+  des matières officielle (chapitres 8 à 19). Les exigences organisationnelles ou
+  contractuelles (revues, procédures, relations tiers…) sortent du périmètre d'un
+  scanner de posture et ne sont pas mappées (cf. gaps.md, bucket D).
 
 controls:
+  # ── 8. Gestion des actifs ──
   - id: "8.1"
-    title: Inventaire des actifs
-    description: Un inventaire complet, précis et tenu à jour des actifs est maintenu, avec un propriétaire par actif.
+    title: Inventaire et propriété des actifs
+    description: Un inventaire des actifs est tenu à jour et chaque actif dispose d'un propriétaire identifié.
 
-  - id: "8.2"
-    title: Gestion des actifs tout au long de leur cycle de vie
-    description: Les actifs sont gérés de leur création à leur destruction (provisionnement, usage, retrait).
+  # ── 9. Contrôle d'accès et gestion des identités ──
+  - id: "9.1"
+    title: Politiques et contrôle d'accès
+    description: Une politique de contrôle d'accès applique le moindre privilège et le besoin d'en connaître.
+  - id: "9.3"
+    title: Gestion des droits d'accès
+    description: L'attribution et le retrait des droits d'accès sont maîtrisés et limités au strict nécessaire.
+  - id: "9.5"
+    title: Gestion des authentifications des utilisateurs
+    description: Les moyens d'authentification sont gérés de façon sécurisée (robustesse, cycle de vie, second facteur).
+  - id: "9.6"
+    title: Accès aux interfaces d'administration
+    description: Les interfaces d'administration ne sont accessibles que depuis des sources maîtrisées et authentifiées fortement.
+  - id: "9.7"
+    title: Restriction des accès à l'information
+    description: L'accès à l'information est restreint aux seules entités légitimes.
 
-  - id: "9.2"
-    title: Cloisonnement logique
-    description: Les ressources de chaque commanditaire sont isolées logiquement des autres commanditaires.
-
+  # ── 10. Cryptologie ──
   - id: "10.1"
-    title: Cryptographie au repos
-    description: Les données stockées sont protégées par chiffrement conforme au RGS.
-
+    title: Chiffrement des données stockées
+    description: Les données stockées sensibles sont chiffrées au repos avec des mécanismes conformes.
   - id: "10.2"
-    title: Cryptographie en transit
-    description: Les communications sont protégées par chiffrement conforme au RGS (TLS ≥ 1.2).
-
-  - id: "12.1"
-    title: Politique de journalisation
-    description: Les événements de sécurité sont journalisés, horodatés et centralisés.
-
-  - id: "12.4"
-    title: Surveillance des événements
-    description: Les journaux sont analysés pour détecter les événements de sécurité.
-
-  - id: "13.1"
-    title: Cloisonnement réseau
-    description: Les flux entre zones de confiance différentes sont filtrés par défaut.
-
-  - id: "13.2"
-    title: Flux d'administration
-    description: Les interfaces d'administration ne sont pas directement accessibles depuis Internet.
-
-  - id: "13.3"
-    title: Filtrage réseau entrant
-    description: Les flux entrants sont restreints aux seules sources légitimes.
-
-  - id: "18.1"
-    title: Gestion des sauvegardes
-    description: Les sauvegardes sont chiffrées, testées et conservées selon une politique de rétention documentée.
-
-  - id: "19.1"
-    title: Gestion des accès privilégiés
-    description: Les accès privilégiés sont nominatifs, tracés et strictement limités au nécessaire.
-
-  - id: "19.2"
-    title: Authentification forte
-    description: L'authentification aux interfaces d'administration utilise un second facteur (MFA).
-
-  - id: "19.3"
-    title: Revue des accès
-    description: Les droits d'accès sont revus périodiquement et révoqués sans délai en cas de départ ou de changement de mission.
-
-  - id: "19.5"
+    title: Chiffrement des flux
+    description: Les flux transportant des données sensibles sont chiffrés (TLS ≥ 1.2, suites robustes).
+  - id: "10.5"
     title: Gestion des secrets
-    description: Les secrets (clés API, mots de passe) sont stockés dans un gestionnaire dédié et tournés régulièrement.
+    description: Les secrets (clés, mots de passe, certificats) sont protégés, cloisonnés et renouvelés.
 
-  - id: "20.1"
-    title: Durcissement des systèmes
-    description: Les systèmes sont configurés selon des référentiels de durcissement et les services inutiles sont désactivés.
+  # ── 12. Sécurité liée à l'exploitation ──
+  - id: "12.5"
+    title: Sauvegarde des informations
+    description: Les informations sont sauvegardées selon une politique documentée et testées en restauration.
+  - id: "12.6"
+    title: Journalisation des événements
+    description: Les événements de sécurité sont journalisés, horodatés et conservés.
+  - id: "12.7"
+    title: Protection de l'information journalisée
+    description: Les journaux sont protégés en intégrité et contre la suppression ou l'altération.
+  - id: "12.11"
+    title: Gestion des vulnérabilités techniques
+    description: Les vulnérabilités techniques sont identifiées et corrigées dans des délais maîtrisés.
 
-  - id: "12.3"
-    title: Sauvegarde et restauration
-    description: Le client implémente une politique de sauvegarde des données critiques avec test de restauration périodique.
+  # ── 13. Sécurité des communications ──
+  - id: "13.1"
+    title: Cartographie du système d'information
+    description: Le système d'information est cartographié (ressources, flux, zones de confiance).
+  - id: "13.2"
+    title: Cloisonnement des réseaux
+    description: Les réseaux sont cloisonnés et les flux entre zones de confiance filtrés par défaut.
+  - id: "13.3"
+    title: Surveillance des réseaux
+    description: Les réseaux sont surveillés pour détecter les flux et comportements anormaux.
 
-  - id: "12.4.1"
-    title: Journalisation des accès aux services
-    description: Les accès aux services exposés sont journalisés et conservés pour audit.
+  # ── 17. Continuité d'activité ──
+  - id: "17.4"
+    title: Disponibilité des moyens de traitement de l'information
+    description: Les moyens de traitement disposent d'une redondance suffisante pour respecter les objectifs de disponibilité.
+  - id: "17.6"
+    title: Mise à disposition d'un dispositif de sauvegarde des données du commanditaire
+    description: Un dispositif permet au commanditaire de sauvegarder et restaurer ses données.
+
+  # ── 19. Exigences supplémentaires ──
+  - id: "19.2"
+    title: Localisation des données
+    description: Les données, y compris les sauvegardes, sont stockées et traitées au sein de l'Union européenne.
+  - id: "19.6"
+    title: Protection vis-à-vis du droit extra-européen
+    description: Le prestataire n'est pas soumis à un droit extra-européen susceptible de contraindre l'accès aux données (capital, gouvernance, sous-traitance).

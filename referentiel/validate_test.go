@@ -125,3 +125,63 @@ func TestCatalogueConsistency(t *testing.T) {
 		}
 	}
 }
+
+// frameworksDir : catalogues de normes (une vue par norme), relatif au package.
+const frameworksDir = "frameworks"
+
+// loadFrameworkIDs charge frameworks/*.yaml et retourne, par code de norme, l'ensemble
+// des identifiants d'exigence définis (repris VERBATIM du texte officiel).
+func loadFrameworkIDs(t *testing.T) map[string]map[string]bool {
+	t.Helper()
+	entries, err := os.ReadDir(frameworksDir)
+	if err != nil {
+		t.Fatalf("lecture de %s : %v", frameworksDir, err)
+	}
+	out := map[string]map[string]bool{}
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".yaml") {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(frameworksDir, e.Name()))
+		if err != nil {
+			t.Fatalf("lecture de %s : %v", e.Name(), err)
+		}
+		var fw struct {
+			Code     string `yaml:"code"`
+			Controls []struct {
+				ID string `yaml:"id"`
+			} `yaml:"controls"`
+		}
+		if err := yaml.Unmarshal(b, &fw); err != nil {
+			t.Fatalf("%s invalide : %v", e.Name(), err)
+		}
+		ids := map[string]bool{}
+		for _, c := range fw.Controls {
+			ids[c.ID] = true
+		}
+		out[fw.Code] = ids
+	}
+	return out
+}
+
+// TestFrameworkReferencesExist : tout identifiant d'exigence mappé par un contrôle
+// (frameworks: {norme: [ids]}) doit être défini dans le catalogue de cette norme
+// (frameworks/<norme>.yaml). Anti-invention symétrique de TestSCSLReferencesExist :
+// interdit qu'un mapping cite un numéro d'exigence qui n'existe pas dans le texte.
+func TestFrameworkReferencesExist(t *testing.T) {
+	defined := loadFrameworkIDs(t)
+	for code, ctl := range byCode {
+		for fw, ids := range ctl.Frameworks {
+			known, ok := defined[fw]
+			if !ok {
+				t.Errorf("contrôle %q mappe une norme inconnue (pas de frameworks/%s.yaml) : %s", code, fw, fw)
+				continue
+			}
+			for _, id := range ids {
+				if !known[id] {
+					t.Errorf("contrôle %q référence %s %q, absent du catalogue frameworks/%s.yaml", code, fw, id, fw)
+				}
+			}
+		}
+	}
+}
