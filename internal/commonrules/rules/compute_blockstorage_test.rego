@@ -91,3 +91,17 @@ test_userdata_password_inline_denied if {
 test_userdata_cloudinit_chpasswd_ok if {
 	count({f | some f in deny; f.code == "compute_instance_no_secrets_in_user_data"}) == 0 with input as {"resources": [{"provider": "scaleway", "type": "compute_instance", "id": "i-7", "attributes": {"vm_id": "i-7", "security_group_ids": ["sg-1"], "user_data": "#cloud-config\nchpasswd:\n  expire: true\nssh_pwauth: false\n"}}]}
 }
+
+# ✗ user-data réellement encodé en base64 (le décodage donne du texte cloud-init) → le secret
+#   AKIA embarqué est bien détecté.
+test_userdata_base64_encoded_secret_denied if {
+	some f in deny with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-8", "attributes": {"vm_id": "i-8", "security_group_ids": ["sg-1"], "user_data": "I2Nsb3VkLWNvbmZpZwpleHBvcnQgS0VZPUFLSUFBQkNERUZHSElKS0xNTk9QCg=="}}]}
+	f.code == "compute_instance_no_secrets_in_user_data"
+}
+
+# ✗ secret EN CLAIR qui matche par accident l'alphabet base64 (clé AKIA seule, 20 car., %4==0) :
+#   le décodage donne du binaire NON imprimable → traité comme texte brut → toujours détecté.
+test_userdata_plaintext_looks_base64_denied if {
+	some f in deny with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-9", "attributes": {"vm_id": "i-9", "security_group_ids": ["sg-1"], "user_data": "AKIAABCDEFGHIJKLMNOP"}}]}
+	f.code == "compute_instance_no_secrets_in_user_data"
+}

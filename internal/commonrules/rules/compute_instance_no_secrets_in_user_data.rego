@@ -47,10 +47,15 @@ _user_data(attrs) := concat("\n", vals) if {
 	vals := [v | some k; v := m[k]; is_string(v)]
 }
 
+# _is_base64 — chaîne réellement base64 : alphabet valide, longueur multiple de 4, ET le
+# décodage produit du TEXTE imprimable (le user-data encodé est du cloud-init, du texte). Sans
+# le test d'imprimabilité, un user-data EN CLAIR qui matche par accident l'alphabet base64
+# serait décodé en binaire et la détection de secret perdue (faux négatif).
 _is_base64(s) if {
 	s != ""
 	regex.match(`^[A-Za-z0-9+/]+={0,2}$`, s)
 	count(s) % 4 == 0
+	regex.match(`^[[:print:][:space:]]*$`, base64.decode(s))
 }
 
 # _secret_patterns — ENSEMBLE des types de secrets détectés (un user-data peut en
