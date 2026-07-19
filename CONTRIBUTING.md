@@ -1,0 +1,61 @@
+> 🇬🇧 English · [🇫🇷 Français](CONTRIBUTING.fr.md)
+
+# Contributing to Pépin
+
+Thanks for contributing. Pépin is an audit tool: the quality bar is high because a
+false result defeats its very purpose (opposability).
+
+## Quality gates
+
+```bash
+mise run build   # compile
+mise run test    # go test ./... -race + Rego tests (opa)
+mise run audit   # vet + lint (golangci-lint) + gosec + govulncheck + osv
+```
+
+Do not submit a change if `mise run test` or `mise run audit` fails. `opa test`,
+`opa check --strict` and `opa fmt` must stay clean.
+
+## Non-negotiable rules
+
+1. **Anchor on the API contract.** Never invent a provider's resource model: the
+   evaluated model reflects the native SDK/API contract. An unverified field is
+   not used; a **derived** field is marked "DÉRIVÉ" with its formula. Cite the
+   source in each rule's header.
+2. **Never invent a normative reference.** Every SCSL requirement (`CLD-*`) and
+   every norm mapping is checked against the official text. Tests
+   (`TestSCSLReferencesExist`, `TestFrameworkReferencesExist`) reject a
+   non-existent id; add the requirement to the source first if it is missing.
+3. **Effective configuration.** A control queries the resolved state, never a
+   service file. Every rule carries a **capability guard**: if the needed
+   attribute was not collected, it does not fire (no false positive).
+4. **No rule change without a real scan.** A new rule or a provider extension MUST
+   be validated by a real scan (live collection, or auditing a Terraform plan)
+   before any coverage is claimed. An unvalidated control stays `fournisseurs: []`
+   (written and tested, activation frozen).
+5. **No test resource left alive.** If a test provisions cloud resources, they
+   MUST be destroyed afterwards (`terraform destroy`). Prefer the Terraform plan
+   (`scan --terraform`), which provisions nothing.
+6. **No hardcoded secrets** (keys, passwords): CLI options / environment /
+   `random_password` in fixtures.
+
+## Adding a provider
+
+A provider is one `providers/<name>.yaml` file: identity, auth, credential
+resolution, S3 endpoint, `collecte` (live API), `mapping_terraform`, and the
+`contrat` (state per type: `verifie` / `a_verifier` / `absent`, with its source).
+
+## Adding a control
+
+1. Write the rule `internal/commonrules/rules/<code>.rego` (emits the neutral
+   `code`, with a capability guard) and its `_test.rego`.
+2. Declare the control in `referentiel/controles.yaml` (severity, SCSL, norm
+   mappings, `fournisseurs`).
+3. Validate with a real scan, then activate (`fournisseurs`).
+
+## Docs & commits
+
+Repository docs are **bilingual**: English is primary (`README.md`), French is the
+counterpart (`README.fr.md`), linked by a language switcher. Commits follow
+Conventional Commits (`feat`/`fix`/`docs`/`refactor`/`test`/`chore`), imperative
+subject.

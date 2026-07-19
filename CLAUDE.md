@@ -65,6 +65,15 @@ CE plan — aucune ressource cloud créée. Le scan live ne sert qu'à confirmer
 **contrat d'API** (champs réels) quand le plan ne suffit pas ; il est alors suivi
 d'un `destroy` immédiat.
 
+### 1.2 Docs du dépôt : bilingues, anglais en premier
+
+Comme pavois, les docs du dépôt sont **bilingues FR/EN**. **L'anglais est la langue
+PRIMAIRE** : `README.md`, `SECURITY.md`, `CONTRIBUTING.md` sont en anglais ; leur
+contrepartie française est `*.fr.md`, reliée par un sélecteur de langue en tête
+(`🇬🇧 English · [🇫🇷 Français](*.fr.md)`). Tenir les deux versions synchronisées à
+chaque changement. Le CODE, les COMMENTAIRES, la CLI et le RÉFÉRENTIEL restent en
+français (produit souverain) ; les COMMITS restent en anglais (Conventional Commits).
+
 ## 2. Ancrage sur le contrat de l'API — règle d'or (skill `ancrage-contrat`)
 
 **Ne jamais inventer le modèle de ressources d'un provider.** Le modèle évalué
