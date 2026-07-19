@@ -46,6 +46,25 @@ mise run audit   # vet + lint (golangci-lint) + sec (gosec) + vuln (govulncheck)
 
 Ne pas committer si `mise run test` ou `mise run audit` échoue.
 
+### 1.1 Scans réels & provisionnement (comptes Outscale + Scaleway disponibles)
+
+Des comptes **Outscale** et **Scaleway** réels sont disponibles pour valider une
+règle par un scan live (`--live`), condition non négociable avant d'ACTIVER un
+contrôle (`fournisseurs:` non vide, contrat `verifie`).
+
+**RÈGLE ABSOLUE — nettoyage : toute ressource provisionnée pour un test DOIT être
+détruite à la fin** (`terraform destroy`, ou suppression via l'API/console). Ne
+jamais laisser une ressource de test vivre : coût, surface d'exposition, dérive.
+Tenir la liste de ce qui est créé et confirmer la destruction avant de conclure.
+
+**Préférer le NON-provisionnement.** pepin sait auditer un **plan Terraform**
+(`scan --tf plan.json`, chemin `tfmap`/`tfparse`) : pour valider une règle et le
+mapping d'un nouveau type, écrire (ou réutiliser depuis GitHub) un `.tf` du/des
+provider(s) souverain(s), générer `terraform plan -out` → `plan.json`, et scanner
+CE plan — aucune ressource cloud créée. Le scan live ne sert qu'à confirmer le
+**contrat d'API** (champs réels) quand le plan ne suffit pas ; il est alors suivi
+d'un `destroy` immédiat.
+
 ## 2. Ancrage sur le contrat de l'API — règle d'or (skill `ancrage-contrat`)
 
 **Ne jamais inventer le modèle de ressources d'un provider.** Le modèle évalué
