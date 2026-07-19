@@ -15,17 +15,23 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  actions: read
-  security-events: write
   contents: read
 
 jobs:
   # Scan de PR : ne casse le build que si la PR introduit une nouvelle vuln.
   scan-pr:
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    permissions:
+      actions: read
+      security-events: write
+      contents: read
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
 
   # Scan planifié/complet : rattrape les paquets reclassés MAL- après coup.
   scan-scheduled:
     if: github.event_name == 'push' || github.event_name == 'schedule'
+    permissions:
+      actions: read
+      security-events: write
+      contents: read
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
