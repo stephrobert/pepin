@@ -30,6 +30,15 @@ resource "scaleway_instance_security_group" "web" {
   }
 }
 
+# ✗ Politique entrante par défaut « accept » : tout trafic non filtré est admis
+#   → network_securitygroup_default_deny (CLD-NET-2)
+#   Forme reprise de jpetazzo/container.training (Kapsule custom SG, accept par défaut).
+resource "scaleway_instance_security_group" "open_default" {
+  name                    = "sg-open-default"
+  inbound_default_policy  = "accept"
+  outbound_default_policy = "accept"
+}
+
 # ✗ Bucket exposé publiquement (ACL canned public-read)
 #   → objectstorage_bucket_public_access
 resource "scaleway_object_bucket" "backups" {

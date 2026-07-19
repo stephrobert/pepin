@@ -841,7 +841,8 @@ controles:
       cis_controls_v8: ["4.4", "12.2"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
       iso_27017: ["CLD.13.1.4"]
-    fournisseurs: []
+    # scaleway : mapping Terraform validé par un plan réel (scan --terraform).
+    fournisseurs: [scaleway]
 
   - code: network_subnet_no_public_ip_by_default
     famille: reseau

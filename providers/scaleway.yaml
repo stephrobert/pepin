@@ -140,6 +140,15 @@ mapping_terraform:
         port_from: range_from
         port_to: range_to
   
+    # Le SG en tant qu'OBJET → security_group (politique par défaut, distinct des
+    # security_group_rule ci-dessus). inbound_default_policy=accept ⇒ ouvert par défaut.
+    - tf_type: scaleway_instance_security_group
+      type: security_group
+      id: security_group_id
+      map:
+        security_group_id: name
+        inbound_default_policy: inbound_default_policy
+
     - tf_type: scaleway_object_bucket_acl
       type: object_storage_bucket
       id: name
@@ -215,6 +224,15 @@ contrat:
         port_to: DestPortTo (*uint32) ; nil → DestPortFrom
         cidrs: '[IPRange (scw.IPNet)]'
         security_group_id: ID du security group parent
+    security_group:
+      etat: verifie
+      source: >
+        Terraform scaleway_instance_security_group (mapping validé par un plan réel :
+        jpetazzo/container.training accept, wescale/forge-gitlab-scaleway-demo drop).
+        API live api/instance/v1 SecurityGroup.InboundDefaultPolicy à câbler en collecte.
+      mapping:
+        security_group_id: nom du security group (id null au stade plan)
+        inbound_default_policy: InboundDefaultPolicy (accept|drop)
     compute_instance:
       etat: verifie
       source: api/instance/v1 Server
