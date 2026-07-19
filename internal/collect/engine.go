@@ -470,6 +470,43 @@ func lookup(v any, path string) any {
 	return v
 }
 
+// knownBareTransforms : noms de transforms de valeur sans préfixe (liste fermée).
+var knownBareTransforms = map[string]bool{
+	"lower": true, "upper": true, "first": true, "range_from": true, "range_to": true,
+	"iampolicy": true, "list": true, "kv": true, "to_int": true, "nonempty": true,
+}
+
+// knownTransformPrefixes : préfixes de transforms paramétrés (`default:val`, `equals:val`…).
+var knownTransformPrefixes = []string{"equals:", "default:", "pluck:", "contains:"}
+
+// ValidateTransform retourne les noms de transforms INCONNUS d'une spec (chaîne, chaînage
+// []any, ou table de remplacement map). Un transform inconnu (typo `lowercase`) serait un
+// no-op silencieux : sans cette validation, il ferait disparaître un attribut sans erreur,
+// court-circuitant la garde de capacité de la règle. Appelé au chargement du descripteur.
+func ValidateTransform(spec any) []string {
+	switch t := spec.(type) {
+	case []any:
+		var bad []string
+		for _, step := range t {
+			bad = append(bad, ValidateTransform(step)...)
+		}
+		return bad
+	case map[string]any:
+		return nil // table de remplacement de valeurs : toujours valide
+	case string:
+		if knownBareTransforms[t] {
+			return nil
+		}
+		for _, p := range knownTransformPrefixes {
+			if strings.HasPrefix(t, p) {
+				return nil
+			}
+		}
+		return []string{t}
+	}
+	return nil
+}
+
 // applyTransform applique un transform : nom prédéfini (lower|upper|first|list|
 // to_int) ou table de remplacement de valeurs (map from->to).
 func applyTransform(v any, spec any) any {

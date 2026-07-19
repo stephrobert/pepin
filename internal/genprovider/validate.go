@@ -5,6 +5,8 @@ import (
 	"io/fs"
 	"path"
 	"strings"
+
+	"github.com/stephrobert/pepin/internal/collect"
 )
 
 // authTypes et credFormats définissent le CONTRAT d'un provider : seuls ces
@@ -60,12 +62,22 @@ func Validate(name string, desc Descriptor) []string {
 		if r.Type == "" {
 			add("collecte : ressource #%d sans `type`", i)
 		}
+		for attr, tr := range r.Transforms {
+			for _, bad := range collect.ValidateTransform(tr) {
+				add("collecte : ressource #%d (%s) transform inconnu %q sur `%s`", i, r.Type, bad, attr)
+			}
+		}
 	}
 
 	// Source : mapping Terraform (optionnel, mais cohérent si présent).
 	for i, r := range desc.MappingTerraform.Resources {
 		if r.TFType == "" || r.Type == "" {
 			add("mapping_terraform : ressource #%d : `tf_type` et `type` requis", i)
+		}
+		for attr, tr := range r.Transforms {
+			for _, bad := range collect.ValidateTransform(tr) {
+				add("mapping_terraform : ressource #%d (%s) transform inconnu %q sur `%s`", i, r.TFType, bad, attr)
+			}
 		}
 	}
 	return errs

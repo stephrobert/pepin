@@ -299,3 +299,24 @@ func TestProjectOmitsAbsentAttributes(t *testing.T) {
 		t.Errorf("un attribut absent de la source ne doit pas être projeté, got %v", attrs["encrypted"])
 	}
 }
+
+func TestValidateTransform(t *testing.T) {
+	// Connus : bare, préfixés, chaînage, table de remplacement.
+	for _, ok := range []any{
+		"lower", "range_from", "list", "nonempty",
+		"default:0.0.0.0/0", "contains:iam", "equals:x", "pluck:ip",
+		[]any{"default:accept", "lower"},
+		map[string]any{"any": "all"},
+	} {
+		if bad := ValidateTransform(ok); len(bad) != 0 {
+			t.Errorf("transform %v jugé inconnu à tort : %v", ok, bad)
+		}
+	}
+	// Inconnu (typo) : signalé, y compris dans un chaînage.
+	if bad := ValidateTransform("lowercase"); len(bad) != 1 || bad[0] != "lowercase" {
+		t.Errorf("typo `lowercase` non détectée : %v", bad)
+	}
+	if bad := ValidateTransform([]any{"lower", "nope"}); len(bad) != 1 || bad[0] != "nope" {
+		t.Errorf("typo dans un chaînage non détectée : %v", bad)
+	}
+}

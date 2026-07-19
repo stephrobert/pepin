@@ -7,11 +7,16 @@ package collectkit
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/internal/objectstorage"
 )
+
+// httpTimeout borne chaque requête de collecte live : sans borne, un endpoint provider qui
+// pend gèle le scan indéfiniment (pas de deadline sur le contexte cobra).
+const httpTimeout = 30 * time.Second
 
 // S3 décrit l'accès au stockage objet S3-compatible d'un provider (endpoint vide
 // = pas de collecte de buckets).
@@ -23,7 +28,7 @@ type S3 struct {
 // Run exécute la spec de collecte (auth + variables fournies par le provider),
 // puis collecte les buckets S3 si un endpoint est donné.
 func Run(ctx context.Context, name string, spec collect.Spec, auth collect.Auth, vars map[string]string, s3 S3) ([]model.Resource, error) {
-	out, err := collect.Collect(ctx, &http.Client{}, spec, auth, vars)
+	out, err := collect.Collect(ctx, &http.Client{Timeout: httpTimeout}, spec, auth, vars)
 	if err != nil {
 		return nil, err
 	}
