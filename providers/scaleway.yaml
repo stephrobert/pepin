@@ -110,31 +110,35 @@ mapping_terraform:
       type: security_group_rule
       items: inbound_rule[*]
       id: security_group_id
-      const: { direction: inbound, action: accept }
+      const: { direction: inbound }
       map:
         security_group_id: _parent.id
+        action: action                       # accept|drop : NE PAS présumer accept (une règle drop bloque)
         protocol: protocol
-        cidrs: ip_range
+        cidrs: ip_range||ip                   # ip_range (CIDR) ou champ ip déprécié (IP unique)
         port_from: port||port_range
         port_to: port||port_range
       transforms:
+        action: ["default:accept", lower]     # action omise ⇒ accept (défaut du bloc de règle)
         protocol: [lower, { any: all, "": all }]
-        cidrs: ["default:0.0.0.0/0", list]   # ip_range omis ⇒ toute origine
-        port_from: range_from
+        cidrs: ["default:0.0.0.0/0", list]   # ip_range ET ip omis ⇒ toute origine
+        port_from: range_from                 # port ET port_range omis ⇒ nil (tous ports via covers_port)
         port_to: range_to
-  
+
     - tf_type: scaleway_instance_security_group
       type: security_group_rule
       items: outbound_rule[*]
       id: security_group_id
-      const: { direction: outbound, action: accept }
+      const: { direction: outbound }
       map:
         security_group_id: _parent.id
+        action: action
         protocol: protocol
-        cidrs: ip_range
+        cidrs: ip_range||ip
         port_from: port||port_range
         port_to: port||port_range
       transforms:
+        action: ["default:accept", lower]
         protocol: [lower, { any: all, "": all }]
         cidrs: ["default:0.0.0.0/0", list]
         port_from: range_from
