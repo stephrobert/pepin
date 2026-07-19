@@ -199,7 +199,11 @@ func Project(item any, mapping map[string]string, transforms map[string]any) map
 			v = applyTransform(v, t)
 		}
 		if v == nil {
-			v = ""
+			// Attribut absent de la source (l'API n'a rien renvoyé) : on ne le projette PAS,
+			// au lieu de le forcer à "". Sinon les gardes de capacité (`"k" in object.keys`)
+			// sont toujours vraies et un champ numérique absent devient une chaîne vide qui
+			// casse les comparaisons — doctrine « ce que le provider n'expose pas ne se teste pas ».
+			continue
 		}
 		attrs[attr] = v
 	}

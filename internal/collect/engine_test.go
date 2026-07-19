@@ -51,12 +51,14 @@ resources:
 	if len(res) != 2 {
 		t.Fatalf("attendu 2 access_key, obtenu %d", len(res))
 	}
-	// 1re clé : sans expiration → expiration_date vide (déclenchera iam_accesskey_expiration_set).
+	// 1re clé : sans expiration → expiration_date ABSENT (non projeté : « ce que la source
+	// n'expose pas ne se teste pas »). La règle iam_accesskey_expiration_set se déclenche
+	// quand même, via object.get(k, "expiration_date", "") == "".
 	if res[0].Type != "access_key" || res[0].Provider != "scaleway" || res[0].ID != "SCWAAAA" {
 		t.Errorf("ressource inattendue : %+v", res[0])
 	}
-	if res[0].Attributes["expiration_date"] != "" {
-		t.Errorf("clé sans expiration : expiration_date devrait être vide, got %v", res[0].Attributes["expiration_date"])
+	if _, present := res[0].Attributes["expiration_date"]; present {
+		t.Errorf("clé sans expiration : expiration_date devrait être ABSENT, got %v", res[0].Attributes["expiration_date"])
 	}
 	// 2e clé : avec expiration.
 	if res[1].Attributes["expiration_date"] != "2027-01-01T00:00:00Z" {
@@ -278,5 +280,22 @@ func TestAwsPolicyStatementsInvalid(t *testing.T) {
 	}
 	if got := awsPolicyStatements(""); len(got) != 0 {
 		t.Errorf("policy vide : %d, attendu 0", len(got))
+	}
+}
+
+func TestProjectOmitsAbsentAttributes(t *testing.T) {
+	item := map[string]any{"name": "vol-1", "size": float64(20)}
+	mapping := map[string]string{
+		"id":        "name",
+		"size":      "size",
+		"encrypted": "encrypted", // absent de la source
+	}
+	attrs := Project(item, mapping, nil)
+	if attrs["id"] != "vol-1" || attrs["size"] != float64(20) {
+		t.Errorf("attributs présents mal projetés : %+v", attrs)
+	}
+	// Attribut absent de la source : NON projeté (pas forcé à "").
+	if _, present := attrs["encrypted"]; present {
+		t.Errorf("un attribut absent de la source ne doit pas être projeté, got %v", attrs["encrypted"])
 	}
 }
