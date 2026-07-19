@@ -150,9 +150,10 @@ Module Go : `github.com/stephrobert/pepin`.
 
 ## 9. Découplage en modules — `scankit`
 
-Le **moteur OPA, le modèle `Finding`, le rendu (terminal/SARIF) et le scoring**
-viennent du module partagé **`github.com/stephrobert/scankit`** (`../scankit`,
-**non publié** → `replace` local dans `go.mod`), commun à Pépin et **pitstop**.
+Le **moteur OPA, le modèle `Finding`, le rendu (terminal/SARIF), le scoring et
+l'assessment (statuts/bundle/OSCAL)** viennent du module partagé
+**`github.com/stephrobert/scankit`** (publié, consommé **en ligne** — épinglé par
+version dans `go.mod`, **plus de `replace` local**), commun à Pépin et **pitstop**.
 
 - Reste **dans Pépin** : les règles `.rego` (passées à `scankit/engine.Evaluate`),
   les providers/collecteurs, le référentiel, la marque (bandeau PEPIN), le verdict

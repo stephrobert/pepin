@@ -23,3 +23,6 @@ references/docs/*/
 # Editor / OS
 .DS_Store
 *.swp
+
+# Notes internes assistées par IA (mémoire, comptes) — jamais publiées.
+.claude/
