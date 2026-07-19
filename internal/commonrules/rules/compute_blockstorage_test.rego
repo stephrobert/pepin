@@ -51,6 +51,12 @@ test_vm_with_sg_ok if {
 	count({f | some f in deny; f.code == "compute_instance_has_security_group"}) == 0 with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": {"vm_id": "i-1", "security_group_ids": ["sg-1"]}}]}
 }
 
+# ✓ M1 : security_group_ids NON collecté (plan Terraform, référence « known after apply ») →
+#   garde de capacité, aucun faux positif « sans SG ».
+test_vm_sg_uncollected_ok if {
+	count({f | some f in deny; f.code == "compute_instance_has_security_group"}) == 0 with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": {"vm_id": "i-1"}}]}
+}
+
 # ---- compute_instance_no_secrets_in_user_data ----
 test_userdata_secret_denied if {
 	some f in deny with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": {"vm_id": "i-1", "security_group_ids": ["sg-1"], "user_data": "export KEY=AKIAABCDEFGHIJKLMNOP"}}]}
