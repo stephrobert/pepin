@@ -32,7 +32,13 @@ test_gov_secnumcloud_immunity_ok if {
 	count({f | some f in deny; f.code == "governance_provider_sovereignty"}) == 0 with input as _gov({"provider": "x", "eu_established": true, "capital_control": "FR", "extraterritorial_exposure": true, "secnumcloud": "qualifie"})
 }
 
-# ✓ contrôle « a_verifier » (incertain) → pas de faux positif.
-test_gov_capital_unverified_ok if {
-	count({f | some f in deny; f.code == "governance_provider_sovereignty"}) == 0 with input as _gov({"provider": "exoscale", "eu_established": true, "capital_control": "a_verifier", "secnumcloud": "non"})
+# ✓ contrôle « a_verifier » (souveraineté NON établie) → finding : ne pas présumer conforme.
+test_gov_capital_unverified_denied if {
+	some f in deny with input as _gov({"provider": "exoscale", "eu_established": true, "capital_control": "a_verifier", "secnumcloud": "non"})
+	f.code == "governance_provider_sovereignty"
+}
+
+# ✓ mais une immunité SecNumCloud reconnue tranche la question : pas de finding.
+test_gov_capital_unverified_but_secnumcloud_ok if {
+	count({f | some f in deny; f.code == "governance_provider_sovereignty"}) == 0 with input as _gov({"provider": "x", "eu_established": true, "capital_control": "a_verifier", "secnumcloud": "qualifie"})
 }

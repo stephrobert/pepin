@@ -39,6 +39,24 @@ deny contains f if {
 	}
 }
 
+# Contrôle capitalistique NON ÉTABLI (à vérifier). Un fait de souveraineté incertain
+# ne peut PAS être présumé conforme : sur le contrôle vitrine d'un CSPM souverain, un
+# actionnariat ultime non tracé est une lacune, pas un vert silencieux (sauf immunité
+# SecNumCloud reconnue, qui tranche la question).
+deny contains f if {
+	some r in resources_of_type("governance_provider")
+	object.get(r.attributes, "capital_control", "") == "a_verifier"
+	object.get(r.attributes, "secnumcloud", "non") != "qualifie"
+	f := {
+		"code": "governance_provider_sovereignty",
+		"severity": "high",
+		"subject": r.id,
+		"message": sprintf("Fournisseur « %s » : contrôle capitalistique non établi (à vérifier) — la souveraineté ne peut être présumée conforme.", [r.id]),
+		"remediation": "Tracer la chaîne capitalistique ultime du fournisseur sur des sources officielles et confirmer l'absence de contrôle déterminant extra-UE ; à défaut, retenir une offre qualifiée SecNumCloud.",
+		"labels": {"provider": provider_of(r), "category": "compliance"},
+	}
+}
+
 # Exposition à une loi extraterritoriale (ex. Cloud Act) sans immunité reconnue
 # (la qualification SecNumCloud vaut immunité).
 deny contains f if {
