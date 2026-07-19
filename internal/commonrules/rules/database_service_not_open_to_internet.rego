@@ -5,6 +5,11 @@
 # Contrat : type normalisé agnostique `managed_database` ; attribut ip_filter
 #   (liste de CIDR autorisés, DÉRIVÉ — Scaleway RDB ACLs / Exoscale DBaaS
 #   ip-filter). Absent ⇒ pas de finding (garde de capacité).
+# LIMITE (source Terraform) : la règle ne voit que les ACL DÉCLARÉES. Le défaut d'API
+#   Scaleway est « ACL initiale 0.0.0.0/0 » (base ouverte tant qu'aucune ACL n'est posée) ;
+#   détecter une instance SANS ACL exige de corréler instance et ACL par leur id RÉEL, ce
+#   que le plan (ids « known after apply ») ne permet pas → à traiter en COLLECTE LIVE
+#   (rdb/v1 instances + acls), pas au niveau du plan.
 package pepin.rules
 
 import rego.v1

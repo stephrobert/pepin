@@ -265,11 +265,12 @@ mapping_terraform:
         tags: kv
 
     # Sous-réseau → subnet. map_public_ip_on_launch=true ⇒ IP publique auto (CLD-NET-3).
+    # subnet_id NON mappé depuis ip_range (deux subnets de même CIDR dans des Nets distincts
+    # fusionneraient) : id laissé au fallback res.Address de tfmap, unique par ressource.
     - tf_type: outscale_subnet
       type: subnet
       id: subnet_id
       map:
-        subnet_id: ip_range
         map_public_ip_on_launch: map_public_ip_on_launch
 
     # Permission de lancement d'OMI → compute_image. permission_additions[].global_permission
@@ -412,7 +413,7 @@ contrat:
         map_public_ip_on_launch, doc outscale/terraform-provider-outscale). API live
         ReadSubnets MapPublicIpOnLaunch à câbler en collecte.
       mapping:
-        subnet_id: ip_range du subnet (subnet_id computed, null au stade plan)
+        subnet_id: id API (computed) ; sujet = res.Address au stade plan (fallback tfmap)
         map_public_ip_on_launch: MapPublicIpOnLaunch (bool)
     compute_image:
       etat: verifie
