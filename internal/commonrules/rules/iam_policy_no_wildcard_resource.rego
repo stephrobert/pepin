@@ -10,11 +10,13 @@ import rego.v1
 deny contains f if {
 	some p in resources_of_type("iam_policy")
 	some stmt in object.get(p.attributes, "statements", [])
-	object.get(stmt, "effect", "") == "Allow"
+	lower(object.get(stmt, "effect", "")) == "allow"
 	"*" in object.get(stmt, "resources", [])
 
-	# Pas de doublon avec iam_policy_no_administrative_privileges (Action * = plus grave).
-	not "*" in object.get(stmt, "actions", [])
+	# Pas de doublon avec iam_policy_no_administrative_privileges : on EXCLUT toutes les formes
+	# « toutes les actions » (*, *:*, api:*), pas seulement « * » — sinon un statement
+	# {actions:["api:*"], resources:["*"]} déclencherait les DEUX règles.
+	not _grants_all_actions(object.get(stmt, "actions", []))
 	name := object.get(p.attributes, "policy_name", p.id)
 	f := {
 		"code": "iam_policy_no_wildcard_resource",

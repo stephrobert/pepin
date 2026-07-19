@@ -1,7 +1,7 @@
 # kubernetes_cluster_not_publicly_accessible
 #   API server du cluster managé (OKS) joignable depuis Internet : la liste
 #   d'autorisation contient 0.0.0.0/0 ou ::/0 — plan de contrôle exposé.
-# Origine : osc-policy OSC-OKS-001. SCSL : CLD-CMP-2.
+# SCSL : CLD-K8S-1 (serveur d'API du cluster non exposé publiquement).
 # Contrat : type normalisé agnostique `kubernetes_cluster` ; attribut
 #   admin_whitelist ([]string) — liste des CIDR autorisés à appeler l'API.
 package pepin.rules

@@ -30,7 +30,7 @@ catalogue:
   - { code: loadbalancer_is_in_multiple_az, severite: medium, statut: a_trier }
   - { code: loadbalancer_listeners_underneath, severite: medium, statut: a_trier }
   - { code: loadbalancer_logging_enabled, severite: medium, statut: implemente }
-  - { code: loadbalancer_ssl_listeners, severite: medium, statut: implemente }
+  - { code: loadbalancer_ssl_listeners, severite: high, statut: implemente }
 
   # ── compute ──
   - { code: compute_image_public, severite: critical, statut: a_trier }
@@ -68,7 +68,7 @@ catalogue:
   - { code: kubernetes_cluster_deletion_protection_enabled, severite: high, statut: a_trier }
   - { code: kubernetes_cluster_kms_cmk_encryption_in_secrets_enabled, severite: medium, statut: a_trier }
   - { code: kubernetes_cluster_network_policy_enabled, severite: high, statut: a_trier }
-  - { code: kubernetes_cluster_not_publicly_accessible, severite: high, statut: implemente }
+  - { code: kubernetes_cluster_not_publicly_accessible, severite: critical, statut: implemente }
   - { code: kubernetes_cluster_private_nodes_enabled, severite: high, statut: a_trier }
   - { code: kubernetes_cluster_uses_a_supported_version, severite: high, statut: a_trier }
   - { code: kubernetes_control_plane_logging_all_types_enabled, severite: medium, statut: a_trier }
@@ -87,7 +87,7 @@ catalogue:
   - { code: iam_inline_policy_no_wildcard_marketplace_subscribe, severite: medium, statut: a_trier }
   - { code: iam_no_custom_policy_permissive_role_assumption, severite: high, statut: a_trier }
   - { code: iam_no_expired_server_certificates_stored, severite: high, statut: a_trier }
-  - { code: iam_no_root_access_key, severite: critical, statut: implemente }
+  - { code: iam_no_root_access_key, severite: high, statut: implemente }
   - { code: iam_password_policy_expires_passwords_within_90_days_or_less, severite: medium, statut: a_trier }
   - { code: iam_password_policy_lowercase, severite: low, statut: a_trier }
   - { code: iam_password_policy_minimum_length_14, severite: medium, statut: a_trier }
@@ -157,7 +157,7 @@ catalogue:
   - { code: blockstorage_public_snapshot, severite: critical, statut: a_trier }
   - { code: blockstorage_snapshot_account_block_public_access, severite: high, statut: a_trier }
   - { code: blockstorage_snapshots_encrypted, severite: high, statut: a_trier }
-  - { code: blockstorage_volume_encryption, severite: high, statut: implemente }
+  - { code: blockstorage_volume_encryption, severite: medium, statut: implemente }
   - { code: blockstorage_volume_protected_by_backup_plan, severite: medium, statut: a_trier }
   - { code: blockstorage_volume_snapshots_exists, severite: high, statut: a_trier }
   - { code: objectstorage_access_point_public_access_block, severite: critical, statut: a_trier }

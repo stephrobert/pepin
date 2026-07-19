@@ -1,7 +1,7 @@
 # compute_instance_no_secrets_in_user_data
 #   Secret en clair détecté dans les données utilisateur (user-data) d'une VM :
 #   un accès aux métadonnées ou un SSRF peut l'exfiltrer.
-# Origine : osc-policy OSC-VM-008. SCSL : CLD-CMP-2.
+# SCSL : CLD-CMP-9 (aucun secret en clair dans les user-data).
 # Contrat : type normalisé agnostique `compute_instance` ; attribut user_data
 #   (string ; osc-sdk-go Vm.UserData renvoyé en base64 par l'API).
 package pepin.rules

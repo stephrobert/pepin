@@ -2,8 +2,8 @@
 #   Type normalisé agnostique `kubernetes_cluster`. Attributs (DÉRIVÉS du
 #   collecteur OKS) : control_plane_multi_az (bool), auto_upgrade (bool),
 #   deletion_protection (bool).
-# Origine : osc-policy OSC-OKS-002/003 (HA), OSC-OKS-005 (maintenance),
-#   OSC-OKS-004 (protection suppression). SCSL : CLD-CMP-4, CLD-CMP-5.
+# SCSL : CLD-K8S-2 (haute disponibilité du plan de contrôle),
+#   CLD-K8S-3 (auto-upgrade / maintenance, protection contre la suppression).
 package pepin.rules
 
 import rego.v1

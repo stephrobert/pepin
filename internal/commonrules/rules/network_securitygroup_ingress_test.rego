@@ -69,6 +69,23 @@ test_ipv4_half_internet_denied if {
 	f.code == _ssh
 }
 
+# ✗ IPv6 « moitié d'Internet » ::/1 reconnu public (généralisation IPv6 du /1).
+test_ipv6_half_internet_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["::/1"], "port_from": 22, "port_to": 22})
+	f.code == _ssh
+}
+
+# ✗ Sentinelle -1/-1 (Outscale OAPI = tous ports) ouverte à Internet → all/any TCP high_risk.
+test_port_sentinel_minus_one_denied if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["0.0.0.0/0"], "port_from": -1, "port_to": -1})
+	f.code == _hr
+}
+
+# ✓ action « reject » (ni accept ni drop) NON présumée acceptante → aucun finding.
+test_action_reject_not_accepting_ok if {
+	count({f | some f in deny; f.code == _ssh}) == 0 with input as _sgr({"direction": "inbound", "action": "reject", "protocol": "tcp", "cidrs": ["0.0.0.0/0"], "port_from": 22, "port_to": 22})
+}
+
 # ✗ FN-2 : NFS/UDP (2049) ouvert à Internet → high_risk UDP.
 test_udp_nfs_denied if {
 	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "udp", "cidrs": ["0.0.0.0/0"], "port_from": 2049, "port_to": 2049})

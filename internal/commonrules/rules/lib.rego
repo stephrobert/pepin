@@ -14,15 +14,10 @@ resources_of_type(t) := [r | some r in input.resources; r.type == t]
 
 # is_public_cidr — le CIDR couvre l'Internet public (IPv4 ou IPv6). On PARSE la longueur de
 # préfixe au lieu de comparer des littéraux : un préfixe /0 couvre tout l'espace d'adressage
-# quelle que soit l'écriture (`0.0.0.0/0`, `::/0`, `::0/0`, `0000::/0`). Un /1 IPv4
-# (`0.0.0.0/1` ou `128.0.0.0/1`) couvre la moitié d'Internet : contournement CSPM connu, jamais
-# légitime comme source « restreinte » → également public.
-is_public_cidr(cidr) if _cidr_prefix(cidr) == 0
-
-is_public_cidr(cidr) if {
-	not contains(cidr, ":") # IPv4 uniquement
-	_cidr_prefix(cidr) == 1
-}
+# quelle que soit l'écriture (`0.0.0.0/0`, `::/0`, `::0/0`, `0000::/0`). Un /1 (IPv4
+# `0.0.0.0/1`|`128.0.0.0/1`, ou IPv6 `::/1`) couvre la MOITIÉ de l'espace d'adressage :
+# contournement CSPM connu, jamais légitime comme source « restreinte » → également public.
+is_public_cidr(cidr) if _cidr_prefix(cidr) <= 1
 
 _cidr_prefix(cidr) := n if {
 	parts := split(cidr, "/")
@@ -70,6 +65,13 @@ covers_port(rule, _) if {
 	not _port_bound(rule, "port_to")
 }
 
+# 3. sentinelle « tous les ports » : plusieurs API (ex. Outscale OAPI) encodent une plage
+#    complète par FromPortRange/ToPortRange = -1. Sans ce cas, [-1,-1] ne couvrirait AUCUN
+#    port (faux négatif : une règle -1/-1 ouverte à Internet = any/any échapperait aux checks).
+covers_port(rule, _) if _port_bound(rule, "port_from") == -1
+
+covers_port(rule, _) if _port_bound(rule, "port_to") == -1
+
 # _port_bound — borne de port numérique, défensif face au typage : accepte un nombre ou une
 # chaîne purement numérique ; undefined si absente/vide/non numérique (le « » du moteur live).
 _port_bound(rule, key) := v if {
@@ -93,11 +95,17 @@ proto_covers(rule, want) if lower(object.get(rule, "protocol", "")) == want
 
 proto_covers(rule, _) if lower(object.get(rule, "protocol", "")) == "all"
 
+# sg_accepting — la règle AUTORISE le trafic. Ensemble EXPLICITE d'actions acceptantes
+# (accept/allow, ou absente ⇒ modèle allow-list type Outscale) : toute autre valeur
+# (drop, deny, reject…) est bloquante. On ne présume PAS acceptant « tout ce qui n'est pas
+# drop » — un `deny`/`reject` d'un futur provider serait alors compté à tort comme ouvert.
+sg_accepting(rule) if lower(object.get(rule, "action", "accept")) in {"accept", "allow", ""}
+
 # sg_inbound_from_internet — règle entrante acceptante dont la source couvre
 # Internet ; renvoie true si au moins un CIDR public est présent.
 sg_inbound_from_internet(rule) if {
 	lower(object.get(rule, "direction", "")) == "inbound"
-	object.get(rule, "action", "accept") != "drop"
+	sg_accepting(rule)
 	some cidr in object.get(rule, "cidrs", [])
 	is_public_cidr(cidr)
 }

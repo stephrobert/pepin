@@ -30,3 +30,22 @@ test_notaction_denied if {
 test_notaction_deny_ok if {
 	count({f | some f in deny; f.code == _notact_code}) == 0 with input as _pol([{"effect": "Deny", "not_action": ["DeleteVms"], "resources": ["*"]}])
 }
+
+# ✗ effet en minuscule « allow » (casse non normalisée) → toujours détecté.
+test_wildcard_resource_lowercase_effect if {
+	some f in deny with input as _pol([{"effect": "allow", "actions": ["ReadVms"], "resources": ["*"]}])
+	f.code == _wildres_code
+}
+
+test_notaction_lowercase_effect if {
+	some f in deny with input as _pol([{"effect": "allow", "not_action": ["DeleteVms"], "resources": ["*"]}])
+	f.code == _notact_code
+}
+
+# ✓ api:* + Resource "*" → seule la règle admin s'applique, PAS wildcard_resource
+#   (pas de double comptage : api:* est une forme « toutes actions »).
+test_wildcard_resource_skipped_when_api_wildcard if {
+	count({f | some f in deny; f.code == _wildres_code}) == 0 with input as _pol([{"effect": "Allow", "actions": ["api:*"], "resources": ["*"]}])
+	some f in deny with input as _pol([{"effect": "Allow", "actions": ["api:*"], "resources": ["*"]}])
+	f.code == "iam_policy_no_administrative_privileges"
+}

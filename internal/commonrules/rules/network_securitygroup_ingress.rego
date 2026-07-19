@@ -59,7 +59,7 @@ deny contains f if {
 deny contains f if {
 	some r in resources_of_type("security_group_rule")
 	lower(object.get(r.attributes, "direction", "")) == "outbound"
-	object.get(r.attributes, "action", "accept") != "drop"
+	sg_accepting(r.attributes)
 	lower(object.get(r.attributes, "protocol", "")) == "all"
 	some cidr in object.get(r.attributes, "cidrs", [])
 	is_public_cidr(cidr)

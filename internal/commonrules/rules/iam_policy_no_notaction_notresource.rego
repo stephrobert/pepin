@@ -11,7 +11,7 @@ import rego.v1
 deny contains f if {
 	some p in resources_of_type("iam_policy")
 	some stmt in object.get(p.attributes, "statements", [])
-	object.get(stmt, "effect", "") == "Allow"
+	lower(object.get(stmt, "effect", "")) == "allow"
 	_has_inversion(stmt)
 	name := object.get(p.attributes, "policy_name", p.id)
 	f := {

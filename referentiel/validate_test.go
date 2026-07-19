@@ -110,18 +110,25 @@ func TestCatalogueConsistency(t *testing.T) {
 	}
 	var cat struct {
 		Catalogue []struct {
-			Code   string `yaml:"code"`
-			Statut string `yaml:"statut"`
+			Code     string `yaml:"code"`
+			Statut   string `yaml:"statut"`
+			Severite string `yaml:"severite"`
 		} `yaml:"catalogue"`
 	}
 	if err := yaml.Unmarshal(raw, &cat); err != nil {
 		t.Fatalf("catalogue.yaml invalide : %v", err)
 	}
 	for _, e := range cat.Catalogue {
-		if e.Statut == "implemente" {
-			if _, ok := byCode[e.Code]; !ok {
-				t.Errorf("catalogue : %q marqué implemente mais absent de controles.yaml", e.Code)
-			}
+		if e.Statut != "implemente" {
+			continue
+		}
+		ctl, ok := byCode[e.Code]
+		if !ok {
+			t.Errorf("catalogue : %q marqué implemente mais absent de controles.yaml", e.Code)
+			continue
+		}
+		if e.Severite != "" && e.Severite != ctl.Severite {
+			t.Errorf("catalogue : sévérité de %q = %s, diverge de controles.yaml (%s)", e.Code, e.Severite, ctl.Severite)
 		}
 	}
 }
