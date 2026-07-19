@@ -7,10 +7,13 @@ package genprovider
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io/fs"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	yaml "go.yaml.in/yaml/v3"
@@ -268,19 +271,39 @@ func RegisterAll(fsys fs.FS, root string) error {
 	if err != nil {
 		return fmt.Errorf("lecture du dossier des providers %s : %w", root, err)
 	}
+	names := make([]string, 0, len(entries))
 	for _, e := range entries {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
 			continue
 		}
-		desc, err := Load(fsys, path.Join(root, e.Name()))
-		if err != nil {
-			return err
+		names = append(names, e.Name())
+	}
+	sort.Strings(names) // digest déterministe
+	h := sha256.New()
+	for _, name := range names {
+		raw, rerr := fs.ReadFile(fsys, path.Join(root, name))
+		if rerr != nil {
+			return rerr
+		}
+		h.Write([]byte(name))
+		h.Write(raw)
+		desc, derr := Load(fsys, path.Join(root, name))
+		if derr != nil {
+			return derr
 		}
 		registry[desc.Name] = desc
 		provider.Register(GenericProvider{desc: desc})
 	}
+	descriptorsDigest = "sha256:" + hex.EncodeToString(h.Sum(nil))
 	return nil
 }
+
+// descriptorsDigest : empreinte de contenu des descripteurs providers chargés (déterminent
+// `verified`, les N/A, la projection des attributs, la souveraineté) — pour la provenance.
+var descriptorsDigest string
+
+// DescriptorsDigest retourne l'empreinte des descripteurs providers chargés par RegisterAll.
+func DescriptorsDigest() string { return descriptorsDigest }
 
 // registry conserve les descripteurs chargés, pour exposer l'applicabilité des
 // contrôles (contrats) à la roadmap `pepin scsl`.

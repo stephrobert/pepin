@@ -54,6 +54,10 @@ func Lookup(code string) (Control, bool) {
 // All retourne tous les contrôles, indexés par code agnostique (lecture seule).
 func All() map[string]Control { return byCode }
 
+// Raw retourne le référentiel embarqué (controles.yaml) tel quel : sévérités, références
+// normatives et fournisseurs déterminent le résultat, donc entrent dans la provenance.
+func Raw() []byte { return raw }
+
 // SCSL retourne le premier id SCSL (CLD-*) du contrôle, ou "" s'il n'y en a pas.
 func (c Control) SCSL() string {
 	if len(c.Scsl) == 0 {

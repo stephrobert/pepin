@@ -55,10 +55,12 @@ func canonical(a assessment.Assessment) assessment.Assessment {
 	return a
 }
 
-// WriteBundle writes a tamper-evident evidence bundle to dir: the assessment (JSON), its OSCAL
-// assessment-results, a manifest with per-artifact digests, and a checksums.txt an operator can
-// sign. Returns the path of checksums.txt (the thing to sign).
-func WriteBundle(dir string, a assessment.Assessment) (string, error) {
+// WriteBundle writes a tamper-evident evidence bundle to dir: the exact evaluated inventory
+// (input.json — so the result is RE-DERIVABLE and attributable to a specific inventory), the
+// assessment (JSON), its OSCAL assessment-results, a manifest with per-artifact digests, and a
+// checksums.txt an operator can sign. `inputJSON` is the inventory the rules were evaluated on
+// (nil to omit). Returns the path of checksums.txt (the thing to sign).
+func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string, error) {
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return "", fmt.Errorf("création du dossier bundle %s : %w", dir, err)
 	}
@@ -93,6 +95,13 @@ func WriteBundle(dir string, a assessment.Assessment) (string, error) {
 	}{
 		{"assessment.json", "assessment", asmtJSON},
 		{"assessment-oscal.json", "oscal-assessment-results", oscalBuf},
+	}
+	if inputJSON != nil {
+		// L'inventaire évalué, en tête pour qu'un tiers puisse re-dériver le résultat.
+		files = append([]struct {
+			name, role string
+			data       []byte
+		}{{"input.json", "evaluated-input", inputJSON}}, files...)
 	}
 
 	manifest := Manifest{

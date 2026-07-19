@@ -26,7 +26,7 @@ func bundleAssessment() assessment.Assessment {
 
 func TestWriteAndVerifyBundle(t *testing.T) {
 	dir := t.TempDir()
-	cs, err := WriteBundle(dir, bundleAssessment())
+	cs, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`))
 	if err != nil {
 		t.Fatalf("WriteBundle: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestWriteAndVerifyBundle(t *testing.T) {
 
 func TestVerifyDetectsTampering(t *testing.T) {
 	dir := t.TempDir()
-	if _, err := WriteBundle(dir, bundleAssessment()); err != nil {
+	if _, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`)); err != nil {
 		t.Fatal(err)
 	}
 	// Tamper with the assessment after sealing.
@@ -61,10 +61,10 @@ func TestVerifyDetectsTampering(t *testing.T) {
 
 func TestBundleDeterministic(t *testing.T) {
 	d1, d2 := t.TempDir(), t.TempDir()
-	if _, err := WriteBundle(d1, bundleAssessment()); err != nil {
+	if _, err := WriteBundle(d1, bundleAssessment(), []byte(`{"resources":[]}`)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := WriteBundle(d2, bundleAssessment()); err != nil {
+	if _, err := WriteBundle(d2, bundleAssessment(), []byte(`{"resources":[]}`)); err != nil {
 		t.Fatal(err)
 	}
 	// Same run (same timestamp) → identical assessment digest in checksums.txt.

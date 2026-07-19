@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -94,7 +96,11 @@ var scanCmd = &cobra.Command{
 
 		// Bundle de preuve horodaté et hashé (opposabilité : intégrité + non-répudiation).
 		if scanSeal != "" {
-			cs, err := assess.WriteBundle(scanSeal, asmt)
+			inputJSON, merr := json.MarshalIndent(input, "", "  ") // l'inventaire EXACT évalué
+			if merr != nil {
+				return fmt.Errorf("sérialisation de l'inventaire évalué : %w", merr)
+			}
+			cs, err := assess.WriteBundle(scanSeal, asmt, inputJSON)
 			if err != nil {
 				return err
 			}
@@ -283,12 +289,28 @@ func buildRun(provider string, rtypes map[string]bool) assessment.Run {
 	sort.Strings(included)
 	return assessment.Run{
 		Tool:      assessment.Component{Name: "pepin", Version: version},
-		Ruleset:   assessment.Component{Name: "pepin-commonrules", Digest: assess.RulesetDigest(commonrules.FS())},
+		Ruleset:   assessment.Component{Name: "pepin-config", Digest: configDigest()},
 		Target:    assessment.Target{Provider: provider, Region: scanRegion, Platform: provider},
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 		Source:    source,
 		Scope:     assessment.Scope{Included: included},
 	}
+}
+
+// configDigest empreinte TOUT ce qui détermine le résultat : les règles Rego communes, les
+// descripteurs providers (verified/N/A/projection/souveraineté), le référentiel (sévérités,
+// références, fournisseurs) ET les répertoires de règles externes (--policy-dir). Deux
+// configurations différentes ne peuvent PAS produire le même digest sous le même résultat.
+func configDigest() string {
+	h := sha256.New()
+	h.Write([]byte(assess.RulesetDigest(commonrules.FS()))) // règles communes embarquées
+	h.Write([]byte(genprovider.DescriptorsDigest()))        // descripteurs providers
+	h.Write(referentiel.Raw())                              // référentiel (mappings/sévérités/fournisseurs)
+	for _, dir := range policyDirs {                        // règles externes éventuelles
+		h.Write([]byte(dir))
+		h.Write([]byte(assess.RulesetDigest(os.DirFS(dir))))
+	}
+	return "sha256:" + hex.EncodeToString(h.Sum(nil))
 }
 
 // loadInput charge l'entrée à évaluer : collecte live de l'API (--live), plan
