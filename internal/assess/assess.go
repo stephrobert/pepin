@@ -24,7 +24,6 @@ import (
 // frameworkSlug maps the referentiel's YAML framework keys to stable, auditor-facing slugs.
 var frameworkSlug = map[string]string{
 	"secnumcloud_3_2": "secnumcloud-3.2",
-	"anssi_bp_028":    "anssi-bp028",
 	"cis_controls_v8": "cis-v8",
 	"iso_27001_2022":  "iso-27001",
 	"iso_27017":       "iso-27017",

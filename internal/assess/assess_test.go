@@ -14,7 +14,7 @@ func testControls() map[string]referentiel.Control {
 		"objectstorage_bucket_public_access": {
 			Code: "objectstorage_bucket_public_access", Titre: "Bucket public", Severite: "high",
 			Scsl:         []string{"CLD-STO-1"},
-			Frameworks:   map[string][]string{"secnumcloud_3_2": {"19.1"}, "anssi_bp_028": {"R8"}},
+			Frameworks:   map[string][]string{"secnumcloud_3_2": {"13.3"}},
 			Fournisseurs: []string{"outscale", "exoscale"},
 		},
 		"network_sg_open_22": {
@@ -43,11 +43,8 @@ func TestReferences(t *testing.T) {
 	if got["scsl"] != "CLD-STO-1" {
 		t.Errorf("missing scsl ref: %v", got)
 	}
-	if got["secnumcloud-3.2"] != "19.1" { // yaml key mapped to auditor slug
+	if got["secnumcloud-3.2"] != "13.3" { // yaml key mapped to auditor slug
 		t.Errorf("secnumcloud slug/id wrong: %v", got)
-	}
-	if got["anssi-bp028"] != "R8" {
-		t.Errorf("anssi slug/id wrong: %v", got)
 	}
 }
 

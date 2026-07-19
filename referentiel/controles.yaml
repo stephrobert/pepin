@@ -43,7 +43,6 @@ controles:
       Restreindre la politique aux actions/ressources strictement nécessaires.
     scsl: [CLD-IAM-1]
     frameworks:
-      anssi_bp_028: ["R10", "R13"]
       secnumcloud_3_2: ["19.1", "19.3"]
       cis_controls_v8: ["6.7", "6.8"]
       iso_27001_2022: ["A.5.15", "A.5.18", "A.8.2", "A.8.3"]
@@ -61,7 +60,6 @@ controles:
       réellement couvrir.
     scsl: [CLD-IAM-1]
     frameworks:
-      anssi_bp_028: ["R10", "R13"]
       secnumcloud_3_2: ["19.1", "19.3"]
       cis_controls_v8: ["6.7", "6.8"]
       iso_27001_2022: ["A.5.15", "A.8.3"]
@@ -80,7 +78,6 @@ controles:
       NotAction/NotResource n'est acceptable qu'avec Effect Deny.
     scsl: [CLD-IAM-1]
     frameworks:
-      anssi_bp_028: ["R10", "R13"]
       secnumcloud_3_2: ["19.1", "19.3"]
       cis_controls_v8: ["6.7", "6.8"]
       iso_27001_2022: ["A.5.15", "A.5.18"]
@@ -100,7 +97,6 @@ controles:
       les réserver à un rôle d'administration dédié, scopé aux ressources légitimes.
     scsl: [CLD-IAM-12]
     frameworks:
-      anssi_bp_028: ["R10"]
       secnumcloud_3_2: ["19.1", "19.3"]
       cis_controls_v8: ["6.8"]
       iso_27001_2022: ["A.5.15"]
@@ -118,7 +114,6 @@ controles:
       clé root.
     scsl: [CLD-IAM-1]
     frameworks:
-      anssi_bp_028: ["R10", "R13"]
       secnumcloud_3_2: ["19.1", "19.3"]
       cis_controls_v8: ["6.7", "6.8"]
       iso_27001_2022: ["A.5.15", "A.5.18"]
@@ -136,7 +131,6 @@ controles:
       courte (OIDC) aux secrets statiques.
     scsl: [CLD-IAM-2]
     frameworks:
-      anssi_bp_028: ["R11", "R13"]
       secnumcloud_3_2: ["19.1", "19.5"]
       cis_controls_v8: ["5.3", "5.6"]
       iso_27001_2022: ["A.5.17", "A.8.2"]
@@ -188,7 +182,6 @@ controles:
       Configurer une expiration maximale des clés d'accès (ex. 90 jours).
     scsl: [CLD-IAM-2]
     frameworks:
-      anssi_bp_028: ["R11"]
       secnumcloud_3_2: ["19.5"]
       cis_controls_v8: ["5.3"]
       iso_27001_2022: ["A.5.17"]
@@ -206,7 +199,6 @@ controles:
       toute règle ouverte à Internet.
     scsl: [CLD-IAM-4]
     frameworks:
-      anssi_bp_028: ["R67"]
       secnumcloud_3_2: ["13.2"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20"]
@@ -224,7 +216,6 @@ controles:
       IP légitimes.
     scsl: [CLD-IAM-4]
     frameworks:
-      anssi_bp_028: ["R67"]
       secnumcloud_3_2: ["13.2"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20"]
@@ -243,7 +234,6 @@ controles:
       puis n'autoriser explicitement que les opérations et ressources nécessaires.
     scsl: [CLD-IAM-1]
     frameworks:
-      anssi_bp_028: ["R34"]
       secnumcloud_3_2: ["8.1"]
       cis_controls_v8: ["6.8"]
       iso_27001_2022: ["A.8.2"]
@@ -262,7 +252,6 @@ controles:
       d'administration légitimes) afin de restreindre l'usage des accès.
     scsl: [CLD-IAM-4]
     frameworks:
-      anssi_bp_028: ["R67"]
       secnumcloud_3_2: ["13.2"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20"]
@@ -283,7 +272,6 @@ controles:
       refusés).
     scsl: [CLD-IAM-2]
     frameworks:
-      anssi_bp_028: ["R31"]
       secnumcloud_3_2: ["10.1"]
       cis_controls_v8: ["5.3"]
       iso_27001_2022: ["A.8.15"]
@@ -302,7 +290,6 @@ controles:
       ou un VPN.
     scsl: [CLD-NET-1, CLD-IAM-6, CLD-NET-6]
     frameworks:
-      anssi_bp_028: ["R65", "R67"]
       secnumcloud_3_2: ["13.2", "13.3"]
       cis_controls_v8: ["4.4", "12.2"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
@@ -320,7 +307,6 @@ controles:
       ou un VPN.
     scsl: [CLD-NET-1, CLD-IAM-6, CLD-NET-6]
     frameworks:
-      anssi_bp_028: ["R65", "R67"]
       secnumcloud_3_2: ["13.2", "13.3"]
       cis_controls_v8: ["4.4", "12.2"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
@@ -338,7 +324,6 @@ controles:
       restreintes aux sources légitimes.
     scsl: [CLD-NET-2]
     frameworks:
-      anssi_bp_028: ["R65", "R67"]
       secnumcloud_3_2: ["13.2", "13.3"]
       cis_controls_v8: ["4.4", "12.2"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
@@ -357,7 +342,6 @@ controles:
       exposer une base de données ou un annuaire directement sur Internet.
     scsl: [CLD-NET-1]
     frameworks:
-      anssi_bp_028: ["R65", "R67"]
       secnumcloud_3_2: ["13.2", "13.3"]
       cis_controls_v8: ["4.4", "12.2"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
@@ -376,7 +360,6 @@ controles:
       d'amplification ou non authentifié directement sur Internet.
     scsl: [CLD-NET-1]
     frameworks:
-      anssi_bp_028: ["R65", "R67"]
       secnumcloud_3_2: ["13.2", "13.3"]
       cis_controls_v8: ["4.4", "12.2"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
@@ -393,7 +376,6 @@ controles:
       Restreindre les règles de sortie aux destinations et ports légitimes.
     scsl: [CLD-NET-4]
     frameworks:
-      anssi_bp_028: ["R67"]
       secnumcloud_3_2: ["13.2"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
@@ -462,7 +444,6 @@ controles:
       placer la machine derrière un répartiteur ou un VPN.
     scsl: [CLD-NET-3]
     frameworks:
-      anssi_bp_028: ["R65", "R67", "R68"]
       secnumcloud_3_2: ["13.1", "13.2", "13.3"]
       cis_controls_v8: ["4.4", "12.2"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
@@ -482,7 +463,6 @@ controles:
       instance.
     scsl: [CLD-CMP-1]
     frameworks:
-      anssi_bp_028: ["R37", "R65"]
       secnumcloud_3_2: ["13.1", "13.3"]
       cis_controls_v8: ["4.4"]
       iso_27001_2022: ["A.8.20"]
@@ -504,7 +484,6 @@ controles:
     scsl: [CLD-CMP-9]
     frameworks:
       secnumcloud_3_2: ["19.1", "19.5"]
-      anssi_bp_028: ["R12"]
       cis_controls_v8: ["4.4"]
     fournisseurs: [outscale, exoscale, scaleway]
 
@@ -520,7 +499,6 @@ controles:
       d'administration ; activer un accès privé.
     scsl: [CLD-K8S-1]
     frameworks:
-      anssi_bp_028: ["R12"]
       secnumcloud_3_2: ["12.1"]
       cis_controls_v8: ["4.4", "13.4"]
       iso_27001_2022: ["A.8.20", "A.8.22"]
@@ -553,7 +531,6 @@ controles:
       Activer la maintenance / mise à jour automatique du cluster.
     scsl: [CLD-K8S-3]
     frameworks:
-      anssi_bp_028: ["R12"]
       secnumcloud_3_2: ["12.6"]
       cis_controls_v8: ["7.3"]
     fournisseurs: [outscale, exoscale]
@@ -622,7 +599,6 @@ controles:
       URLs signées si un accès externe est requis.
     scsl: [CLD-STO-1]
     frameworks:
-      anssi_bp_028: ["R1", "R65"]
       secnumcloud_3_2: ["9.2", "13.1"]
       cis_controls_v8: ["3.3", "3.11"]
       iso_27001_2022: ["A.5.15", "A.8.3", "A.8.11"]
@@ -640,7 +616,6 @@ controles:
       Retirer le partage public ; restreindre le partage aux comptes légitimes.
     scsl: [CLD-STO-2]
     frameworks:
-      anssi_bp_028: ["R1", "R71"]
       secnumcloud_3_2: ["9.2", "18.1"]
       cis_controls_v8: ["3.3", "3.11"]
       iso_27001_2022: ["A.5.15", "A.8.3", "A.8.24"]
@@ -659,7 +634,6 @@ controles:
       restauration ; chiffrer et appliquer une rétention documentée.
     scsl: [CLD-STO-3]
     frameworks:
-      anssi_bp_028: ["R69", "R70"]
       secnumcloud_3_2: ["12.3"]
       cis_controls_v8: ["11.1", "11.4"]
       iso_27001_2022: ["A.8.13"]
@@ -678,7 +652,6 @@ controles:
       clair vers HTTPS.
     scsl: [CLD-CHF-1]
     frameworks:
-      anssi_bp_028: ["R72"]
       secnumcloud_3_2: ["10.2", "13.1"]
       cis_controls_v8: ["3.11", "16.11"]
       iso_27001_2022: ["A.8.24", "A.8.21"]
@@ -695,7 +668,6 @@ controles:
       Mettre en place une redirection 301 du listener HTTP:80 vers HTTPS.
     scsl: [CLD-CHF-1]
     frameworks:
-      anssi_bp_028: ["R72"]
       secnumcloud_3_2: ["10.2"]
       cis_controls_v8: ["3.11"]
       iso_27001_2022: ["A.8.24"]
@@ -786,7 +758,6 @@ controles:
       contrôler leur présence à la création.
     scsl: [CLD-GVN-1]
     frameworks:
-      anssi_bp_028: ["R1"]
       secnumcloud_3_2: ["19.3"]
       cis_controls_v8: ["3.3"]
       iso_27001_2022: ["A.5.15", "A.8.9"]

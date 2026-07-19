@@ -24,7 +24,7 @@ FAM = {"iam": "IAM", "reseau": "NET", "compute": "CMP", "stockage": "STO",
 # sévérité → (niveau, devoir)
 LVL = {"critical": ("R1", "DOIT"), "high": ("R1", "DOIT"),
        "medium": ("R2", "DEVRAIT"), "low": ("R3", "DEVRAIT")}
-FWLABEL = {"anssi_bp_028": "ANSSI-BP-028 {}", "secnumcloud_3_2": "SecNumCloud {}",
+FWLABEL = {"secnumcloud_3_2": "SecNumCloud {}",
            "cis_controls_v8": "CIS Controls v8 {}", "iso_27001_2022": "ISO 27001 ({})",
            "iso_27017": "ISO 27017 ({})"}
 

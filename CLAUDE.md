@@ -3,7 +3,7 @@
 Pépin est un **CSPM multi-cloud souverain** (Go). Il évalue la **posture** d'un
 cloud (OVH, Scaleway, Exoscale, Outscale…) contre un **référentiel commun** de
 contrôles (`referentiel/`), ancré sur **SCSL** (module posture cloud), **SecNumCloud**,
-**ANSSI BP-028**, **CIS** et **ISO**. « Pépin trouve les pépins de votre cloud. »
+**CIS** et **ISO**. « Pépin trouve les pépins de votre cloud. »
 
 > Né de la généralisation d'**osc-policy** (Outscale) et de la lignée **pitstop**
 > (SCSL-R) / **plumber**. Le référentiel commun est la source de vérité des

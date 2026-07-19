@@ -13,7 +13,7 @@ var rootCmd = &cobra.Command{
 	Short: "Pépin — trouve les pépins de votre cloud souverain",
 	Long: "Pépin — CSPM multi-cloud souverain.\n\n" +
 		"Évalue la posture d'un cloud (OVH, Scaleway, Exoscale, Outscale…) contre un\n" +
-		"référentiel commun ancré sur SCSL, SecNumCloud, ANSSI BP-028, CIS et ISO.",
+		"référentiel commun ancré sur SCSL, SecNumCloud, CIS et ISO.",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
