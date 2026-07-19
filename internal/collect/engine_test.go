@@ -320,3 +320,39 @@ func TestValidateTransform(t *testing.T) {
 		t.Errorf("typo dans un chaînage non détectée : %v", bad)
 	}
 }
+
+func TestFetchItemsTokenPagination(t *testing.T) {
+	// Serveur : 3 pages liées par un jeton `next` (dernière page : next="").
+	pages := map[string]string{
+		"":   `{"items":[{"id":"a"},{"id":"b"}],"next":"p2"}`,
+		"p2": `{"items":[{"id":"c"}],"next":"p3"}`,
+		"p3": `{"items":[{"id":"d"}],"next":""}`,
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(pages[r.URL.Query().Get("page_token")]))
+	}))
+	defer srv.Close()
+
+	p := &Paging{Style: "token", TokenParam: "page_token", TokenPath: "next"}
+	items, err := fetchItems(context.Background(), srv.Client(), nil, srv.URL, "items", p, "GET", "")
+	if err != nil {
+		t.Fatalf("fetchItems: %v", err)
+	}
+	if len(items) != 4 {
+		t.Errorf("pagination token : %d items, attendu 4 (a,b,c,d)", len(items))
+	}
+}
+
+func TestFetchItemsPageBoundGuardsInfiniteLoop(t *testing.T) {
+	// Serveur pathologique : ignore la pagination et renvoie TOUJOURS un lot plein.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"items":[{"id":"x"},{"id":"y"}]}`))
+	}))
+	defer srv.Close()
+
+	p := &Paging{Style: "page", Param: "page", Size: 2, MaxPages: 5}
+	_, err := fetchItems(context.Background(), srv.Client(), nil, srv.URL, "items", p, "GET", "")
+	if err == nil {
+		t.Error("un serveur qui ignore la pagination doit provoquer une ERREUR de borne, pas une boucle infinie")
+	}
+}

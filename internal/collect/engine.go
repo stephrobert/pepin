@@ -34,11 +34,18 @@ func (h HeaderAuth) Apply(req *http.Request) error { req.Header.Set(h.Header, h.
 
 // Paging décrit la pagination par numéro de page (?<param>=N&<size_param>=<size>).
 type Paging struct {
-	Style     string `yaml:"style"`      // "page" | "" (aucune)
-	Param     string `yaml:"param"`      // ex. page
-	SizeParam string `yaml:"size_param"` // ex. page_size
-	Size      int    `yaml:"size"`       // ex. 100
+	Style      string `yaml:"style"`       // "page" | "token" | "" (aucune)
+	Param      string `yaml:"param"`       // page : ex. page
+	SizeParam  string `yaml:"size_param"`  // ex. page_size
+	Size       int    `yaml:"size"`        // ex. 100
+	TokenParam string `yaml:"token_param"` // token : param de requête portant le jeton de page suivante
+	TokenPath  string `yaml:"token_path"`  // token : chemin JSON du jeton suivant dans la réponse (ex. NextPageToken)
+	MaxPages   int    `yaml:"max_pages"`   // borne de sécurité anti-boucle (défaut defaultMaxPages)
 }
+
+// defaultMaxPages borne le nombre de pages d'un endpoint : un serveur qui ignore la pagination
+// (renvoie toujours un lot plein) ne doit pas faire boucler la collecte à l'infini.
+const defaultMaxPages = 1000
 
 // ForEach déclare une JOINTURE parent→enfant par endpoint : on liste d'abord les
 // parents, puis on appelle le chemin de la ressource une fois PAR parent (variable
@@ -154,20 +161,51 @@ func collectForEach(ctx context.Context, hc *http.Client, spec Spec, auth Auth, 
 }
 
 // fetchItems récupère (avec pagination) le tableau d'items d'un endpoint (URL complète).
+// Styles : "page" (numéro de page incrémenté jusqu'à un lot incomplet) et "token" (jeton de
+// page suivante lu dans la réponse jusqu'à épuisement). Une borne de pages empêche toute
+// boucle infinie et, si elle est atteinte, retourne une ERREUR (jamais une troncature muette).
 func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsPath string, paging *Paging, method, body string) ([]any, error) {
+	max := defaultMaxPages
+	if paging != nil && paging.MaxPages > 0 {
+		max = paging.MaxPages
+	}
 	var items []any
-	for page := 1; ; page++ {
-		doc, err := fetch(ctx, hc, fullURL, auth, paging, page, method, body)
+	token := ""
+	for page := 1; page <= max; page++ {
+		doc, err := fetch(ctx, hc, fullURL, auth, paging, page, token, method, body)
 		if err != nil {
 			return nil, err
 		}
 		batch := extractItems(doc, itemsPath)
 		items = append(items, batch...)
-		if paging == nil || paging.Style != "page" || len(batch) < paging.Size || len(batch) == 0 {
-			break
+		if paging == nil {
+			return items, nil
+		}
+		switch paging.Style {
+		case "page":
+			if len(batch) < paging.Size || len(batch) == 0 {
+				return items, nil
+			}
+		case "token":
+			token = tokenFromDoc(doc, paging.TokenPath)
+			if token == "" {
+				return items, nil
+			}
+		default:
+			return items, nil
 		}
 	}
-	return items, nil
+	return nil, fmt.Errorf("pagination : borne de %d pages atteinte sur %s — collecte tronquée (vérifier la config de pagination)", max, fullURL)
+}
+
+// tokenFromDoc extrait le jeton de page suivante à `path` dans la réponse (chaîne ; "" = fin).
+func tokenFromDoc(doc any, path string) string {
+	if path == "" {
+		return ""
+	}
+	v := lookup(doc, path)
+	s, _ := v.(string)
+	return s
 }
 
 // mapItems projette les items bruts vers des ressources normalisées (map +
@@ -255,7 +293,7 @@ func lookupCoalesce(it any, path string) any {
 	return nil
 }
 
-func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Paging, page int, method, body string) (any, error) {
+func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Paging, page int, token, method, body string) (any, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, err
@@ -266,6 +304,11 @@ func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Pa
 		if p.SizeParam != "" {
 			q.Set(p.SizeParam, strconv.Itoa(p.Size))
 		}
+		u.RawQuery = q.Encode()
+	}
+	if p != nil && p.Style == "token" && token != "" && p.TokenParam != "" {
+		q := u.Query()
+		q.Set(p.TokenParam, token)
 		u.RawQuery = q.Encode()
 	}
 	if method == "" {
