@@ -4,9 +4,9 @@ version: "3.2"
 url: https://cyber.gouv.fr/sites/default/files/document/secnumcloud-referentiel-exigences-v3.2.pdf
 description: |
   Référentiel d'exigences applicables aux prestataires de services d'informatique
-  en nuage (SecNumCloud), version 3.2 du 08/03/2022, publié par l'ANSSI. 354
-  exigences réparties sur 19 chapitres (structure calquée sur l'annexe A d'ISO/IEC
-  27001, augmentée d'exigences additionnelles au chapitre 19).
+  en nuage (SecNumCloud), version 3.2 du 08/03/2022, publié par l'ANSSI. Les
+  exigences sont réparties sur les chapitres 5 à 19 (structure calquée sur l'annexe
+  A d'ISO/IEC 27001, augmentée d'exigences additionnelles au chapitre 19).
   Ce catalogue ne référence QUE les sous-sections observables au niveau de la
   configuration d'un tenant IaaS : les intitulés sont repris VERBATIM de la table
   des matières officielle (chapitres 8 à 19). Les exigences organisationnelles ou

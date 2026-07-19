@@ -93,9 +93,9 @@ controls:
     description: Les règles de développement sécurisé sont établies et appliquées.
 
   - id: A.5.12
-    title: Classification de l'information
+    title: Classification of information
     description: L'information est classifiée selon son niveau de sensibilité et étiquetée pour piloter sa protection.
 
   - id: A.8.14
-    title: Redondance des installations de traitement de l'information
-    description: Les composants critiques sont déployés avec redondance suffisante pour garantir la disponibilité (multi-AZ, multi-master).
+    title: Redundancy of information processing facilities
+    description: Les composants critiques sont déployés avec redondance suffisante pour garantir la disponibilité requise.

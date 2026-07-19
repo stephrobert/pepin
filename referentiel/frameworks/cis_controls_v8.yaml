@@ -20,10 +20,6 @@ controls:
     title: Configure Data Access Control Lists
     description: Restreindre l'accès aux données sensibles via des ACL documentées et revues.
 
-  - id: "3.6"
-    title: Encrypt Data on End-User Devices
-    description: Appliqué ici aux volumes persistants de VM et aux snapshots.
-
   - id: "3.10"
     title: Encrypt Sensitive Data in Transit
     description: Les données sensibles en transit sont chiffrées (TLS ≥ 1.2, suites robustes).
@@ -97,7 +93,7 @@ controls:
     description: L'architecture réseau applique une segmentation par zone de confiance et une approche deny-by-default.
 
   - id: "12.4"
-    title: Establish and Maintain Architecture Diagrams
+    title: Establish and Maintain Architecture Diagram(s)
     description: Les diagrammes d'architecture sont tenus à jour et reflètent la segmentation effective.
 
   - id: "13.1"
@@ -117,17 +113,17 @@ controls:
     description: Les composants de sécurité applicative (chiffrement, authentification) proviennent de modules éprouvés.
 
   - id: "5.2"
-    title: Use unique passwords
+    title: Use Unique Passwords
     description: Use unique, strong credentials for each system. Enforce credential rotation and avoid shared accounts.
 
   - id: "11.1"
-    title: Establish and maintain a data recovery process
+    title: Establish and Maintain a Data Recovery Process
     description: Establish and maintain a data recovery process with regular backups and restoration tests.
 
   - id: "11.4"
-    title: Establish and maintain an isolated instance of recovery data
+    title: Establish and Maintain an Isolated Instance of Recovery Data
     description: Maintain at least one offsite or air-gapped backup copy to recover from ransomware and physical disasters.
 
   - id: "13.4"
-    title: Perform traffic filtering between network segments
+    title: Perform Traffic Filtering Between Network Segments
     description: Filter traffic between network segments to enforce the principle of least privilege at the network layer.
