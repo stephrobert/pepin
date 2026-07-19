@@ -144,6 +144,47 @@ mapping_terraform:
         port_from: range_from
         port_to: range_to
   
+    # Forme EXTERNE (external_rules=true) : scaleway_instance_security_group_rules porte les
+    # blocs inbound_rule/outbound_rule dans une ressource distincte. Même schéma que ci-dessus,
+    # security_group_id en top-level. Sans ce mapping, ces règles seraient INVISIBLES.
+    - tf_type: scaleway_instance_security_group_rules
+      type: security_group_rule
+      items: inbound_rule[*]
+      id: security_group_id
+      const: { direction: inbound }
+      map:
+        security_group_id: _parent.security_group_id
+        action: action
+        protocol: protocol
+        cidrs: ip_range||ip
+        port_from: port||port_range
+        port_to: port||port_range
+      transforms:
+        action: ["default:accept", lower]
+        protocol: [lower, { any: all, "": all }]
+        cidrs: ["default:0.0.0.0/0", list]
+        port_from: range_from
+        port_to: range_to
+
+    - tf_type: scaleway_instance_security_group_rules
+      type: security_group_rule
+      items: outbound_rule[*]
+      id: security_group_id
+      const: { direction: outbound }
+      map:
+        security_group_id: _parent.security_group_id
+        action: action
+        protocol: protocol
+        cidrs: ip_range||ip
+        port_from: port||port_range
+        port_to: port||port_range
+      transforms:
+        action: ["default:accept", lower]
+        protocol: [lower, { any: all, "": all }]
+        cidrs: ["default:0.0.0.0/0", list]
+        port_from: range_from
+        port_to: range_to
+
     # Le SG en tant qu'OBJET → security_group (politique par défaut, distinct des
     # security_group_rule ci-dessus). inbound_default_policy=accept ⇒ ouvert par défaut.
     - tf_type: scaleway_instance_security_group

@@ -234,6 +234,27 @@ mapping_terraform:
         port_from: range_from
         port_to: range_to
   
+    # Forme alternative : bloc(s) `rules {}` (plusieurs règles dans une ressource ; flow et
+    # security_group_id restent top-level). Sans ce mapping, ces règles seraient INVISIBLES.
+    - tf_type: outscale_security_group_rule
+      type: security_group_rule
+      items: rules[*]
+      id: security_group_id
+      const: { action: accept }
+      map:
+        security_group_id: _parent.security_group_id
+        direction: _parent.flow
+        protocol: ip_protocol
+        cidrs: ip_ranges                 # tableau de CIDR (schéma du bloc rules)
+        port_from: from_port_range
+        port_to: to_port_range
+      transforms:
+        direction: { Inbound: inbound, Outbound: outbound }
+        protocol: [lower, { "-1": all, any: all, "": all }]
+        cidrs: list
+        port_from: range_from
+        port_to: range_to
+
     - tf_type: outscale_vm
       type: compute_instance
       id: vm_id
