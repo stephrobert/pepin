@@ -45,6 +45,10 @@ func NonApplicableReason(providerName, code string) string {
 // gouvernance sont multi-types et renvoient "".
 func ControlType(code string) string {
 	switch {
+	// Cas spécifique AVANT le préfixe network_securitygroup : cette règle lit l'OBJET
+	// security_group (politique par défaut), pas une security_group_rule.
+	case code == "network_securitygroup_default_deny":
+		return "security_group"
 	case strings.HasPrefix(code, "network_securitygroup"):
 		return "security_group_rule"
 	case code == "network_flow_matrix_documented":
@@ -53,6 +57,12 @@ func ControlType(code string) string {
 		return "network"
 	case code == "network_peering_cross_organization":
 		return "network_peering"
+	case code == "network_subnet_no_public_ip_by_default":
+		return "subnet"
+	case strings.HasPrefix(code, "database_"):
+		return "managed_database"
+	case strings.HasPrefix(code, "compute_image"):
+		return "compute_image"
 	case strings.HasPrefix(code, "compute_instance"):
 		return "compute_instance"
 	case strings.HasPrefix(code, "kubernetes_cluster"):

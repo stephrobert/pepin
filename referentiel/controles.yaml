@@ -803,3 +803,78 @@ controles:
     frameworks:
       secnumcloud_3_2: ["19.2", "19.6"]
     fournisseurs: [exoscale, outscale, scaleway]
+
+  # ── Contrôles écrits et testés (Rego), activation gelée en attendant un scan réel
+  #    validant le collecteur (fournisseurs: [] = aucune couverture affirmée). Ancrés
+  #    sur des attributs d'API documentés (cf. en-tête de chaque règle).
+  - code: compute_image_not_public
+    famille: stockage
+    titre: Image machine partagée publiquement
+    severite: high
+    description: >
+      Une image machine (OMI/template) est partagée publiquement : quiconque peut la
+      lancer, exposant les données ou secrets embarqués dans l'image.
+    remediation: >
+      Retirer le partage public de l'image ; la réserver aux comptes légitimes.
+    scsl: [CLD-STO-2]
+    frameworks:
+      secnumcloud_3_2: ["9.7"]
+      cis_controls_v8: ["3.3"]
+      iso_27001_2022: ["A.5.15", "A.8.3"]
+      iso_27017: ["CLD.9.5.1"]
+    fournisseurs: []
+
+  - code: network_securitygroup_default_deny
+    famille: reseau
+    titre: Politique entrante par défaut d'un groupe de sécurité en « accept »
+    severite: high
+    description: >
+      La politique par défaut en entrée d'un groupe de sécurité est « accept » : tout
+      trafic non explicitement filtré est admis (any/any implicite), quel que soit le
+      jeu de règles explicites.
+    remediation: >
+      Basculer la politique entrante par défaut sur « drop » et n'ouvrir que les flux
+      légitimes par des règles explicites.
+    scsl: [CLD-NET-2, CLD-NET-1]
+    frameworks:
+      secnumcloud_3_2: ["13.2", "13.3"]
+      cis_controls_v8: ["4.4", "12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+      iso_27017: ["CLD.13.1.4"]
+    fournisseurs: []
+
+  - code: network_subnet_no_public_ip_by_default
+    famille: reseau
+    titre: Sous-réseau attribuant une IP publique par défaut
+    severite: medium
+    description: >
+      Un sous-réseau attribue automatiquement une IP publique à toute interface créée :
+      les machines sont exposées à Internet par défaut, sans décision explicite.
+    remediation: >
+      Désactiver l'attribution automatique d'IP publique du sous-réseau ; n'attribuer
+      une IP publique qu'aux interfaces qui le nécessitent.
+    scsl: [CLD-NET-3]
+    frameworks:
+      secnumcloud_3_2: ["13.2"]
+      cis_controls_v8: ["12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+      iso_27017: ["CLD.13.1.4"]
+    fournisseurs: []
+
+  - code: database_service_not_open_to_internet
+    famille: reseau
+    titre: Base de données managée joignable depuis Internet
+    severite: high
+    description: >
+      La liste d'IP autorisées (ACL) d'une base de données managée admet un CIDR
+      public : le service de base de données est joignable depuis Internet.
+    remediation: >
+      Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand
+      disponible) ; retirer 0.0.0.0/0.
+    scsl: [CLD-NET-1]
+    frameworks:
+      secnumcloud_3_2: ["13.2", "13.3"]
+      cis_controls_v8: ["4.4", "12.2"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+      iso_27017: ["CLD.13.1.4"]
+    fournisseurs: []
