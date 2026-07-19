@@ -98,7 +98,7 @@ func TestBuildStatuses(t *testing.T) {
 	// (a compute_instance is present) but NOT verified — its data may not be collected.
 	// compute_image_only is verified but its EXACT type is absent (only compute_instance).
 	verified := map[string]bool{"objectstorage_bucket_public_access": true, "compute_image_only": true}
-	a := Build("outscale", controls, findings, rtypes, nil, verified, ct, run)
+	a := Build("outscale", controls, findings, rtypes, nil, verified, ct, nil, run)
 	byControl := map[string]assessment.Result{}
 	for _, r := range a.Results {
 		byControl[r.Control] = r
@@ -133,6 +133,32 @@ func TestBuildStatuses(t *testing.T) {
 	}
 }
 
+// TestBuildAttributeGate : le verrou par ATTRIBUT. compute_instance_no_secrets_in_user_data
+// lit `user_data` ; verified + type compute_instance présent mais SANS user_data collecté →
+// NotEvaluated (pas un faux « pass »). Avec user_data présent → Pass.
+func TestBuildAttributeGate(t *testing.T) {
+	code := "compute_instance_no_secrets_in_user_data"
+	controls := map[string]referentiel.Control{code: {Code: code, Titre: "Secrets user-data", Severite: "high", Fournisseurs: []string{"scaleway"}}}
+	rtypes := map[string]bool{"compute_instance": true}
+	ct := map[string]string{code: "compute_instance"}
+	verified := map[string]bool{code: true}
+	run := assessment.Run{Target: assessment.Target{ID: "acct"}, Source: "live-api"}
+
+	// user_data NON collecté sur les compute_instance → NotEvaluated.
+	noAttr := map[string]map[string]bool{"compute_instance": {"vm_id": true, "state": true}}
+	a := Build("scaleway", controls, nil, rtypes, nil, verified, ct, noAttr, run)
+	if a.Results[0].Status != assessment.NotEvaluated {
+		t.Errorf("attribut user_data absent → %s, want not-evaluated (pas de faux pass)", a.Results[0].Status)
+	}
+
+	// user_data collecté → Pass.
+	withAttr := map[string]map[string]bool{"compute_instance": {"vm_id": true, "user_data": true}}
+	b := Build("scaleway", controls, nil, rtypes, nil, verified, ct, withAttr, run)
+	if b.Results[0].Status != assessment.Pass {
+		t.Errorf("attribut user_data collecté, aucun finding → %s, want pass", b.Results[0].Status)
+	}
+}
+
 func TestBuildNotApplicableWithJustification(t *testing.T) {
 	controls := testControls()
 	rtypes := map[string]bool{"object_storage_bucket": true}
@@ -140,7 +166,7 @@ func TestBuildNotApplicableWithJustification(t *testing.T) {
 	reason := "SKS API endpoint is always public by construction (doc containers/overview)"
 	na := map[string]string{"kubernetes_api_private": reason}
 
-	a := Build("outscale", controls, nil, rtypes, na, nil, nil, run)
+	a := Build("outscale", controls, nil, rtypes, na, nil, nil, nil, run)
 	var got *assessment.Result
 	for i := range a.Results {
 		if a.Results[i].Control == "kubernetes_api_private" {

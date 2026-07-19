@@ -105,7 +105,7 @@ var scanCmd = &cobra.Command{
 		// rewrites Code to the SCSL id: typed statuses (fail/pass/not-evaluated), exact
 		// normative references, and run provenance (tool/ruleset digests, target, timestamp).
 		rtypes := resourceTypesOf(input)
-		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), providerVerified(name), controlTypes(), buildRun(name, rtypes))
+		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), buildRun(name, rtypes))
 
 		// Bundle de preuve horodaté et hashé (opposabilité : intégrité + non-répudiation).
 		if scanSeal != "" {
@@ -226,6 +226,44 @@ func resourceTypesOf(input any) map[string]bool {
 				if t, ok := rm["type"].(string); ok && t != "" {
 					out[t] = true
 				}
+			}
+		}
+	}
+	return out
+}
+
+// attrsByTypeOf collecte, PAR TYPE, l'ensemble des noms d'attributs présents sur au moins une
+// ressource. assess s'en sert pour n'affirmer un « pass » que si l'ATTRIBUT précis qu'un
+// contrôle lit a réellement été collecté (pas seulement le type) — sinon une garde de capacité
+// silencieuse produit un faux « pass » (ex. compute_instance présent mais sans user_data).
+func attrsByTypeOf(input any) map[string]map[string]bool {
+	out := map[string]map[string]bool{}
+	add := func(typ string, attrs map[string]any) {
+		if typ == "" {
+			return
+		}
+		if out[typ] == nil {
+			out[typ] = map[string]bool{}
+		}
+		for k := range attrs {
+			out[typ][k] = true
+		}
+	}
+	m, ok := input.(map[string]any)
+	if !ok {
+		return out
+	}
+	switch rs := m["resources"].(type) {
+	case []model.Resource:
+		for _, r := range rs {
+			add(r.Type, r.Attributes)
+		}
+	case []any:
+		for _, it := range rs {
+			if rm, ok := it.(map[string]any); ok {
+				t, _ := rm["type"].(string)
+				attrs, _ := rm["attributes"].(map[string]any)
+				add(t, attrs)
 			}
 		}
 	}

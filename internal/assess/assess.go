@@ -33,6 +33,25 @@ var frameworkSlug = map[string]string{
 	"iso_27017":       "iso-27017",
 }
 
+// requiredAttr maps a control to the resource attribute whose PRESENCE its evaluation needs.
+// For these controls, absence of the attribute makes the rule silently emit no finding (a
+// capability guard, or a compliant-by-default read), so a `verified` type would yield a FALSE
+// pass. Listed here, such a control becomes NotEvaluated when the attribute was not collected on
+// any resource of its type. Controls NOT listed are evaluated by the presence of a finding
+// (absence of a bad config = genuinely compliant) and need no attribute gate. This map must stay
+// in sync with the rules' capability guards (TestRequiredAttrGuardsExist checks it).
+var requiredAttr = map[string]string{
+	"compute_instance_no_secrets_in_user_data": "user_data",
+	"iam_user_mfa_enabled":                      "mfa_enabled",
+	"iam_account_mfa_enforced":                  "require_trusted_env",
+	"blockstorage_volume_encryption":            "encrypted",
+	"objectstorage_bucket_object_lock_enabled":  "object_lock_enabled",
+	"objectstorage_bucket_kms_encryption":       "sse_kms_enabled",
+	"database_encryption_at_rest_enabled":       "encryption_at_rest",
+	"loadbalancer_http_redirect_to_https":       "redirect_to_https",
+	"iam_apiaccesspolicy_max_key_expiration":    "max_access_key_expiration_seconds",
+}
+
 // References converts a control's framework + SCSL mappings into exact, versioned references.
 func References(c referentiel.Control) []assessment.Reference {
 	var refs []assessment.Reference
@@ -84,7 +103,7 @@ func applicable(code string, controlType map[string]string, resourceTypes map[st
 // control whose resource is present, so a capability guard that silently skipped evaluation
 // (attribute not collected) surfaces as NotEvaluated, never a false "compliant". `run`
 // supplies the provenance.
-func Build(provider string, controls map[string]referentiel.Control, findings []finding.Finding, resourceTypes map[string]bool, naReasons map[string]string, verified map[string]bool, controlType map[string]string, run assessment.Run) assessment.Assessment {
+func Build(provider string, controls map[string]referentiel.Control, findings []finding.Finding, resourceTypes map[string]bool, naReasons map[string]string, verified map[string]bool, controlType map[string]string, attrsByType map[string]map[string]bool, run assessment.Run) assessment.Assessment {
 	// One Fail result per finding (a control may fail on several subjects).
 	failedControls := map[string]bool{}
 	var results []assessment.Result
@@ -134,7 +153,7 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			// Otherwise the control could not actually be evaluated (attribute not collected, or
 			// nothing of this type in scope) — NotEvaluated, never a silent Pass.
 			switch {
-			case verified[code] && applicable(code, controlType, resourceTypes):
+			case verified[code] && applicable(code, controlType, resourceTypes) && attrCollected(code, typ, attrsByType):
 				// A Pass carries WHAT was checked (basis of the assertion), not just a status.
 				res.Status = assessment.Pass
 				res.Evidence = assessment.Evidence{
@@ -143,7 +162,7 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 				}
 			default:
 				res.Status = assessment.NotEvaluated
-				res.Evidence = assessment.Evidence{Observed: notEvaluatedReason(code, typ, verified[code], resourceTypes), Source: run.Source}
+				res.Evidence = assessment.Evidence{Observed: notEvaluatedReason(code, typ, verified[code], resourceTypes, attrsByType), Source: run.Source}
 			}
 		default:
 			continue // implemented for other providers and not N/A here — out of this scan's scope
@@ -154,14 +173,28 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 	return assessment.Assessment{Run: run, Results: results}
 }
 
+// attrCollected indique que l'ATTRIBUT clé du contrôle (s'il en a un) est présent sur au moins
+// une ressource de son type. Sans attribut requis déclaré, true (le contrôle s'évalue par la
+// présence d'un finding). C'est le verrou par ATTRIBUT (pas seulement par type) du « pass ».
+func attrCollected(code, typ string, attrsByType map[string]map[string]bool) bool {
+	a := requiredAttr[code]
+	if a == "" {
+		return true
+	}
+	return attrsByType[typ][a]
+}
+
 // notEvaluatedReason explique POURQUOI un contrôle n'a pas pu être évalué — un « non évalué »
 // opposable dit sur quoi il bute (donnée non collectée, ou aucune ressource du type en scope).
-func notEvaluatedReason(code, typ string, verified bool, resourceTypes map[string]bool) string {
+func notEvaluatedReason(code, typ string, verified bool, resourceTypes map[string]bool, attrsByType map[string]map[string]bool) string {
 	if !verified {
 		return "collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « vérifié »)"
 	}
 	if typ != "" && !resourceTypes[typ] {
 		return fmt.Sprintf("aucune ressource de type « %s » dans l'inventaire évalué", typ)
+	}
+	if a := requiredAttr[code]; a != "" && !attrsByType[typ][a] {
+		return fmt.Sprintf("attribut « %s » non collecté sur les ressources de type « %s » (garde de capacité)", a, typ)
 	}
 	return "contrôle non évaluable sur cet inventaire"
 }

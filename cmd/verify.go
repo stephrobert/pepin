@@ -93,7 +93,7 @@ func reDerive(ctx context.Context, dir string) error {
 		return fmt.Errorf("re-dérivation : %w", err)
 	}
 	got := assess.Build(name, referentiel.All(), findings, resourceTypesOf(input),
-		providerNAReasons(name), providerVerified(name), controlTypes(), sealed.Run)
+		providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), sealed.Run)
 
 	gotJSON, _ := json.Marshal(assess.Canonical(got).Results)
 	sealedJSON, _ := json.Marshal(assess.Canonical(sealed).Results)
