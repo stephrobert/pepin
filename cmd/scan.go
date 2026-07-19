@@ -266,6 +266,8 @@ func init() {
 	scanCmd.Flags().StringVar(&scanSeal, "seal", "", "écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier")
 	scanCmd.Flags().BoolVar(&scanStrict, "strict", false, "porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance) ou s'il subsiste un écart medium/low")
 	scanCmd.Flags().BoolVar(&scanRedact, "redact", false, "caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive")
+	// --live et --terraform sont exclusifs : sinon loadInput privilégie le live et ignore le plan en silence.
+	scanCmd.MarkFlagsMutuallyExclusive("live", "terraform")
 }
 
 // enrichFromReferentiel rattache chaque finding à l'index SCSL. Les règles Rego
@@ -499,9 +501,8 @@ func configDigest() string {
 	h.Write([]byte(assess.RulesetDigest(commonrules.FS()))) // règles communes embarquées
 	h.Write([]byte(genprovider.DescriptorsDigest()))        // descripteurs providers
 	h.Write(referentiel.Raw())                              // référentiel (mappings/sévérités/fournisseurs)
-	for _, dir := range policyDirs {                        // règles externes éventuelles
-		h.Write([]byte(dir))
-		h.Write([]byte(assess.RulesetDigest(os.DirFS(dir))))
+	for _, dir := range policyDirs {                        // règles externes : le CONTENU seul (pas le chemin, qui
+		h.Write([]byte(assess.RulesetDigest(os.DirFS(dir)))) // varie d'une machine à l'autre)
 	}
 	return "sha256:" + hex.EncodeToString(h.Sum(nil))
 }

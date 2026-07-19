@@ -3,7 +3,7 @@
 # Build/test/audit/validate sont les portes de qualité (cf. CLAUDE.md §1).
 
 [tools]
-opa = "1.17.1"        # tests des règles Rego (aligné sur la CI)
+opa = "1.18.2"        # tests des règles Rego : ALIGNÉ sur la lib OPA du runtime (go.mod)
 terraform = "1.15.4"  # validation des preuves de remédiation + mapping TF
 
 [tasks.build]
