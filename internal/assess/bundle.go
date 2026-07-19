@@ -38,6 +38,10 @@ type Artifact struct {
 	Bytes  int    `json:"bytes"`
 }
 
+// Canonical exposes the deterministic ordering used for sealing, so `verify --re-derive` can
+// compare a re-evaluated assessment to the sealed one on the same canonical basis.
+func Canonical(a assessment.Assessment) assessment.Assessment { return canonical(a) }
+
 // canonical returns the assessment with its results sorted deterministically, so the same run
 // always serializes byte-for-byte the same (a prerequisite for a meaningful digest).
 func canonical(a assessment.Assessment) assessment.Assessment {
@@ -142,18 +146,47 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string,
 }
 
 // VerifyBundle re-computes the sha256 of every file listed in checksums.txt and reports any
-// mismatch or missing file — the third-party integrity check of an evidence bundle.
+// mismatch or missing file, AND cross-checks that checksums.txt covers EXACTLY the artifacts
+// the manifest declares (plus manifest.json itself) — otherwise an artifact could be dropped
+// from checksums (no longer verified) or added unlisted without detection. This is the
+// third-party integrity check of an evidence bundle.
 func VerifyBundle(dir string) error {
 	raw, err := os.ReadFile(filepath.Join(dir, "checksums.txt")) // #nosec G304 -- dossier de bundle fourni par l'opérateur.
 	if err != nil {
 		return fmt.Errorf("lecture de checksums.txt : %w", err)
 	}
-	var checked int
+	summed := map[string]string{} // nom -> empreinte attendue (checksums.txt)
 	for _, line := range splitLines(string(raw)) {
-		want, name, ok := parseChecksum(line)
-		if !ok {
-			continue
+		if want, name, ok := parseChecksum(line); ok {
+			summed[name] = want
 		}
+	}
+	if len(summed) == 0 {
+		return fmt.Errorf("aucune empreinte à vérifier dans %s", dir)
+	}
+	// Recoupement manifest.json ↔ checksums.txt : bijection stricte sur les artefacts.
+	manRaw, err := os.ReadFile(filepath.Join(dir, "manifest.json")) // #nosec G304 -- dossier de bundle de l'opérateur.
+	if err != nil {
+		return fmt.Errorf("lecture de manifest.json : %w", err)
+	}
+	var man Manifest
+	if err := json.Unmarshal(manRaw, &man); err != nil {
+		return fmt.Errorf("manifest.json invalide : %w", err)
+	}
+	declared := map[string]bool{"manifest.json": true} // manifest lui-même listé dans checksums
+	for _, a := range man.Artifacts {
+		declared[a.File] = true
+		if summed[a.File] == "" {
+			return fmt.Errorf("artefact %q déclaré au manifeste mais absent de checksums.txt", a.File)
+		}
+	}
+	for name := range summed {
+		if !declared[name] {
+			return fmt.Errorf("fichier %q listé dans checksums.txt mais non déclaré au manifeste", name)
+		}
+	}
+	// Re-calcul des empreintes.
+	for name, want := range summed {
 		data, rerr := os.ReadFile(filepath.Join(dir, name)) // #nosec G304 -- nom issu du manifeste du bundle.
 		if rerr != nil {
 			return fmt.Errorf("%s : %w", name, rerr)
@@ -162,10 +195,6 @@ func VerifyBundle(dir string) error {
 		if hex.EncodeToString(got[:]) != want {
 			return fmt.Errorf("empreinte invalide pour %s (fichier altéré)", name)
 		}
-		checked++
-	}
-	if checked == 0 {
-		return fmt.Errorf("aucune empreinte à vérifier dans %s", dir)
 	}
 	return nil
 }

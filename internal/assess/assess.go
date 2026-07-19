@@ -16,6 +16,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/fs"
+	"maps"
 	"sort"
 	"strings"
 
@@ -99,7 +100,7 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			Evidence:    assessment.Evidence{Observed: stripSubject(f.Message), Source: run.Source},
 			References:  References(c),
 			Remediation: first(f.Remediation, c.Remediation),
-			Labels:      f.Labels,
+			Labels:      maps.Clone(f.Labels), // copie : une mutation post-Build (enrichFromReferentiel) ne doit pas altérer l'assessment scellé
 		})
 	}
 

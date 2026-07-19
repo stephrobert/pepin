@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"runtime/debug"
 	"sort"
 	"time"
 
@@ -76,12 +77,17 @@ var scanCmd = &cobra.Command{
 			return err
 		}
 		// Injecte la ressource synthétique de souveraineté (CLD-GVN-4), métadonnée
-		// du fournisseur indépendante de l'inventaire collecté/importé.
+		// du fournisseur indépendante de l'inventaire collecté/importé. Idempotent :
+		// rejouer l'input.json d'un bundle (déjà augmenté) ne duplique pas la ressource.
 		input = withGovernance(p, input)
 		// Horodatage d'évaluation porté PAR l'input : les règles sensibles au temps s'y
-		// ancrent (au lieu de l'horloge), donc le bundle (input.json) rejoue le même verdict.
+		// ancrent (au lieu de l'horloge), donc le bundle (input.json) rejoue le MÊME verdict.
+		// On NE l'écrase PAS s'il est déjà présent (rejeu d'un input.json scellé) : sinon
+		// l'ancrage temporel gelé serait perdu et le rejeu donnerait un verdict différent.
 		if m, ok := input.(map[string]any); ok {
-			m["evaluated_at"] = scanTimestamp
+			if _, present := m["evaluated_at"]; !present {
+				m["evaluated_at"] = scanTimestamp
+			}
 		}
 
 		// Toutes les règles sont communes ; le provider ne fournit que la
@@ -305,13 +311,44 @@ func buildRun(provider string, rtypes map[string]bool) assessment.Run {
 	}
 	sort.Strings(included)
 	return assessment.Run{
-		Tool:      assessment.Component{Name: "pepin", Version: version},
+		Tool:      assessment.Component{Name: "pepin", Version: version, Digest: binaryDigest()},
 		Ruleset:   assessment.Component{Name: "pepin-config", Digest: configDigest()},
 		Target:    assessment.Target{ID: targetID(provider), Provider: provider, Region: scanRegion, Platform: provider},
 		Timestamp: scanTimestamp,
 		Source:    source,
 		Scope:     assessment.Scope{Included: included},
 	}
+}
+
+// binaryDigest empreinte le BINAIRE qui a produit le résultat : la logique Go de assess/scoring
+// n'entre pas dans configDigest, donc deux binaires différents pourraient afficher la même
+// provenance sur des verdicts différents. On enregistre la révision VCS (+ marqueur `modified`
+// si l'arbre était sale) ; à défaut, le hash du binaire courant. Une version SemVer ne suffit pas.
+func binaryDigest() string {
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		var rev, modified string
+		for _, s := range bi.Settings {
+			switch s.Key {
+			case "vcs.revision":
+				rev = s.Value
+			case "vcs.modified":
+				modified = s.Value
+			}
+		}
+		if rev != "" {
+			if modified == "true" {
+				return "vcs:" + rev + "+modified"
+			}
+			return "vcs:" + rev
+		}
+	}
+	if exe, err := os.Executable(); err == nil {
+		if b, err := os.ReadFile(exe); err == nil { // #nosec G304 -- chemin du binaire courant.
+			sum := sha256.Sum256(b)
+			return "sha256:" + hex.EncodeToString(sum[:])
+		}
+	}
+	return ""
 }
 
 // configDigest empreinte TOUT ce qui détermine le résultat : les règles Rego communes, les
@@ -390,6 +427,9 @@ func withGovernance(p provider.Provider, input any) any {
 	if !ok {
 		return input
 	}
+	if hasGovernanceResource(m["resources"]) {
+		return m // idempotent : déjà augmenté (ex. rejeu d'un input.json scellé)
+	}
 	switch rs := m["resources"].(type) {
 	case []model.Resource:
 		m["resources"] = append(rs, res)
@@ -400,6 +440,33 @@ func withGovernance(p provider.Provider, input any) any {
 		}
 	}
 	return m
+}
+
+// hasGovernanceResource indique si l'inventaire contient déjà une ressource `governance_provider`
+// (rend withGovernance idempotent, pour un rejeu fidèle d'un input.json déjà augmenté).
+func hasGovernanceResource(resources any) bool {
+	typeOf := func(r any) string {
+		if mr, ok := r.(map[string]any); ok {
+			s, _ := mr["type"].(string)
+			return s
+		}
+		return ""
+	}
+	switch rs := resources.(type) {
+	case []model.Resource:
+		for _, r := range rs {
+			if r.Type == "governance_provider" {
+				return true
+			}
+		}
+	case []any:
+		for _, r := range rs {
+			if typeOf(r) == "governance_provider" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // scslDocBase est la racine de la doc SCSL ; on y concatène l'id de l'exigence

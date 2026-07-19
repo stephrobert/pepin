@@ -3,6 +3,7 @@ package assess
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stephrobert/scankit/assessment"
@@ -56,6 +57,28 @@ func TestVerifyDetectsTampering(t *testing.T) {
 	}
 	if err := VerifyBundle(dir); err == nil {
 		t.Error("VerifyBundle must fail on a tampered artifact")
+	}
+}
+
+func TestVerifyManifestChecksumBijection(t *testing.T) {
+	// Retirer un artefact de checksums.txt (il ne serait plus vérifié) : rejeté via le manifeste.
+	dir := t.TempDir()
+	if _, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`)); err != nil {
+		t.Fatal(err)
+	}
+	cs := filepath.Join(dir, "checksums.txt")
+	raw, _ := os.ReadFile(cs) // #nosec G304 -- test fixture.
+	var kept []byte
+	for _, ln := range splitLines(string(raw)) {
+		if !strings.Contains(ln, "assessment-oscal.json") {
+			kept = append(kept, []byte(ln+"\n")...)
+		}
+	}
+	if err := os.WriteFile(cs, kept, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyBundle(dir); err == nil {
+		t.Error("VerifyBundle must reject a manifest artifact missing from checksums.txt")
 	}
 }
 
