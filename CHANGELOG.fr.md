@@ -22,6 +22,71 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-19
+
+### Sécurité
+
+- **Une politique chargée à chaud n'a plus accès au réseau.** `--policy-dir`
+  compilait du Rego tiers avec les capacités par défaut d'OPA, `http.send`
+  compris : une règle de huit lignes suffisait à POSTer l'inventaire évalué —
+  user-data des instances, documents de politique IAM, policies de bucket — vers
+  un hôte arbitraire, ou à balayer le réseau interne du runner depuis l'intérieur
+  du scanner. Corrigé en amont dans `scankit v0.2.2` ; une politique appelant un
+  de ces builtins ne compile plus. L'évaluation reçoit aussi une borne de cinq
+  minutes.
+- **Les identifiants fournisseur ne survivent plus à une redirection HTTP.** Go
+  ne retire, en cross-domain, que `Authorization`, `Cookie` et
+  `WWW-Authenticate` — ni `X-Auth-Token` (clé secrète Scaleway) ni
+  `AccessKey`/`SecretKey` (Outscale). Une seule 302 vers un hôte contrôlé les
+  livrait. Le client de collecte ne suit plus les redirections.
+- **`pepin verify` ne lit plus hors de son bundle.** Les noms d'artefacts
+  venaient du manifeste, fourni par le tiers audité : `../secret` faisait de la
+  vérification un oracle d'existence et de contenu.
+- **`--seal --redact` n'emporte plus les clés du tenant.** Le caviardage ne
+  couvrait que les documents libres, alors qu'`access_key` est un attribut à part
+  entière du modèle normalisé et que `password`/`certificate` remontent des bases
+  managées.
+- **Toolchain en Go 1.26.6**, qui annule cinq avis de la bibliothèque standard
+  atteignables depuis ce code (`net/url`, `crypto/tls`, `encoding/xml`,
+  `encoding/asn1`, `net/http`).
+- **L'action publiée vérifie l'authenticité, pas seulement l'intégrité.** Le
+  binaire et `checksums.txt` viennent de la même origine : qui peut remplacer les
+  assets d'une release remplace les deux. `install.sh` vérifie désormais la
+  provenance via `gh attestation verify`.
+
+### Corrigé
+
+Chaque point ci-dessous peut changer un verdict sur un tenant inchangé.
+
+- **Un scan qui n'a rien mesuré ne rend plus `0`.** Identifiants expirés, droits
+  insuffisants ou inventaire tronqué produisaient le même résultat vide qu'un
+  tenant sain, et la porte de CI passait au vert sur un périmètre jamais regardé.
+  Le code `3` le dit maintenant, sans exiger `--strict`.
+- **Quatorze contrôles ne concluent plus `pass` sans la donnée décisive.** Le
+  verrou de capacité gagne treize entrées, et une collection vide ne compte plus
+  comme collectée : le collecteur IAM pose toujours `statements`, à `[]` quand un
+  document ne s'analyse pas, si bien que quatre contrôles critical/high
+  concluaient « conforme » sur zéro information.
+- **`authenticated-read` et `AuthenticatedUsers` sont détectés** comme exposition
+  publique : les deux accordent la lecture à tout utilisateur authentifié de la
+  plateforme, donc hors du tenant.
+- **Un bucket rendu public par une `acl` en ligne** sur `scaleway_object_bucket`
+  est enfin collecté ; il produisait auparavant zéro finding et un verdict
+  « conforme ».
+- **Les booléens transmis en chaîne sont honorés.** Un plan Terraform rend
+  certains attributs de schéma en `"true"`/`"false"`, et `== false` est
+  simplement faux pour `"false"` ; 25 comparaisons dans 16 règles passent
+  désormais par `truthy()`.
+- **Une région non cataloguée est signalée** au lieu de passer en silence : les
+  tables de classification sont des listes blanches, et leur silence valait
+  « en UE ».
+- **Normalisation réseau** : `-1`, `any` et un protocole vide signifient tous
+  « tout protocole », et un scalaire là où le modèle attend une liste ne rend
+  plus la règle indéfinie — un export portant `"cidrs": "0.0.0.0/0"` n'était pas
+  signalé.
+- **Sévérités de `CLD-CHF-2` alignées** sur `high` pour ses trois contrôles : la
+  sévérité pilote la porte de CI, et l'écart n'était pas justifié.
+
 ### Ajouté
 
 - **La surface publique est gelée par des tests, pas par de la prose.** Les

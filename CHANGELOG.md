@@ -21,6 +21,67 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-19
+
+### Security
+
+- **Policies loaded at runtime no longer get network access.** `--policy-dir`
+  compiled third-party Rego with OPA's default capabilities, `http.send`
+  included, so an eight-line rule could POST the evaluated inventory — instance
+  user-data, IAM policy documents, bucket policies — to an arbitrary host, or
+  reach the runner's internal network from inside the scanner. Fixed upstream in
+  `scankit v0.2.2`; a policy calling one of those builtins now fails to compile.
+  Policy evaluation also gets a five-minute deadline.
+- **Provider credentials no longer survive an HTTP redirect.** Go strips only
+  `Authorization`, `Cookie` and `WWW-Authenticate` across domains — not
+  `X-Auth-Token` (the Scaleway secret key) nor `AccessKey`/`SecretKey`
+  (Outscale). One 302 toward a controlled host handed them over. The collection
+  client no longer follows redirects.
+- **`pepin verify` no longer reads outside its bundle.** Artifact names came
+  from the manifest, supplied by the audited third party, so `../secret` turned
+  verification into an existence-and-content oracle. Names must be plain
+  basenames.
+- **`--seal --redact` no longer ships the tenant's keys.** Redaction covered
+  free-form documents only, while `access_key` is a first-class attribute of the
+  normalized model and `password`/`certificate` come from managed databases.
+- **Toolchain moved to Go 1.26.6**, which resolves five standard-library
+  advisories reachable from this code (`net/url`, `crypto/tls`, `encoding/xml`,
+  `encoding/asn1`, `net/http`).
+- **The published action verifies authenticity, not just integrity.** The binary
+  and `checksums.txt` come from the same origin, so whoever can replace release
+  assets replaces both. `install.sh` now verifies build provenance via
+  `gh attestation verify`.
+
+### Fixed
+
+Every item below can change a verdict on an unchanged tenant.
+
+- **A scan that measured nothing no longer exits `0`.** Expired credentials,
+  insufficient rights or a truncated inventory produced the same empty result as
+  a clean tenant, and the CI gate went green on a scope never looked at. Exit
+  code `3` now says so without requiring `--strict`.
+- **Fourteen controls no longer report `pass` without the deciding data.** The
+  capability gate gained thirteen entries, and an empty collection no longer
+  counts as collected — the IAM collector always sets `statements`, at `[]` when
+  a document fails to parse, so four critical/high controls concluded
+  "compliant" over zero information.
+- **`authenticated-read` and `AuthenticatedUsers` are detected** as public
+  exposure: both grant read access to every authenticated user of the platform,
+  which is cross-tenant.
+- **A bucket made public by an inline `acl`** on `scaleway_object_bucket` is
+  collected at last; it previously produced zero findings and a "compliant"
+  verdict.
+- **Booleans arriving as strings are honoured.** A Terraform plan renders some
+  schema attributes as `"true"`/`"false"`, and `== false` is simply false for
+  `"false"`; 25 comparisons across 16 rules now go through `truthy()`.
+- **An uncatalogued region is reported** instead of silently passing: the
+  classification tables are allow-lists, so their silence read as "in the EU".
+- **Network normalization**: `-1`, `any` and an empty protocol all mean "every
+  protocol", and a scalar where the model expects a list no longer makes the
+  rule undefined — an export carrying `"cidrs": "0.0.0.0/0"` went unreported.
+- **`CLD-CHF-2` severities aligned** on `high` across its three controls;
+  severity drives the CI gate, and the split was unjustified.
+
 ### Added
 
 - **The public surface is frozen by tests, not by prose.** The CLI's verbs,
