@@ -290,6 +290,17 @@ func Project(item any, mapping map[string]string, transforms map[string]any) map
 	for attr, path := range mapping {
 		v := lookupCoalesce(item, path)
 		if t, ok := transforms[attr]; ok {
+			// `kv`/`list` fabriquent une COLLECTION VIDE même sur nil, pour préserver
+			// « présent mais vide » (des tags déclarés et vides sont une information).
+			// Cette sémantique ne vaut que si la clé EXISTE réellement dans la source.
+			// Sur un plan Terraform, un attribut encore inconnu (`unknown after apply`)
+			// est simplement ABSENT de `planned_values` : fabriquer `[]` ferait croire
+			// à une collecte réussie, franchirait la garde de capacité de la règle et
+			// produirait un faux positif. C'est le cas d'une instance dont le groupe de
+			// sécurité est créé par le même plan — la configuration la plus courante.
+			if v == nil && !sourcePresent(item, path) {
+				continue
+			}
 			v = applyTransform(v, t)
 		}
 		if v == nil {
@@ -337,6 +348,59 @@ func withParent(it any, parent map[string]any) any {
 }
 
 // lookupCoalesce résout un chemin, avec coalescence "a||b" (premier non-nul).
+// sourcePresent indique que le chemin EXISTE dans la source, indépendamment de sa
+// valeur. C'est la distinction que `lookup` ne fait pas : il rend nil aussi bien
+// pour une clé absente que pour une clé présente à null, alors que les deux ne
+// disent pas la même chose. « Absent » signifie que la source n'expose pas
+// l'information ; « présent et vide » est une information à part entière.
+//
+// Un chemin `a||b` est présent dès que l'une de ses alternatives l'est.
+func sourcePresent(it any, path string) bool {
+	if !strings.Contains(path, "||") {
+		return pathExists(it, path)
+	}
+	for _, p := range strings.Split(path, "||") {
+		if pathExists(it, strings.TrimSpace(p)) {
+			return true
+		}
+	}
+	return false
+}
+
+// pathExists parcourt le chemin comme lookup, mais rend la PRÉSENCE de la
+// dernière clé plutôt que sa valeur.
+func pathExists(v any, path string) bool {
+	if path == "" {
+		return v != nil
+	}
+	keys := strings.Split(path, ".")
+	for i, key := range keys {
+		switch c := v.(type) {
+		case map[string]any:
+			next, ok := c[key]
+			if !ok {
+				return false
+			}
+			if i == len(keys)-1 {
+				return true
+			}
+			v = next
+		case []any:
+			idx, err := strconv.Atoi(key)
+			if err != nil || idx < 0 || idx >= len(c) {
+				return false
+			}
+			if i == len(keys)-1 {
+				return true
+			}
+			v = c[idx]
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func lookupCoalesce(it any, path string) any {
 	if !strings.Contains(path, "||") {
 		return lookup(it, path)

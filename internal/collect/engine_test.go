@@ -512,6 +512,56 @@ func TestProjectOmitsAbsentAttributes(t *testing.T) {
 	}
 }
 
+// Un transform de COLLECTION (`list`, `kv`) fabrique une collection vide même sur
+// nil, pour préserver « présent mais vide ». Cette sémantique ne vaut que si la clé
+// existe réellement : sur un plan Terraform, un attribut encore inconnu
+// (`unknown after apply`) est simplement ABSENT de `planned_values`, et fabriquer
+// `[]` faisait croire à une collecte réussie.
+//
+// Conséquence mesurée avant correction : une instance Scaleway dont le groupe de
+// sécurité est créé par le même plan — la configuration la plus courante — recevait
+// un finding CRITICAL « VM sans groupe de sécurité ». Un faux positif sur le cas
+// nominal coûte plus cher qu'un contrôle non évalué : il apprend à ignorer l'outil.
+func TestProjectDistinguishesAbsentFromEmptyCollection(t *testing.T) {
+	mapping := map[string]string{"security_group_ids": "security_group_id"}
+	transforms := map[string]any{"security_group_ids": "list"}
+
+	// Clé ABSENTE (plan Terraform, id encore inconnu) : rien ne doit être projeté,
+	// pour que la garde de capacité de la règle reste fermée.
+	absent := Project(map[string]any{"id": "srv-1"}, mapping, transforms)
+	if _, present := absent["security_group_ids"]; present {
+		t.Errorf("clé absente de la source : ne doit pas être projetée, got %v", absent["security_group_ids"])
+	}
+
+	// Clé PRÉSENTE à nil (l'API dit explicitement « aucun ») : collection vide
+	// projetée, l'information « aucun groupe » est réelle et doit être évaluée.
+	explicitNil := Project(map[string]any{"security_group_id": nil}, mapping, transforms)
+	got, present := explicitNil["security_group_ids"]
+	if !present {
+		t.Fatal("clé présente à nil : la collection vide doit être projetée")
+	}
+	if arr, ok := got.([]any); !ok || len(arr) != 0 {
+		t.Errorf("attendu une collection vide, got %#v", got)
+	}
+
+	// Clé PRÉSENTE avec une valeur : comportement inchangé.
+	withValue := Project(map[string]any{"security_group_id": "sg-1"}, mapping, transforms)
+	arr, ok := withValue["security_group_ids"].([]any)
+	if !ok || len(arr) != 1 || arr[0] != "sg-1" {
+		t.Errorf("valeur scalaire mal enveloppée en liste : %#v", withValue["security_group_ids"])
+	}
+
+	// Chemin `a||b` : présent dès qu'une alternative l'est.
+	coalesce := map[string]string{"tags": "labels||tags"}
+	kv := map[string]any{"tags": "kv"}
+	if out := Project(map[string]any{"tags": map[string]any{}}, coalesce, kv); len(out) != 1 {
+		t.Errorf("chemin coalescé : la clé présente doit être projetée, got %+v", out)
+	}
+	if out := Project(map[string]any{"autre": 1}, coalesce, kv); len(out) != 0 {
+		t.Errorf("chemin coalescé : aucune alternative présente, rien ne doit être projeté, got %+v", out)
+	}
+}
+
 func TestValidateTransform(t *testing.T) {
 	// Connus : bare, préfixés, chaînage, table de remplacement.
 	for _, ok := range []any{
