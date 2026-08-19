@@ -22,6 +22,26 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Unreleased]
 
+### Ajouté
+
+- **Vague 2 de la documentation produit : dix pages, générées partout où elles
+  peuvent l'être.** Une référence CLI bâtie depuis la surface gelée et depuis de
+  vraies exécutions de `--help`, le contrat des codes de sortie montré comme six
+  exécutions avec le code que chacune a rendu, les cinq formats de sortie avec un
+  document réel chacun, le plan contre le live avec deux divergences
+  reproductibles, le cycle de vie du bundle de preuve (sceller, vérifier,
+  re-dériver, altérer, caviarder) capturé de bout en bout, les intégrations
+  GitHub Actions et GitLab CI dont les pipelines complets sont injectés depuis
+  `examples/`, et une page par cloud souverain avec ses appels d'API et ses
+  permissions minimales en lecture seule. `TestEveryPublicCLIFlagIsDocumented`
+  échoue désormais quand un drapeau public manque à la référence CLI, dans l'une
+  ou l'autre langue.
+
+- Les exemples de CI publiés épinglent la **v0.2.0** et chaque action par SHA de
+  commit. L'action des v0.1.0 et v0.1.1 n'installait rien du tout
+  (`gh attestation verify` sans jeton) : ces tags ne doivent être épinglés par
+  personne.
+
 ## [0.2.0] - 2026-08-19
 
 ### Ajouté

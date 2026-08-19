@@ -113,6 +113,15 @@ control is the one that governs.
   **Generated** from the reference and the provider descriptors, and verified in CI.
 - [Known limitations](docs/known-limitations.md) — the blind spots, named.
 - [Scope and non-goals](docs/concepts/scope.md) — what a Pépin report is not.
+- [Terraform plan vs live scan](docs/concepts/terraform-vs-live.md) — choosing the
+  source, and the real divergences between the two.
+- Providers: [Scaleway](docs/providers/scaleway.md) · [Outscale](docs/providers/outscale.md) ·
+  [Exoscale](docs/providers/exoscale.md) — authentication, API calls, minimal
+  read-only permissions, coverage.
+- Reference: [CLI](docs/reference/cli.md) · [Exit codes](docs/reference/exit-codes.md) ·
+  [Output formats](docs/reference/output-formats.md).
+- Guides: [Evidence bundles](docs/guides/evidence-bundles.md) ·
+  [GitHub Actions](docs/guides/github-actions.md) · [GitLab CI](docs/guides/gitlab-ci.md).
 - [Install](docs/install.md)
 
 ## Architecture (in brief)

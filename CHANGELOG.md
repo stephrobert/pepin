@@ -21,6 +21,23 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+### Added
+
+- **Wave 2 of the product documentation: ten pages, generated where they can be.**
+  A CLI reference built from the frozen surface and from real `--help` runs, the
+  exit-code contract shown as six executions with the code each one returned, the
+  five output formats with a real document each, plan-versus-live with two
+  reproducible divergences, the evidence-bundle lifecycle (seal, verify,
+  re-derive, tamper, redact) captured end to end, GitHub Actions and GitLab CI
+  integrations whose complete pipelines are injected from `examples/`, and one
+  page per sovereign cloud with its API calls and its minimal read-only
+  permissions. `TestEveryPublicCLIFlagIsDocumented` now fails when a public flag
+  is missing from the CLI reference, in either language.
+
+- The published CI examples pin **v0.2.0** and every action by commit SHA. The
+  action of v0.1.0 and v0.1.1 could not install anything (`gh attestation verify`
+  without a token), so those tags should not be pinned by anyone.
+
 ## [0.2.0] - 2026-08-19
 
 ### Added
