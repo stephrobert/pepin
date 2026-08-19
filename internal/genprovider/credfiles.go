@@ -9,6 +9,8 @@ import (
 
 	toml "github.com/pelletier/go-toml/v2"
 	yaml "go.yaml.in/yaml/v3"
+
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // pathEnv : variable d'environnement surchargeant le chemin du fichier de config,
@@ -38,7 +40,7 @@ func loadCredFile(f credFile, profile string) (map[string]string, error) {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("lecture de %s : %w", path, err)
+		return nil, fmt.Errorf(i18n.T("lecture de %s : %w", "reading %s: %w"), path, err)
 	}
 	switch f.Format {
 	case "scw":
@@ -48,7 +50,7 @@ func loadCredFile(f credFile, profile string) (map[string]string, error) {
 	case "exoscale":
 		return parseExoscale(raw, profile)
 	}
-	return nil, fmt.Errorf("format de fichier d'identifiants inconnu : %q", f.Format)
+	return nil, fmt.Errorf(i18n.T("format de fichier d'identifiants inconnu : %q", "unknown credentials file format: %q"), f.Format)
 }
 
 // parseSCW : ~/.config/scw/config.yaml (profil par défaut à la racine, profils
@@ -64,12 +66,12 @@ func parseSCW(raw []byte, profile, path string) (map[string]string, error) {
 	}
 	var c scw
 	if err := yaml.Unmarshal(raw, &c); err != nil {
-		return nil, fmt.Errorf("config Scaleway %s invalide : %w", path, err)
+		return nil, fmt.Errorf(i18n.T("config Scaleway %s invalide : %w", "invalid Scaleway config %s: %w"), path, err)
 	}
 	if profile != "" {
 		p, ok := c.Profiles[profile]
 		if !ok {
-			return nil, fmt.Errorf("profil Scaleway %q introuvable dans %s", profile, path)
+			return nil, fmt.Errorf(i18n.T("profil Scaleway %q introuvable dans %s", "Scaleway profile %q not found in %s"), profile, path)
 		}
 		c = p
 	}
@@ -90,14 +92,14 @@ func parseOSC(raw []byte, profile, path string) (map[string]string, error) {
 	}
 	var all map[string]osc
 	if err := json.Unmarshal(raw, &all); err != nil {
-		return nil, fmt.Errorf("config Outscale %s invalide : %w", path, err)
+		return nil, fmt.Errorf(i18n.T("config Outscale %s invalide : %w", "invalid Outscale config %s: %w"), path, err)
 	}
 	if profile == "" {
 		profile = "default"
 	}
 	p, ok := all[profile]
 	if !ok {
-		return nil, fmt.Errorf("profil Outscale %q introuvable dans %s", profile, path)
+		return nil, fmt.Errorf(i18n.T("profil Outscale %q introuvable dans %s", "Outscale profile %q not found in %s"), profile, path)
 	}
 	region := p.Region
 	if region == "" {
@@ -121,7 +123,7 @@ func parseExoscale(raw []byte, profile string) (map[string]string, error) {
 		} `toml:"accounts"`
 	}
 	if err := toml.Unmarshal(raw, &conf); err != nil {
-		return nil, fmt.Errorf("config Exoscale invalide : %w", err)
+		return nil, fmt.Errorf(i18n.T("config Exoscale invalide : %w", "invalid Exoscale config: %w"), err)
 	}
 	want := profile
 	if want == "" {
@@ -135,7 +137,7 @@ func parseExoscale(raw []byte, profile string) (map[string]string, error) {
 		}
 	}
 	if profile != "" {
-		return nil, fmt.Errorf("profil Exoscale %q introuvable", profile)
+		return nil, fmt.Errorf(i18n.T("profil Exoscale %q introuvable", "Exoscale profile %q not found"), profile)
 	}
 	return nil, nil
 }

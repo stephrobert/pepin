@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // CLDExigence est une exigence du module posture cloud SCSL, lue dans l'API
@@ -38,11 +40,11 @@ var rePepin = regexp.MustCompile(`Pépin:\s*([a-z0-9_]+)`)
 func ParseCLDExigences(path string) ([]CLDExigence, error) {
 	raw, err := os.ReadFile(path) // #nosec G304 -- chemin de l'API SCSL fourni par l'appelant, lecture seule.
 	if err != nil {
-		return nil, fmt.Errorf("lecture de l'index SCSL %s : %w", path, err)
+		return nil, fmt.Errorf(i18n.T("lecture de l'index SCSL %s : %w", "reading the SCSL index %s: %w"), path, err)
 	}
 	var items []CLDExigence
 	if err := json.Unmarshal(raw, &items); err != nil {
-		return nil, fmt.Errorf("index SCSL %s invalide : %w", path, err)
+		return nil, fmt.Errorf(i18n.T("index SCSL %s invalide : %w", "invalid SCSL index %s: %w"), path, err)
 	}
 	out := make([]CLDExigence, 0, len(items))
 	for _, e := range items {
@@ -111,12 +113,14 @@ func AnalyseCoherence(exs []CLDExigence) (desalignements, roadmap []Ecart) {
 		for _, code := range codes {
 			if _, ok := ctrls[code]; !ok {
 				roadmap = append(roadmap, Ecart{"a_implementer", code, e.ID,
-					"exigence cite ce code Pépin, absent de controles.yaml"})
+					i18n.T("exigence cite ce code Pépin, absent de controles.yaml",
+						"the requirement cites this Pepin code, absent from controles.yaml")})
 				continue
 			}
 			if !mapped[code][e.ID] {
 				desalignements = append(desalignements, Ecart{"desalignement", code, e.ID,
-					fmt.Sprintf("l'exigence cite « %s » mais le contrôle mappe %v", code, sortedKeys(mapped[code]))})
+					fmt.Sprintf(i18n.T("l'exigence cite « %s » mais le contrôle mappe %v",
+						"the requirement cites \"%s\" but the control maps %v"), code, sortedKeys(mapped[code]))})
 			}
 		}
 		if len(codes) == 0 && e.OutilléeParPepin() && !covered[e.ID] {

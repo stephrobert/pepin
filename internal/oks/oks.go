@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
 )
 
@@ -42,7 +43,7 @@ func CollectClusters(ctx context.Context, hc *http.Client, provider, endpoint, r
 	defer func() { _ = resp.Body.Close() }()
 	body, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
 	if rerr != nil {
-		return nil, fmt.Errorf("lecture de la reponse OKS : %w", rerr)
+		return nil, fmt.Errorf(i18n.T("lecture de la reponse OKS : %w", "reading the OKS response: %w"), rerr)
 	}
 	if resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("OKS HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(body)))
@@ -51,7 +52,7 @@ func CollectClusters(ctx context.Context, hc *http.Client, provider, endpoint, r
 		Clusters []map[string]any `json:"Clusters"`
 	}
 	if err := json.Unmarshal(body, &doc); err != nil {
-		return nil, fmt.Errorf("OKS réponse JSON invalide : %w", err)
+		return nil, fmt.Errorf(i18n.T("OKS réponse JSON invalide : %w", "invalid OKS JSON response: %w"), err)
 	}
 	out := make([]model.Resource, 0, len(doc.Clusters))
 	for _, c := range doc.Clusters {

@@ -15,6 +15,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // emptyPayloadHash est le SHA-256 d'un corps vide (requêtes GET sans body).
@@ -45,7 +47,7 @@ func payloadHash(req *http.Request) (string, error) {
 	}
 	data, err := io.ReadAll(req.Body)
 	if err != nil {
-		return "", fmt.Errorf("lecture du corps pour signature : %w", err)
+		return "", fmt.Errorf(i18n.T("lecture du corps pour signature : %w", "reading the body for signing: %w"), err)
 	}
 	_ = req.Body.Close()
 	req.Body = io.NopCloser(bytes.NewReader(data))
@@ -73,7 +75,7 @@ func (a ExoscaleAuth) Apply(req *http.Request) error {
 	if req.Body != nil {
 		data, err := io.ReadAll(req.Body)
 		if err != nil {
-			return fmt.Errorf("lecture du corps pour signature : %w", err)
+			return fmt.Errorf(i18n.T("lecture du corps pour signature : %w", "reading the body for signing: %w"), err)
 		}
 		_ = req.Body.Close()
 		body = string(data)

@@ -14,12 +14,15 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
 
 	yaml "go.yaml.in/yaml/v3"
+
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // Config est le résultat utile d'un kubeconfig : l'URL du serveur d'API et un client
@@ -52,14 +55,14 @@ type kubeconfig struct {
 func Load(path string, timeout time.Duration) (Config, error) {
 	raw, err := os.ReadFile(path) // #nosec G304 -- chemin fourni explicitement par l'opérateur
 	if err != nil {
-		return Config{}, fmt.Errorf("kubeconfig : %w", err)
+		return Config{}, fmt.Errorf(i18n.T("kubeconfig : %w", "kubeconfig: %w"), err)
 	}
 	var kc kubeconfig
 	if err := yaml.Unmarshal(raw, &kc); err != nil {
-		return Config{}, fmt.Errorf("kubeconfig invalide : %w", err)
+		return Config{}, fmt.Errorf(i18n.T("kubeconfig invalide : %w", "invalid kubeconfig: %w"), err)
 	}
 	if len(kc.Clusters) == 0 || kc.Clusters[0].Cluster.Server == "" {
-		return Config{}, fmt.Errorf("kubeconfig : aucun serveur d'API déclaré")
+		return Config{}, errors.New(i18n.T("kubeconfig : aucun serveur d'API déclaré", "kubeconfig: no API server declared"))
 	}
 	cl := kc.Clusters[0].Cluster
 
@@ -68,10 +71,10 @@ func Load(path string, timeout time.Duration) (Config, error) {
 	pool := x509.NewCertPool()
 	ca, err := decodeOrRead(cl.CAData, cl.CAFile)
 	if err != nil {
-		return Config{}, fmt.Errorf("kubeconfig, CA du cluster : %w", err)
+		return Config{}, fmt.Errorf(i18n.T("kubeconfig, CA du cluster : %w", "kubeconfig, cluster CA: %w"), err)
 	}
 	if len(ca) > 0 && !pool.AppendCertsFromPEM(ca) {
-		return Config{}, fmt.Errorf("kubeconfig : CA du cluster illisible")
+		return Config{}, errors.New(i18n.T("kubeconfig : CA du cluster illisible", "kubeconfig: unreadable cluster CA"))
 	}
 	tlsCfg := &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
 
@@ -96,7 +99,7 @@ func Load(path string, timeout time.Duration) (Config, error) {
 		}
 	}
 	if len(tlsCfg.Certificates) == 0 && bearer == "" {
-		return Config{}, fmt.Errorf("kubeconfig : ni certificat client ni jeton — authentification impossible")
+		return Config{}, errors.New(i18n.T("kubeconfig : ni certificat client ni jeton — authentification impossible", "kubeconfig: neither a client certificate nor a token — authentication impossible"))
 	}
 
 	var rt http.RoundTripper = &http.Transport{TLSClientConfig: tlsCfg}

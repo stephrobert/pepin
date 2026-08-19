@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
 )
 
@@ -154,7 +155,7 @@ func readAllUserGroups(ctx context.Context, hc *http.Client, auth collect.Auth, 
 			return out, nil
 		}
 	}
-	return nil, fmt.Errorf("ReadUserGroups : borne de %d pages atteinte", maxPages)
+	return nil, fmt.Errorf(i18n.T("ReadUserGroups : borne de %d pages atteinte", "ReadUserGroups: reached the %d-page bound"), maxPages)
 }
 
 // readAllGroupPolicies pagine ReadUserGroupPolicies pour un groupe.
@@ -201,7 +202,7 @@ func readAllUsers(ctx context.Context, hc *http.Client, auth collect.Auth, baseU
 			return out, nil
 		}
 	}
-	return nil, fmt.Errorf("ReadUsers : borne de %d pages atteinte", maxPages)
+	return nil, fmt.Errorf(i18n.T("ReadUsers : borne de %d pages atteinte", "ReadUsers: reached the %d-page bound"), maxPages)
 }
 
 // readAllUserPolicies pagine ReadUserPolicies pour un utilisateur.
@@ -253,7 +254,7 @@ func post(ctx context.Context, hc *http.Client, auth collect.Auth, url, body str
 	defer func() { _ = resp.Body.Close() }()
 	raw, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
 	if rerr != nil {
-		return fmt.Errorf("lecture de la reponse EIM : %w", rerr)
+		return fmt.Errorf(i18n.T("lecture de la reponse EIM : %w", "reading the EIM response: %w"), rerr)
 	}
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(raw)))

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // authTypes et credFormats définissent le CONTRAT d'un provider : seuls ces
@@ -90,7 +91,7 @@ func Validate(name string, desc Descriptor) []string {
 func ValidateAll(fsys fs.FS, root string) (map[string][]string, error) {
 	entries, err := fs.ReadDir(fsys, root)
 	if err != nil {
-		return nil, fmt.Errorf("lecture de %s : %w", root, err)
+		return nil, fmt.Errorf(i18n.T("lecture de %s : %w", "reading %s: %w"), root, err)
 	}
 	out := map[string][]string{}
 	for _, e := range entries {
