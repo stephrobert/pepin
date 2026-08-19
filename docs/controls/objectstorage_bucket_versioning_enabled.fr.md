@@ -96,7 +96,7 @@ Activer le versioning sur les buckets de données critiques (PutBucketVersioning
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie
 tel quel, ou une note ancrée sur la documentation officielle. Voir
-[le guide de remédiation](../guides/remediation.md).
+[le guide de remédiation](../guides/remediation.fr.md).
 
 ## Comment vérifier la correction
 
@@ -118,7 +118,7 @@ Le tableau des motifs dit laquelle, et pourquoi.
 
 ## Voir aussi
 
-- [Le modèle d'assessment](../concepts/assessment-model.md) : ce que chaque statut affirme.
-- [Matrice de couverture](../coverage.md) : la même information, tous contrôles confondus.
-- [Plan Terraform ou scan live](../concepts/terraform-vs-live.md) : choisir la source.
-- [Ajouter un contrôle](../contributing/adding-a-control.md) : la procédure de bout en bout.
+- [Le modèle d'assessment](../concepts/assessment-model.fr.md) : ce que chaque statut affirme.
+- [Matrice de couverture](../coverage.fr.md) : la même information, tous contrôles confondus.
+- [Plan Terraform ou scan live](../concepts/terraform-vs-live.fr.md) : choisir la source.
+- [Ajouter un contrôle](../contributing/adding-a-control.fr.md) : la procédure de bout en bout.

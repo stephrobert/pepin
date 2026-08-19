@@ -10,7 +10,7 @@ Aucune métadonnée n'est recopiée ici : ajouter un contrôle, changer une sév
 retirer un fournisseur réécrit ces pages, et la CI refuse une documentation en retard.
 
 Ce catalogue dit ce que Pépin **peut conclure**, pas le résultat d'un scan. Pour la
-vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](../coverage.md).
+vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](../coverage.fr.md).
 
 ## Chiffres
 
