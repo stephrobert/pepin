@@ -23,6 +23,10 @@ var injectedPages = []string{
 	"docs/concepts/scope.fr.md",
 	"docs/known-limitations.md",
 	"docs/known-limitations.fr.md",
+	"docs/reference/cli.md",
+	"docs/reference/cli.fr.md",
+	"docs/reference/exit-codes.md",
+	"docs/reference/exit-codes.fr.md",
 }
 
 // generatedPages : les pages entièrement calculées, sans une ligne écrite à la main.
