@@ -178,8 +178,17 @@ var scanCmd = &cobra.Command{
 
 // sensitiveAttrs : attributs dont la VALEUR peut porter un secret et qu'on caviarde dans le
 // bundle partageable (l'outil détecte les secrets ; il ne doit pas les ré-exfiltrer).
+//
+// La liste couvre les attributs du modèle normalisé, pas seulement les documents libres :
+// `access_key` est un attribut de ressource à part entière (cf. examples/scaleway/inventory.json,
+// type "access_key"), et `password`/`certificate` remontent des bases managées. Un bundle
+// `--seal --redact` est destiné à un auditeur EXTERNE : ce qui traverse cette carte quitte
+// le périmètre du tenant scanné.
 var sensitiveAttrs = map[string]bool{
 	"user_data": true, "document": true, "statements": true, "policy": true,
+	"access_key": true, "secret_key": true, "password": true, "token": true,
+	"ssh_key": true, "public_key": true, "private_key": true,
+	"certificate": true, "connection_string": true,
 }
 
 // redactInventory retourne une COPIE de l'inventaire dont les valeurs des attributs sensibles

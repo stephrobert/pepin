@@ -5,4 +5,6 @@
 # Regenerable cache of scraped third-party provider docs (example API keys in prose).
 references/docs/
 # IMDS/SSRF demonstration example: a deliberately fake token leaked via the metadata service.
-examples/exoscale/lab-imds/
+# Scoped to the Terraform source that carries the placeholder — plan.json stays scanned, since
+# that is the file a sanitization slip would land in.
+examples/exoscale/lab-imds/main.tf

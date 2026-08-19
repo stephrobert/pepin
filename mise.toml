@@ -5,10 +5,12 @@
 [tools]
 opa = "1.18.2"        # tests des règles Rego : ALIGNÉ sur la lib OPA du runtime (go.mod)
 terraform = "1.15.4"  # validation des preuves de remédiation + mapping TF
+gitleaks = "8.30.0"   # scan de secrets par MOTIF : couvre les clés souveraines,
+                      # que trufflehog --only-verified ne sait pas reconnaître
 
 [tasks.build]
 description = "Compile le binaire (version injectée)"
-run = 'go build -ldflags "-s -w -X github.com/stephrobert/pepin/cmd.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)" -o pepin .'
+run = 'go build -trimpath -ldflags "-s -w -X github.com/stephrobert/pepin/cmd.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)" -o pepin .'
 
 [tasks.test]
 description = "Tests Go (data races) + tests des règles Rego"
@@ -64,6 +66,10 @@ run = "PEPIN_UPDATE_FROZEN=1 go test ./cmd/ -run 'Frozen|Fixture|VersionBump' -c
 [tasks.release-check]
 description = "Tout ce qui doit être vrai avant qu'un tag existe : mise run release-check -- vX.Y.Z"
 run = "tools/release/preflight.sh"
+
+[tasks.secrets]
+description = "Scan de secrets par motif (gitleaks), historique git compris"
+run = "gitleaks detect --source . --no-banner --redact --config .gitleaks.toml"
 
 [tasks.vet]
 description = "Analyse statique du compilateur"

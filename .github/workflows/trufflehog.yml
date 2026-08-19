@@ -29,3 +29,27 @@ jobs:
           base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
           head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           extra_args: --only-verified --exclude-paths .trufflehogignore
+
+  # trufflehog tourne en --only-verified : il n'escalade que ce qu'une API vivante
+  # confirme, et il n'a AUCUN détecteur pour Exoscale, Outscale ni Scaleway —
+  # c'est-à-dire exactement les trois clouds au cœur de ce dépôt. Une vraie clé
+  # souveraine committée passerait donc ce job en silence. gitleaks travaille par
+  # motif, sans vérification réseau : il couvre ce point aveugle.
+  gitleaks:
+    name: Secret scanning (pattern-based)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup mise (outils + tâches)
+        uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
+
+      # Via mise plutôt que l'action gitleaks : la version est épinglée dans
+      # mise.toml comme opa et terraform, et le scan reste identique en local.
+      - name: gitleaks
+        run: mise run secrets

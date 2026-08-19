@@ -8,16 +8,20 @@ useDefault = true
 
 [allowlist]
 description = "Fake placeholder keys (IMDS/SSRF demo + rule-test fixtures) and the scraped doc cache."
-# Placeholder AKIA-format keys used to demonstrate detection — obviously fake, never live.
+# Placeholder keys used to demonstrate detection — obviously fake, never live. Acquitting them
+# BY VALUE rather than by path keeps every file scanned: a directory-wide exclusion would also
+# hide a real credential pasted there later, and the rule tests are exactly where one would land.
 regexes = [
   '''AKIA0123456789ABCDEF''',
   '''AKIAABCDEFGHIJKLMNOP''',
+  # compute_blockstorage_test.rego: fixtures asserting the secret detector fires.
+  '''eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3In0\.abcdefghij''',
+  '''0123456789abcdef0123''',
 ]
 paths = [
   # Regenerable cache of third-party provider docs (full of example keys) — gitignored too.
   '''references/docs/.*''',
   # IMDS/SSRF demonstration: the whole point is a token leaked via the metadata service.
-  '''examples/exoscale/lab-imds/.*''',
-  # Rego rule tests need a fake secret to assert the detector fires.
-  '''internal/commonrules/rules/.*_test\.rego''',
+  # Scoped to the Terraform source; plan.json stays scanned.
+  '''examples/exoscale/lab-imds/main\.tf''',
 ]
