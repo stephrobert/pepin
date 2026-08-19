@@ -66,13 +66,14 @@ control that reads instance filtering therefore cannot decide, and says so rathe
 {
   "control": "compute_instance_has_security_group",
   "evidence": {
+    "attribute": "security_group_ids",
     "observed": "attribute \"security_group_ids\" not collected on the resources of type \"compute_instance\" (capability guard)",
     "proves": [
       "",
       "",
       ""
     ],
-    "source": "terraform-plan"
+    "source": "security_group_ids=terraform-plan:scaleway_instance_server observed=0/1"
   },
   "references": [
     {

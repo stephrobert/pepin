@@ -211,6 +211,7 @@ func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any
 		localizeFindings(f)
 		got := assess.Build(name, referentiel.All(), f, resourceTypesOf(input),
 			providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), run)
+		got = assess.WithProvenance(got, assess.ProvenanceOf(input), controlTypes())
 		b, _ := json.Marshal(assess.Canonical(got).Results)
 		if string(b) == sealedJSON {
 			return got, true

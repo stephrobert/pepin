@@ -143,13 +143,14 @@ One result:
 {
   "control": "objectstorage_bucket_public_access",
   "evidence": {
+    "attribute": "acl",
     "observed": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL).",
     "proves": [
       "",
       "",
       ""
     ],
-    "source": "terraform-plan"
+    "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
     "category": "security",

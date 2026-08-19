@@ -127,6 +127,9 @@ var scanCmd = &cobra.Command{
 		// normative references, and run provenance (tool/ruleset digests, target, timestamp).
 		rtypes := resourceTypesOf(input)
 		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), buildRun(name, rtypes))
+		// La provenance des attributs décisifs, en PASSE POSTÉRIEURE : elle enrichit la
+		// preuve (d'où vient la donnée, a-t-elle été observée) et ne touche aucun statut.
+		asmt = assess.WithProvenance(asmt, assess.ProvenanceOf(input), controlTypes())
 
 		// Bundle de preuve horodaté et hashé (opposabilité : intégrité + non-répudiation).
 		if scanSeal != "" {

@@ -231,12 +231,22 @@ func (g GenericProvider) GovernanceResource() (model.Resource, bool) {
 	if s.ExpositionExtraterritoriale != nil {
 		attrs["extraterritorial_exposure"] = *s.ExpositionExtraterritoriale
 	}
+	// Ces attributs sont des FAITS DÉCLARÉS au descripteur, jamais mesurés sur le
+	// tenant : leur attestation le dit explicitement. C'est la même honnêteté que la
+	// preuve d'un `pass` de gouvernance, portée cette fois par la donnée elle-même.
+	var prov model.Provenance
+	for attr := range attrs {
+		prov.Attest(attr, model.Attestation{
+			Origin: model.OriginDerived, Source: "descriptor:souverainete", Derived: true,
+		})
+	}
 	return model.Resource{
 		Provider:   g.desc.Name,
 		Type:       "governance_provider",
 		ID:         g.desc.Name,
 		Name:       g.desc.Name,
 		Attributes: attrs,
+		Provenance: prov,
 	}, true
 }
 

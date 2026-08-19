@@ -129,7 +129,40 @@ func collectBucket(ctx context.Context, client *s3.Client, provider, region, nam
 		}
 	} // sinon (403, timeout) : attributs absents → not-evaluated, jamais un faux vert.
 
-	return model.Resource{Provider: provider, Type: "object_storage_bucket", ID: name, Name: name, Region: region, Attributes: attrs}
+	// Chaque attribut n'est posé QUE si son appel a réussi (voir ci-dessus) : attester
+	// l'appel qui le porte est donc une lecture fidèle de ce qui s'est passé, jamais une
+	// recopie de ce que le code déclare appeler. Un 403 sur GetBucketAcl laisse l'attribut
+	// absent ET non attesté — l'attestation ne peut pas nommer un appel qui a échoué.
+	return model.Resource{
+		Provider: provider, Type: "object_storage_bucket", ID: name, Name: name, Region: region,
+		Attributes: attrs,
+		Provenance: model.AttestPresent(attrs, bucketAttrCall, bucketAttrDerived),
+	}
+}
+
+// bucketAttrCall : l'appel S3 qui porte chaque attribut de bucket.
+var bucketAttrCall = map[string]string{
+	"name":                       "s3:ListBuckets",
+	"acl_grants":                 "s3:GetBucketAcl",
+	"public_via_acl":             "s3:GetBucketAcl",
+	"versioning":                 "s3:GetBucketVersioning",
+	"policy_public":              "s3:GetBucketPolicy",
+	"tags":                       "s3:GetBucketTagging",
+	"object_lock_enabled":        "s3:GetObjectLockConfiguration",
+	"default_encryption_enabled": "s3:GetBucketEncryption",
+	"sse_kms_enabled":            "s3:GetBucketEncryption",
+	"kms_key_id":                 "s3:GetBucketEncryption",
+}
+
+// bucketAttrDerived : les attributs CALCULÉS depuis la réponse (un booléen déduit
+// d'une liste de grants n'est pas un champ de l'API), par opposition à ceux qui en
+// sont recopiés.
+var bucketAttrDerived = map[string]bool{
+	"public_via_acl":             true,
+	"policy_public":              true,
+	"object_lock_enabled":        true,
+	"default_encryption_enabled": true,
+	"sse_kms_enabled":            true,
 }
 
 // isACLPublic — un grant cible le groupe public (AllUsers/AuthenticatedUsers).

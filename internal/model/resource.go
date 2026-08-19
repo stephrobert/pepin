@@ -6,6 +6,11 @@
 package model
 
 // Resource est une ressource cloud normalisée.
+//
+// `Provenance` est un index PARALLÈLE à `Attributes`, indexé par le même nom
+// d'attribut : il dit d'où vient chaque valeur et si elle a réellement été
+// observée. Il ne s'imbrique jamais DANS une valeur — les règles Rego lisent
+// `attributes.<nom>` et n'ont rien à savoir de la provenance.
 type Resource struct {
 	Provider   string         `json:"provider"`
 	Type       string         `json:"type"`
@@ -13,6 +18,7 @@ type Resource struct {
 	Name       string         `json:"name"`
 	Region     string         `json:"region,omitempty"`
 	Attributes map[string]any `json:"attributes"`
+	Provenance Provenance     `json:"provenance,omitempty"`
 }
 
 // Posture est l'export d'inventaire soumis à l'évaluation.
