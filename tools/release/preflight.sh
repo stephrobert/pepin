@@ -212,7 +212,12 @@ fi
 # être ROUGES pendant que le preflight annonçait « la CI est verte » et autorisait le
 # tag. Les lignes ci-dessus délèguent l'audit à la CI : la délégation doit pointer
 # vers ce qu'elle prétend déléguer.
-ci_jobs='^(Build \+ Test|golangci-lint|Audit \(gosec \+ govulncheck\)|Analyze \(go\)|Dependency Review|Secret scanning|Secret scanning \(pattern-based\)|The image scans for real|The action installs only what it verified)$'
+# NB : ce motif est passé à awk via -v, donc awk le lit comme une CHAÎNE avant
+# d'en faire une regex : les échappements doivent être DOUBLÉS. Avec un simple
+# `\(`, awk émet « escape sequence treated as plain ( » et la parenthèse devient
+# un GROUPE — le motif ne matche plus aucun nom de job, et le preflight conclut
+# « la CI est 'null' » au lieu de lire son état.
+ci_jobs='^(Build \\+ Test|golangci-lint|Audit \\(gosec \\+ govulncheck\\)|Analyze \\(go\\)|Dependency Review|Secret scanning|Secret scanning \\(pattern-based\\)|The image scans for real|The action installs only what it verified)$'
 if git remote | grep -q . && command -v gh >/dev/null 2>&1; then
   sha="$(git rev-parse HEAD)"
   if runs="$(gh api "repos/{owner}/{repo}/commits/$sha/check-runs?per_page=100" \
