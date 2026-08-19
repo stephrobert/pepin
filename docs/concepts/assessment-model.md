@@ -25,19 +25,19 @@ for the scanned provider always comes back with one of these four.
 
 ```mermaid
 flowchart TD
-    A[Control from the common reference] --> B{A finding was emitted<br/>for this control?}
-    B -- yes --> FAIL[fail]
-    B -- no --> C{Provider contract declares it<br/>not applicable, with a reason?}
-    C -- yes --> NA[not-applicable<br/>+ justification]
-    C -- no --> D{Provider listed in<br/>fournisseurs for this control?}
-    D -- no --> OUT[out of this scan's scope<br/>no result emitted]
-    D -- yes --> E{Contract marks the target<br/>resource type verifie?}
-    E -- no --> NE1[not-evaluated<br/>data collection unconfirmed]
-    E -- yes --> F{A resource of that exact type<br/>in the evaluated inventory?}
-    F -- no --> NE2[not-evaluated<br/>nothing of that type in scope]
-    F -- yes --> G{Deciding attribute actually<br/>collected on that type?}
-    G -- no --> NE3[not-evaluated<br/>capability guard]
-    G -- yes --> PASS[pass]
+    A["Control from the common reference"] --> B{"A finding was emitted<br/>for this control?"}
+    B -- yes --> FAIL["fail"]
+    B -- no --> C{"Provider contract declares it<br/>not applicable, with a reason?"}
+    C -- yes --> NA["not-applicable<br/>+ justification"]
+    C -- no --> D{"Provider listed in<br/>fournisseurs for this control?"}
+    D -- no --> OUT["out of this scan's scope<br/>no result emitted"]
+    D -- yes --> E{"Contract marks the target<br/>resource type verifie?"}
+    E -- no --> NE1["not-evaluated<br/>data collection unconfirmed"]
+    E -- yes --> F{"A resource of that exact type<br/>in the evaluated inventory?"}
+    F -- no --> NE2["not-evaluated<br/>nothing of that type in scope"]
+    F -- yes --> G{"Deciding attribute actually<br/>collected on that type?"}
+    G -- no --> NE3["not-evaluated<br/>capability guard"]
+    G -- yes --> PASS["pass"]
 ```
 
 Three gates stand between "no finding" and `pass`, and each one exists because removing it

@@ -26,19 +26,19 @@ implémenté pour le fournisseur scanné revient toujours avec l'un de ces quatr
 
 ```mermaid
 flowchart TD
-    A[Contrôle du référentiel commun] --> B{Un finding a-t-il été émis<br/>pour ce contrôle ?}
-    B -- oui --> FAIL[fail]
-    B -- non --> C{Le contrat du fournisseur le déclare-t-il<br/>non applicable, avec un motif ?}
-    C -- oui --> NA[not-applicable<br/>+ justification]
-    C -- non --> D{Le fournisseur figure-t-il dans<br/>fournisseurs pour ce contrôle ?}
-    D -- non --> OUT[hors périmètre de ce scan<br/>aucun résultat émis]
-    D -- oui --> E{Le contrat marque-t-il le type<br/>de ressource visé verifie ?}
-    E -- non --> NE1[not-evaluated<br/>collecte non confirmée]
-    E -- oui --> F{Une ressource de ce type exact<br/>est-elle dans l'inventaire évalué ?}
-    F -- non --> NE2[not-evaluated<br/>aucune ressource de ce type]
-    F -- oui --> G{L'attribut décisif a-t-il<br/>réellement été collecté ?}
-    G -- non --> NE3[not-evaluated<br/>garde de capacité]
-    G -- oui --> PASS[pass]
+    A["Contrôle du référentiel commun"] --> B{"Un finding a-t-il été émis<br/>pour ce contrôle ?"}
+    B -- oui --> FAIL["fail"]
+    B -- non --> C{"Le contrat du fournisseur le déclare-t-il<br/>non applicable, avec un motif ?"}
+    C -- oui --> NA["not-applicable<br/>+ justification"]
+    C -- non --> D{"Le fournisseur figure-t-il dans<br/>fournisseurs pour ce contrôle ?"}
+    D -- non --> OUT["hors périmètre de ce scan<br/>aucun résultat émis"]
+    D -- oui --> E{"Le contrat marque-t-il le type<br/>de ressource visé verifie ?"}
+    E -- non --> NE1["not-evaluated<br/>collecte non confirmée"]
+    E -- oui --> F{"Une ressource de ce type exact<br/>est-elle dans l'inventaire évalué ?"}
+    F -- non --> NE2["not-evaluated<br/>aucune ressource de ce type"]
+    F -- oui --> G{"L'attribut décisif a-t-il<br/>réellement été collecté ?"}
+    G -- non --> NE3["not-evaluated<br/>garde de capacité"]
+    G -- oui --> PASS["pass"]
 ```
 
 Trois verrous séparent « aucun finding » de `pass`, et chacun existe parce que son absence a
