@@ -9,7 +9,9 @@ This page reads one real Pépin run end to end. The command:
 ```
 
 Everything reproduced below was captured from that exact command on this repository — the
-terminal report, the assessment document, the exit code. Nothing is illustrative.
+terminal report, the assessment document, the exit code. Nothing is illustrative. The output
+itself is in French: Pépin's CLI, reference and rules are French by repository convention, and
+quoting them verbatim is what lets this page be checked against the tool.
 
 ## The two streams
 

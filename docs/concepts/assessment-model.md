@@ -9,6 +9,10 @@ Every scan produces one **assessment**: one typed result per control, each carry
 normative references and the provenance of the run. Read it with `--format assessment`, or
 find it sealed inside a `--seal` bundle.
 
+The captured output on this page is in French: the CLI, the reference and the rules are French
+by repository convention, and quoting them verbatim is the only way this page can be checked
+against what the tool prints.
+
 ## The four statuses in one sentence each
 
 | Status | Pépin asserts |

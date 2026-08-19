@@ -9,6 +9,10 @@ This page states what Pépin **cannot** measure, and why. It applies to **v0.1.0
 regenerated with the code: the tables below are computed from the reference, the provider
 descriptors and the `pass` lock — see [How this page stays true](#how-this-page-stays-true).
 
+The justifications and reasons in those tables are quoted **verbatim** from the reference and
+the provider contracts, which the repository keeps in French by convention. Translating them
+here would put a second, unverified wording next to the one the scan actually prints.
+
 ## The five categories
 
 | # | Category | Who can lift it |
