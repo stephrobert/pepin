@@ -13,6 +13,7 @@ type blockStrings struct {
 	exitNothing, exitMediumPlain, exitMediumStrict    string
 	orWord, none, totalWord, figControls, figDeclared string
 	noTypeWord                                        string
+	noDeviationFor, noResultFor, quotedPlaceholder    string
 }
 
 func blockText(lang string) blockStrings {
@@ -36,6 +37,9 @@ func blockText(lang string) blockStrings {
 			figControls:       "Contrôles au référentiel",
 			figDeclared:       "Contrôles déclarés pour au moins un fournisseur",
 			noTypeWord:        "(aucun : contrôle transverse)",
+			noDeviationFor:    "(aucun écart %s sur ce scan)",
+			noResultFor:       "(aucun résultat « %s » sur ce scan)",
+			quotedPlaceholder: "« … »",
 		}
 	}
 	return blockStrings{
@@ -57,5 +61,8 @@ func blockText(lang string) blockStrings {
 		figControls:       "Controls in the reference",
 		figDeclared:       "Controls declared for at least one provider",
 		noTypeWord:        "(none: cross-cutting control)",
+		noDeviationFor:    "(no %s deviation in this scan)",
+		noResultFor:       "(no \"%s\" result in this scan)",
+		quotedPlaceholder: "\"…\"",
 	}
 }

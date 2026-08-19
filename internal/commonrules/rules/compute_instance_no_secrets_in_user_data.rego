@@ -18,9 +18,14 @@ deny contains f if {
 		"code": "compute_instance_no_secrets_in_user_data",
 		"severity": "high",
 		"subject": id,
-		"message": sprintf("VM « %s » : secret en clair dans user-data (%s).", [id, pattern]),
+		"message": sprintf("VM « %s » : secret en clair dans user-data (%s).", [id, pattern.fr]),
 		"remediation": "Bannir les secrets des données utilisateur ; utiliser un coffre de secrets et l'injection au démarrage. Révoquer le secret exposé.",
-		"labels": {"provider": provider_of(vm), "category": "security"},
+		"labels": {
+			"provider": provider_of(vm),
+			"category": "security",
+			"message_en": sprintf("VM \"%s\": cleartext secret in user-data (%s).", [id, pattern.en]),
+			"remediation_en": "Ban secrets from user data; use a secrets vault and inject them at boot. Revoke the exposed secret.",
+		},
 	}
 }
 
@@ -58,34 +63,72 @@ _is_base64(s) if {
 	regex.match(`^[[:print:][:space:]]*$`, base64.decode(s))
 }
 
+# _secret_regexes — motifs de détection, chacun avec son LIBELLÉ dans les deux
+# langues. Le libellé est interpolé dans le message du finding : le garder
+# monolingue produirait une phrase anglaise à moitié française, exactement ce que
+# l'internationalisation corrige. La clé de la carte est le libellé français
+# (langue de référence) ; `en` en est la traduction, `re` le motif.
+_secret_regexes := {
+	# Clés d'accès cloud, y compris SOUVERAINES (préfixes documentés).
+	"clé d'accès Outscale (format AKIA…)": {
+		"en": "Outscale access key (AKIA… format)",
+		"re": `AKIA[0-9A-Z]{16}`,
+	},
+	"clé d'accès Scaleway (SCW…)": {
+		"en": "Scaleway access key (SCW…)",
+		"re": `SCW[A-Z0-9]{17,}`,
+	},
+	"clé d'accès Exoscale (EXO…)": {
+		"en": "Exoscale access key (EXO…)",
+		"re": `EXO[A-Za-z0-9]{16,}`,
+	},
+	# Jetons de forge / d'identité fréquemment collés dans le user-data.
+	"jeton GitHub": {
+		"en": "GitHub token",
+		"re": `(gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,})`,
+	},
+	"jeton GitLab (glpat-)": {
+		"en": "GitLab token (glpat-)",
+		"re": `glpat-[A-Za-z0-9_-]{20}`,
+	},
+	"jeton JWT": {
+		"en": "JWT token",
+		"re": `eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}`,
+	},
+	"en-tête Authorization Bearer": {
+		"en": "Authorization Bearer header",
+		"re": `(?i)authorization\s*:\s*bearer\s+[A-Za-z0-9._-]{12,}`,
+	},
+	# Affectation de mot de passe EN CLAIR. La valeur doit suivre le séparateur SUR LA MÊME
+	# LIGNE (>=4 caractères non blancs) : évite le faux positif sur les blocs cloud-init
+	# `chpasswd:` / `password:` suivis d'un bloc YAML (la valeur passe alors à la ligne).
+	"mot de passe en clair": {
+		"en": "cleartext password",
+		"re": `(?i)(password|passwd|pwd)[ \t]*[:=][ \t]*['"]?[^\s'"]{4,}`,
+	},
+	# Bloc cloud-init `chpasswd` : la façon la PLUS courante de poser un mot de passe.
+	# La valeur est sur une ligne indentée `utilisateur:motdepasse` — sans espace après
+	# le deux-points, ce qui la distingue d'une clé YAML (`expire: true`).
+	"mot de passe cloud-init (chpasswd)": {
+		"en": "cloud-init password (chpasswd)",
+		"re": `(?i)chpasswd:[\s\S]{0,300}?\n[ \t]+[A-Za-z0-9_.-]+:[^\s]{6,}`,
+	},
+	"clé/API générique affectée": {
+		"en": "generic key/API assignment",
+		"re": `(?i)(api[_-]?key|secret[_-]?key|access[_-]?key|secret[_-]?access[_-]?key|auth[_-]?token|api[_-]?token)\s*[:=]\s*['"]?[A-Za-z0-9/+._-]{16,}`,
+	},
+}
+
 # _secret_patterns — ENSEMBLE des types de secrets détectés (un user-data peut en
 # cumuler plusieurs : clé d'accès ET mot de passe…). Un set évite le conflit d'une
-# fonction single-value à clauses non exclusives.
+# fonction single-value à clauses non exclusives. Chaque élément porte le libellé
+# dans les deux langues (`fr`, `en`).
 _secret_patterns(s) := patterns if {
-	by_regex := {label |
-		some label, re in {
-			# Clés d'accès cloud, y compris SOUVERAINES (préfixes documentés).
-			"clé d'accès Outscale (format AKIA…)": `AKIA[0-9A-Z]{16}`,
-			"clé d'accès Scaleway (SCW…)": `SCW[A-Z0-9]{17,}`,
-			"clé d'accès Exoscale (EXO…)": `EXO[A-Za-z0-9]{16,}`,
-			# Jetons de forge / d'identité fréquemment collés dans le user-data.
-			"jeton GitHub": `(gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,})`,
-			"jeton GitLab (glpat-)": `glpat-[A-Za-z0-9_-]{20}`,
-			"jeton JWT": `eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}`,
-			"en-tête Authorization Bearer": `(?i)authorization\s*:\s*bearer\s+[A-Za-z0-9._-]{12,}`,
-			# Affectation de mot de passe EN CLAIR. La valeur doit suivre le séparateur SUR LA MÊME
-			# LIGNE (>=4 caractères non blancs) : évite le faux positif sur les blocs cloud-init
-			# `chpasswd:` / `password:` suivis d'un bloc YAML (la valeur passe alors à la ligne).
-			"mot de passe en clair": `(?i)(password|passwd|pwd)[ \t]*[:=][ \t]*['"]?[^\s'"]{4,}`,
-			# Bloc cloud-init `chpasswd` : la façon la PLUS courante de poser un mot de passe.
-			# La valeur est sur une ligne indentée `utilisateur:motdepasse` — sans espace après
-			# le deux-points, ce qui la distingue d'une clé YAML (`expire: true`).
-			"mot de passe cloud-init (chpasswd)": `(?i)chpasswd:[\s\S]{0,300}?\n[ \t]+[A-Za-z0-9_.-]+:[^\s]{6,}`,
-			"clé/API générique affectée": `(?i)(api[_-]?key|secret[_-]?key|access[_-]?key|secret[_-]?access[_-]?key|auth[_-]?token|api[_-]?token)\s*[:=]\s*['"]?[A-Za-z0-9/+._-]{16,}`,
-		}
-		regex.match(re, s)
+	by_regex := {{"fr": label, "en": spec.en} |
+		some label, spec in _secret_regexes
+		regex.match(spec.re, s)
 	}
-	private_key := {"bloc PRIVATE KEY" |
+	private_key := {{"fr": "bloc PRIVATE KEY", "en": "PRIVATE KEY block"} |
 		contains(s, "BEGIN ")
 		contains(s, "PRIVATE KEY")
 	}

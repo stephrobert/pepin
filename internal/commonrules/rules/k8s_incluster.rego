@@ -29,7 +29,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("ClusterRoleBinding « %s » accorde cluster-admin à %s — pleins pouvoirs sur le cluster.", [name, subject]),
 		"remediation": "Retirer cluster-admin de ce sujet ; accorder un Role/ClusterRole restreint au strict nécessaire.",
-		"labels": {"provider": provider_of(b), "category": "security"},
+		"labels": {
+			"provider": provider_of(b),
+			"category": "security",
+			"message_en": sprintf("ClusterRoleBinding \"%s\" grants cluster-admin to %s — full power over the cluster.", [name, subject]),
+			"remediation_en": "Remove cluster-admin from this subject; grant a Role/ClusterRole restricted to what it strictly needs.",
+		},
 	}
 }
 
@@ -60,7 +65,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Namespace « %s » sans Pod Security Standards imposés (enforce = %s) — un pod privilégié y est accepté.", [name, lvl]),
 		"remediation": "Poser le label pod-security.kubernetes.io/enforce (baseline ou restricted) sur le namespace.",
-		"labels": {"provider": provider_of(n), "category": "security"},
+		"labels": {
+			"provider": provider_of(n),
+			"category": "security",
+			"message_en": sprintf("Namespace \"%s\" has no Pod Security Standards enforced (enforce = %s) — a privileged pod is accepted there.", [name, lvl]),
+			"remediation_en": "Set the pod-security.kubernetes.io/enforce label (baseline or restricted) on the namespace.",
+		},
 	}
 }
 
@@ -76,7 +86,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Namespace « %s » sans aucune NetworkPolicy — tout pod y joint tout autre pod (réseau plat).", [name]),
 		"remediation": "Définir une NetworkPolicy de refus par défaut (ingress et egress) dans le namespace, puis autoriser les flux légitimes.",
-		"labels": {"provider": provider_of(n), "category": "security"},
+		"labels": {
+			"provider": provider_of(n),
+			"category": "security",
+			"message_en": sprintf("Namespace \"%s\" has no NetworkPolicy at all — every pod can reach every other pod (flat network).", [name]),
+			"remediation_en": "Define a default-deny NetworkPolicy (ingress and egress) in the namespace, then allow the legitimate flows.",
+		},
 	}
 }
 
@@ -99,7 +114,12 @@ deny contains f if {
 		"subject": "cluster",
 		"message": "Aucun gestionnaire de secrets externes détecté (External Secrets Operator, Secrets Store CSI, agent Vault) — les secrets reposent sur le stockage natif Kubernetes.",
 		"remediation": "Déployer un gestionnaire de secrets externes (External Secrets Operator ou Secrets Store CSI) et monter les secrets depuis le coffre, jamais en clair dans les manifests.",
-		"labels": {"provider": "kubernetes", "category": "security"},
+		"labels": {
+			"provider": "kubernetes",
+			"category": "security",
+			"message_en": "No external secrets manager detected (External Secrets Operator, Secrets Store CSI, Vault agent) — secrets rely on the native Kubernetes storage.",
+			"remediation_en": "Deploy an external secrets manager (External Secrets Operator or Secrets Store CSI) and mount secrets from the vault, never in cleartext in the manifests.",
+		},
 	}
 }
 

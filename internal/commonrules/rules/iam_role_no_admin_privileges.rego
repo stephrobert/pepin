@@ -23,6 +23,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Rôle IAM « %s » : politique en « allow » par défaut — privilèges étendus, à l'encontre du moindre privilège.", [name]),
 		"remediation": "Repartir d'une stratégie de service « deny » par défaut et n'autoriser explicitement que le strict nécessaire.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("IAM role \"%s\": policy set to \"allow\" by default — broad privileges, against least privilege.", [name]),
+			"remediation_en": "Start again from a default \"deny\" service strategy and explicitly allow only what is strictly needed.",
+		},
 	}
 }

@@ -30,10 +30,10 @@ nothing else.
  ██║     ███████╗██║     ██║ ██║ ╚████║
  ╚═╝     ╚══════╝╚═╝     ╚═╝ ╚═╝  ╚═══╝
 
- v<version>  · scanner de posture cloud (sécurité · conformité)
+ v<version>  · cloud posture scanner (security · compliance)
 
 
-ⓘ Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud.
+ⓘ This report assesses the configuration of a tenant (customer-side scope). The normative mappings (SecNumCloud, ISO, CIS) are indicative: they are not a proof of qualification or certification, which applies to the cloud service provider.
 ```
 <!-- /pepin:gen scan-vulnerable-banner -->
 
@@ -58,138 +58,138 @@ large tenant, you want to know the tool started. The closing line is
  ⚡ Immediate action — top 3 most severe deviations
 ──────────────────────────────────────────────────────────────────────────────
 
-  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
+  1. 🔴 CRIT  CLD-STO-1 — Bucket "scaleway_object_bucket_acl.backups" is publicly accessi…
      subject: scaleway_object_bucket_acl.backups
-  2. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
+  2. 🟠 HIGH  CLD-CMP-9 — VM "scaleway_instance_server.web": cleartext secret in user-dat…
      subject: scaleway_instance_server.web
-  3. 🟠 HIGH  CLD-STO-3 — sauvegardes automatiques désactivées.
+  3. 🟠 HIGH  CLD-STO-3 — Managed database "pepin-test-rdb": automatic backups are disabl…
      subject: pepin-test-rdb
 
 
 ──────────────────────────────────────────────────────────────────────────────
  CRITICAL  ·  CLD-STO-1  ·  scaleway
- Stockage objet exposé publiquement
+ Object storage publicly exposed
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
+      CRIT  scaleway_object_bucket_acl.backups — Bucket "scaleway_object_bucket_acl.backups" is publicly accessible (public ACL).
 
   Remediation
-    Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
+    Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-STO-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CHF-2  ·  scaleway
- Base de données managée sans chiffrement au repos
+ Managed database without encryption at rest
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      HIGH  pepin-test-rdb — Base de données managée « pepin-test-rdb » sans chiffrement au repos.
+      HIGH  pepin-test-rdb — Managed database "pepin-test-rdb" has no encryption at rest.
 
   Remediation
-    Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
+    Enable encryption at rest on the instance (at creation time, or through an upgrade).
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-CHF-2
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CMP-9  ·  scaleway
- Secret en clair dans les données utilisateur (user-data)
+ Cleartext secret in the user data (user-data)
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      HIGH  scaleway_instance_server.web — secret en clair dans user-data (mot de passe en clair).
+      HIGH  scaleway_instance_server.web — VM "scaleway_instance_server.web": cleartext secret in user-data (cleartext password).
 
   Remediation
-    Bannir les secrets des données utilisateur ; utiliser un coffre de secrets et l'injection au démarrage. Révoquer le secret exposé.
+    Ban secrets from user data; use a secrets vault and inject them at boot. Revoke the exposed secret.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-CMP-9
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-IAM-12  ·  scaleway
- Politique IAM permettant une élévation de privilèges
+ IAM policy allowing privilege escalation
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      HIGH  ci-deployer — confère la gestion de l'IAM (PermissionSet) — chemin d'élévation de privilèges.
+      HIGH  ci-deployer — Policy "ci-deployer": grants IAM management (PermissionSet) — a privilege escalation path.
 
   Remediation
-    Réserver la gestion IAM à une politique d'administration dédiée ; retirer le PermissionSet de gestion des politiques d'usage.
+    Reserve IAM management for a dedicated administration policy; remove the management PermissionSet from everyday policies.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-IAM-12
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-1  ·  scaleway
- Base de données managée joignable depuis Internet
+ Managed database reachable from the internet
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 2
 
   Details:
-      HIGH  fr-par/11111111-1111-1111-1111-111111111111 — ACL autorisant un CIDR public (0.0.0.0/0) — service exposé à Internet.
-      HIGH  scaleway_instance_security_group.web — SSH (port 22) accepté depuis/vers Internet.
+      HIGH  fr-par/11111111-1111-1111-1111-111111111111 — Managed database "fr-par/11111111-1111-1111-1111-111111111111": ACL allowing a public CIDR (0.0.0.0/0) — the service is exposed to the internet.
+      HIGH  scaleway_instance_security_group.web — Security group "scaleway_instance_security_group.web": SSH (port 22) accepted from/to the internet.
 
   Remediation
-    Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand disponible) ; retirer 0.0.0.0/0.
+    Restrict the database ACL to the application CIDRs only (a private network where one is available); remove 0.0.0.0/0.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-NET-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-2  ·  scaleway
- Politique entrante par défaut d'un groupe de sécurité en « accept »
+ Security group inbound default policy set to "accept"
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      HIGH  sg-open-default — politique entrante par défaut « accept » — tout trafic non filtré est admis.
+      HIGH  sg-open-default — Security group "sg-open-default": default inbound policy set to "accept" — any unfiltered traffic is admitted.
 
   Remediation
-    Basculer la politique entrante par défaut sur « drop » et n'ouvrir que les flux légitimes par des règles explicites.
+    Switch the default inbound policy to "drop" and open only the legitimate flows through explicit rules.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-NET-2
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-STO-3  ·  scaleway
- Sauvegardes automatiques d'une base managée désactivées
+ Automatic backups disabled on a managed database
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      HIGH  pepin-test-rdb — sauvegardes automatiques désactivées.
+      HIGH  pepin-test-rdb — Managed database "pepin-test-rdb": automatic backups are disabled.
 
   Remediation
-    Réactiver les sauvegardes automatiques et fixer une rétention adaptée au RPO.
+    Re-enable automatic backups and set a retention that matches the RPO.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-STO-3
 
 ──────────────────────────────────────────────────────────────────────────────
  MEDIUM  ·  CLD-GVN-1  ·  scaleway
- Inventaire et étiquetage incomplets
+ Incomplete inventory and tagging
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      MED   scaleway_instance_server.web — étiquettes de gouvernance manquantes (CostCenter, Project, Env, Owner).
+      MED   scaleway_instance_server.web — Resource "scaleway_instance_server.web": governance tags missing (CostCenter, Project, Env, Owner).
 
   Remediation
-    Ajouter les étiquettes obligatoires (CostCenter, Project, Env, Owner) sur la ressource.
+    Add the mandatory tags (CostCenter, Project, Env, Owner) to the resource.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-GVN-1
 
 ──────────────────────────────────────────────────────────────────────────────
  LOW  ·  CLD-STO-8  ·  scaleway
- Object Lock (immutabilité) désactivé sur le stockage objet
+ Object Lock (immutability) disabled on object storage
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      LOW   backups-prod — objets non immuables (pas de protection WORM contre suppression/écrasement).
+      LOW   backups-prod — Bucket "backups-prod" has no Object Lock: objects are mutable (no WORM protection against deletion or overwrite).
 
   Remediation
-    Activer l'Object Lock (mode conformité/gouvernance) sur les buckets de sauvegarde et d'objets critiques.
+    Enable Object Lock (compliance or governance mode) on backup buckets and critical objects.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-STO-8
 
@@ -197,20 +197,20 @@ large tenant, you want to know the tool started. The closing line is
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
   │ Code       │ Control                                          │ Sev      │ Tier     │ # │
   ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
-  │ CLD-STO-1  │ Stockage objet exposé publiquement               │ CRITICAL │ scaleway │ 1 │
-  │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
-  │ CLD-CMP-9  │ Secret en clair dans les données utilisateur (u… │ HIGH     │ scaleway │ 1 │
-  │ CLD-IAM-12 │ Politique IAM permettant une élévation de privi… │ HIGH     │ scaleway │ 1 │
-  │ CLD-NET-1  │ Base de données managée joignable depuis Intern… │ HIGH     │ scaleway │ 2 │
-  │ CLD-NET-2  │ Politique entrante par défaut d'un groupe de sé… │ HIGH     │ scaleway │ 1 │
-  │ CLD-STO-3  │ Sauvegardes automatiques d'une base managée dés… │ HIGH     │ scaleway │ 1 │
-  │ CLD-GVN-1  │ Inventaire et étiquetage incomplets              │ MEDIUM   │ scaleway │ 1 │
-  │ CLD-STO-8  │ Object Lock (immutabilité) désactivé sur le sto… │ LOW      │ scaleway │ 1 │
+  │ CLD-STO-1  │ Object storage publicly exposed                  │ CRITICAL │ scaleway │ 1 │
+  │ CLD-CHF-2  │ Managed database without encryption at rest      │ HIGH     │ scaleway │ 1 │
+  │ CLD-CMP-9  │ Cleartext secret in the user data (user-data)    │ HIGH     │ scaleway │ 1 │
+  │ CLD-IAM-12 │ IAM policy allowing privilege escalation         │ HIGH     │ scaleway │ 1 │
+  │ CLD-NET-1  │ Managed database reachable from the internet     │ HIGH     │ scaleway │ 2 │
+  │ CLD-NET-2  │ Security group inbound default policy set to "a… │ HIGH     │ scaleway │ 1 │
+  │ CLD-STO-3  │ Automatic backups disabled on a managed database │ HIGH     │ scaleway │ 1 │
+  │ CLD-GVN-1  │ Incomplete inventory and tagging                 │ MEDIUM   │ scaleway │ 1 │
+  │ CLD-STO-8  │ Object Lock (immutability) disabled on object s… │ LOW      │ scaleway │ 1 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
  Summary
 
- Verdict : NON CONFORME
+ Verdict: NON-COMPLIANT
 
  🔴 CRITICAL 1   🟠 HIGH 7   🟡 MEDIUM 1   🔵 LOW 1
 ──────────────────────────────────────────────────────────────────────────────
@@ -251,15 +251,15 @@ screen of a long report is already actionable.
 ```text
 ──────────────────────────────────────────────────────────────────────────────
  CRITICAL  ·  CLD-STO-1  ·  scaleway
- Stockage objet exposé publiquement
+ Object storage publicly exposed
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
+      CRIT  scaleway_object_bucket_acl.backups — Bucket "scaleway_object_bucket_acl.backups" is publicly accessible (public ACL).
 
   Remediation
-    Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
+    Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-STO-1
 ```
@@ -382,7 +382,7 @@ A single account-free scan produces all four. Each is documented in
 {
   "control": "objectstorage_bucket_public_access",
   "evidence": {
-    "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
+    "observed": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL).",
     "proves": [
       "",
       "",
@@ -424,11 +424,11 @@ A single account-free scan produces all four. Each is documented in
       "id": "13.2"
     }
   ],
-  "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
+  "remediation": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
   "severity": "critical",
   "status": "fail",
   "subject": "scaleway_object_bucket_acl.backups",
-  "title": "Stockage objet exposé publiquement"
+  "title": "Object storage publicly exposed"
 }
 ```
 <!-- /pepin:gen assessment-fail -->
@@ -440,7 +440,7 @@ A single account-free scan produces all four. Each is documented in
 {
   "control": "network_securitygroup_allow_ingress_from_internet_to_all_ports",
   "evidence": {
-    "observed": "aucune non-conformité détectée sur les ressources de type « security_group_rule » collectées (contrat vérifié)",
+    "observed": "no deviation detected on the collected resources of type \"security_group_rule\" (contract verified)",
     "proves": [
       "",
       "",
@@ -477,7 +477,7 @@ A single account-free scan produces all four. Each is documented in
   "severity": "critical",
   "status": "pass",
   "subject": "scaleway",
-  "title": "Tout le trafic entrant autorisé depuis Internet (any/any)"
+  "title": "All inbound traffic allowed from the internet (any/any)"
 }
 ```
 <!-- /pepin:gen assessment-pass -->
@@ -505,9 +505,9 @@ A single account-free scan produces all four. Each is documented in
   "severity": "high",
   "status": "not-applicable",
   "subject": "scaleway",
-  "title": "Chiffrement au repos désactivé",
+  "title": "Encryption at rest disabled",
   "waiver": {
-    "justification": "Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2)."
+    "justification": "Encryption at rest of block volumes is guest-side (LUKS/Cryptsetup), a customer responsibility (shared responsibility model); the block API exposes no encryption field, hence unobservable on the platform side (CHF-2)."
   }
 }
 ```
@@ -520,7 +520,7 @@ A single account-free scan produces all four. Each is documented in
 {
   "control": "compute_instance_public_ip_with_open_securitygroup",
   "evidence": {
-    "observed": "attribut « public_ip » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
+    "observed": "attribute \"public_ip\" not collected on the resources of type \"compute_instance\" (capability guard)",
     "proves": [
       "",
       "",
@@ -561,7 +561,7 @@ A single account-free scan produces all four. Each is documented in
   "severity": "critical",
   "status": "not-evaluated",
   "subject": "scaleway",
-  "title": "Machine exposée publiquement sans filtrage restrictif"
+  "title": "Instance publicly exposed without restrictive filtering"
 }
 ```
 <!-- /pepin:gen assessment-ne -->

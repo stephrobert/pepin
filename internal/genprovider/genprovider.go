@@ -89,8 +89,9 @@ type Contrat struct {
 
 // TypeContrat est l'ancrage d'un type de ressource sur l'API native.
 type TypeContrat struct {
-	Etat   string `yaml:"etat"`   // verifie | a_verifier | absent
-	Reason string `yaml:"reason"` // justification quand etat=absent (mécanisme inexistant côté API, source doc)
+	Etat     string `yaml:"etat"`      // verifie | a_verifier | absent
+	Reason   string `yaml:"reason"`    // justification quand etat=absent (mécanisme inexistant côté API, source doc)
+	ReasonEn string `yaml:"reason_en"` // la même justification en anglais (Pépin est bilingue, cf. internal/i18n)
 }
 
 // NAEntry déclare un contrôle non applicable à un provider AVEC sa justification —
@@ -98,8 +99,9 @@ type TypeContrat struct {
 // deux formes YAML : un simple code (`- objectstorage_bucket_x`, sans justification, repli
 // générique) ou un mapping justifié (`- {control: ..., reason: ...}`).
 type NAEntry struct {
-	Control string `yaml:"control"` // code de contrôle agnostique
-	Reason  string `yaml:"reason"`  // pourquoi le contrôle est non testable/non applicable (ancré doc)
+	Control  string `yaml:"control"`   // code de contrôle agnostique
+	Reason   string `yaml:"reason"`    // pourquoi le contrôle est non testable/non applicable (ancré doc)
+	ReasonEn string `yaml:"reason_en"` // la même justification en anglais (Pépin est bilingue, cf. internal/i18n)
 }
 
 // UnmarshalYAML accepte la forme courte (scalaire = code) et la forme justifiée (mapping).

@@ -28,6 +28,7 @@ func (c Capture) Command() string { return "./pepin " + strings.Join(c.Args, " "
 type Runner struct {
 	Bin  string // chemin du binaire pepin
 	Root string // racine du dépôt (répertoire de travail des commandes)
+	Lang string // langue imposée au binaire ("fr" | "en") — la doc est bilingue
 }
 
 // Run exécute `pepin <args>` et retourne la capture. Une erreur n'est remontée que si le
@@ -44,7 +45,15 @@ func (r Runner) Run(args ...string) (Capture, error) {
 	cmd.Dir = r.Root
 	// Environnement minimal et explicite : NO_COLOR retire les séquences ANSI, TERM=dumb
 	// évite toute adaptation au terminal, LC_ALL fige le tri et le formatage.
+	//
+	// PEPIN_LANG est posé EXPLICITEMENT et l'emporte sur LC_ALL : chaque page de docs/
+	// montre la sortie de SA langue. Sans lui, LC_ALL=C.UTF-8 rendrait tout en anglais,
+	// et les pages françaises citeraient des sorties anglaises — une documentation qui
+	// ne décrit plus ce que son lecteur voit.
 	cmd.Env = []string{"NO_COLOR=1", "TERM=dumb", "LC_ALL=C.UTF-8", "HOME=" + os.TempDir()}
+	if r.Lang != "" {
+		cmd.Env = append(cmd.Env, "PEPIN_LANG="+r.Lang)
+	}
 	var stdout, stderr strings.Builder
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

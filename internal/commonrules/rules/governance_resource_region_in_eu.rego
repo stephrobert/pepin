@@ -44,7 +44,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Ressource « %s » dans la région « %s » : hors Union européenne mais en espace européen de confiance (EEE/Suisse), niveau de protection adéquat et sans loi extraterritoriale.", [name, reg]),
 		"remediation": "Si une localisation strictement UE est exigée, migrer vers une région de l'Union européenne ; sinon documenter l'acceptation du risque (zone adéquate).",
-		"labels": {"provider": p, "category": "compliance"},
+		"labels": {
+			"provider": p,
+			"category": "compliance",
+			"message_en": sprintf("Resource \"%s\" in region \"%s\": outside the European Union but within the European trusted area (EEA/Switzerland), an adequate level of protection with no extraterritorial law.", [name, reg]),
+			"remediation_en": "If a strictly EU location is required, migrate to a European Union region; otherwise document the accepted risk (adequate area).",
+		},
 	}
 }
 
@@ -65,7 +70,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Ressource « %s » hébergée dans la région « %s », hors espace souverain européen — exigence de localisation UE non respectée.", [name, reg]),
 		"remediation": "Recréer ou migrer la ressource dans une région de l'Union européenne ; restreindre les régions autorisées au niveau de l'organisation.",
-		"labels": {"provider": p, "category": "compliance"},
+		"labels": {
+			"provider": p,
+			"category": "compliance",
+			"message_en": sprintf("Resource \"%s\" hosted in region \"%s\", outside the European sovereign area — the EU location requirement is not met.", [name, reg]),
+			"remediation_en": "Recreate or migrate the resource in a European Union region; restrict the allowed regions at the organisation level.",
+		},
 	}
 }
 
@@ -88,6 +98,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Ressource « %s » : région « %s » non cataloguée pour le fournisseur « %s » — localisation non vérifiable, conformité UE ni établie ni infirmée.", [name, reg, p]),
 		"remediation": "Vérifier la localisation réelle de cette région auprès du fournisseur, puis l'ajouter aux tables de classification (lib.rego) ; migrer la ressource si elle est hors UE.",
-		"labels": {"provider": p, "category": "compliance"},
+		"labels": {
+			"provider": p,
+			"category": "compliance",
+			"message_en": sprintf("Resource \"%s\": region \"%s\" is not catalogued for provider \"%s\" — the location cannot be verified, EU compliance is neither established nor ruled out.", [name, reg, p]),
+			"remediation_en": "Check the real location of this region with the provider, then add it to the classification tables (lib.rego); migrate the resource if it sits outside the EU.",
+		},
 	}
 }

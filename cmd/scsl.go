@@ -61,7 +61,9 @@ var scslCmd = &cobra.Command{
 		sort.Strings(order)
 
 		fmt.Println()
-		fmt.Println(eyebrow.Render("// pépin") + muted.Render(fmt.Sprintf("  cohérence SCSL — %d exigences cloud (CLD-*)", len(exs))))
+		fmt.Println(eyebrow.Render(brandEyebrow()) + muted.Render(fmt.Sprintf(tr(
+			"  cohérence SCSL — %d exigences cloud (CLD-*)",
+			"  SCSL consistency — %d cloud requirements (CLD-*)"), len(exs))))
 
 		// Socle essentiel : exigences `essentielle` (fondamentaux). Ce sont des
 		// AGRÉGATS des contrôles fins — satisfaits dès que leurs sous-contrôles le
@@ -100,7 +102,8 @@ var scslCmd = &cobra.Command{
 				}
 			}
 			fmt.Println()
-			fmt.Println(titre.Render(fmt.Sprintf("  Socle essentiel  %d/%d", n, len(ess))) + muted.Render("  (fondamentaux — agrégat des contrôles fins)"))
+			fmt.Println(titre.Render(fmt.Sprintf(tr("  Socle essentiel  %d/%d", "  Essential baseline  %d/%d"), n, len(ess))) +
+				muted.Render(tr("  (fondamentaux — agrégat des contrôles fins)", "  (fundamentals — an aggregate of the fine-grained controls)")))
 			for _, e := range ess {
 				mark := errStyle.Render("·")
 				if essCov(e.ID) {
@@ -115,7 +118,7 @@ var scslCmd = &cobra.Command{
 		}
 
 		fmt.Println()
-		fmt.Println(titre.Render("  Couverture par famille"))
+		fmt.Println(titre.Render(tr("  Couverture par famille", "  Coverage by family")))
 		totCov, tot := 0, 0
 		for _, f := range order {
 			s := fams[f]
@@ -170,7 +173,7 @@ var scslCmd = &cobra.Command{
 		okMark := lipgloss.NewStyle().Foreground(lipgloss.Color("#3ddc84")).Bold(true).Render("✓")
 		noMark := muted.Render("·")
 		naMark := lipgloss.NewStyle().Foreground(colMuted).Render("n/a")
-		headers := append([]string{"Exigence"}, provs...)
+		headers := append([]string{tr("Exigence", "Requirement")}, provs...)
 		var rows [][]string
 		for _, id := range covIDs {
 			row := []string{id}
@@ -208,14 +211,15 @@ var scslCmd = &cobra.Command{
 				return s
 			})
 		fmt.Println()
-		fmt.Println(titre.Render("  Couverture par provider"))
+		fmt.Println(titre.Render(tr("  Couverture par provider", "  Coverage by provider")))
 		fmt.Println(tbl)
 
 		// Roadmap de PARITÉ : une exigence couverte par un provider est observable,
 		// donc faisable chez les autres. On liste, par provider, les exigences
 		// couvertes ailleurs mais pas chez lui (applicabilité : contrat de providers/<nom>.yaml).
 		fmt.Println()
-		fmt.Println(titre.Render("  Roadmap de parité par provider") + muted.Render("  (couvert ailleurs → à étendre)"))
+		fmt.Println(titre.Render(tr("  Roadmap de parité par provider", "  Parity roadmap by provider")) +
+			muted.Render(tr("  (couvert ailleurs → à étendre)", "  (covered elsewhere → to extend)")))
 		// Les providers d'une AUTRE portée (ex. `kubernetes`, qui audite l'intérieur d'un
 		// cluster) sont exclus de la parité : leurs exigences ne sont pas atteignables par
 		// un plan de contrôle cloud, et réciproquement. Les comparer produirait une roadmap
@@ -243,16 +247,18 @@ var scslCmd = &cobra.Command{
 				}
 			}
 			if len(extend) == 0 && len(na) == 0 {
-				fmt.Printf("    %-9s %s\n", p, muted.Render("parité atteinte ✓"))
+				fmt.Printf("    %-9s %s\n", p, muted.Render(tr("parité atteinte ✓", "parity reached ✓")))
 				continue
 			}
 			label := p
 			if len(extend) > 0 {
-				fmt.Printf("    %-9s %s %s\n", label, titre.Render(fmt.Sprintf("(%d à étendre)", len(extend))), muted.Render(strings.Join(extend, ", ")))
+				fmt.Printf("    %-9s %s %s\n", label, titre.Render(fmt.Sprintf(tr("(%d à étendre)", "(%d to extend)"), len(extend))), muted.Render(strings.Join(extend, ", ")))
 				label = ""
 			}
 			if len(na) > 0 {
-				fmt.Printf("    %-9s %s %s\n", label, muted.Render(fmt.Sprintf("(%d non applicable — API n'expose pas)", len(na))), muted.Render(strings.Join(na, ", ")))
+				fmt.Printf("    %-9s %s %s\n", label, muted.Render(fmt.Sprintf(tr(
+					"(%d non applicable — API n'expose pas)",
+					"(%d not applicable — the API does not expose it)"), len(na))), muted.Render(strings.Join(na, ", ")))
 			}
 		}
 
@@ -263,7 +269,7 @@ var scslCmd = &cobra.Command{
 		}
 		sort.Strings(ids)
 		fmt.Println()
-		fmt.Println(titre.Render(fmt.Sprintf("  Couvertes (%d)", len(ids))))
+		fmt.Println(titre.Render(fmt.Sprintf(tr("  Couvertes (%d)", "  Covered (%d)"), len(ids))))
 		for _, id := range ids {
 			codes := coveredBy[id]
 			sort.Strings(codes)
@@ -273,20 +279,24 @@ var scslCmd = &cobra.Command{
 
 		fmt.Println()
 		if len(desal) == 0 {
-			fmt.Println(titre.Render("  Désalignements") + muted.Render("  aucun ✓"))
+			fmt.Println(titre.Render(tr("  Désalignements", "  Misalignments")) + muted.Render(tr("  aucun ✓", "  none ✓")))
 		} else {
-			fmt.Println(errStyle.Render(fmt.Sprintf("  Désalignements (%d) — mapping `scsl` à corriger", len(desal))))
+			fmt.Println(errStyle.Render(fmt.Sprintf(tr(
+				"  Désalignements (%d) — mapping `scsl` à corriger",
+				"  Misalignments (%d) — the `scsl` mapping must be fixed"), len(desal))))
 			for _, d := range desal {
 				fmt.Printf("    %s  %s\n", errStyle.Render(d.Scsl), d.Detail)
 			}
 		}
 
 		fmt.Println()
-		fmt.Println(titre.Render(fmt.Sprintf("  Roadmap (%d) — exigences outillables par Pépin, non couvertes", len(roadmap))))
+		fmt.Println(titre.Render(fmt.Sprintf(tr(
+			"  Roadmap (%d) — exigences outillables par Pépin, non couvertes",
+			"  Roadmap (%d) — requirements Pepin could tool, not covered yet"), len(roadmap))))
 		for _, r := range roadmap {
-			tag := "non couverte"
+			tag := tr("non couverte", "not covered")
 			if r.Type == "a_implementer" {
-				tag = "code cité absent : " + r.Code
+				tag = tr("code cité absent : ", "cited code missing: ") + r.Code
 			}
 			fmt.Printf("    %s  %s %s\n", titre.Render(r.Scsl), muted.Render("["+tag+"]"), r.Detail)
 		}

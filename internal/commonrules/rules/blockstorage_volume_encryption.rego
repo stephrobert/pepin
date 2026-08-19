@@ -33,6 +33,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Volume block storage « %s » : chiffrement au repos désactivé (données en clair côté plateforme).", [name]),
 		"remediation": "Activer le chiffrement au repos du volume (selon le fournisseur : transparent, clé gérée fournisseur, ou chiffrement client).",
-		"labels": {"provider": provider_of(v), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(v),
+			"category": "compliance",
+			"message_en": sprintf("Block storage volume \"%s\": encryption at rest is disabled (data in cleartext on the platform side).", [name]),
+			"remediation_en": "Enable encryption at rest on the volume (depending on the provider: transparent, provider-managed key, or client-side encryption).",
+		},
 	}
 }

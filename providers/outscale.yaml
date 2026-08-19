@@ -596,6 +596,7 @@ contrat:
   # côté plateforme.
   - control: blockstorage_volume_encryption
     reason: "osc-sdk-go/v2 Volume n'expose aucun champ de chiffrement ; le chiffrement au repos est côté invité (EncFS/LUKS), responsabilité du client → non observable côté plateforme (CHF-2)."
+    reason_en: "osc-sdk-go/v2 Volume exposes no encryption field; encryption at rest is guest-side (EncFS/LUKS), a customer responsibility, hence unobservable on the platform side (CHF-2)."
   # CHF-4 : OOS ServerSideEncryption est TOUJOURS AES256 (clé fournisseur) ; aucun
   # service KMS ni clé client au niveau objet (doc OOS) → BYOK non applicable.
   # CHF-4 : distinguer SSE et BYOK. Le SSE existe chez OOS et il est OPT-IN par bucket
@@ -603,9 +604,11 @@ contrat:
   # l'absence de clé gérée par le client.
   - control: objectstorage_bucket_kms_encryption
     reason: "OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A."
+    reason_en: "OOS encrypts server-side in AES256 with a PROVIDER key; there is neither a KMS service nor a customer-managed master key, so there is no BYOK to audit at the bucket level (CHF-4). Note: enabling SSE itself is opt-in and observable, which is a separate control, not this N/A."
   # CHF-1 : `Listener` et `ListenerRule` EXISTENT bien au contrat — l'affirmation inverse
   # était fausse et réfutable en une recherche. Le fait exact est que `ListenerRule.Action`
   # est documenté « always forward » : la règle ne sait que transmettre, aucune action de
   # redirection n'existe. Le mécanisme est donc absent, mais pour cette raison-là.
   - control: loadbalancer_http_redirect_to_https
     reason: "Le LBU Outscale ne peut pas rediriger : `ListenerRule.Action` est documenté « always forward » au contrat OAPI (aucune action de redirection), et aucun attribut de redirection n'existe sur `Listener`. Le mécanisme est inexistant → contrôle non applicable (CHF-1)."
+    reason_en: "The Outscale LBU cannot redirect: `ListenerRule.Action` is documented as \"always forward\" in the OAPI contract (no redirect action), and no redirect attribute exists on `Listener`. The mechanism does not exist, so the control is not applicable (CHF-1)."

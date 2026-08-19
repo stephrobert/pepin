@@ -11,6 +11,8 @@ import (
 
 	"github.com/stephrobert/scankit/assessment"
 	screport "github.com/stephrobert/scankit/report"
+
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // BundleFormat identifie le schéma du bundle de preuve, version comprise (`/vN`).
@@ -25,9 +27,22 @@ const BundleFormat = "pepin-assessment-bundle/v1"
 // configuration d'un TENANT (périmètre commanditaire) ; les référentiels cités (SecNumCloud,
 // ISO, CIS) portent, eux, sur le PRESTATAIRE ou sont des correspondances thématiques. Un rapport
 // pepin ne prouve donc jamais une qualification/certification, seulement la posture du tenant.
-const ScopeDisclaimer = "Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). " +
-	"Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent " +
-	"pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud."
+//
+// Rendu dans la langue courante : l'avertissement est imprimé à chaque scan et scellé dans le
+// manifest du bundle, deux endroits où un lecteur anglophone doit pouvoir le lire.
+func ScopeDisclaimer() string { return ScopeDisclaimerIn(i18n.Current()) }
+
+// ScopeDisclaimerIn est ScopeDisclaimer pour une langue explicite — la documentation
+// bilingue rend les deux versions dans une seule exécution.
+func ScopeDisclaimerIn(l i18n.Lang) string {
+	return i18n.TIn(l,
+		"Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). "+
+			"Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent "+
+			"pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud.",
+		"This report assesses the configuration of a tenant (customer-side scope). The normative "+
+			"mappings (SecNumCloud, ISO, CIS) are indicative: they are not a proof of "+
+			"qualification or certification, which applies to the cloud service provider.")
+}
 
 // Manifest is the opposable envelope of an evidence bundle: the run provenance, a summary by
 // status, and the digest of every artifact. Sealing it (a detached signature over
@@ -124,7 +139,7 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string,
 
 	manifest := Manifest{
 		Format:     BundleFormat,
-		Disclaimer: ScopeDisclaimer,
+		Disclaimer: ScopeDisclaimer(),
 		Generated:  a.Run.Timestamp,
 		Tool:       a.Run.Tool,
 		Ruleset:    a.Run.Ruleset,

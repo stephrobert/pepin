@@ -36,7 +36,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Politique « %s » : autorise une action de gestion d'identité permettant une élévation de privilèges (%s).", [name, a]),
 		"remediation": "Retirer les actions de gestion d'identité (attacher/créer une politique, créer une clé) des politiques d'usage ; les réserver à un rôle d'administration dédié et scopé.",
-		"labels": {"provider": provider_of(p), "category": "security"},
+		"labels": {
+			"provider": provider_of(p),
+			"category": "security",
+			"message_en": sprintf("Policy \"%s\": allows an identity management action that enables privilege escalation (%s).", [name, a]),
+			"remediation_en": "Remove identity management actions (attach/create a policy, create a key) from everyday policies; reserve them for a dedicated, scoped administration role.",
+		},
 	}
 }
 
@@ -73,7 +78,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Rôle IAM « %s » : sa politique autorise la gestion des rôles IAM — chemin d'élévation de privilèges.", [name]),
 		"remediation": "Réserver la gestion des rôles/clés IAM à un rôle d'administration dédié ; retirer ces autorisations des rôles d'usage.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("IAM role \"%s\": its policy allows managing IAM roles — a privilege escalation path.", [name]),
+			"remediation_en": "Reserve IAM role and key management for a dedicated administration role; remove those permissions from everyday roles.",
+		},
 	}
 }
 
@@ -89,6 +99,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Politique « %s » : confère la gestion de l'IAM (PermissionSet) — chemin d'élévation de privilèges.", [name]),
 		"remediation": "Réserver la gestion IAM à une politique d'administration dédiée ; retirer le PermissionSet de gestion des politiques d'usage.",
-		"labels": {"provider": provider_of(p), "category": "security"},
+		"labels": {
+			"provider": provider_of(p),
+			"category": "security",
+			"message_en": sprintf("Policy \"%s\": grants IAM management (PermissionSet) — a privilege escalation path.", [name]),
+			"remediation_en": "Reserve IAM management for a dedicated administration policy; remove the management PermissionSet from everyday policies.",
+		},
 	}
 }

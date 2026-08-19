@@ -22,6 +22,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("VM « %s » sans groupe de sécurité : aucun filtrage réseau ne s'applique.", [id]),
 		"remediation": "Attacher un groupe de sécurité restrictif (refus par défaut) à la VM.",
-		"labels": {"provider": provider_of(vm), "category": "security"},
+		"labels": {
+			"provider": provider_of(vm),
+			"category": "security",
+			"message_en": sprintf("VM \"%s\" has no security group: no network filtering applies to it.", [id]),
+			"remediation_en": "Attach a restrictive security group (deny by default) to the VM.",
+		},
 	}
 }

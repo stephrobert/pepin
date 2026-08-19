@@ -20,7 +20,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("LBU « %s » internet-facing sans listener HTTPS/SSL — trafic en clair.", [name]),
 		"remediation": "Ajouter un listener HTTPS/SSL (TLS ≥ 1.2) avec certificat ; rediriger le trafic en clair vers HTTPS.",
-		"labels": {"provider": provider_of(lb), "category": "security"},
+		"labels": {
+			"provider": provider_of(lb),
+			"category": "security",
+			"message_en": sprintf("Internet-facing LBU \"%s\" has no HTTPS/SSL listener — traffic in cleartext.", [name]),
+			"remediation_en": "Add an HTTPS/SSL listener (TLS 1.2 or above) with a certificate; redirect cleartext traffic to HTTPS.",
+		},
 	}
 }
 

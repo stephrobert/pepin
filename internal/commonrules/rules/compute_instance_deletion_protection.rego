@@ -22,6 +22,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("Instance « %s » sans protection contre la suppression — une action accidentelle ou malveillante la détruit.", [id]),
 		"remediation": "Activer la protection contre la suppression sur les instances portant un service en production.",
-		"labels": {"provider": provider_of(r), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "compliance",
+			"message_en": sprintf("Instance \"%s\" has no deletion protection — an accidental or malicious action destroys it.", [id]),
+			"remediation_en": "Enable deletion protection on the instances carrying a production service.",
+		},
 	}
 }

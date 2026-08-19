@@ -24,9 +24,13 @@ run = "go test ./... -race"
 description = "Tests des politiques Rego (toutes communes)"
 run = "opa test internal/commonrules/rules -v"
 
+# `Finding` sélectionne TestEveryFindingCarriesRemediation, qui exige de chaque
+# règle sa remédiation ET ses deux labels de traduction (message_en,
+# remediation_en). C'est une vérification purement statique du texte des .rego :
+# elle a sa place dans la porte de cohérence, à côté de celle du référentiel.
 [tasks.validate]
-description = "Cohérence des référentiels (codes ↔ règles ↔ index SCSL gelé ↔ catalogue)"
-run = "go test ./referentiel/ -run 'Control|Rule|SCSL|Catalogue|Lookup|Coherent' -v"
+description = "Cohérence des référentiels (codes ↔ règles ↔ index SCSL gelé ↔ catalogue ↔ bilinguisme)"
+run = "go test ./referentiel/ -run 'Control|Rule|SCSL|Catalogue|Lookup|Coherent|Finding' -v"
 
 # check-remediation est volontairement DÉCOUPLÉ de `validate` : la couverture est
 # aujourd'hui de 4/95 (exoscale 4/26, outscale 0/40, scaleway 0/25, kubernetes 0/4),

@@ -24,6 +24,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Bucket « %s » sans chiffrement par défaut au repos — les objets y sont écrits en clair côté fournisseur.", [name]),
 		"remediation": "Activer le chiffrement par défaut du bucket (SSE) ; vérifier que les objets déjà déposés sont ré-écrits chiffrés.",
-		"labels": {"provider": provider_of(b), "category": "security"},
+		"labels": {
+			"provider": provider_of(b),
+			"category": "security",
+			"message_en": sprintf("Bucket \"%s\" has no default encryption at rest — objects are written in cleartext on the provider side.", [name]),
+			"remediation_en": "Enable the bucket's default encryption (SSE); check that the objects already stored are rewritten encrypted.",
+		},
 	}
 }

@@ -22,6 +22,11 @@ deny contains f if {
 		"subject": sg,
 		"message": sprintf("Security group « default » (%s) : porte une règle entrante — il s'applique d'office à toute ressource créée sans SG explicite.", [sg]),
 		"remediation": "Vider le security group « default » de toutes ses règles ; attacher explicitement un SG dédié et restrictif à chaque ressource.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("Security group \"default\" (%s) carries an inbound rule — it applies automatically to every resource created without an explicit SG.", [sg]),
+			"remediation_en": "Empty the \"default\" security group of all its rules; explicitly attach a dedicated, restrictive SG to every resource.",
+		},
 	}
 }

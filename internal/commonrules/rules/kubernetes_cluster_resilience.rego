@@ -19,7 +19,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Cluster OKS « %s » : plan de contrôle non multi-AZ — perte d'une zone = interruption.", [name]),
 		"remediation": "Activer un plan de contrôle multi-AZ / multi-master sur le cluster.",
-		"labels": {"provider": provider_of(c), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(c),
+			"category": "compliance",
+			"message_en": sprintf("OKS cluster \"%s\": control plane is not multi-AZ — losing one zone means an outage.", [name]),
+			"remediation_en": "Enable a multi-AZ / multi-master control plane on the cluster.",
+		},
 	}
 }
 
@@ -34,7 +39,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Cluster OKS « %s » : mises à jour automatiques désactivées — correctifs non appliqués.", [name]),
 		"remediation": "Activer la maintenance / mise à jour automatique du cluster.",
-		"labels": {"provider": provider_of(c), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(c),
+			"category": "compliance",
+			"message_en": sprintf("OKS cluster \"%s\": automatic upgrades disabled — fixes are not applied.", [name]),
+			"remediation_en": "Enable automatic maintenance and upgrades on the cluster.",
+		},
 	}
 }
 
@@ -49,6 +59,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Cluster OKS « %s » sans protection contre la suppression.", [name]),
 		"remediation": "Activer la protection contre la suppression sur le cluster.",
-		"labels": {"provider": provider_of(c), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(c),
+			"category": "compliance",
+			"message_en": sprintf("OKS cluster \"%s\" has no deletion protection.", [name]),
+			"remediation_en": "Enable deletion protection on the cluster.",
+		},
 	}
 }

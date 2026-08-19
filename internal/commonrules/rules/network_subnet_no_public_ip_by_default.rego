@@ -20,6 +20,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("Sous-réseau « %s » : attribution automatique d'IP publique à la création (exposition Internet par défaut).", [id]),
 		"remediation": "Désactiver l'attribution automatique d'IP publique du sous-réseau ; n'attribuer une IP publique qu'aux interfaces qui le nécessitent.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("Subnet \"%s\": a public IP is assigned automatically at creation (exposed to the internet by default).", [id]),
+			"remediation_en": "Disable the subnet's automatic public IP assignment; assign a public IP only to the interfaces that need one.",
+		},
 	}
 }

@@ -19,6 +19,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("Base de données managée « %s » : sauvegardes automatiques désactivées.", [id]),
 		"remediation": "Réactiver les sauvegardes automatiques et fixer une rétention adaptée au RPO.",
-		"labels": {"provider": provider_of(r), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "compliance",
+			"message_en": sprintf("Managed database \"%s\": automatic backups are disabled.", [id]),
+			"remediation_en": "Re-enable automatic backups and set a retention that matches the RPO.",
+		},
 	}
 }

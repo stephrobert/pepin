@@ -22,7 +22,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Politique EIM « %s » : autorisation Allow portant Action=\"*\" (toutes les actions accordées).", [name]),
 		"remediation": "Remplacer Action=\"*\" par la liste exhaustive des actions réellement nécessaires (moindre privilège).",
-		"labels": {"provider": provider_of(p), "category": "security"},
+		"labels": {
+			"provider": provider_of(p),
+			"category": "security",
+			"message_en": sprintf("EIM policy \"%s\": Allow statement carrying Action=\"*\" (every action granted).", [name]),
+			"remediation_en": "Replace Action=\"*\" with the exhaustive list of the actions actually needed (least privilege).",
+		},
 	}
 }
 

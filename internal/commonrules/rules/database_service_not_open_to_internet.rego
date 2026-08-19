@@ -26,6 +26,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("Base de données managée « %s » : ACL autorisant un CIDR public (%s) — service exposé à Internet.", [id, cidr]),
 		"remediation": "Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand disponible) ; retirer 0.0.0.0/0.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("Managed database \"%s\": ACL allowing a public CIDR (%s) — the service is exposed to the internet.", [id, cidr]),
+			"remediation_en": "Restrict the database ACL to the application CIDRs only (a private network where one is available); remove 0.0.0.0/0.",
+		},
 	}
 }

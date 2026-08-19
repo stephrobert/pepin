@@ -1,0 +1,165 @@
+──────────────────────────────────────────────────────────────────────────────
+ Mode      scan scaleway (terraform)
+ Source    examples/scaleway/terraform/plan.json
+──────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────
+ ⚡ Immediate action — top 3 most severe deviations
+──────────────────────────────────────────────────────────────────────────────
+
+  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
+     subject: scaleway_object_bucket_acl.backups
+  2. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
+     subject: scaleway_instance_server.web
+  3. 🟠 HIGH  CLD-STO-3 — sauvegardes automatiques désactivées.
+     subject: pepin-test-rdb
+
+
+──────────────────────────────────────────────────────────────────────────────
+ CRITICAL  ·  CLD-STO-1  ·  scaleway
+ Stockage objet exposé publiquement
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
+
+  Remediation
+    Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-1
+
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-CHF-2  ·  scaleway
+ Base de données managée sans chiffrement au repos
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      HIGH  pepin-test-rdb — Base de données managée « pepin-test-rdb » sans chiffrement au repos.
+
+  Remediation
+    Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-CHF-2
+
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-CMP-9  ·  scaleway
+ Secret en clair dans les données utilisateur (user-data)
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      HIGH  scaleway_instance_server.web — secret en clair dans user-data (mot de passe en clair).
+
+  Remediation
+    Bannir les secrets des données utilisateur ; utiliser un coffre de secrets et l'injection au démarrage. Révoquer le secret exposé.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-CMP-9
+
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-IAM-12  ·  scaleway
+ Politique IAM permettant une élévation de privilèges
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      HIGH  ci-deployer — confère la gestion de l'IAM (PermissionSet) — chemin d'élévation de privilèges.
+
+  Remediation
+    Réserver la gestion IAM à une politique d'administration dédiée ; retirer le PermissionSet de gestion des politiques d'usage.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-IAM-12
+
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-NET-1  ·  scaleway
+ Base de données managée joignable depuis Internet
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 2
+
+  Details:
+      HIGH  fr-par/11111111-1111-1111-1111-111111111111 — ACL autorisant un CIDR public (0.0.0.0/0) — service exposé à Internet.
+      HIGH  scaleway_instance_security_group.web — SSH (port 22) accepté depuis/vers Internet.
+
+  Remediation
+    Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand disponible) ; retirer 0.0.0.0/0.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-NET-1
+
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-NET-2  ·  scaleway
+ Politique entrante par défaut d'un groupe de sécurité en « accept »
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      HIGH  sg-open-default — politique entrante par défaut « accept » — tout trafic non filtré est admis.
+
+  Remediation
+    Basculer la politique entrante par défaut sur « drop » et n'ouvrir que les flux légitimes par des règles explicites.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-NET-2
+
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-STO-3  ·  scaleway
+ Sauvegardes automatiques d'une base managée désactivées
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      HIGH  pepin-test-rdb — sauvegardes automatiques désactivées.
+
+  Remediation
+    Réactiver les sauvegardes automatiques et fixer une rétention adaptée au RPO.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-3
+
+──────────────────────────────────────────────────────────────────────────────
+ MEDIUM  ·  CLD-GVN-1  ·  scaleway
+ Inventaire et étiquetage incomplets
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      MED   scaleway_instance_server.web — étiquettes de gouvernance manquantes (CostCenter, Project, Env, Owner).
+
+  Remediation
+    Ajouter les étiquettes obligatoires (CostCenter, Project, Env, Owner) sur la ressource.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-GVN-1
+
+──────────────────────────────────────────────────────────────────────────────
+ LOW  ·  CLD-STO-8  ·  scaleway
+ Object Lock (immutabilité) désactivé sur le stockage objet
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      LOW   backups-prod — objets non immuables (pas de protection WORM contre suppression/écrasement).
+
+  Remediation
+    Activer l'Object Lock (mode conformité/gouvernance) sur les buckets de sauvegarde et d'objets critiques.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-8
+
+  Controls
+  ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
+  │ Code       │ Control                                          │ Sev      │ Tier     │ # │
+  ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
+  │ CLD-STO-1  │ Stockage objet exposé publiquement               │ CRITICAL │ scaleway │ 1 │
+  │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
+  │ CLD-CMP-9  │ Secret en clair dans les données utilisateur (u… │ HIGH     │ scaleway │ 1 │
+  │ CLD-IAM-12 │ Politique IAM permettant une élévation de privi… │ HIGH     │ scaleway │ 1 │
+  │ CLD-NET-1  │ Base de données managée joignable depuis Intern… │ HIGH     │ scaleway │ 2 │
+  │ CLD-NET-2  │ Politique entrante par défaut d'un groupe de sé… │ HIGH     │ scaleway │ 1 │
+  │ CLD-STO-3  │ Sauvegardes automatiques d'une base managée dés… │ HIGH     │ scaleway │ 1 │
+  │ CLD-GVN-1  │ Inventaire et étiquetage incomplets              │ MEDIUM   │ scaleway │ 1 │
+  │ CLD-STO-8  │ Object Lock (immutabilité) désactivé sur le sto… │ LOW      │ scaleway │ 1 │
+  ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
+──────────────────────────────────────────────────────────────────────────────
+ Summary
+
+ Verdict : NON CONFORME
+
+ 🔴 CRITICAL 1   🟠 HIGH 7   🟡 MEDIUM 1   🔵 LOW 1
+──────────────────────────────────────────────────────────────────────────────

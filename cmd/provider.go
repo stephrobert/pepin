@@ -33,7 +33,7 @@ var providerListCmd = &cobra.Command{
 // listProviders affiche les providers enregistrés (nom + description).
 func listProviders() {
 	fmt.Println()
-	fmt.Println(eyebrow.Render("// pépin") + muted.Render("  providers enregistrés"))
+	fmt.Println(eyebrow.Render(brandEyebrow()) + muted.Render(tr("  providers enregistrés", "  registered providers")))
 	for _, p := range provider.All() {
 		fmt.Printf("  %s  %s\n", titre.Render(p.Name()), muted.Render(p.Description()))
 	}
@@ -61,7 +61,7 @@ var providerValidateCmd = &cobra.Command{
 		sort.Strings(names)
 
 		fmt.Println()
-		fmt.Println(eyebrow.Render("// pépin") + muted.Render("  validation des providers — "+dir))
+		fmt.Println(eyebrow.Render(brandEyebrow()) + muted.Render(tr("  validation des providers — ", "  provider validation — ")+dir))
 		conforme := true
 		for _, n := range names {
 			errs := res[n]
@@ -92,14 +92,16 @@ var providerNewCmd = &cobra.Command{
 		name := args[0]
 		path := filepath.Join("providers", name+".yaml")
 		if _, err := os.Stat(path); err == nil {
-			return fmt.Errorf("%s existe déjà", path)
+			return fmt.Errorf(tr("%s existe déjà", "%s already exists"), path)
 		}
 		content := strings.ReplaceAll(providerSkeleton, "{{name}}", name)
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil { // #nosec G306 -- descripteur de provider versionné (config partageable), pas un secret.
-			return fmt.Errorf("écriture de %s : %w", path, err)
+			return fmt.Errorf(tr("écriture de %s : %w", "writing %s: %w"), path, err)
 		}
-		fmt.Printf("Créé : %s\n", path)
-		fmt.Println("Complétez auth/credentials/collecte/mapping_terraform, puis : pepin provider validate")
+		fmt.Printf(tr("Créé : %s\n", "Created: %s\n"), path)
+		fmt.Println(tr(
+			"Complétez auth/credentials/collecte/mapping_terraform, puis : pepin provider validate",
+			"Fill in auth/credentials/collecte/mapping_terraform, then run: pepin provider validate"))
 		return nil
 	},
 }

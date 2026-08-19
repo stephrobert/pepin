@@ -24,6 +24,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Cluster Kubernetes « %s » : journalisation d'audit désactivée — aucun endpoint d'audit configuré, un incident ne pourrait pas être investigué.", [name]),
 		"remediation": "Configurer l'audit Kubernetes du cluster (endpoint de collecte) et centraliser les journaux selon la politique de rétention.",
-		"labels": {"provider": provider_of(c), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(c),
+			"category": "compliance",
+			"message_en": sprintf("Kubernetes cluster \"%s\": audit logging disabled — no audit endpoint is configured, an incident could not be investigated.", [name]),
+			"remediation_en": "Configure the cluster's Kubernetes audit (collection endpoint) and centralise the logs according to the retention policy.",
+		},
 	}
 }

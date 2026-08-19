@@ -20,7 +20,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Politique EIM « %s » : autorisation Allow employant NotAction/NotResource (inversion dangereuse).", [name]),
 		"remediation": "Réécrire en liste d'autorisations explicite (Action/Resource) ; NotAction/NotResource n'est acceptable qu'avec Effect Deny.",
-		"labels": {"provider": provider_of(p), "category": "security"},
+		"labels": {
+			"provider": provider_of(p),
+			"category": "security",
+			"message_en": sprintf("EIM policy \"%s\": Allow statement using NotAction/NotResource (dangerous inversion).", [name]),
+			"remediation_en": "Rewrite it as an explicit allow list (Action/Resource); NotAction/NotResource is only acceptable with an Effect Deny.",
+		},
 	}
 }
 

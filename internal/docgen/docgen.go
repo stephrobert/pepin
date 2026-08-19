@@ -46,27 +46,39 @@ var blockRe = regexp.MustCompile(`(?s)<!-- pepin:gen ([a-z0-9-]+) -->\n.*?<!-- /
 // le compare à ce qui est committé. Les deux empruntent le même chemin de code : il n'existe
 // pas de version « de vérification » qui pourrait diverger de la version « de production ».
 func Generate(root, bin string) (map[string]string, error) {
-	matrix, err := BuildMatrix(root)
-	if err != nil {
-		return nil, err
-	}
-	captures, err := captureAll(root, bin)
-	if err != nil {
-		return nil, err
-	}
 	rem, err := RemediationCoverages(root)
 	if err != nil {
 		return nil, err
+	}
+	// Une campagne de captures PAR LANGUE : Pépin est bilingue, donc la page anglaise
+	// doit montrer la sortie anglaise et la page française la sortie française. Une
+	// campagne unique recopiée dans les deux pages ferait mentir l'une des deux — et
+	// c'est précisément le défaut que l'internationalisation vient corriger.
+	// Idem pour la matrice, qui porte de la prose (titres de contrôles, motifs) :
+	// une par langue, sinon la page française citerait des motifs anglais.
+	captureByLang := map[string]captures{}
+	matrixByLang := map[string]Matrix{}
+	for _, lang := range []string{"fr", "en"} {
+		c, cerr := captureAll(root, bin, lang)
+		if cerr != nil {
+			return nil, cerr
+		}
+		captureByLang[lang] = c
+		m, merr := BuildMatrix(root, lang)
+		if merr != nil {
+			return nil, merr
+		}
+		matrixByLang[lang] = m
 	}
 
 	out := map[string]string{}
 	for _, page := range generatedPages {
 		lang := langOf(page)
-		out[page] = matrix.coveragePage(lang)
+		out[page] = matrixByLang[lang].coveragePage(lang)
 	}
 	for _, page := range injectedPages {
 		lang := langOf(page)
-		blocks := buildBlocks(lang, matrix, captures, rem)
+		blocks := buildBlocks(lang, matrixByLang[lang], captureByLang[lang], rem)
 		raw, rerr := os.ReadFile(filepath.Join(root, page)) // #nosec G304 -- chemin d'une liste constante du paquet.
 		if rerr != nil {
 			return nil, fmt.Errorf("lecture de %s : %w", page, rerr)

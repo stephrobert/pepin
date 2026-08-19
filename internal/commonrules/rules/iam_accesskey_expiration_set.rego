@@ -17,6 +17,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("Clé d'accès « %s » sans date d'expiration — une fuite resterait exploitable indéfiniment.", [id]),
 		"remediation": "Définir une date d'expiration sur la clé et mettre en place une rotation ; préférer une identité courte (OIDC).",
-		"labels": {"provider": provider_of(k), "category": "security"},
+		"labels": {
+			"provider": provider_of(k),
+			"category": "security",
+			"message_en": sprintf("Access key \"%s\" has no expiry date — a leak would stay exploitable indefinitely.", [id]),
+			"remediation_en": "Set an expiry date on the key and put a rotation in place; prefer a short-lived identity (OIDC).",
+		},
 	}
 }

@@ -57,7 +57,7 @@ func TestTheGeneratorActuallyRunsTheBinary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("binaire de capture indisponible : %v", err)
 	}
-	c, err := captureAll(repoRoot, bin)
+	c, err := captureAll(repoRoot, bin, "fr")
 	if err != nil {
 		t.Fatalf("capture : %v", err)
 	}
@@ -98,8 +98,8 @@ func TestTheCapturedBannerCarriesNoBuildVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("version : %v", err)
 	}
-	raw := strings.TrimPrefix(strings.TrimSpace(ver.Stdout), "pépin ")
-	c, err := captureAll(repoRoot, bin)
+	raw := trimToolName(ver.Stdout)
+	c, err := captureAll(repoRoot, bin, "fr")
 	if err != nil {
 		t.Fatalf("capture : %v", err)
 	}
@@ -118,7 +118,7 @@ func TestTheCapturedBannerCarriesNoBuildVersion(t *testing.T) {
 // serait invisible dans une page de 57 lignes, et c'est exactement le genre d'absence qui fait
 // mentir une documentation de couverture.
 func TestTheMatrixCoversEveryControlAndProvider(t *testing.T) {
-	m, err := BuildMatrix(repoRoot)
+	m, err := BuildMatrix(repoRoot, "fr")
 	if err != nil {
 		t.Fatalf("matrice : %v", err)
 	}

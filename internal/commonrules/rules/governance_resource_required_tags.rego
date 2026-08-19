@@ -26,6 +26,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Ressource « %s » : étiquettes de gouvernance manquantes (%s).", [name, concat(", ", missing)]),
 		"remediation": "Ajouter les étiquettes obligatoires (CostCenter, Project, Env, Owner) sur la ressource.",
-		"labels": {"provider": provider_of(r), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "compliance",
+			"message_en": sprintf("Resource \"%s\": governance tags missing (%s).", [name, concat(", ", missing)]),
+			"remediation_en": "Add the mandatory tags (CostCenter, Project, Env, Owner) to the resource.",
+		},
 	}
 }

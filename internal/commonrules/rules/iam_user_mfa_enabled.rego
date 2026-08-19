@@ -20,6 +20,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Compte « %s » sans authentification multifacteur (MFA) activée.", [name]),
 		"remediation": "Activer la MFA sur le compte ; l'imposer pour tous les accès d'administration et la console cloud.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("Account \"%s\" has no multi-factor authentication (MFA) enabled.", [name]),
+			"remediation_en": "Enable MFA on the account; enforce it for every administrative access and for the cloud console.",
+		},
 	}
 }

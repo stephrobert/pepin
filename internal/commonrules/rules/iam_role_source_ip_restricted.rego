@@ -23,6 +23,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Rôle IAM « %s » : aucune restriction d'IP source — une clé assumant ce rôle est utilisable depuis n'importe quelle adresse.", [name]),
 		"remediation": "Ajouter à la politique du rôle une condition sur l'IP source (plages d'administration légitimes).",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("IAM role \"%s\": no source IP restriction — a key assuming this role is usable from any address.", [name]),
+			"remediation_en": "Add a source IP condition to the role's policy (legitimate administration ranges).",
+		},
 	}
 }

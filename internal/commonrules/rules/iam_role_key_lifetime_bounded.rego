@@ -29,7 +29,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Rôle IAM « %s » : aucune borne de durée de vie (ni TTL de session, ni expiration) — les accès assumant ce rôle sont permanents.", [name]),
 		"remediation": "Borner la durée de vie : définir un TTL de session maximal sur le rôle, ou une condition d'expiration dans sa politique.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("IAM role \"%s\": no bound on credential lifetime (no session TTL, no expiry) — credentials assuming this role are permanent.", [name]),
+			"remediation_en": "Bound that lifetime: set a maximum session TTL on the role, or an expiry condition in its policy.",
+		},
 	}
 }
 

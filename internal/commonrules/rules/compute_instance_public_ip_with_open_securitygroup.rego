@@ -31,7 +31,12 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("VM « %s » exposée publiquement via le security group %s (règle entrante ouverte sur Internet).", [id, sg_id]),
 		"remediation": "Retirer la règle entrante 0.0.0.0/0 du security group, ou détacher l'IP publique et passer par un LBU / NAT.",
-		"labels": {"provider": provider_of(vm), "category": "security"},
+		"labels": {
+			"provider": provider_of(vm),
+			"category": "security",
+			"message_en": sprintf("VM \"%s\" publicly exposed through security group %s (inbound rule open to the internet).", [id, sg_id]),
+			"remediation_en": "Remove the 0.0.0.0/0 inbound rule from the security group, or detach the public IP and go through an LBU / NAT.",
+		},
 	}
 }
 

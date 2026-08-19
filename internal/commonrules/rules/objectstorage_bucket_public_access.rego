@@ -24,19 +24,19 @@ _public_group_uris := {
 deny contains f if {
 	some r in resources_of_type("object_storage_bucket")
 	lower(object.get(r.attributes, "acl", "")) in _public_canned_acls
-	f := _bucket_public_finding(r, "ACL publique")
+	f := _bucket_public_finding(r, "ACL publique", "public ACL")
 }
 
 deny contains f if {
 	some r in resources_of_type("object_storage_bucket")
 	_acl_grant_public(r.attributes)
-	f := _bucket_public_finding(r, "ACL accordant l'accès à un groupe global (AllUsers / AuthenticatedUsers)")
+	f := _bucket_public_finding(r, "ACL accordant l'accès à un groupe global (AllUsers / AuthenticatedUsers)", "ACL granting access to a global group (AllUsers / AuthenticatedUsers)")
 }
 
 deny contains f if {
 	some r in resources_of_type("object_storage_bucket")
 	truthy(object.get(r.attributes, "policy_public", false))
-	f := _bucket_public_finding(r, "bucket policy avec Principal « * »")
+	f := _bucket_public_finding(r, "bucket policy avec Principal « * »", "bucket policy with Principal \"*\"")
 }
 
 _acl_grant_public(attrs) if truthy(object.get(attrs, "public_via_acl", false))
@@ -46,11 +46,19 @@ _acl_grant_public(attrs) if {
 	object.get(object.get(g, "grantee", {}), "uri", "") in _public_group_uris
 }
 
-_bucket_public_finding(r, cause) := {
+# _bucket_public_finding — finding commun d'exposition d'un bucket. `cause` nomme
+# le vecteur d'exposition (fragment interpolé dans le message) ; `cause_en` en est
+# la contrepartie anglaise.
+_bucket_public_finding(r, cause, cause_en) := {
 	"code": "objectstorage_bucket_public_access",
 	"severity": "critical",
 	"subject": object.get(r.attributes, "name", r.id),
 	"message": sprintf("Bucket « %s » accessible publiquement (%s).", [object.get(r.attributes, "name", r.id), cause]),
 	"remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
-	"labels": {"provider": provider_of(r), "category": "security"},
+	"labels": {
+		"provider": provider_of(r),
+		"category": "security",
+		"message_en": sprintf("Bucket \"%s\" is publicly accessible (%s).", [object.get(r.attributes, "name", r.id), cause_en]),
+		"remediation_en": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
+	},
 }
