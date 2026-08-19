@@ -113,6 +113,17 @@ d'un contrôle qui fait foi.
   source. **Générée** depuis le référentiel et les descripteurs, vérifiée en CI.
 - [Limites connues](docs/known-limitations.fr.md) : les angles morts, nommés.
 - [Périmètre et non-objectifs](docs/concepts/scope.fr.md) : ce qu'un rapport Pépin n'est pas.
+- [Plan Terraform contre scan live](docs/concepts/terraform-vs-live.fr.md) : choisir la
+  source, et les divergences réelles entre les deux.
+- Fournisseurs : [Scaleway](docs/providers/scaleway.fr.md) ·
+  [Outscale](docs/providers/outscale.fr.md) · [Exoscale](docs/providers/exoscale.fr.md) :
+  authentification, appels d'API, permissions minimales en lecture seule, couverture.
+- Référence : [CLI](docs/reference/cli.fr.md) ·
+  [Codes de sortie](docs/reference/exit-codes.fr.md) ·
+  [Formats de sortie](docs/reference/output-formats.fr.md).
+- Guides : [Le bundle de preuve](docs/guides/evidence-bundles.fr.md) ·
+  [GitHub Actions](docs/guides/github-actions.fr.md) ·
+  [GitLab CI](docs/guides/gitlab-ci.fr.md).
 - [Installation](docs/install.fr.md) · [Feuille de route](docs/roadmap.md) (document de
   travail interne)
 

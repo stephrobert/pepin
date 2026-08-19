@@ -37,6 +37,12 @@ var injectedPages = []string{
 	"docs/guides/github-actions.fr.md",
 	"docs/guides/gitlab-ci.md",
 	"docs/guides/gitlab-ci.fr.md",
+	"docs/providers/scaleway.md",
+	"docs/providers/scaleway.fr.md",
+	"docs/providers/outscale.md",
+	"docs/providers/outscale.fr.md",
+	"docs/providers/exoscale.md",
+	"docs/providers/exoscale.fr.md",
 }
 
 // generatedPages : les pages entièrement calculées, sans une ligne écrite à la main.
