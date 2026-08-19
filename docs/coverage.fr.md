@@ -200,5 +200,4 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 | outscale | live | 39 | 1 | 4 | 13 |
 | scaleway | terraform | 18 | 6 | 2 | 31 |
 | scaleway | live | 16 | 3 | 2 | 36 |
-| kubernetes | terraform | 0 | 0 | 0 | 57 |
 | kubernetes | live | 4 | 0 | 0 | 53 |

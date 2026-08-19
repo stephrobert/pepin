@@ -151,7 +151,6 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 | outscale | live | 39 | 1 | 4 | 13 |
 | scaleway | terraform | 18 | 6 | 2 | 31 |
 | scaleway | live | 16 | 3 | 2 | 36 |
-| kubernetes | terraform | 0 | 0 | 0 | 57 |
 | kubernetes | live | 4 | 0 | 0 | 53 |
 <!-- /pepin:gen coverage-totals -->
 

@@ -212,16 +212,23 @@ func (m Matrix) countsTable(t coverageStrings) string {
 	b.WriteString("| " + t.colProvider + " | " + t.colSource + " | " + mark(Supported) + " `supported` | " +
 		mark(Partial) + " `partial` | " + mark(NotApplicable) + " `not-applicable` | " +
 		mark(Unsupported) + " `unsupported` |\n|---|---|---:|---:|---:|---:|\n")
-	providers := append(append([]string{}, m.CloudProviders...), m.OtherProviders...)
-	for _, p := range providers {
-		for _, src := range []Source{SourceTerraform, SourceLive} {
-			c := map[Status]int{}
-			for _, r := range m.Rows {
-				c[r.Cells[p][src].Status]++
-			}
-			_, _ = fmt.Fprintf(&b, "| %s | %s | %d | %d | %d | %d |\n",
-				p, src, c[Supported], c[Partial], c[NotApplicable], c[Unsupported])
+	row := func(p string, src Source) {
+		c := map[Status]int{}
+		for _, r := range m.Rows {
+			c[r.Cells[p][src].Status]++
 		}
+		_, _ = fmt.Fprintf(&b, "| %s | %s | %d | %d | %d | %d |\n",
+			p, src, c[Supported], c[Partial], c[NotApplicable], c[Unsupported])
+	}
+	for _, p := range m.CloudProviders {
+		row(p, SourceTerraform)
+		row(p, SourceLive)
+	}
+	// Les fournisseurs d'une autre portée n'ont pas de mapping Terraform du tout : afficher une
+	// ligne « terraform : 0 supporté » se lirait comme un support cassé, alors que la source
+	// n'existe pas pour eux.
+	for _, p := range m.OtherProviders {
+		row(p, SourceLive)
 	}
 	return b.String()
 }

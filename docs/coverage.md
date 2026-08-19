@@ -200,5 +200,4 @@ the other's scope. One source only: live collection through a kubeconfig.
 | outscale | live | 39 | 1 | 4 | 13 |
 | scaleway | terraform | 18 | 6 | 2 | 31 |
 | scaleway | live | 16 | 3 | 2 | 36 |
-| kubernetes | terraform | 0 | 0 | 0 | 57 |
 | kubernetes | live | 4 | 0 | 0 | 53 |
