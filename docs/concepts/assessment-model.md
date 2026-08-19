@@ -372,7 +372,7 @@ reasons observed:
 | Reason | Count | Witness control |
 |---|---:|---|
 | attribut « … » non collecté sur les ressources collectées (garde de capacité) | 1 | `governance_resource_region_in_eu` |
-| attribut « … » non collecté sur les ressources de type « … » (garde de capacité) | 3 | `compute_instance_public_ip_with_open_securitygroup` |
+| attribut « … » non collecté sur les ressources de type « … » (garde de capacité) | 4 | `compute_instance_has_security_group` |
 | aucune ressource de type « … » dans l'inventaire évalué | 3 | `iam_accesskey_expiration_set` |
 | collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « … ») | 1 | `network_documented` |
 <!-- /pepin:gen not-evaluated-reasons -->
@@ -410,9 +410,9 @@ Scanning the deliberately misconfigured plan of the
 | Status | Count |
 |---|---:|
 | `pass` | 6 |
-| `fail` | 11 |
+| `fail` | 10 |
 | `not-applicable` | 2 |
-| `not-evaluated` | 8 |
+| `not-evaluated` | 9 |
 <!-- /pepin:gen assessment-counts -->
 
 ## The link with exit code `3`

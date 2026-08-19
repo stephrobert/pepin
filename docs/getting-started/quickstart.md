@@ -72,17 +72,17 @@ actionable:
  ⚡ Immediate action — top 3 most severe deviations
 ──────────────────────────────────────────────────────────────────────────────
 
-  1. 🔴 CRIT  CLD-CMP-1 — aucun filtrage réseau ne s'applique.
-     subject: scaleway_instance_server.web
-  2. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
+  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
      subject: scaleway_object_bucket_acl.backups
-  3. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
+  2. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
      subject: scaleway_instance_server.web
+  3. 🟠 HIGH  CLD-STO-3 — sauvegardes automatiques désactivées.
+     subject: pepin-test-rdb
 
 
 ──────────────────────────────────────────────────────────────────────────────
- CRITICAL  ·  CLD-CMP-1  ·  scaleway
- Machine sans filtrage réseau
+ CRITICAL  ·  CLD-STO-1  ·  scaleway
+ Stockage objet exposé publiquement
 […]
 ```
 <!-- /pepin:gen scan-vulnerable-head -->
@@ -92,11 +92,11 @@ and closes with the per-control table and the verdict:
 <!-- pepin:gen scan-vulnerable-tail -->
 ```text
 […]
+
   Controls
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
   │ Code       │ Control                                          │ Sev      │ Tier     │ # │
   ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
-  │ CLD-CMP-1  │ Machine sans filtrage réseau                     │ CRITICAL │ scaleway │ 1 │
   │ CLD-STO-1  │ Stockage objet exposé publiquement               │ CRITICAL │ scaleway │ 1 │
   │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
   │ CLD-CMP-9  │ Secret en clair dans les données utilisateur (u… │ HIGH     │ scaleway │ 1 │
@@ -112,7 +112,7 @@ and closes with the per-control table and the verdict:
 
  Verdict : NON CONFORME
 
- 🔴 CRITICAL 2   🟠 HIGH 7   🟡 MEDIUM 1   🔵 LOW 1
+ 🔴 CRITICAL 1   🟠 HIGH 7   🟡 MEDIUM 1   🔵 LOW 1
 ──────────────────────────────────────────────────────────────────────────────
 ```
 <!-- /pepin:gen scan-vulnerable-tail -->

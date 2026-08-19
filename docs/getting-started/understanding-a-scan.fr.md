@@ -57,27 +57,13 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  ⚡ Immediate action — top 3 most severe deviations
 ──────────────────────────────────────────────────────────────────────────────
 
-  1. 🔴 CRIT  CLD-CMP-1 — aucun filtrage réseau ne s'applique.
-     subject: scaleway_instance_server.web
-  2. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
+  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
      subject: scaleway_object_bucket_acl.backups
-  3. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
+  2. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
      subject: scaleway_instance_server.web
+  3. 🟠 HIGH  CLD-STO-3 — sauvegardes automatiques désactivées.
+     subject: pepin-test-rdb
 
-
-──────────────────────────────────────────────────────────────────────────────
- CRITICAL  ·  CLD-CMP-1  ·  scaleway
- Machine sans filtrage réseau
-──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
-
-  Details:
-      CRIT  scaleway_instance_server.web — aucun filtrage réseau ne s'applique.
-
-  Remediation
-    Attacher un groupe de sécurité restrictif (refus par défaut) à la VM.
-
-  ↳ docs: https://stephane-robert.info/scsl/CLD-CMP-1
 
 ──────────────────────────────────────────────────────────────────────────────
  CRITICAL  ·  CLD-STO-1  ·  scaleway
@@ -210,7 +196,6 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
   │ Code       │ Control                                          │ Sev      │ Tier     │ # │
   ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
-  │ CLD-CMP-1  │ Machine sans filtrage réseau                     │ CRITICAL │ scaleway │ 1 │
   │ CLD-STO-1  │ Stockage objet exposé publiquement               │ CRITICAL │ scaleway │ 1 │
   │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
   │ CLD-CMP-9  │ Secret en clair dans les données utilisateur (u… │ HIGH     │ scaleway │ 1 │
@@ -226,7 +211,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
 
  Verdict : NON CONFORME
 
- 🔴 CRITICAL 2   🟠 HIGH 7   🟡 MEDIUM 1   🔵 LOW 1
+ 🔴 CRITICAL 1   🟠 HIGH 7   🟡 MEDIUM 1   🔵 LOW 1
 ──────────────────────────────────────────────────────────────────────────────
 ```
 <!-- /pepin:gen scan-vulnerable-full -->
@@ -384,9 +369,9 @@ marqueurs ; tout le reste est le document capturé.)*
 | Statut | Nombre |
 |---|---:|
 | `pass` | 6 |
-| `fail` | 11 |
+| `fail` | 10 |
 | `not-applicable` | 2 |
-| `not-evaluated` | 8 |
+| `not-evaluated` | 9 |
 <!-- /pepin:gen assessment-counts -->
 
 Un unique scan sans compte cloud produit les quatre. Chacun est documenté dans
