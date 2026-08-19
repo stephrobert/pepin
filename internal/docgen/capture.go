@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -115,6 +116,28 @@ func Fence(lang, body string) string {
 		body = strings.ReplaceAll(body, "\n```", "\n'''")
 	}
 	return "```" + lang + "\n" + body + "\n```"
+}
+
+// consoleRun rend une exécution telle qu'un lecteur la refait : la commande, le flux montré,
+// puis le code de sortie OBSERVÉ. Le flux est passé explicitement (sortie standard, sortie
+// d'erreur, ou extrait) parce que les deux ne se mélangent pas d'elles-mêmes : les fondre
+// inventerait un entrelacement que rien n'a mesuré.
+func consoleRun(c Capture, body string) string {
+	return Fence("console", "$ "+c.Command()+"\n"+strings.TrimRight(body, "\n")+
+		"\n$ echo $?\n"+strconv.Itoa(c.Exit))
+}
+
+// linesWithPrefix ne garde que les lignes commençant par un préfixe (après espaces). Sert à
+// isoler les messages de l'outil d'un flux qui porte aussi le bandeau : la sélection est
+// explicite, et rien n'est réécrit.
+func linesWithPrefix(s, prefix string) string {
+	var kept []string
+	for _, l := range strings.Split(s, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(l), prefix) {
+			kept = append(kept, strings.TrimSpace(l))
+		}
+	}
+	return strings.Join(kept, "\n")
 }
 
 // Head rend les n premières lignes d'une sortie, suivies d'un marqueur d'élision explicite :

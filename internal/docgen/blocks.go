@@ -47,6 +47,7 @@ const (
 	planVulnerable = "examples/scaleway/terraform/plan.json"
 	planFixed      = "examples/scaleway/terraform-fixed/plan.json"
 	planMissing    = "examples/scaleway/plan-absent.json"
+	planOutscale   = "examples/outscale/terraform/plan.json"
 )
 
 // captures rassemble toutes les exécutions réelles de `pepin` dont la documentation montre la
@@ -60,6 +61,50 @@ type captures struct {
 	tagless     Capture
 	taglessStr  Capture
 	providers   Capture
+
+	// Référence CLI : une aide par verbe, dans la langue de la page. Les captures y sont
+	// tenues par POINTEUR : une valeur de carte n'est pas adressable, et la neutralisation
+	// de la version de build doit pouvoir les réécrire.
+	help map[string]*Capture
+	// Formats de sortie : le MÊME scan rendu dans chaque format parsable.
+	jsonReport Capture
+	sarif      Capture
+	oscal      Capture
+	// Plan contre live : le contrôle qui change de statut avec la source, et l'attribut
+	// qu'un plan rend en chaîne là où l'API rend un booléen.
+	driftLive        Capture // assessment sur l'inventaire de démonstration
+	outscalePlanJSON Capture // --format json sur le plan Outscale
+	planUnknown      string  // extrait du plan : l'attribut « unknown after apply »
+	planBoolAsString string  // extrait du plan : le booléen rendu en chaîne
+	// Pages de fournisseurs : un scan réel du plan d'exemple de chacun.
+	providerScans map[string]*Capture
+	// Bundle de preuve : sceller, vérifier, altérer, caviarder.
+	bundle bundleCaptures
+	// Surfaces gelées : la version de forme de chacune, lue dans sa fixture.
+	frozenVersions map[string]int
+	cliSurface     cliFrozen
+}
+
+// all rend chaque capture du jeu. La neutralisation de la version de build s'y adosse : une
+// liste énumérée à la main y oublierait une capture au premier ajout, et la page concernée
+// divergerait à chaque build sans qu'aucun comportement n'ait bougé.
+func (c *captures) all() []*Capture {
+	out := []*Capture{&c.vulnerable, &c.fixed, &c.assessment, &c.missingFile, &c.empty,
+		&c.tagless, &c.taglessStr, &c.providers, &c.jsonReport, &c.sarif, &c.oscal,
+		&c.driftLive, &c.outscalePlanJSON,
+		&c.bundle.seal, &c.bundle.verify, &c.bundle.reDerive, &c.bundle.tampered,
+		&c.bundle.redact, &c.bundle.redactRD}
+	for _, m := range []map[string]*Capture{c.help, c.providerScans} {
+		names := make([]string, 0, len(m))
+		for k := range m {
+			names = append(names, k)
+		}
+		sort.Strings(names)
+		for _, n := range names {
+			out = append(out, m[n])
+		}
+	}
+	return out
 }
 
 // captureAll exécute la totalité des commandes documentées. Les deux inventaires en ligne sont
@@ -109,6 +154,21 @@ func captureAll(root, bin, lang string) (captures, error) {
 	if strings.TrimSpace(c.vulnerable.Stdout) == "" {
 		return captures{}, fmt.Errorf("le scan de %s n'a rien produit : capture inexploitable", planVulnerable)
 	}
+	ver, verr := r.Run("version")
+	if verr != nil {
+		return captures{}, verr
+	}
+	version := trimToolName(ver.Stdout)
+
+	if err := c.captureReference(r, root, tmp); err != nil {
+		return captures{}, err
+	}
+	bc, berr := captureBundle(r, tmp, version)
+	if berr != nil {
+		return captures{}, berr
+	}
+	c.bundle = bc
+
 	// La VERSION est injectée au build (`git describe`) : elle diffère d'une machine et d'un
 	// commit à l'autre, et le bandeau la porte. Sans neutralisation, la page divergerait à
 	// chaque build sans qu'aucun comportement n'ait bougé — un contrôle qui crie pour rien
@@ -118,18 +178,113 @@ func captureAll(root, bin, lang string) (captures, error) {
 	// sur le jeton nu. Sans ancrage, un binaire construit hors dépôt (version de repli
 	// « dev ») ferait remplacer « dev » à l'intérieur de « Total deviations », ce qui
 	// corromprait la sortie montrée au lecteur.
-	ver, verr := r.Run("version")
-	if verr != nil {
-		return captures{}, verr
-	}
-	if v := trimToolName(ver.Stdout); v != "" {
-		for _, capt := range []*Capture{&c.vulnerable, &c.fixed, &c.assessment, &c.missingFile,
-			&c.empty, &c.tagless, &c.taglessStr, &c.providers} {
-			capt.Stdout = strings.ReplaceAll(capt.Stdout, "v"+v, "v"+versionPlaceholder)
-			capt.Stderr = strings.ReplaceAll(capt.Stderr, "v"+v, "v"+versionPlaceholder)
+	//
+	// Les documents PARSABLES, eux, portent la version nue (`"version": "0.2.0"`) : la
+	// forme citée y est donc celle du champ JSON, sans quoi la page de formats divergerait
+	// à chaque build.
+	if version != "" {
+		for _, capt := range c.all() {
+			capt.Stdout = strings.ReplaceAll(capt.Stdout, "v"+version, "v"+versionPlaceholder)
+			capt.Stderr = strings.ReplaceAll(capt.Stderr, "v"+version, "v"+versionPlaceholder)
+			capt.Stdout = strings.ReplaceAll(capt.Stdout, `"`+version+`"`, `"`+versionPlaceholder+`"`)
+			capt.Stderr = strings.ReplaceAll(capt.Stderr, `"`+version+`"`, `"`+versionPlaceholder+`"`)
 		}
 	}
 	return c, nil
+}
+
+// captureReference joue les exécutions dont vivent les pages de référence (aides de la CLI,
+// formats de sortie), la page de comparaison plan/live et les pages de fournisseurs, puis lit
+// les surfaces gelées et les extraits de plans committés.
+func (c *captures) captureReference(r Runner, root, tmp string) error {
+	surface, err := loadCLISurface(root)
+	if err != nil {
+		return err
+	}
+	if err := frozenVerbsAreDocumented(surface); err != nil {
+		return err
+	}
+	c.cliSurface = surface
+	c.frozenVersions = map[string]int{}
+	for _, name := range []string{"cli", "findings", "assessment", "bundle"} {
+		v, _, ferr := loadFrozen(root, name)
+		if ferr != nil {
+			return ferr
+		}
+		c.frozenVersions[name] = v
+	}
+
+	c.help = map[string]*Capture{}
+	for _, verb := range append([]string{""}, documentedVerbs...) {
+		args := append(strings.Fields(verb), "--help")
+		got, rerr := r.Run(args...)
+		if rerr != nil {
+			return rerr
+		}
+		if strings.TrimSpace(got.Stdout) == "" {
+			return fmt.Errorf("`pepin %s --help` n'a rien écrit sur la sortie standard : aide inexploitable", verb)
+		}
+		h := got
+		c.help[verb] = &h
+	}
+
+	driftPath := filepath.Join(tmp, "live-inventory.json")
+	if werr := os.WriteFile(driftPath, []byte(driftInventory+"\n"), 0o600); werr != nil {
+		return werr
+	}
+	steps := []struct {
+		into    *Capture
+		args    []string
+		display []string
+	}{
+		{&c.jsonReport, []string{"scan", "scaleway", "--terraform", planVulnerable, "--format", "json"}, nil},
+		{&c.sarif, []string{"scan", "scaleway", "--terraform", planVulnerable, "--format", "sarif"}, nil},
+		{&c.oscal, []string{"scan", "scaleway", "--terraform", planVulnerable, "--format", "oscal"}, nil},
+		{&c.driftLive, []string{"scan", "scaleway", driftPath, "--format", "assessment"},
+			[]string{"scan", "scaleway", "live-inventory.json", "--format", "assessment"}},
+		{&c.outscalePlanJSON, []string{"scan", "outscale", "--terraform", planOutscale, "--format", "json"}, nil},
+	}
+	for _, s := range steps {
+		got, rerr := r.Run(s.args...)
+		if rerr != nil {
+			return rerr
+		}
+		if s.display != nil {
+			got.Args = s.display
+		}
+		*s.into = got
+	}
+
+	// Les documents normatifs portent un horodatage, des UUID dérivés de cet horodatage et
+	// l'empreinte de provenance du binaire : neutralisés, sans quoi la page de formats
+	// divergerait à chaque exécution du générateur.
+	c.oscal.Stdout = normalizeVolatile(c.oscal.Stdout)
+	c.sarif.Stdout = normalizeVolatile(c.sarif.Stdout)
+
+	c.providerScans = map[string]*Capture{}
+	for _, name := range documentedProviders {
+		got, rerr := r.Run("scan", name, "--terraform", "examples/"+name+"/terraform/plan.json")
+		if rerr != nil {
+			return rerr
+		}
+		if strings.TrimSpace(got.Stdout) == "" {
+			return fmt.Errorf("le scan du plan d'exemple de %s n'a rien produit : capture inexploitable", name)
+		}
+		s := got
+		c.providerScans[name] = &s
+	}
+
+	// Les deux extraits de plan que la page de comparaison commente. Ils sont LUS dans les
+	// fixtures committées : un extrait recopié survivrait à la disparition de ce qu'il
+	// illustre, et c'est précisément la divergence que la page dénonce.
+	c.planUnknown, err = planExcerpt(root, planVulnerable, "scaleway_instance_server.web",
+		[]string{"security_group_id", "public_ips", "id"})
+	if err != nil {
+		return err
+	}
+	c.planBoolAsString, err = planExcerpt(root, planOutscale, "outscale_image_launch_permission.public_omi",
+		[]string{"image_id", "permission_additions"})
+	return err
 }
 
 // versionPlaceholder remplace la version du binaire dans les sorties capturées.
@@ -177,7 +332,66 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"coverage-totals":           m.countsTable(coverageText(lang)),
 		"control-counts":            controlCountsTable(t, m),
 	}
+	// Les régions des pages de la vague 2. Elles vivent dans leurs propres fichiers (la
+	// référence CLI, les formats, la comparaison plan/live, le bundle, les fournisseurs)
+	// pour que chacune reste lisible, et se fondent ici en un seul index de régions.
+	for _, extra := range []map[string]string{
+		referenceBlocks(lang, c),
+		formatBlocks(lang, c),
+		driftBlocks(lang, c),
+		bundleBlocks(lang, c),
+		providerBlocks(lang, m, c.providerScans),
+	} {
+		for id, body := range extra {
+			b[id] = body
+		}
+	}
 	return b
+}
+
+// referenceBlocks assemble les régions de la référence CLI.
+func referenceBlocks(lang string, c captures) map[string]string {
+	t := refText(lang)
+	out := map[string]string{
+		"cli-verbs":        cliVerbsTable(t, c.cliSurface),
+		"cli-exit-codes":   cliExitCodesTable(t, c.cliSurface),
+		"surface-versions": surfaceVersionsTable(t, c.frozenVersions),
+	}
+	for verb, capt := range c.help {
+		out[helpBlockID(verb)] = Fence("text", capt.Stdout)
+	}
+	return out
+}
+
+// formatBlocks assemble les régions de la page des formats de sortie : le MÊME scan, rendu
+// dans chaque format, et l'extrait qui montre ce qu'un pipeline y lira.
+func formatBlocks(lang string, c captures) map[string]string {
+	_ = lang // les extraits sont des documents, pas des libellés : rien à traduire ici
+	return map[string]string{
+		"format-json-summary": jsonField(c.jsonReport, "summary"),
+		"format-json-finding": jsonField(c.jsonReport, "findings", "0"),
+		"format-sarif-head":   Fence("json", Head(c.sarif.Stdout, 22)),
+		"format-sarif-result": jsonField(c.sarif, "runs", "0", "results", "0"),
+		"format-oscal-head":   Fence("json", Head(c.oscal.Stdout, 24)),
+	}
+}
+
+// bundleBlocks assemble les régions du guide du bundle de preuve.
+func bundleBlocks(lang string, c captures) map[string]string {
+	t := bundleText(lang)
+	b := c.bundle
+	return map[string]string{
+		"bundle-seal":       consoleRun(b.seal, linesWithPrefix(b.seal.Stderr, "pepin:")),
+		"bundle-files":      bundleFilesTable(t, b.files),
+		"bundle-manifest":   Fence("json", b.manifest),
+		"bundle-checksums":  Fence("text", b.checksums),
+		"bundle-verify":     consoleRun(b.verify, b.verify.Stdout),
+		"bundle-rederive":   consoleRun(b.reDerive, b.reDerive.Stdout),
+		"bundle-tampered":   consoleRun(b.tampered, b.tampered.Stdout+b.tampered.Stderr),
+		"bundle-redact":     Fence("json", b.redacted),
+		"bundle-redact-rd":  consoleRun(b.redactRD, b.redactRD.Stdout+b.redactRD.Stderr),
+		"bundle-cross-lang": crossLangTable(t, b.crossLang),
+	}
 }
 
 // controlBlock extrait du rapport terminal le bloc d'UN contrôle, de la règle horizontale qui
