@@ -5,7 +5,7 @@
 For a posture scanner, a known limitation is part of the trust contract. An unstated one gets
 discovered at the worst possible moment: during an audit.
 
-This page states what Pépin **cannot** measure, and why. It applies to **v0.1.0** and is
+This page states what Pépin **cannot** measure, and why. It applies to **v0.2.0** and is
 regenerated with the code: the tables below are computed from the reference, the provider
 descriptors and the `pass` lock — see [How this page stays true](#how-this-page-stays-true).
 
@@ -223,6 +223,19 @@ the shared `scankit` module (`[running, persistent, reboot-survivable]`). That n
 to host hardening, not to cloud posture: Pépin never fills it, and it serialises as
 `["", "", ""]`. Consumers should ignore it; it is not a Pépin signal.
 
+### The `live` column of the coverage matrix is derived, not observed
+
+The coverage matrix is **computed from the descriptors**: it states what a provider's live
+collection spec and Terraform mapping are declared to project, and what the API contract marks
+as verified. It is not the record of an observed run: no live scan produces that column, and
+nothing in this repository's automated checks calls a provider API.
+
+That distinction matters when reading a green cell in the `live` column. It means "this
+descriptor projects the deciding attribute, and the contract is verified", not "an API returned
+this field during a measured run". Should the two diverge on your tenant, the scan says so with
+a `not-evaluated` and its reason, never with a silent green — but the matrix itself is a
+statement of intent by the descriptor, not evidence.
+
 ### Nothing is measured between two runs
 
 A result describes an instant. Pépin has no agent, no watch mode and no history. Continuous
@@ -238,7 +251,7 @@ are not silently reported as passing. `referentiel/gaps.md` tracks what is triag
 
 ## Resolved limitations
 
-None yet: this page is published with v0.1.0. When a limitation is lifted, it is removed from
+None yet: this page is published with v0.2.0. When a limitation is lifted, it is removed from
 the sections above and recorded here with the version that lifted it, so that a reader of an
 older report can tell what was true at the time.
 
