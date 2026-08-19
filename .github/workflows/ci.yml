@@ -67,7 +67,7 @@ jobs:
         run: |
           # Outil tiers et schema figes : sans version ni empreinte, ce job execute
           # a chaque fois du code et des donnees qu'il n'a pas choisis.
-          pipx install 'check-jsonschema==0.33.4'
+          pipx install 'check-jsonschema==0.38.0'
           curl -sSL --retry 3 -o oscal-ar.json https://github.com/usnistgov/OSCAL/releases/download/v1.1.2/oscal_assessment-results_schema.json
           echo "d033da70154cf6625ae46a746199e88e58f2928b1387dfac051d381b92f41b0d  oscal-ar.json" | sha256sum -c -
           # `|| true` : un scan non conforme sort 1, ce qui est le comportement
