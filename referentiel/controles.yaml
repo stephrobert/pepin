@@ -10,9 +10,17 @@
 # Schéma d'un contrôle :
 #   code         : identifiant agnostique commun (= champ `code` des findings)
 #   famille      : iam | reseau | compute | stockage | chiffrement | journalisation | gouvernance
-#   titre        : libellé court (FR)
+#   titre        : libellé court (FR, langue de référence)
+#   titre_en     : le même libellé en anglais
 #   severite     : critical | high | medium | low
 #   description, remediation : prose (FR, vouvoiement dans les livrables)
+#   description_en, remediation_en : la même prose en anglais
+#
+# Pépin est BILINGUE (cf. internal/i18n) : le français est la langue de référence
+# du contenu normatif, l'anglais en est la traduction maintenue en parallèle. Les
+# trois champs `_en` sont OBLIGATOIRES ; `mise run validate` refuse un contrôle
+# qui en omettrait un, car une sortie anglaise ne doit jamais retomber en silence
+# sur le français.
 #   scsl         : exigence(s) de l'index SCSL — module SCSL-C « Posture cloud »
 #                  (framework-scsl/api/v1/exigences.json, domaine CLD ; l'ID SCSL-
 #                  CLD-* est lu dépréfixé en CLD-*). NE PAS inventer : si
@@ -35,12 +43,18 @@ controles:
   - code: iam_policy_no_administrative_privileges
     famille: iam
     titre: Politique IAM à privilèges administratifs (action joker)
+    titre_en: IAM policy with administrative privileges (wildcard action)
     severite: critical
     description: >
       Une politique IAM accorde une action joker « * » (ou l'anti-pattern
       NotAction/NotResource), contournant le moindre privilège.
+    description_en: >
+      An IAM policy grants a wildcard "*" action (or the NotAction/NotResource
+      anti-pattern), bypassing least privilege.
     remediation: >
       Restreindre la politique aux actions/ressources strictement nécessaires.
+    remediation_en: >
+      Restrict the policy to the strictly necessary actions and resources.
     scsl: [CLD-IAM-1]
     frameworks:
       secnumcloud_3_2: ["9.1", "9.3"]
@@ -51,13 +65,20 @@ controles:
   - code: iam_policy_no_wildcard_resource
     famille: iam
     titre: Politique IAM avec ressource joker
+    titre_en: IAM policy with a wildcard resource
     severite: high
     description: >
       Un Statement Allow porte une ressource joker « * » : il s'applique à
       toutes les ressources du compte, au-delà du strict nécessaire.
+    description_en: >
+      An Allow statement carries a wildcard "*" resource: it applies to every
+      resource in the account, well beyond what is strictly needed.
     remediation: >
       Restreindre Resource aux identifiants (ORN) que la politique doit
       réellement couvrir.
+    remediation_en: >
+      Restrict Resource to the identifiers (ORN) the policy must actually
+      cover.
     scsl: [CLD-IAM-1]
     frameworks:
       secnumcloud_3_2: ["9.1", "9.3"]
@@ -68,14 +89,22 @@ controles:
   - code: iam_policy_no_notaction_notresource
     famille: iam
     titre: Politique IAM avec NotAction/NotResource (anti-pattern)
+    titre_en: IAM policy using NotAction/NotResource (anti-pattern)
     severite: critical
     description: >
       Un Statement Allow emploie NotAction ou NotResource : ce pattern
       d'inversion autorise tout sauf une liste, ouvrant des permissions
       imprévues à chaque nouveau service/ressource.
+    description_en: >
+      An Allow statement uses NotAction or NotResource: this inversion pattern
+      allows everything except a list, opening unforeseen permissions with
+      every new service or resource.
     remediation: >
       Réécrire en liste d'autorisations explicite (Action/Resource).
       NotAction/NotResource n'est acceptable qu'avec Effect Deny.
+    remediation_en: >
+      Rewrite it as an explicit allow list (Action/Resource).
+      NotAction/NotResource is only acceptable with an Effect Deny.
     scsl: [CLD-IAM-1]
     frameworks:
       secnumcloud_3_2: ["9.1", "9.3"]
@@ -86,15 +115,23 @@ controles:
   - code: iam_policy_no_privilege_escalation
     famille: iam
     titre: Politique IAM permettant une élévation de privilèges
+    titre_en: IAM policy allowing privilege escalation
     severite: high
     description: >
       Une politique autorise des actions de gestion d'identité (attacher ou créer
       une politique, créer/réactiver une clé d'accès) qui permettent à un principal
       de s'octroyer lui-même des droits supplémentaires — chemin d'élévation de
       privilèges.
+    description_en: >
+      A policy allows identity management actions (attaching or creating a
+      policy, creating or re-enabling an access key) that let a principal
+      grant itself extra rights — a privilege escalation path.
     remediation: >
       Retirer les actions de gestion d'identité des politiques d'usage courant ;
       les réserver à un rôle d'administration dédié, scopé aux ressources légitimes.
+    remediation_en: >
+      Remove identity management actions from everyday policies; reserve them
+      for a dedicated administration role, scoped to the legitimate resources.
     scsl: [CLD-IAM-12]
     frameworks:
       secnumcloud_3_2: ["9.1", "9.3"]
@@ -107,13 +144,20 @@ controles:
   - code: iam_no_root_access_key
     famille: iam
     titre: Clé d'accès rattachée au compte root
+    titre_en: Access key attached to the root account
     severite: high
     description: >
       Une clé d'API/d'accès est rattachée au compte root de l'organisation, ce
       qui contourne les politiques IAM et le moindre privilège.
+    description_en: >
+      An API/access key is attached to the organisation's root account, which
+      bypasses IAM policies and least privilege.
     remediation: >
       Créer une identité/application dédiée à moindre privilège et révoquer la
       clé root.
+    remediation_en: >
+      Create a dedicated least-privilege identity or application, and revoke
+      the root key.
     scsl: [CLD-IAM-1]
     frameworks:
       secnumcloud_3_2: ["9.3", "9.6"]
@@ -124,13 +168,20 @@ controles:
   - code: iam_accesskey_expiration_set
     famille: iam
     titre: Clé d'accès sans expiration ni rotation
+    titre_en: Access key without expiry or rotation
     severite: critical
     description: >
       Une clé d'accès longue durée n'a pas de date d'expiration : une fuite
       reste exploitable indéfiniment.
+    description_en: >
+      A long-lived access key has no expiry date: a leak stays exploitable
+      indefinitely.
     remediation: >
       Imposer une expiration et une rotation des clés ; préférer une identité
       courte (OIDC) aux secrets statiques.
+    remediation_en: >
+      Enforce an expiry and a rotation for access keys; prefer a short-lived
+      identity (OIDC) over static secrets.
     scsl: [CLD-IAM-2]
     frameworks:
       secnumcloud_3_2: ["9.5", "10.5"]
@@ -140,13 +191,21 @@ controles:
   - code: iam_user_mfa_enabled
     famille: iam
     titre: MFA non activée sur un compte
+    titre_en: MFA not enabled on an account
     severite: high
     description: >
       Un compte utilisateur cloud n'a pas l'authentification multifacteur (MFA)
       activée : un mot de passe compromis suffit à accéder à la console ou à l'API.
+    description_en: >
+      A cloud user account does not have multi-factor authentication (MFA)
+      enabled: a compromised password is enough to reach the console or the
+      API.
     remediation: >
       Activer la MFA sur tous les comptes, en priorité les accès d'administration
       et la console ; l'imposer par politique au niveau de l'organisation.
+    remediation_en: >
+      Enable MFA on every account, starting with administrative and console
+      access; enforce it by policy at the organisation level.
     scsl: [CLD-IAM-3]
     frameworks:
       secnumcloud_3_2: ["9.5", "9.6"]
@@ -157,14 +216,22 @@ controles:
   - code: iam_account_mfa_enforced
     famille: iam
     titre: MFA non imposée au niveau du compte
+    titre_en: MFA not enforced at the account level
     severite: high
     description: >
       La politique d'accès API du compte n'impose pas la MFA à l'ensemble des
       utilisateurs (environnement de confiance désactivé) : un mot de passe
       compromis suffit. Angle compte, complémentaire du MFA par utilisateur.
+    description_en: >
+      The account's API access policy does not enforce MFA for all users
+      (trusted environment disabled): a compromised password is enough.
+      Account-level angle, complementary to per-user MFA.
     remediation: >
       Activer l'exigence d'environnement de confiance (RequireTrustedEnv) pour
       imposer la MFA (WebAuthn/OTP) à tous les utilisateurs du compte.
+    remediation_en: >
+      Enable the trusted environment requirement (RequireTrustedEnv) to
+      enforce MFA (WebAuthn/OTP) for every user of the account.
     scsl: [CLD-IAM-3]
     frameworks:
       secnumcloud_3_2: ["9.5", "9.6"]
@@ -175,12 +242,18 @@ controles:
   - code: iam_apiaccesspolicy_max_key_expiration
     famille: iam
     titre: Politique d'accès API sans expiration maximale des clés
+    titre_en: API access policy without a maximum key expiry
     severite: medium
     description: >
       La politique d'accès API du compte n'impose pas d'expiration maximale aux
       clés d'accès : rien ne force leur rotation.
+    description_en: >
+      The account's API access policy sets no maximum expiry on access keys:
+      nothing forces their rotation.
     remediation: >
       Configurer une expiration maximale des clés d'accès (ex. 90 jours).
+    remediation_en: >
+      Configure a maximum access key expiry (90 days, for instance).
     scsl: [CLD-IAM-2]
     frameworks:
       secnumcloud_3_2: ["9.5", "10.5"]
@@ -190,13 +263,20 @@ controles:
   - code: iam_apiaccessrule_no_public_cidr
     famille: iam
     titre: Règle d'accès API ouverte à un CIDR public
+    titre_en: API access rule open to a public CIDR
     severite: high
     description: >
       Une règle d'accès API autorise les appels depuis 0.0.0.0/0 ou ::/0 : une
       clé d'accès fuitée serait exploitable depuis n'importe où.
+    description_en: >
+      An API access rule allows calls from 0.0.0.0/0 or ::/0: a leaked access
+      key would be usable from anywhere.
     remediation: >
       Restreindre les plages IP de la règle aux adresses légitimes ; supprimer
       toute règle ouverte à Internet.
+    remediation_en: >
+      Restrict the rule's IP ranges to legitimate addresses; remove any rule
+      open to the internet.
     scsl: [CLD-IAM-4]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -207,13 +287,20 @@ controles:
   - code: iam_apiaccessrule_defined
     famille: iam
     titre: Aucune règle d'accès API définie
+    titre_en: No API access rule defined
     severite: high
     description: >
       Aucune règle d'accès API n'est définie : l'API du compte est joignable
       depuis n'importe où avec une clé d'accès valide.
+    description_en: >
+      No API access rule is defined: the account's API is reachable from
+      anywhere with a valid access key.
     remediation: >
       Créer au moins une règle d'accès API restreignant les appels à des plages
       IP légitimes.
+    remediation_en: >
+      Create at least one API access rule restricting calls to legitimate IP
+      ranges.
     scsl: [CLD-IAM-4]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -224,14 +311,22 @@ controles:
   - code: iam_role_no_admin_privileges
     famille: iam
     titre: Rôle IAM aux privilèges excessifs
+    titre_en: IAM role with excessive privileges
     severite: high
     description: >
       La politique d'un rôle IAM autorise tout par défaut (stratégie de service
       « allow ») : sauf interdictions ciblées, une clé assumant ce rôle dispose de
       privilèges étendus, à l'encontre du moindre privilège.
+    description_en: >
+      An IAM role's policy allows everything by default ("allow" default
+      service strategy): short of targeted denials, a key assuming this role
+      holds broad privileges, against least privilege.
     remediation: >
       Reposer la politique du rôle sur une stratégie de service « deny » par défaut,
       puis n'autoriser explicitement que les opérations et ressources nécessaires.
+    remediation_en: >
+      Base the role's policy on a default "deny" service strategy, then
+      explicitly allow only the required operations and resources.
     scsl: [CLD-IAM-1]
     frameworks:
       secnumcloud_3_2: ["9.3"]
@@ -242,14 +337,22 @@ controles:
   - code: iam_role_source_ip_restricted
     famille: iam
     titre: Rôle IAM sans restriction d'IP source
+    titre_en: IAM role without a source IP restriction
     severite: high
     description: >
       La politique d'un rôle IAM ne borne pas les IP sources autorisées : une clé
       assumant ce rôle est utilisable depuis n'importe quelle adresse, y compris en
       cas de fuite du secret.
+    description_en: >
+      An IAM role's policy does not bound the allowed source IPs: a key
+      assuming this role is usable from any address, including after the
+      secret leaks.
     remediation: >
       Ajouter à la politique du rôle une condition sur l'IP source (plages
       d'administration légitimes) afin de restreindre l'usage des accès.
+    remediation_en: >
+      Add a source IP condition to the role's policy (legitimate
+      administration ranges) to restrict where the credentials can be used.
     scsl: [CLD-IAM-4]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -260,16 +363,25 @@ controles:
   - code: iam_role_key_lifetime_bounded
     famille: iam
     titre: Rôle IAM sans borne de durée de vie des accès
+    titre_en: IAM role without a bounded credential lifetime
     severite: critical
     description: >
       La politique d'un rôle IAM ne borne pas la durée de vie des accès (ni TTL de
       session maximal, ni expiration dans la politique) : une clé assumant ce rôle
       conserve indéfiniment ses droits, contrairement au principe de secrets à durée
       limitée.
+    description_en: >
+      An IAM role's policy does not bound the lifetime of credentials (no
+      maximum session TTL, no expiry condition in the policy): a key assuming
+      this role keeps its rights indefinitely, against the principle of
+      time-limited secrets.
     remediation: >
       Borner la durée de vie : définir un TTL de session maximal sur le rôle ou une
       condition d'expiration dans sa politique (au-delà d'une durée, les accès sont
       refusés).
+    remediation_en: >
+      Bound that lifetime: set a maximum session TTL on the role, or an expiry
+      condition in its policy (past that duration, access is denied).
     scsl: [CLD-IAM-2]
     frameworks:
       secnumcloud_3_2: ["9.5", "10.5"]
@@ -280,13 +392,20 @@ controles:
   - code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
     famille: reseau
     titre: SSH (port 22) ouvert à Internet
+    titre_en: SSH (port 22) open to the internet
     severite: high
     description: >
       Une règle de filtrage accepte le port 22 (SSH) depuis 0.0.0.0/0 ou ::/0,
       exposant l'administration à tout Internet.
+    description_en: >
+      A filtering rule accepts port 22 (SSH) from 0.0.0.0/0 or ::/0, exposing
+      administration to the whole internet.
     remediation: >
       Restreindre la source à un CIDR d'administration ; passer par un bastion
       ou un VPN.
+    remediation_en: >
+      Restrict the source to an administration CIDR; go through a bastion or a
+      VPN.
     scsl: [CLD-NET-1, CLD-IAM-6, CLD-NET-6]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -297,13 +416,20 @@ controles:
   - code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389
     famille: reseau
     titre: RDP (port 3389) ouvert à Internet
+    titre_en: RDP (port 3389) open to the internet
     severite: high
     description: >
       Une règle de filtrage accepte le port 3389 (RDP) depuis 0.0.0.0/0 ou ::/0,
       exposant l'administration Windows à tout Internet.
+    description_en: >
+      A filtering rule accepts port 3389 (RDP) from 0.0.0.0/0 or ::/0,
+      exposing Windows administration to the whole internet.
     remediation: >
       Restreindre la source à un CIDR d'administration ; passer par un bastion
       ou un VPN.
+    remediation_en: >
+      Restrict the source to an administration CIDR; go through a bastion or a
+      VPN.
     scsl: [CLD-NET-1, CLD-IAM-6, CLD-NET-6]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -314,13 +440,20 @@ controles:
   - code: network_securitygroup_allow_ingress_from_internet_to_all_ports
     famille: reseau
     titre: Tout le trafic entrant autorisé depuis Internet (any/any)
+    titre_en: All inbound traffic allowed from the internet (any/any)
     severite: critical
     description: >
       Une règle autorise l'ensemble des ports/protocoles depuis 0.0.0.0/0 —
       exposition maximale.
+    description_en: >
+      A rule allows every port and every protocol from 0.0.0.0/0 — maximum
+      exposure.
     remediation: >
       Remplacer la règle par des autorisations explicites, port par port,
       restreintes aux sources légitimes.
+    remediation_en: >
+      Replace the rule with explicit port-by-port allowances, restricted to
+      legitimate sources.
     scsl: [CLD-NET-2]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -331,14 +464,22 @@ controles:
   - code: network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports
     famille: reseau
     titre: Port sensible (base de données, annuaire…) ouvert à Internet
+    titre_en: Sensitive port (database, directory…) open to the internet
     severite: high
     description: >
       Une règle de filtrage accepte depuis 0.0.0.0/0 ou ::/0 un port sensible
       (PostgreSQL, MySQL, Redis, MongoDB, Elasticsearch, MS-SQL, RDP…), exposant
       un service critique à tout Internet.
+    description_en: >
+      A filtering rule accepts a sensitive port from 0.0.0.0/0 or ::/0
+      (PostgreSQL, MySQL, Redis, MongoDB, Elasticsearch, MS-SQL, RDP…),
+      exposing a critical service to the whole internet.
     remediation: >
       Restreindre la source à un CIDR d'administration / d'application ; ne jamais
       exposer une base de données ou un annuaire directement sur Internet.
+    remediation_en: >
+      Restrict the source to an administration or application CIDR; never
+      expose a database or a directory service directly on the internet.
     scsl: [CLD-NET-1]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -349,14 +490,22 @@ controles:
   - code: network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports
     famille: reseau
     titre: Service UDP sensible (amplification, non authentifié) ouvert à Internet
+    titre_en: Sensitive UDP service (amplification, unauthenticated) open to the internet
     severite: high
     description: >
       Une règle de filtrage accepte depuis 0.0.0.0/0 ou ::/0 un service UDP
       sensible (DNS, NTP, SNMP, memcached, NFS, LDAP/CLDAP…), vecteur classique
       d'amplification DDoS et souvent non authentifié.
+    description_en: >
+      A filtering rule accepts a sensitive UDP service from 0.0.0.0/0 or ::/0
+      (DNS, NTP, SNMP, memcached, NFS, LDAP/CLDAP…), a classic DDoS
+      amplification vector and often unauthenticated.
     remediation: >
       Restreindre la source à un CIDR légitime ; ne jamais exposer un service UDP
       d'amplification ou non authentifié directement sur Internet.
+    remediation_en: >
+      Restrict the source to a legitimate CIDR; never expose an amplification
+      or unauthenticated UDP service directly on the internet.
     scsl: [CLD-NET-1]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -367,14 +516,22 @@ controles:
   - code: network_securitygroup_default_restrict_traffic
     famille: reseau
     titre: Security group « default » non restrictif
+    titre_en: The "default" security group is not restrictive
     severite: high
     description: >
       Le security group « default » est attaché d'office à toute ressource créée sans
       groupe explicite : la moindre règle entrante qu'il porte s'applique alors
       silencieusement, sans décision de l'exploitant.
+    description_en: >
+      The "default" security group is attached automatically to every resource
+      created without an explicit group: any inbound rule it carries then
+      applies silently, without an operator decision.
     remediation: >
       Vider le security group « default » de toutes ses règles et attacher
       explicitement un groupe dédié et restrictif à chaque ressource.
+    remediation_en: >
+      Empty the "default" security group of all its rules, and explicitly
+      attach a dedicated, restrictive group to every resource.
     scsl: [CLD-NET-4]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -385,12 +542,18 @@ controles:
   - code: network_securitygroup_unrestricted_egress
     famille: reseau
     titre: Filtrage sortant non restreint
+    titre_en: Unrestricted outbound filtering
     severite: medium
     description: >
       Un groupe de sécurité autorise tout le trafic sortant vers 0.0.0.0/0 sans
       restriction, facilitant l'exfiltration de données et les rappels C2.
+    description_en: >
+      A security group allows all outbound traffic to 0.0.0.0/0 without
+      restriction, easing data exfiltration and C2 callbacks.
     remediation: >
       Restreindre les règles de sortie aux destinations et ports légitimes.
+    remediation_en: >
+      Restrict the egress rules to legitimate destinations and ports.
     scsl: [CLD-NET-4]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -401,14 +564,23 @@ controles:
   - code: network_flow_matrix_documented
     famille: reseau
     titre: Flux entrant sans justification dans la matrice des flux
+    titre_en: Inbound flow without a justification in the flow matrix
     severite: medium
     description: >
       Une règle de flux entrant n'a pas de justification (description) : la matrice
       des flux autorisés (services, protocoles, ports + justification) n'est pas
       tenue, ce qui empêche la revue et l'imputabilité des ouvertures réseau.
+    description_en: >
+      An inbound flow rule carries no justification (description): the matrix
+      of allowed flows (services, protocols, ports and justification) is not
+      maintained, which prevents any review of, and accountability for,
+      network openings.
     remediation: >
       Documenter chaque règle de security group (service desservi, raison) via sa
       description ; tenir à jour la matrice des flux et la réviser périodiquement.
+    remediation_en: >
+      Document every security group rule (service served, reason) in its
+      description; keep the flow matrix up to date and review it periodically.
     scsl: [CLD-NET-5]
     frameworks:
       secnumcloud_3_2: ["13.1", "13.2"]
@@ -418,14 +590,22 @@ controles:
   - code: network_documented
     famille: reseau
     titre: Réseau non documenté (cartographie non tenue)
+    titre_en: Undocumented network (mapping not maintained)
     severite: low
     description: >
       Un réseau (VPC / Net / réseau privé) n'a pas de nom ou d'étiquettes de
       gouvernance : la cartographie réseau (inventaire, propriétaire, projet) n'est
       pas tenue à jour, ce qui nuit à la revue et à la réponse aux incidents.
+    description_en: >
+      A network (VPC / Net / private network) has no name and no governance
+      tags: the network mapping (inventory, owner, project) is not kept up to
+      date, which hurts review and incident response.
     remediation: >
       Nommer et étiqueter chaque réseau (propriétaire, projet, environnement) ;
       tenir à jour la cartographie réseau et la réviser périodiquement.
+    remediation_en: >
+      Name and tag every network (owner, project, environment); keep the
+      network mapping up to date and review it periodically.
     scsl: [CLD-NET-5]
     frameworks:
       secnumcloud_3_2: ["13.1"]
@@ -435,14 +615,23 @@ controles:
   - code: network_peering_cross_organization
     famille: reseau
     titre: Appairage réseau vers un autre système d'information
+    titre_en: Network peering towards another information system
     severite: high
     description: >
       Un appairage réseau (peering) relie deux comptes/organisations différents :
       les flux internes sont ouverts vers un autre système d'information, à
       l'encontre du cloisonnement, sauf justification et restriction des routes.
+    description_en: >
+      A network peering links two different accounts or organisations:
+      internal flows are opened towards another information system, against
+      segregation, unless it is justified and the routes are restricted.
     remediation: >
       Limiter les appairages aux réseaux du même SI ; pour un partenaire, justifier
       l'appairage et restreindre les routes/flux échangés (matrice de flux).
+    remediation_en: >
+      Limit peerings to networks of the same information system; for a
+      partner, justify the peering and restrict the routes and flows exchanged
+      (flow matrix).
     scsl: [CLD-NET-7]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -452,13 +641,20 @@ controles:
   - code: compute_instance_public_ip_with_open_securitygroup
     famille: reseau
     titre: Machine exposée publiquement sans filtrage restrictif
+    titre_en: Instance publicly exposed without restrictive filtering
     severite: critical
     description: >
       Une instance porte une IP publique et un groupe de sécurité ouvert à
       0.0.0.0/0 : elle est directement atteignable depuis Internet.
+    description_en: >
+      An instance carries a public IP and a security group open to 0.0.0.0/0:
+      it is directly reachable from the internet.
     remediation: >
       Retirer l'IP publique si inutile ; restreindre le groupe de sécurité ;
       placer la machine derrière un répartiteur ou un VPN.
+    remediation_en: >
+      Remove the public IP if it is not needed; restrict the security group;
+      place the instance behind a load balancer or a VPN.
     scsl: [CLD-NET-3]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -471,13 +667,19 @@ controles:
   - code: compute_instance_has_security_group
     famille: compute
     titre: Machine sans filtrage réseau
+    titre_en: Instance without network filtering
     severite: critical
     description: >
       Une instance n'est associée à aucun groupe de sécurité : aucun filtrage
       réseau ne s'applique.
+    description_en: >
+      An instance is not associated with any security group: no network
+      filtering applies to it.
     remediation: >
       Associer un groupe de sécurité restrictif (refus par défaut) à chaque
       instance.
+    remediation_en: >
+      Attach a restrictive security group (deny by default) to every instance.
     scsl: [CLD-CMP-1]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -489,13 +691,19 @@ controles:
   - code: compute_instance_no_secrets_in_user_data
     famille: compute
     titre: Secret en clair dans les données utilisateur (user-data)
+    titre_en: Cleartext secret in the user data (user-data)
     severite: high
     description: >
       Les données utilisateur (user-data/cloud-init) contiennent un secret en
       clair : un SSRF ou un accès aux métadonnées peut l'exfiltrer.
+    description_en: >
+      The user data (user-data/cloud-init) contains a cleartext secret: an
+      SSRF or any access to the metadata service can exfiltrate it.
     remediation: >
       Bannir les secrets des données utilisateur ; utiliser un coffre de secrets
       et l'injection au démarrage.
+    remediation_en: >
+      Ban secrets from user data; use a secrets vault and inject them at boot.
     # Ce contrôle VÉRIFIE l'absence de secret en clair dans le user-data = CLD-CMP-9
     # (et non la protection IMDSv2 de CLD-CMP-2, qui reste un trou faute d'attribut exposé).
     scsl: [CLD-CMP-9]
@@ -506,14 +714,22 @@ controles:
   - code: k8s_rbac_no_cluster_admin_binding
     famille: compute
     titre: cluster-admin accordé au-delà du binding natif
+    titre_en: cluster-admin granted beyond the native binding
     severite: critical
     description: >
       Un ClusterRoleBinding accorde le rôle cluster-admin à un sujet autre que le
       groupe natif system:masters : ce sujet dispose des pleins pouvoirs sur le
       cluster, au-delà du moindre privilège.
+    description_en: >
+      A ClusterRoleBinding grants the cluster-admin role to a subject other
+      than the native system:masters group: that subject holds full power over
+      the cluster, beyond least privilege.
     remediation: >
       Retirer cluster-admin de ce sujet et lui accorder un Role/ClusterRole
       restreint au strict nécessaire.
+    remediation_en: >
+      Remove cluster-admin from this subject and grant it a Role/ClusterRole
+      restricted to what it strictly needs.
     scsl: [CLD-K8S-4]
     frameworks:
       secnumcloud_3_2: ["9.1", "9.3"]
@@ -524,14 +740,22 @@ controles:
   - code: k8s_namespace_pod_security_enforced
     famille: compute
     titre: Pod Security Standards non imposés sur un namespace
+    titre_en: Pod Security Standards not enforced on a namespace
     severite: high
     description: >
       Un namespace applicatif n'a pas de label pod-security.kubernetes.io/enforce :
       aucun garde-fou n'empêche d'y déployer un pod privilégié (accès à l'hôte,
       élévation de privilèges).
+    description_en: >
+      An application namespace carries no pod-security.kubernetes.io/enforce
+      label: nothing prevents deploying a privileged pod there (host access,
+      privilege escalation).
     remediation: >
       Poser le label pod-security.kubernetes.io/enforce (baseline ou restricted)
       sur le namespace.
+    remediation_en: >
+      Set the pod-security.kubernetes.io/enforce label (baseline or
+      restricted) on the namespace.
     scsl: [CLD-K8S-5]
     frameworks:
       # Pas de correspondance CIS Controls v8 défendable au catalogue : aucune safeguard
@@ -543,15 +767,24 @@ controles:
   - code: k8s_secrets_external_manager
     famille: chiffrement
     titre: Secrets Kubernetes sans coffre externe
+    titre_en: Kubernetes secrets without an external vault
     severite: high
     description: >
       Aucun gestionnaire de secrets externes n'est déployé dans le cluster : les
       secrets reposent sur le stockage natif de Kubernetes (encodés en base64 dans
       etcd), sans coffre, sans rotation et exposés à quiconque peut les lire.
+    description_en: >
+      No external secrets manager is deployed in the cluster: secrets rely on
+      Kubernetes' native storage (base64-encoded in etcd), with no vault, no
+      rotation, and readable by anyone allowed to read them.
     remediation: >
       Déployer un gestionnaire de secrets externes (External Secrets Operator ou
       Secrets Store CSI) et monter les secrets depuis le coffre ; ne jamais placer
       de secret en clair dans un manifest ou une variable d'environnement.
+    remediation_en: >
+      Deploy an external secrets manager (External Secrets Operator or Secrets
+      Store CSI) and mount secrets from the vault; never put a cleartext
+      secret in a manifest or in an environment variable.
     scsl: [CLD-K8S-10]
     frameworks:
       secnumcloud_3_2: ["10.5"]
@@ -561,14 +794,22 @@ controles:
   - code: k8s_namespace_network_policy_defined
     famille: reseau
     titre: Namespace sans NetworkPolicy (réseau plat)
+    titre_en: Namespace without a NetworkPolicy (flat network)
     severite: high
     description: >
       Aucune NetworkPolicy n'existe dans un namespace applicatif : tout pod peut
       joindre tout autre pod du cluster, sans cloisonnement — un pod compromis se
       déplace latéralement sans obstacle.
+    description_en: >
+      No NetworkPolicy exists in an application namespace: every pod can reach
+      every other pod of the cluster, with no segregation — a compromised pod
+      moves laterally without obstacle.
     remediation: >
       Définir une NetworkPolicy de refus par défaut (ingress et egress) dans le
       namespace, puis autoriser explicitement les flux légitimes.
+    remediation_en: >
+      Define a default-deny NetworkPolicy (ingress and egress) in the
+      namespace, then explicitly allow the legitimate flows.
     scsl: [CLD-K8S-6]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -579,13 +820,20 @@ controles:
   - code: kubernetes_cluster_not_publicly_accessible
     famille: compute
     titre: API server Kubernetes exposé à Internet
+    titre_en: Kubernetes API server exposed to the internet
     severite: critical
     description: >
       Le serveur d'API du cluster managé est joignable depuis 0.0.0.0/0 (liste
       d'autorisation ouverte), exposant le plan de contrôle.
+    description_en: >
+      The managed cluster's API server is reachable from 0.0.0.0/0 (open allow
+      list), exposing the control plane.
     remediation: >
       Restreindre la liste d'autorisation de l'API server aux CIDR
       d'administration ; activer un accès privé.
+    remediation_en: >
+      Restrict the API server allow list to administration CIDRs; enable
+      private access.
     scsl: [CLD-K8S-1]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -596,12 +844,19 @@ controles:
   - code: kubernetes_cluster_control_plane_highly_available
     famille: compute
     titre: Plan de contrôle Kubernetes non hautement disponible
+    titre_en: Kubernetes control plane not highly available
     severite: high
     description: >
       Le plan de contrôle du cluster managé n'est pas réparti sur plusieurs zones
       (mono-master / mono-AZ) : la perte d'une zone interrompt le plan de contrôle.
+    description_en: >
+      The managed cluster's control plane is not spread across several zones
+      (single master / single AZ): losing one zone interrupts the control
+      plane.
     remediation: >
       Activer un plan de contrôle multi-AZ / multi-master sur le cluster managé.
+    remediation_en: >
+      Enable a multi-AZ / multi-master control plane on the managed cluster.
     scsl: [CLD-K8S-2]
     frameworks:
       secnumcloud_3_2: ["17.4"]
@@ -611,12 +866,18 @@ controles:
   - code: kubernetes_cluster_auto_upgrade_enabled
     famille: compute
     titre: Mises à jour automatiques du cluster Kubernetes désactivées
+    titre_en: Automatic Kubernetes cluster upgrades disabled
     severite: medium
     description: >
       Les mises à jour / patches automatiques du cluster managé sont désactivés :
       les correctifs de sécurité ne sont pas appliqués en temps voulu.
+    description_en: >
+      Automatic upgrades and patches of the managed cluster are disabled:
+      security fixes are not applied in time.
     remediation: >
       Activer la maintenance / mise à jour automatique du cluster.
+    remediation_en: >
+      Enable automatic maintenance and upgrades on the cluster.
     scsl: [CLD-K8S-3]
     frameworks:
       secnumcloud_3_2: ["12.11"]
@@ -626,14 +887,22 @@ controles:
   - code: compute_instance_deletion_protection
     famille: compute
     titre: Instance sans protection contre la suppression
+    titre_en: Instance without deletion protection
     severite: medium
     description: >
       Une instance de calcul n'a pas de protection contre la suppression : une
       commande accidentelle ou malveillante détruit le service et ses données
       locales, sans compromission préalable.
+    description_en: >
+      A compute instance has no deletion protection: an accidental or
+      malicious command destroys the service and its local data, with no prior
+      compromise.
     remediation: >
       Activer la protection contre la suppression sur les instances portant un
       service en production.
+    remediation_en: >
+      Enable deletion protection on the instances carrying a production
+      service.
     scsl: [CLD-CMP-10]
     frameworks:
     fournisseurs: [outscale]
@@ -641,12 +910,18 @@ controles:
   - code: kubernetes_cluster_deletion_protection
     famille: compute
     titre: Cluster Kubernetes sans protection contre la suppression
+    titre_en: Kubernetes cluster without deletion protection
     severite: medium
     description: >
       Le cluster managé n'a pas de protection contre la suppression : une action
       accidentelle ou malveillante peut détruire le cluster.
+    description_en: >
+      The managed cluster has no deletion protection: an accidental or
+      malicious action can destroy the cluster.
     remediation: >
       Activer la protection contre la suppression sur le cluster.
+    remediation_en: >
+      Enable deletion protection on the cluster.
     scsl: [CLD-K8S-3]
     frameworks:
     fournisseurs: [outscale]
@@ -655,13 +930,21 @@ controles:
   - code: objectstorage_bucket_versioning_enabled
     famille: stockage
     titre: Versioning du stockage objet désactivé
+    titre_en: Object storage versioning disabled
     severite: medium
     description: >
       Un bucket de stockage objet n'a pas le versioning activé : une suppression
       ou un écrasement (accidentel ou malveillant, ex. rançongiciel) est
       irréversible.
+    description_en: >
+      An object storage bucket does not have versioning enabled: a deletion or
+      an overwrite (accidental or malicious, ransomware for instance) is
+      irreversible.
     remediation: >
       Activer le versioning sur les buckets de données critiques (PutBucketVersioning).
+    remediation_en: >
+      Enable versioning on the buckets holding critical data
+      (PutBucketVersioning).
     scsl: [CLD-STO-4]
     frameworks:
       secnumcloud_3_2: ["12.5"]
@@ -672,15 +955,24 @@ controles:
   - code: objectstorage_bucket_object_lock_enabled
     famille: stockage
     titre: Object Lock (immutabilité) désactivé sur le stockage objet
+    titre_en: Object Lock (immutability) disabled on object storage
     severite: low
     description: >
       Un bucket de stockage objet n'a pas l'Object Lock (WORM) activé : ses objets
       peuvent être supprimés ou écrasés (accidentellement ou par un rançongiciel),
       sans garantie d'immutabilité. Recommandé pour les buckets de sauvegarde et
       les objets critiques.
+    description_en: >
+      An object storage bucket does not have Object Lock (WORM) enabled: its
+      objects can be deleted or overwritten (accidentally or by ransomware),
+      with no immutability guarantee. Recommended for backup buckets and
+      critical objects.
     remediation: >
       Activer l'Object Lock (mode conformité ou gouvernance) sur les buckets de
       sauvegarde et d'objets critiques, avec une période de rétention adaptée.
+    remediation_en: >
+      Enable Object Lock (compliance or governance mode) on backup buckets and
+      critical objects, with a suitable retention period.
     scsl: [CLD-STO-8]
     frameworks:
       secnumcloud_3_2: ["12.5"]
@@ -691,13 +983,21 @@ controles:
   - code: objectstorage_bucket_public_access
     famille: stockage
     titre: Stockage objet exposé publiquement
+    titre_en: Object storage publicly exposed
     severite: critical
     description: >
       Un bucket de stockage objet est accessible publiquement (ACL au groupe
       AllUsers, ACL « canned » public-read/-write, ou politique publique).
+    description_en: >
+      An object storage bucket is publicly accessible (ACL granting the
+      AllUsers group, a public-read/public-write canned ACL, or a public
+      policy).
     remediation: >
       Retirer l'accès public de l'ACL/la politique ; servir le contenu via des
       URLs signées si un accès externe est requis.
+    remediation_en: >
+      Remove public access from the ACL and from the policy; serve the content
+      through signed URLs if external access is required.
     scsl: [CLD-STO-1]
     frameworks:
       secnumcloud_3_2: ["9.7", "13.2"]
@@ -709,12 +1009,18 @@ controles:
   - code: blockstorage_snapshot_not_public
     famille: stockage
     titre: Instantané ou image partagé publiquement
+    titre_en: Snapshot or image shared publicly
     severite: high
     description: >
       Un instantané (snapshot) ou une image disque est partagé publiquement,
       exposant potentiellement des données ou des secrets.
+    description_en: >
+      A snapshot or a disk image is shared publicly, potentially exposing data
+      or secrets.
     remediation: >
       Retirer le partage public ; restreindre le partage aux comptes légitimes.
+    remediation_en: >
+      Remove the public sharing; restrict sharing to legitimate accounts.
     scsl: [CLD-STO-2]
     frameworks:
       secnumcloud_3_2: ["9.7", "13.2"]
@@ -726,13 +1032,20 @@ controles:
   - code: blockstorage_volume_snapshots_exist
     famille: stockage
     titre: Absence de sauvegarde récente
+    titre_en: No recent backup
     severite: high
     description: >
       Un volume de données en usage n'a pas d'instantané/sauvegarde récent : la
       restauration après incident n'est pas garantie.
+    description_en: >
+      A data volume in use has no recent snapshot or backup: restoring after
+      an incident is not guaranteed.
     remediation: >
       Mettre en place une politique de sauvegarde régulière avec test de
       restauration ; chiffrer et appliquer une rétention documentée.
+    remediation_en: >
+      Set up a regular backup policy with restore testing; encrypt the backups
+      and apply a documented retention.
     scsl: [CLD-STO-3]
     frameworks:
       secnumcloud_3_2: ["12.5"]
@@ -744,13 +1057,20 @@ controles:
   - code: loadbalancer_ssl_listeners
     famille: chiffrement
     titre: Chiffrement en transit absent
+    titre_en: No encryption in transit
     severite: high
     description: >
       Un répartiteur de charge exposé n'impose pas de listener TLS/HTTPS : le
       trafic transite en clair.
+    description_en: >
+      An exposed load balancer does not enforce a TLS/HTTPS listener: traffic
+      travels in cleartext.
     remediation: >
       Configurer un listener HTTPS/SSL (TLS ≥ 1.2) ; rediriger le trafic en
       clair vers HTTPS.
+    remediation_en: >
+      Configure an HTTPS/SSL listener (TLS 1.2 or above); redirect cleartext
+      traffic to HTTPS.
     scsl: [CLD-CHF-1]
     frameworks:
       secnumcloud_3_2: ["10.2"]
@@ -761,12 +1081,18 @@ controles:
   - code: loadbalancer_http_redirect_to_https
     famille: chiffrement
     titre: Listener HTTP sans redirection HTTPS
+    titre_en: HTTP listener without an HTTPS redirect
     severite: medium
     description: >
       Un répartiteur de charge expose un listener HTTP (port 80) : sans
       redirection vers HTTPS, le trafic peut transiter en clair.
+    description_en: >
+      A load balancer exposes an HTTP listener (port 80): without a redirect
+      to HTTPS, traffic can travel in cleartext.
     remediation: >
       Mettre en place une redirection 301 du listener HTTP:80 vers HTTPS.
+    remediation_en: >
+      Set up a 301 redirect from the HTTP:80 listener to HTTPS.
     scsl: [CLD-CHF-1]
     frameworks:
       secnumcloud_3_2: ["10.2"]
@@ -781,6 +1107,7 @@ controles:
   - code: blockstorage_volume_encryption
     famille: chiffrement
     titre: Chiffrement au repos désactivé
+    titre_en: Encryption at rest disabled
     severite: high
     description: >
       Un volume block storage n'a pas le chiffrement au repos activé. Le modèle
@@ -788,9 +1115,19 @@ controles:
       (Exoscale, conforme par construction), ou chiffrement côté invité à la
       charge du client et non exposé par l'API (Outscale, Scaleway : non
       applicable côté plateforme).
+    description_en: >
+      A block storage volume does not have encryption at rest enabled. The
+      model differs from one provider to the next: transparent encryption
+      always on (Exoscale, compliant by construction), or guest-side
+      encryption left to the customer and not exposed by the API (Outscale,
+      Scaleway: not applicable on the platform side).
     remediation: >
       Activer le chiffrement au repos du volume (transparent côté fournisseur, ou
       chiffrement client EncFS/LUKS selon le modèle de responsabilité partagée).
+    remediation_en: >
+      Enable encryption at rest on the volume (transparent on the provider
+      side, or client-side encryption with EncFS/LUKS, depending on the shared
+      responsibility model).
     scsl: [CLD-CHF-2]
     frameworks:
       secnumcloud_3_2: ["10.1"]
@@ -800,14 +1137,22 @@ controles:
   - code: objectstorage_bucket_default_encryption
     famille: chiffrement
     titre: Bucket sans chiffrement par défaut au repos
+    titre_en: Bucket without default encryption at rest
     severite: high
     description: >
       Un bucket de stockage objet n'a pas de chiffrement par défaut : les objets y
       sont écrits en clair côté fournisseur. Le chiffrement au repos est opt-in par
       bucket chez plusieurs fournisseurs souverains — son absence est un écart réel.
+    description_en: >
+      An object storage bucket has no default encryption: objects are written
+      in cleartext on the provider side. Encryption at rest is opt-in per
+      bucket at several sovereign providers — its absence is a real deviation.
     remediation: >
       Activer le chiffrement par défaut du bucket (SSE) et vérifier que les objets
       déjà déposés sont ré-écrits chiffrés.
+    remediation_en: >
+      Enable the bucket's default encryption (SSE) and check that the objects
+      already stored are rewritten encrypted.
     scsl: [CLD-CHF-2]
     frameworks:
       secnumcloud_3_2: ["10.1"]
@@ -817,6 +1162,7 @@ controles:
   - code: objectstorage_bucket_kms_encryption
     famille: chiffrement
     titre: Clé de chiffrement gérée par le client absente (BYOK) sur un bucket sensible
+    titre_en: No customer-managed encryption key (BYOK) on a sensitive bucket
     severite: medium
     description: >
       Un bucket de stockage objet portant des données classées sensibles n'utilise
@@ -824,9 +1170,18 @@ controles:
       restent sous le contrôle exclusif du fournisseur. Observable seulement là où
       l'API expose le chiffrement par défaut du bucket (Scaleway, via Key Manager) ;
       non applicable chez les fournisseurs sans clé client au niveau objet.
+    description_en: >
+      An object storage bucket holding data classified as sensitive does not
+      use a customer-managed encryption key (SSE-KMS / BYOK): its data stays
+      under the provider's exclusive control. Observable only where the API
+      exposes the bucket's default encryption (Scaleway, through Key Manager);
+      not applicable at providers without a customer key at the object level.
     remediation: >
       Créer une clé dans le gestionnaire de clés du fournisseur (Key Manager) et
       l'associer au bucket comme clé de chiffrement par défaut (SSE-KMS).
+    remediation_en: >
+      Create a key in the provider's key manager (Key Manager) and attach it
+      to the bucket as its default encryption key (SSE-KMS).
     scsl: [CLD-CHF-4]
     frameworks:
       secnumcloud_3_2: ["10.1", "10.5"]
@@ -837,13 +1192,20 @@ controles:
   - code: loadbalancer_logging_enabled
     famille: journalisation
     titre: Journalisation des accès désactivée
+    titre_en: Access logging disabled
     severite: medium
     description: >
       La piste d'audit / les journaux d'accès aux services exposés ne sont pas
       activés : un incident ne pourrait pas être investigué.
+    description_en: >
+      The audit trail and the access logs of the exposed services are not
+      enabled: an incident could not be investigated.
     remediation: >
       Activer la journalisation (piste d'audit, journaux d'accès) ; centraliser
       et conserver selon une politique de rétention.
+    remediation_en: >
+      Enable logging (audit trail, access logs); centralise the logs and keep
+      them according to a retention policy.
     scsl: [CLD-LOG-1]
     frameworks:
       secnumcloud_3_2: ["12.6"]
@@ -853,14 +1215,22 @@ controles:
   - code: kubernetes_cluster_audit_logging_enabled
     famille: journalisation
     titre: Journalisation d'audit du cluster Kubernetes désactivée
+    titre_en: Kubernetes cluster audit logging disabled
     severite: medium
     description: >
       L'audit Kubernetes du cluster managé n'est pas configuré (aucun endpoint
       d'audit) : les événements de sécurité du plan de contrôle ne sont pas
       collectés et un incident ne pourrait pas être investigué.
+    description_en: >
+      Kubernetes auditing is not configured on the managed cluster (no audit
+      endpoint): the control plane's security events are not collected, and an
+      incident could not be investigated.
     remediation: >
       Configurer l'audit Kubernetes du cluster (endpoint de collecte) ;
       centraliser et conserver les journaux selon une politique de rétention.
+    remediation_en: >
+      Configure the cluster's Kubernetes audit (collection endpoint);
+      centralise the logs and keep them according to a retention policy.
     scsl: [CLD-LOG-1]
     frameworks:
       secnumcloud_3_2: ["12.6"]
@@ -871,13 +1241,20 @@ controles:
   - code: governance_resource_required_tags
     famille: gouvernance
     titre: Inventaire et étiquetage incomplets
+    titre_en: Incomplete inventory and tagging
     severite: medium
     description: >
       Des ressources n'ont pas les étiquettes de gouvernance (propriétaire,
       projet, environnement) : l'inventaire et la responsabilité ne sont pas tenus.
+    description_en: >
+      Some resources do not carry the governance tags (owner, project,
+      environment): the inventory and the accountability are not maintained.
     remediation: >
       Imposer des étiquettes obligatoires (propriétaire, projet, environnement) ;
       contrôler leur présence à la création.
+    remediation_en: >
+      Enforce mandatory tags (owner, project, environment); check their
+      presence at creation time.
     scsl: [CLD-GVN-1]
     frameworks:
       secnumcloud_3_2: ["8.1"]
@@ -888,6 +1265,7 @@ controles:
   - code: governance_resource_region_in_eu
     famille: gouvernance
     titre: Ressource hébergée hors Union européenne
+    titre_en: Resource hosted outside the European Union
     severite: high
     description: >
       Une ressource est hébergée hors de l'Union européenne : la localisation des
@@ -895,9 +1273,19 @@ controles:
       (souveraineté). Deux niveaux : l'espace européen de confiance (EEE + Suisse),
       adéquat et sans loi extraterritoriale, est un écart mineur ; le reste (US,
       Asie…) est un écart majeur. L'exposition extraterritoriale relève de CLD-GVN-4.
+    description_en: >
+      A resource is hosted outside the European Union: the location of the
+      data, of the processing and of the administration must stay in the EU
+      (sovereignty). Two levels: the European trusted area (EEA plus
+      Switzerland), adequate and free of extraterritorial law, is a minor
+      deviation; anything else (US, Asia…) is a major one. Extraterritorial
+      exposure itself is covered by CLD-GVN-4.
     remediation: >
       Recréer ou migrer la ressource dans une région de l'Union européenne ;
       restreindre les régions autorisées au niveau de l'organisation.
+    remediation_en: >
+      Recreate or migrate the resource in a European Union region; restrict
+      the allowed regions at the organisation level.
     scsl: [CLD-GVN-3]
     frameworks:
       secnumcloud_3_2: ["19.2"]
@@ -906,6 +1294,7 @@ controles:
   - code: governance_provider_sovereignty
     famille: gouvernance
     titre: Souveraineté du fournisseur non établie
+    titre_en: Provider sovereignty not established
     severite: high
     description: >
       Le fournisseur cloud n'est pas établi dans l'Union européenne, ou son contrôle
@@ -913,10 +1302,20 @@ controles:
       extraterritoriale sans immunité reconnue (qualification SecNumCloud) : les
       données et le plan de contrôle sont susceptibles d'être soumis à une juridiction
       étrangère.
+    description_en: >
+      The cloud provider is not established in the European Union, or its
+      non-EU capital control is decisive, or it is exposed to an
+      extraterritorial law without recognised immunity (SecNumCloud
+      qualification): the data and the control plane may fall under a foreign
+      jurisdiction.
     remediation: >
       Pour une exigence souveraine, retenir un fournisseur établi dans l'UE, au
       contrôle capitalistique européen, idéalement qualifié SecNumCloud (immunité
       reconnue par l'ANSSI).
+    remediation_en: >
+      For a sovereignty requirement, pick a provider established in the EU,
+      under European capital control, ideally SecNumCloud qualified (immunity
+      recognised by the ANSSI).
     scsl: [CLD-GVN-4]
     frameworks:
       secnumcloud_3_2: ["19.2", "19.6"]
@@ -928,12 +1327,18 @@ controles:
   - code: compute_image_not_public
     famille: stockage
     titre: Image machine partagée publiquement
+    titre_en: Machine image shared publicly
     severite: high
     description: >
       Une image machine (OMI/template) est partagée publiquement : quiconque peut la
       lancer, exposant les données ou secrets embarqués dans l'image.
+    description_en: >
+      A machine image (OMI/template) is shared publicly: anyone can launch it,
+      exposing the data or the secrets baked into the image.
     remediation: >
       Retirer le partage public de l'image ; la réserver aux comptes légitimes.
+    remediation_en: >
+      Remove the image's public sharing; reserve it for legitimate accounts.
     scsl: [CLD-STO-2]
     frameworks:
       secnumcloud_3_2: ["9.7"]
@@ -946,14 +1351,22 @@ controles:
   - code: network_securitygroup_default_deny
     famille: reseau
     titre: Politique entrante par défaut d'un groupe de sécurité en « accept »
+    titre_en: Security group inbound default policy set to "accept"
     severite: high
     description: >
       La politique par défaut en entrée d'un groupe de sécurité est « accept » : tout
       trafic non explicitement filtré est admis (any/any implicite), quel que soit le
       jeu de règles explicites.
+    description_en: >
+      A security group's default inbound policy is "accept": any traffic not
+      explicitly filtered is admitted (implicit any/any), whatever the
+      explicit rule set says.
     remediation: >
       Basculer la politique entrante par défaut sur « drop » et n'ouvrir que les flux
       légitimes par des règles explicites.
+    remediation_en: >
+      Switch the default inbound policy to "drop" and open only the legitimate
+      flows through explicit rules.
     scsl: [CLD-NET-2]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -965,13 +1378,21 @@ controles:
   - code: network_subnet_no_public_ip_by_default
     famille: reseau
     titre: Sous-réseau attribuant une IP publique par défaut
+    titre_en: Subnet assigning a public IP by default
     severite: medium
     description: >
       Un sous-réseau attribue automatiquement une IP publique à toute interface créée :
       les machines sont exposées à Internet par défaut, sans décision explicite.
+    description_en: >
+      A subnet automatically assigns a public IP to every interface created in
+      it: machines are exposed to the internet by default, with no explicit
+      decision.
     remediation: >
       Désactiver l'attribution automatique d'IP publique du sous-réseau ; n'attribuer
       une IP publique qu'aux interfaces qui le nécessitent.
+    remediation_en: >
+      Disable the subnet's automatic public IP assignment; assign a public IP
+      only to the interfaces that need one.
     scsl: [CLD-NET-3]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -983,13 +1404,20 @@ controles:
   - code: database_service_not_open_to_internet
     famille: reseau
     titre: Base de données managée joignable depuis Internet
+    titre_en: Managed database reachable from the internet
     severite: high
     description: >
       La liste d'IP autorisées (ACL) d'une base de données managée admet un CIDR
       public : le service de base de données est joignable depuis Internet.
+    description_en: >
+      The allowed IP list (ACL) of a managed database admits a public CIDR:
+      the database service is reachable from the internet.
     remediation: >
       Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand
       disponible) ; retirer 0.0.0.0/0.
+    remediation_en: >
+      Restrict the database ACL to the application CIDRs only (a private
+      network where one is available); remove 0.0.0.0/0.
     scsl: [CLD-NET-1]
     frameworks:
       secnumcloud_3_2: ["13.2"]
@@ -1001,12 +1429,19 @@ controles:
   - code: database_encryption_at_rest_enabled
     famille: chiffrement
     titre: Base de données managée sans chiffrement au repos
+    titre_en: Managed database without encryption at rest
     severite: high
     description: >
       Une base de données managée n'a pas le chiffrement au repos activé : en cas
       d'accès au support de stockage, les données sont lisibles en clair.
+    description_en: >
+      A managed database does not have encryption at rest enabled: should the
+      storage media be accessed, the data is readable in cleartext.
     remediation: >
       Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
+    remediation_en: >
+      Enable encryption at rest on the instance (at creation time, or through
+      an upgrade).
     scsl: [CLD-CHF-2]
     frameworks:
       secnumcloud_3_2: ["10.1"]
@@ -1018,12 +1453,18 @@ controles:
   - code: database_backup_enabled
     famille: stockage
     titre: Sauvegardes automatiques d'une base managée désactivées
+    titre_en: Automatic backups disabled on a managed database
     severite: high
     description: >
       Les sauvegardes automatiques d'une base de données managée sont désactivées :
       pas de restauration garantie après incident ou suppression.
+    description_en: >
+      Automatic backups of a managed database are disabled: there is no
+      guaranteed restore after an incident or a deletion.
     remediation: >
       Réactiver les sauvegardes automatiques et fixer une rétention adaptée au RPO.
+    remediation_en: >
+      Re-enable automatic backups and set a retention that matches the RPO.
     scsl: [CLD-STO-3]
     frameworks:
       secnumcloud_3_2: ["12.5"]

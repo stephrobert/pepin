@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"unicode"
 
 	yaml "go.yaml.in/yaml/v3"
 )
@@ -321,6 +322,74 @@ func TestFrameworkReferencesExist(t *testing.T) {
 			for _, id := range ids {
 				if !known[id] {
 					t.Errorf("contrôle %q référence %s %q, absent du catalogue frameworks/%s.yaml", code, fw, id, fw)
+				}
+			}
+		}
+	}
+}
+
+// TestEveryControlIsBilingual — tout contrôle porte ses trois champs anglais.
+//
+// Pépin est bilingue et la langue est DÉTECTÉE : un lecteur anglophone reçoit
+// `titre_en`, `description_en`, `remediation_en`. Le rendu dégrade proprement
+// vers le français quand la traduction manque (referentiel.Control.TitreIn), et
+// c'est précisément ce qu'il ne faut PAS découvrir en production : une sortie
+// anglaise qui bascule au français au milieu d'un tableau est le défaut que
+// l'internationalisation vient corriger. La porte est donc ici, en CI.
+//
+// Le seuil de longueur n'est pas cosmétique : « N/A », « TODO » ou une chaîne
+// vide passeraient une simple vérification de présence tout en ne disant rien.
+func TestEveryControlIsBilingual(t *testing.T) {
+	const minProse = 20 // description/remédiation : une phrase actionnable, pas un marqueur
+	for code, ctl := range byCode {
+		champs := []struct {
+			nom, fr, en string
+			min         int
+		}{
+			{"titre_en", ctl.Titre, ctl.TitreEn, 5},
+			{"description_en", ctl.Description, ctl.DescriptionEn, minProse},
+			{"remediation_en", ctl.Remediation, ctl.RemediationEn, minProse},
+		}
+		for _, c := range champs {
+			if strings.TrimSpace(c.fr) == "" {
+				t.Errorf("contrôle %q : champ français de %s vide — le français est la langue de référence", code, c.nom)
+			}
+			en := strings.TrimSpace(c.en)
+			if en == "" {
+				t.Errorf("contrôle %q : %s absent — un contrôle sans traduction ferait basculer la sortie anglaise au français", code, c.nom)
+				continue
+			}
+			if len(en) < c.min {
+				t.Errorf("contrôle %q : %s trop court (%d octets) pour dire quoi que ce soit d'actionnable : %q", code, c.nom, len(en), en)
+			}
+			if en == strings.TrimSpace(c.fr) {
+				t.Errorf("contrôle %q : %s est identique au français — la traduction n'a pas été faite", code, c.nom)
+			}
+		}
+	}
+}
+
+// TestEnglishControlFieldsCarryNoAccent — les champs anglais ne portent aucune
+// lettre accentuée.
+//
+// C'est le critère d'acceptation « LANG=en ne produit aucun caractère accenté »,
+// vérifié à la SOURCE plutôt que sur une sortie : le référentiel alimente le
+// titre du tableau, l'evidence de l'assessment et l'OSCAL. Un « é » oublié dans
+// un titre traduit se retrouverait dans les quatre formats à la fois.
+//
+// Seules les LETTRES sont testées : « — », « … » et « · » sont de la ponctuation,
+// légitime en anglais, et les noms de ressources ne transitent pas par ce fichier.
+func TestEnglishControlFieldsCarryNoAccent(t *testing.T) {
+	for code, ctl := range byCode {
+		for nom, v := range map[string]string{
+			"titre_en":       ctl.TitreEn,
+			"description_en": ctl.DescriptionEn,
+			"remediation_en": ctl.RemediationEn,
+		} {
+			for _, r := range v {
+				if r > unicode.MaxASCII && unicode.IsLetter(r) {
+					t.Errorf("contrôle %q, %s : lettre non ASCII %q dans %q", code, nom, r, v)
+					break
 				}
 			}
 		}

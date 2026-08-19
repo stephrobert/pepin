@@ -10,22 +10,34 @@ import (
 	"fmt"
 
 	yaml "go.yaml.in/yaml/v3"
+
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 //go:embed controles.yaml
 var raw []byte
 
 // Control est un contrôle agnostique du référentiel.
+//
+// Les champs de PROSE sont bilingues : le français est la langue de référence du
+// contenu normatif, `*En` en est la traduction anglaise. Les deux vivent dans le
+// MÊME fichier versionné — une source de vérité unique, dont `mise run validate`
+// exige la complétude (TestEveryControlIsBilingual). Ne pas les lire directement
+// pour un affichage : passer par TitreIn/DescriptionIn/RemediationIn, qui portent
+// la dégradation vers le français.
 type Control struct {
-	Code         string              `yaml:"code"`
-	Famille      string              `yaml:"famille"`
-	Titre        string              `yaml:"titre"`
-	Severite     string              `yaml:"severite"`
-	Description  string              `yaml:"description"`
-	Remediation  string              `yaml:"remediation"`
-	Scsl         []string            `yaml:"scsl"`
-	Frameworks   map[string][]string `yaml:"frameworks"`
-	Fournisseurs []string            `yaml:"fournisseurs"`
+	Code          string              `yaml:"code"`
+	Famille       string              `yaml:"famille"`
+	Titre         string              `yaml:"titre"`
+	TitreEn       string              `yaml:"titre_en"`
+	Severite      string              `yaml:"severite"`
+	Description   string              `yaml:"description"`
+	DescriptionEn string              `yaml:"description_en"`
+	Remediation   string              `yaml:"remediation"`
+	RemediationEn string              `yaml:"remediation_en"`
+	Scsl          []string            `yaml:"scsl"`
+	Frameworks    map[string][]string `yaml:"frameworks"`
+	Fournisseurs  []string            `yaml:"fournisseurs"`
 }
 
 type catalog struct {
@@ -57,6 +69,21 @@ func All() map[string]Control { return byCode }
 // Raw retourne le référentiel embarqué (controles.yaml) tel quel : sévérités, références
 // normatives et fournisseurs déterminent le résultat, donc entrent dans la provenance.
 func Raw() []byte { return raw }
+
+// TitreIn retourne le titre du contrôle dans la langue demandée. Une traduction
+// absente rend le français : le rendu montre toujours quelque chose, et c'est la
+// CI qui refuse l'absence, pas l'utilisateur qui découvre un titre vide.
+func (c Control) TitreIn(l i18n.Lang) string { return i18n.PickIn(l, c.Titre, c.TitreEn) }
+
+// DescriptionIn retourne la description du contrôle dans la langue demandée.
+func (c Control) DescriptionIn(l i18n.Lang) string {
+	return i18n.PickIn(l, c.Description, c.DescriptionEn)
+}
+
+// RemediationIn retourne la remédiation du contrôle dans la langue demandée.
+func (c Control) RemediationIn(l i18n.Lang) string {
+	return i18n.PickIn(l, c.Remediation, c.RemediationEn)
+}
 
 // SCSL retourne le premier id SCSL (CLD-*) du contrôle, ou "" s'il n'y en a pas.
 func (c Control) SCSL() string {
