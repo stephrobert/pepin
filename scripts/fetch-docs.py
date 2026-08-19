@@ -16,6 +16,9 @@ Usage :
     python3 scripts/fetch-docs.py [provider ...]   # tous, ou ceux listés
     REFRESH=1 python3 scripts/fetch-docs.py …       # réécrit même les pages en cache
 Reprise : par défaut une page déjà en cache est sautée (idempotent, reprenable).
+
+Dépendances épinglées dans scripts/requirements.txt :
+    python3 -m pip install -r scripts/requirements.txt
 """
 from __future__ import annotations
 

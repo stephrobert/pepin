@@ -1,0 +1,12 @@
+# Dépendances de scripts/fetch-docs.py, ÉPINGLÉES.
+#
+# Ce script n'est jamais lancé en CI : c'est un outil de mainteneur. Le risque
+# n'est donc pas l'exécution mais l'ANCRAGE — le cache qu'il produit sous
+# references/docs/ sert ensuite de « source de contrat vérifiable » (CLAUDE.md
+# §2, skill ancrage-contrat). Une chaîne d'extraction non épinglée fait varier
+# en silence ce sur quoi les contrôles sont ancrés.
+#
+# Installation :
+#     python3 -m pip install -r scripts/requirements.txt
+trafilatura==2.1.0
+PyYAML==6.0.1

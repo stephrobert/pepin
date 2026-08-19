@@ -79,6 +79,13 @@ downloaded.
 - `gh` must be authenticated for the preflight to ask CI about the commit.
 - Moving the CHANGELOG entries is writing, not generation, in both languages.
 
+> **The preflight is a local check, not a gate.** Nothing ties the tag to having
+> run it: `git tag && git push` publishes a full signed, attested release on its
+> own. `release.yml` therefore replays the offline-verifiable gates in a `gate`
+> job that every publishing job depends on. Closing the remaining gap is a
+> **GitHub tag ruleset** on `v*` restricting tag creation to maintainers — repo
+> configuration, so it lives outside this repository and has to be set there.
+
 ## What the tag triggers
 
 `.github/workflows/release.yml`, on `v*`:
