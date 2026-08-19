@@ -27,6 +27,10 @@ var injectedPages = []string{
 	"docs/reference/cli.fr.md",
 	"docs/reference/exit-codes.md",
 	"docs/reference/exit-codes.fr.md",
+	"docs/reference/output-formats.md",
+	"docs/reference/output-formats.fr.md",
+	"docs/concepts/terraform-vs-live.md",
+	"docs/concepts/terraform-vs-live.fr.md",
 }
 
 // generatedPages : les pages entièrement calculées, sans une ligne écrite à la main.
