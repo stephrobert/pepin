@@ -23,6 +23,25 @@ belongs in `git log`.
 
 ### Added
 
+- **Wave 3 of the documentation: the control catalogue is generated, and the
+  project explains itself.** One generated page per control under `docs/controls/`
+  (what it concludes, from which source, with which reason when it cannot), a
+  remediation guide that shows the same control moving from `fail` to `pass` on the
+  repository's own example plans, an architecture page that argues the central choice
+  — one common rule set, the source is what changes per cloud — and two contribution
+  guides, adding a control and adding a provider, each ending in a checklist usable as
+  is. A public `ROADMAP.md` replaces the internal working document that used to sit in
+  the product documentation.
+
+- **Exoscale is the first provider with a complete set of deployable remediation
+  proofs**: 26 of 26, bringing the repository from 4 to 26 out of 95. Twenty
+  self-contained Terraform modules, checked with `terraform init -backend=false` and
+  `terraform validate` against the real provider schema, plus two documented notes
+  where Terraform cannot express the fix (provider sovereignty, account MFA).
+  `TestExoscaleRemediationCoverageStaysComplete` now fails the build when an exoscale
+  control lands without its proof; the other providers stay outside that guard until
+  they reach 100 %.
+
 - **Wave 2 of the product documentation: ten pages, generated where they can be.**
   A CLI reference built from the frozen surface and from real `--help` runs, the
   exit-code contract shown as six executions with the code each one returned, the
