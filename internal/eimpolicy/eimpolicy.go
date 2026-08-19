@@ -42,6 +42,13 @@ const maxRespBytes = 64 << 20 // 64 Mio
 
 // CollectInlinePolicies parcourt les utilisateurs EIM et projette chaque politique inline
 // en ressource `iam_policy` (scope: inline). `baseURL` est l'URL de l'OAPI déjà substituée.
+// PolicyAttributes énumère les attributs communs d'une politique EIM inline.
+// Déclaré à côté du collecteur qui les pose, et lu par le catalogue de
+// l'inventaire (genprovider.InventoryCatalogue).
+func PolicyAttributes() []string {
+	return []string{"owner_group", "owner_user", "policy_id", "policy_name", "scope", "statements"}
+}
+
 func CollectInlinePolicies(ctx context.Context, hc *http.Client, provider, baseURL string, auth collect.Auth) ([]model.Resource, error) {
 	// L'OAPI plafonne toute page à 100 items (MaxResultsLimit) et signale la suite par
 	// HasMoreItems : sans pagination, les utilisateurs 101+ — et donc leurs politiques

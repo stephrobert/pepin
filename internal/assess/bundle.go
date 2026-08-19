@@ -13,6 +13,7 @@ import (
 	screport "github.com/stephrobert/scankit/report"
 
 	"github.com/stephrobert/pepin/internal/i18n"
+	"github.com/stephrobert/pepin/internal/model"
 )
 
 // BundleFormat identifie le schéma du bundle de preuve, version comprise (`/vN`).
@@ -21,7 +22,12 @@ import (
 // s'arrêter plutôt que deviner. La forme du bundle (fichiers, rôles, manifest)
 // est gelée par cmd/testdata/frozen/bundle.json : la changer sans incrémenter le
 // suffixe `/vN` fait échouer TestASurfaceChangeDemandsItsVersionBump.
-const BundleFormat = "pepin-assessment-bundle/v1"
+// v2 : le manifeste porte la version du schéma d'inventaire (l'inventaire est un
+// contrat, cf. internal/model.InventoryFormat) et le résumé des DÉROGATIONS
+// appliquées ; le bundle gagne l'artefact exemptions.json quand une politique de
+// dérogations a été appliquée. Un dossier qui tait ses exemptions n'est pas
+// opposable, donc elles sont scellées comme le reste.
+const BundleFormat = "pepin-assessment-bundle/v2"
 
 // ScopeDisclaimer : avertissement de PORTÉE, obligatoire pour l'opposabilité. pepin évalue la
 // configuration d'un TENANT (périmètre commanditaire) ; les référentiels cités (SecNumCloud,
@@ -48,15 +54,45 @@ func ScopeDisclaimerIn(l i18n.Lang) string {
 // status, and the digest of every artifact. Sealing it (a detached signature over
 // checksums.txt) is left to the operator's own identity — see `pepin verify`.
 type Manifest struct {
-	Format     string               `json:"format"`
-	Disclaimer string               `json:"disclaimer"` // portée prestataire/commanditaire (opposabilité)
-	Generated  string               `json:"generated"`  // Run.Timestamp (RFC3339 UTC)
-	Tool       assessment.Component `json:"tool"`
-	Ruleset    assessment.Component `json:"ruleset"`
-	Target     assessment.Target    `json:"target"`
-	Source     string               `json:"source"`
-	Summary    map[string]int       `json:"summary"` // status -> count
-	Artifacts  []Artifact           `json:"artifacts"`
+	Format string `json:"format"`
+	// InventorySchema : la version du schéma de l'inventaire normalisé que porte
+	// input.json. Elle VOYAGE avec le bundle pour qu'un consommateur sache quelle
+	// forme il lit, au lieu de la déduire de ce qu'il y trouve.
+	InventorySchema string               `json:"inventory_schema"`
+	Disclaimer      string               `json:"disclaimer"` // portée prestataire/commanditaire (opposabilité)
+	Generated       string               `json:"generated"`  // Run.Timestamp (RFC3339 UTC)
+	Tool            assessment.Component `json:"tool"`
+	Ruleset         assessment.Component `json:"ruleset"`
+	Target          assessment.Target    `json:"target"`
+	Source          string               `json:"source"`
+	Summary         map[string]int       `json:"summary"` // status -> count
+	// Exemptions : l'effet des dérogations sur CE dossier. Absent quand aucune
+	// politique n'a été fournie ; jamais silencieux quand il y en a une.
+	Exemptions *ExemptionSummary `json:"exemptions,omitempty"`
+	Artifacts  []Artifact        `json:"artifacts"`
+}
+
+// ExemptionSummary résume, dans le manifeste, ce que les dérogations ont changé.
+// Le détail est dans exemptions.json, lui aussi empreint et signé ; ce résumé est
+// ce qu'un vérificateur lit AVANT d'ouvrir le reste.
+type ExemptionSummary struct {
+	// PolicyDigest : empreinte de la politique appliquée (contenu normalisé).
+	PolicyDigest string `json:"policy_digest"`
+	// Applied / Expired / Orphan : combien de dérogations ont écarté un écart,
+	// combien étaient échues, combien visaient un contrôle ou une ressource absents.
+	Applied int `json:"applied"`
+	Expired int `json:"expired"`
+	Orphan  int `json:"orphan"`
+}
+
+// BundleExtras porte ce qui s'ajoute au trio input/assessment/OSCAL. Un struct
+// plutôt qu'un paramètre de plus : la liste des artefacts d'un bundle grandira
+// encore, et une signature à sept positions se lit mal au point de se tromper.
+type BundleExtras struct {
+	// Exemptions : le document exemptions.json (nil = aucune politique fournie).
+	Exemptions []byte
+	// ExemptionSummary : son résumé, porté par le manifeste.
+	ExemptionSummary *ExemptionSummary
 }
 
 // Artifact is one file of the bundle with its digest, so any tampering is detectable.
@@ -93,7 +129,7 @@ func canonical(a assessment.Assessment) assessment.Assessment {
 // assessment (JSON), its OSCAL assessment-results, a manifest with per-artifact digests, and a
 // checksums.txt an operator can sign. `inputJSON` is the inventory the rules were evaluated on
 // (nil to omit). Returns the path of checksums.txt (the thing to sign).
-func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string, error) {
+func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte, extras BundleExtras) (string, error) {
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return "", fmt.Errorf(i18n.T("création du dossier bundle %s : %w", "creating the bundle directory %s: %w"), dir, err)
 	}
@@ -136,16 +172,27 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string,
 			data       []byte
 		}{{"input.json", "evaluated-input", inputJSON}}, files...)
 	}
+	if extras.Exemptions != nil {
+		// La dérogation APPLIQUÉE fait partie de la preuve : elle entre au bundle,
+		// donc au checksums.txt que l'opérateur signe. Le digest du dossier dépend
+		// ainsi des exemptions, et un dossier ne peut pas les taire sans se trahir.
+		files = append(files, struct {
+			name, role string
+			data       []byte
+		}{"exemptions.json", "applied-exemptions", extras.Exemptions})
+	}
 
 	manifest := Manifest{
-		Format:     BundleFormat,
-		Disclaimer: ScopeDisclaimer(),
-		Generated:  a.Run.Timestamp,
-		Tool:       a.Run.Tool,
-		Ruleset:    a.Run.Ruleset,
-		Target:     a.Run.Target,
-		Source:     a.Run.Source,
-		Summary:    summaryOf(a),
+		Format:          BundleFormat,
+		InventorySchema: model.InventoryFormat,
+		Disclaimer:      ScopeDisclaimer(),
+		Generated:       a.Run.Timestamp,
+		Tool:            a.Run.Tool,
+		Ruleset:         a.Run.Ruleset,
+		Target:          a.Run.Target,
+		Source:          a.Run.Source,
+		Summary:         summaryOf(a),
+		Exemptions:      extras.ExemptionSummary,
 	}
 	var checksums string
 	for _, f := range files {

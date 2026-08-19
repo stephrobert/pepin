@@ -59,6 +59,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/stephrobert/pepin/internal/assess"
+	"github.com/stephrobert/pepin/internal/genprovider"
+	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/internal/scoring"
 	"github.com/stephrobert/scankit/assessment"
 	"github.com/stephrobert/scankit/finding"
@@ -160,6 +162,7 @@ func observedSurfaces(t *testing.T) []frozenSurface {
 		{name: "assessment", version: assess.AssessmentSurfaceVersion,
 			content: mustJSON(t, typeTree(reflect.TypeOf(assessment.Assessment{}), nil))},
 		{name: "bundle", version: bundleFormatVersion(t), content: mustJSON(t, bundleSurface(t))},
+		{name: "inventory", version: model.InventorySchemaVersion(), content: mustJSON(t, inventorySurface(t))},
 	}
 	if os.Getenv("PEPIN_UPDATE_FROZEN") != "" {
 		for _, s := range surfaces {
@@ -211,7 +214,7 @@ func bundleSurface(t *testing.T) map[string]any {
 	t.Helper()
 	dir := t.TempDir()
 	a := assessment.Assessment{Run: assessment.Run{Timestamp: "1970-01-01T00:00:00Z"}}
-	if _, err := assess.WriteBundle(dir, a, []byte("{}\n")); err != nil {
+	if _, err := assess.WriteBundle(dir, a, []byte("{}\n"), assess.BundleExtras{}); err != nil {
 		t.Fatalf("écriture du bundle témoin : %v", err)
 	}
 	raw, err := os.ReadFile(filepath.Join(dir, "manifest.json")) // #nosec G304 -- dossier de test.
@@ -226,11 +229,70 @@ func bundleSurface(t *testing.T) map[string]any {
 	for _, art := range m.Artifacts {
 		files[art.File] = art.Role
 	}
+	// Un second bundle, celui-là AVEC des dérogations : l'artefact qui les scelle
+	// est conditionnel, et une surface gelée sur le seul cas sans dérogation ne
+	// dirait rien du cas qui compte — celui où le dossier doit prouver ce qu'il a
+	// écarté.
+	for file, role := range bundleWithExemptions(t) {
+		files[file] = role
+	}
 	return map[string]any{
 		"format":   assess.BundleFormat,
 		"files":    files,
 		"manifest": typeTree(reflect.TypeOf(assess.Manifest{}), nil),
 	}
+}
+
+// inventorySurface gèle le CONTRAT de l'inventaire normalisé : la forme de
+// l'enveloppe et de la ressource (dérivée du type Go, donc du contrat lui-même) et
+// le VOCABULAIRE — chaque type de ressource et les attributs communs qu'il peut
+// porter, dérivés des descripteurs et des collecteurs.
+//
+// Geler le vocabulaire est délibéré, et son coût est assumé : ajouter un attribut
+// à un descripteur fera rougir ce test, et demandera l'incrément de
+// model.InventoryFormat plus sa ligne de CHANGELOG. C'est exactement le sens de
+// « l'inventaire cesse d'être un détail d'implémentation » : le nombre dit « la
+// forme a changé », et un consommateur qui lit `manifest.inventory_schema` sait
+// alors qu'il a quelque chose à relire.
+func inventorySurface(t *testing.T) map[string]any {
+	t.Helper()
+	// Les descripteurs sont chargés ICI, explicitement : le catalogue en dérive, et
+	// une surface gelée qui dépendrait de l'ordre d'exécution des tests gèlerait
+	// tantôt le vocabulaire complet, tantôt celui des seuls collecteurs Go.
+	ensureProvidersRegistered(t)
+	return map[string]any{
+		"format":   model.InventoryFormat,
+		"envelope": typeTree(reflect.TypeOf(model.Posture{}), nil),
+		"types":    genprovider.InventoryCatalogue(),
+	}
+}
+
+// bundleWithExemptions écrit un bundle portant une politique de dérogations et rend
+// ses fichiers avec leurs rôles.
+func bundleWithExemptions(t *testing.T) map[string]string {
+	t.Helper()
+	dir := t.TempDir()
+	a := assessment.Assessment{Run: assessment.Run{Timestamp: "1970-01-01T00:00:00Z"}}
+	extras := assess.BundleExtras{
+		Exemptions:       []byte("{}\n"),
+		ExemptionSummary: &assess.ExemptionSummary{PolicyDigest: "sha256:0", Applied: 1},
+	}
+	if _, err := assess.WriteBundle(dir, a, []byte("{}\n"), extras); err != nil {
+		t.Fatalf("écriture du bundle témoin avec dérogations : %v", err)
+	}
+	raw, err := os.ReadFile(filepath.Join(dir, "manifest.json")) // #nosec G304 -- dossier de test.
+	if err != nil {
+		t.Fatalf("lecture du manifest témoin : %v", err)
+	}
+	var m assess.Manifest
+	if err := json.Unmarshal(raw, &m); err != nil {
+		t.Fatalf("manifest témoin invalide : %v", err)
+	}
+	out := map[string]string{}
+	for _, art := range m.Artifacts {
+		out[art.File] = art.Role
+	}
+	return out
 }
 
 // bundleFormatVersion extrait la version de surface du suffixe /vN de

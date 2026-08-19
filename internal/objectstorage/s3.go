@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -152,6 +153,18 @@ var bucketAttrCall = map[string]string{
 	"default_encryption_enabled": "s3:GetBucketEncryption",
 	"sse_kms_enabled":            "s3:GetBucketEncryption",
 	"kms_key_id":                 "s3:GetBucketEncryption",
+}
+
+// BucketAttributes énumère les attributs communs qu'un bucket peut porter. Dérivé
+// de la table des appels, donc impossible à laisser diverger du collecteur : le
+// catalogue de l'inventaire (genprovider.InventoryCatalogue) s'y adosse.
+func BucketAttributes() []string {
+	out := make([]string, 0, len(bucketAttrCall))
+	for a := range bucketAttrCall {
+		out = append(out, a)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // bucketAttrDerived : les attributs CALCULÉS depuis la réponse (un booléen déduit

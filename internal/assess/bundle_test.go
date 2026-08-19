@@ -27,7 +27,7 @@ func bundleAssessment() assessment.Assessment {
 
 func TestWriteAndVerifyBundle(t *testing.T) {
 	dir := t.TempDir()
-	cs, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`))
+	cs, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`), BundleExtras{})
 	if err != nil {
 		t.Fatalf("WriteBundle: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestWriteAndVerifyBundle(t *testing.T) {
 
 func TestVerifyDetectsTampering(t *testing.T) {
 	dir := t.TempDir()
-	if _, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`)); err != nil {
+	if _, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`), BundleExtras{}); err != nil {
 		t.Fatal(err)
 	}
 	// Tamper with the assessment after sealing.
@@ -63,7 +63,7 @@ func TestVerifyDetectsTampering(t *testing.T) {
 func TestVerifyManifestChecksumBijection(t *testing.T) {
 	// Retirer un artefact de checksums.txt (il ne serait plus vérifié) : rejeté via le manifeste.
 	dir := t.TempDir()
-	if _, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`)); err != nil {
+	if _, err := WriteBundle(dir, bundleAssessment(), []byte(`{"resources":[]}`), BundleExtras{}); err != nil {
 		t.Fatal(err)
 	}
 	cs := filepath.Join(dir, "checksums.txt")
@@ -84,10 +84,10 @@ func TestVerifyManifestChecksumBijection(t *testing.T) {
 
 func TestBundleDeterministic(t *testing.T) {
 	d1, d2 := t.TempDir(), t.TempDir()
-	if _, err := WriteBundle(d1, bundleAssessment(), []byte(`{"resources":[]}`)); err != nil {
+	if _, err := WriteBundle(d1, bundleAssessment(), []byte(`{"resources":[]}`), BundleExtras{}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := WriteBundle(d2, bundleAssessment(), []byte(`{"resources":[]}`)); err != nil {
+	if _, err := WriteBundle(d2, bundleAssessment(), []byte(`{"resources":[]}`), BundleExtras{}); err != nil {
 		t.Fatal(err)
 	}
 	// Same run (same timestamp) → identical assessment digest in checksums.txt.

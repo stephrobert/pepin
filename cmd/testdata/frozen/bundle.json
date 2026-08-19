@@ -45,6 +45,60 @@
           }
         }
       }
+    },
+    {
+      "schema_version": 2,
+      "content": {
+        "files": {
+          "assessment-oscal.json": "oscal-assessment-results",
+          "assessment.json": "assessment",
+          "checksums.txt": "checksums",
+          "exemptions.json": "applied-exemptions",
+          "input.json": "evaluated-input",
+          "manifest.json": "manifest"
+        },
+        "format": "pepin-assessment-bundle/v2",
+        "manifest": {
+          "artifacts": [
+            {
+              "bytes": "number",
+              "file": "string",
+              "role": "string",
+              "sha256": "string"
+            }
+          ],
+          "disclaimer": "string",
+          "exemptions": {
+            "applied": "number",
+            "expired": "number",
+            "orphan": "number",
+            "policy_digest": "string"
+          },
+          "format": "string",
+          "generated": "string",
+          "inventory_schema": "string",
+          "ruleset": {
+            "digest": "string",
+            "name": "string",
+            "version": "string"
+          },
+          "source": "string",
+          "summary": {
+            "*": "number"
+          },
+          "target": {
+            "id": "string",
+            "platform": "string",
+            "provider": "string",
+            "region": "string"
+          },
+          "tool": {
+            "digest": "string",
+            "name": "string",
+            "version": "string"
+          }
+        }
+      }
     }
   ]
 }

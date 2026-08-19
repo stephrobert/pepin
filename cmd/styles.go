@@ -14,4 +14,9 @@ var (
 	titre    = lipgloss.NewStyle().Foreground(colTexte).Bold(true)
 	muted    = lipgloss.NewStyle().Foreground(colMuted)
 	errStyle = lipgloss.NewStyle().Foreground(colRouge)
+
+	// exemptStyle : les dérogations appliquées. En ambre et en gras, parce qu'une
+	// exemption discrète est une exemption qu'on oublie de revoir — et parce qu'elle
+	// n'est PAS une conformité : la couleur ne doit pas être celle d'un succès.
+	exemptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#f0a338")).Bold(true)
 )
