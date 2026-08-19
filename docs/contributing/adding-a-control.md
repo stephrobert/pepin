@@ -323,10 +323,14 @@ The `remediation` and `remediation_en` fields of step 4 are mandatory and gated 
 [the remediation guide](../guides/remediation.md). It is the difference between telling
 the reader what to do and showing them the setup that does it.
 
-## 12. Regenerate the derived documentation
+## 12. Document the change — the step the procedure now makes explicit
 
-The control catalogue, the coverage matrix and every command output shown in `docs/`
-are **generated**. Never edit them by hand:
+The canonical procedure (`CLAUDE.md` §10, and the same requirement in
+[CONTRIBUTING.md](../../CONTRIBUTING.md)) ends on a seventh step: **documenting is part
+of the change, not a follow-up**. It has three parts, and only the first is automatic.
+
+**Regenerate.** The control catalogue, the coverage matrix and every command output
+shown in `docs/` are **generated**. Never edit them by hand:
 
 ```bash
 mise run gen-docs
@@ -335,7 +339,32 @@ mise run gen-docs
 Your control now has its two pages under `docs/controls/`, it appears in
 `docs/coverage.md` with its status per provider and per source, and the figures move.
 `TestGeneratedDocsAreUpToDate` fails on any documentation that lags behind, so
-regenerating is not optional.
+regenerating is not optional — but passing that test only proves the *generated* pages
+are current.
+
+**Re-read what your change makes false.** The generator cannot know that a sentence
+written by hand has stopped being true. A new control usually falsifies at least one of:
+
+- [`docs/known-limitations.md`](../known-limitations.md) — if your control closes a
+  blind spot that page names, the page now understates what Pépin measures. Move the
+  limitation to *Resolved limitations* with the version that lifted it.
+- the page of each provider you activated
+  ([`docs/providers/`](../providers/scaleway.md)) — its coverage prose and its list of
+  API calls.
+- [`docs/concepts/scope.md`](../concepts/scope.md) — if the control opens a family the
+  scope page said Pépin did not cover.
+
+And in **both languages**. A French page left behind is not a translation debt, it is a
+page that tells a French reader something the tool no longer does.
+
+**Add a CHANGELOG line.** Activating a control changes a verdict on a tenant nobody
+touched: yesterday's report said nothing, today's says `fail`, and someone will have to
+explain that to an auditor. That is exactly what the CHANGELOG exists for, so a new
+active control always earns its line, in both languages. A control that stays dormant
+(`fournisseurs: []`) moves no verdict and needs none.
+
+The question that settles every case: *would someone reading the documentation without
+reading the code be misled by this change?*
 
 ---
 
@@ -362,6 +391,10 @@ regenerating is not optional.
       never a `pass` on uncollected data.
 - [ ] Any `non_applicable` is justified, bilingually, in the provider contract.
 - [ ] `mise run gen-docs` has been run and the result committed.
+- [ ] The **hand-written** pages the control makes wrong were re-read, in both
+      languages: known limitations, the page of each activated provider, scope.
+- [ ] A CHANGELOG line, in both languages, if the control is active — an activated
+      control moves a verdict on an unchanged tenant.
 - [ ] `mise run validate`, `mise run test` and `mise run audit` are green.
 - [ ] The commit follows Conventional Commits, imperative, under 72 characters.
 

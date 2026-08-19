@@ -316,8 +316,10 @@ Puis les portes :
 mise run validate   # référentiel ↔ règles ↔ index SCSL gelé ↔ catalogue ↔ bilinguisme
 mise run test       # tests Go (-race) + tests Rego + fraîcheur de la documentation
 mise run audit      # vet + lint + gosec + govulncheck + osv
-mise run gen-docs   # régénère la matrice, les pages de contrôles, la page du fournisseur
 ```
+
+La documentation n'est pas dans cette liste parce qu'elle n'est pas seulement une porte :
+c'est l'étape 13.
 
 ## 12. Valider sur un vrai compte, si vous en avez un
 
@@ -333,6 +335,45 @@ Seulement si le scan live est la seule façon de confirmer le contrat :
 Ne jamais laisser vivre une ressource de test. Et ne jamais annoncer une couverture
 qu'une exécution n'a pas montrée : un contrôle non validé reste `fournisseurs: []`,
 écrit, testé, activation gelée.
+
+## 13. Documenter le fournisseur, la septième étape de la procédure
+
+La procédure canonique (`CLAUDE.md` §10, et la même exigence dans
+[CONTRIBUTING.fr.md](../../CONTRIBUTING.fr.md)) se termine sur **documenter**, et c'est
+là qu'un fournisseur nouveau fait le plus de dégâts si on saute l'étape : un cloud qui
+apparaît dans le binaire mais pas dans la documentation est un cloud dont personne ne
+peut vérifier la couverture.
+
+**Régénérer**, et committer ce qui change :
+
+```bash
+mise run gen-docs
+```
+
+La matrice de couverture gagne deux colonnes (votre source Terraform et votre source
+live), les pages du catalogue gagnent votre fournisseur dans leurs listes « actif pour »,
+les chiffres bougent, et les régions générées de votre page fournisseur se remplissent.
+`TestGeneratedDocsAreUpToDate` échoue sur tout ce qui reste en arrière.
+
+**Relire ce que le nouveau fournisseur rend faux** : le générateur ne possède que les
+régions entre ses marqueurs.
+
+- [`docs/known-limitations.fr.md`](../known-limitations.fr.md) : si une limite y était
+  formulée comme « aucun cloud souverain de Pépin ne mesure X », votre fournisseur vient
+  peut-être de la lever.
+- la prose de [`docs/coverage.fr.md`](../coverage.fr.md), et sa clé de lecture si vous
+  avez introduit une source qui se comporte autrement.
+- votre propre page fournisseur : tout ce qui est hors des régions générées est écrit à
+  la main, et c'est là que l'ancrage se dit, les appels d'API, les permissions minimales
+  en lecture seule, ce qui est vérifié et ce qui ne l'est pas.
+
+Dans les **deux langues**, toujours. Une page fournisseur qui n'existe qu'en anglais est
+une page que la moitié des lecteurs de ce projet ne peut pas utiliser.
+
+**Ajouter une ligne au CHANGELOG**, dans les deux langues. Un fournisseur nouveau ajoute
+une **surface analysable** : un scan jusque-là impossible rend désormais des findings,
+des statuts et un code de sortie. C'est exactement le genre de changement que le
+CHANGELOG existe pour consigner, quelle que soit sa taille dans le diff.
 
 ---
 
@@ -358,6 +399,10 @@ qu'une exécution n'a pas montrée : un contrôle non validé reste `fournisseur
       confirmée.
 - [ ] La page du fournisseur existe dans les deux langues, avec ses régions générées.
 - [ ] `mise run gen-docs` a été lancé et le résultat committé.
+- [ ] Les pages écrites à la main que le fournisseur rend fausses ont été relues, dans
+      les deux langues : limites connues, prose de la matrice, page du fournisseur.
+- [ ] Une ligne au CHANGELOG, dans les deux langues : un fournisseur nouveau ajoute une
+      surface analysable.
 - [ ] `mise run validate`, `mise run test` et `mise run audit` sont au vert.
 
 ## Voir aussi

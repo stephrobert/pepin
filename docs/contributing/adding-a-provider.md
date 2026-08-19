@@ -303,8 +303,9 @@ Then the gates:
 mise run validate   # reference ↔ rules ↔ frozen SCSL index ↔ catalogue ↔ bilingualism
 mise run test       # Go tests (-race) + Rego tests + documentation freshness
 mise run audit      # vet + lint + gosec + govulncheck + osv
-mise run gen-docs   # regenerate the coverage matrix, the control pages, the provider page
 ```
+
+Documentation is not in that list because it is not only a gate — it is step 13.
 
 ## 12. Validating on a real account, if you have one
 
@@ -319,6 +320,44 @@ Only if a live scan is the only way to confirm the contract:
 
 Never leave a test resource alive. And never claim a coverage a run has not shown: an
 unvalidated control stays `fournisseurs: []` — written, tested, activation frozen.
+
+## 13. Document the provider — the seventh step of the procedure
+
+The canonical procedure (`CLAUDE.md` §10, and the same requirement in
+[CONTRIBUTING.md](../../CONTRIBUTING.md)) ends on **documenting**, and it is where a new
+provider does the most damage if it is skipped: a cloud that appears in the binary but
+not in the documentation is a cloud whose coverage nobody can check.
+
+**Regenerate**, and commit what changes:
+
+```bash
+mise run gen-docs
+```
+
+The coverage matrix gains two columns (your Terraform source and your live source), the
+catalogue pages gain your provider in their *active for* lists, the figures move, and
+the generated regions of your provider page fill in. `TestGeneratedDocsAreUpToDate`
+fails on anything that lags.
+
+**Re-read what the new provider makes false** — the generator only owns the regions
+between its markers:
+
+- [`docs/known-limitations.md`](../known-limitations.md): if a limitation there was
+  phrased as "no sovereign cloud in Pépin measures X", your provider may have just
+  lifted it.
+- [`docs/coverage.md`](../coverage.md) prose, and the reading key if you introduced a
+  source that behaves differently.
+- your own provider page: everything outside the generated regions is written by hand,
+  and it is where the anchoring is stated — the API calls, the minimal read-only
+  permissions, what is verified and what is not.
+
+In **both languages**, always. A provider page that exists only in English is a page
+half the readers of this project cannot use.
+
+**Add a CHANGELOG line**, in both languages. A new provider adds an **analysable
+surface**: a scan that used to be impossible now returns findings, statuses and an exit
+code. That is precisely the kind of change the CHANGELOG exists to record, whatever its
+size in the diff.
 
 ---
 
@@ -344,6 +383,9 @@ unvalidated control stays `fournisseurs: []` — written, tested, activation fro
       confirmed.
 - [ ] The provider page exists in both languages, with its generated regions.
 - [ ] `mise run gen-docs` has been run and the result committed.
+- [ ] The hand-written pages the provider makes wrong were re-read, in both languages:
+      known limitations, the coverage prose, the provider page itself.
+- [ ] A CHANGELOG line, in both languages: a new provider adds an analysable surface.
 - [ ] `mise run validate`, `mise run test` and `mise run audit` are green.
 
 ## See also

@@ -333,10 +333,16 @@ Les champs `remediation` et `remediation_en` de l'étape 4 sont obligatoires et 
 [le guide de remédiation](../guides/remediation.fr.md). C'est la différence entre dire au
 lecteur quoi faire et lui montrer le montage qui le fait.
 
-## 12. Régénérer la documentation dérivée
+## 12. Documenter le changement, l'étape que la procédure rend explicite
 
-Le catalogue des contrôles, la matrice de couverture et toutes les sorties de commande
-montrées dans `docs/` sont **générées**. Ne jamais les éditer à la main :
+La procédure canonique (`CLAUDE.md` §10, et la même exigence dans
+[CONTRIBUTING.fr.md](../../CONTRIBUTING.fr.md)) se termine sur une septième étape :
+**documenter fait partie du changement, pas d'un suivi**. Elle a trois volets, et un
+seul est automatique.
+
+**Régénérer.** Le catalogue des contrôles, la matrice de couverture et toutes les
+sorties de commande montrées dans `docs/` sont **générées**. Ne jamais les éditer à la
+main :
 
 ```bash
 mise run gen-docs
@@ -345,7 +351,35 @@ mise run gen-docs
 Votre contrôle a désormais ses deux pages sous `docs/controls/`, il apparaît dans
 `docs/coverage.fr.md` avec son statut par fournisseur et par source, et les chiffres
 bougent. `TestGeneratedDocsAreUpToDate` échoue sur toute documentation en retard : la
-régénération n'est pas facultative.
+régénération n'est pas facultative. Mais ce test vert ne prouve qu'une chose : que les
+pages **générées** sont à jour.
+
+**Relire ce que le changement rend faux.** Le générateur ne peut pas savoir qu'une
+phrase écrite à la main a cessé d'être vraie. Un contrôle nouveau falsifie
+généralement au moins l'une de ces pages :
+
+- [`docs/known-limitations.fr.md`](../known-limitations.fr.md) : si votre contrôle
+  comble un angle mort que la page nomme, elle sous-estime désormais ce que Pépin
+  mesure. Déplacer la limite dans « Limites levées », avec la version qui l'a levée.
+- la page de chaque fournisseur que vous avez activé
+  ([`docs/providers/`](../providers/scaleway.fr.md)) : sa prose de couverture et sa
+  liste d'appels d'API.
+- [`docs/concepts/scope.fr.md`](../concepts/scope.fr.md) : si le contrôle ouvre une
+  famille que la page de périmètre disait non couverte.
+
+Et **dans les deux langues**. Une page française laissée en arrière n'est pas une dette
+de traduction, c'est une page qui affirme à un lecteur français quelque chose que
+l'outil ne fait plus.
+
+**Ajouter une ligne au CHANGELOG.** Activer un contrôle déplace un verdict sur un tenant
+que personne n'a touché : le rapport d'hier ne disait rien, celui d'aujourd'hui dit
+`fail`, et quelqu'un devra l'expliquer à un auditeur. C'est exactement l'objet du
+CHANGELOG : un contrôle actif nouveau y a toujours sa ligne, dans les deux langues. Un
+contrôle qui reste dormant (`fournisseurs: []`) ne déplace aucun verdict et n'en demande
+aucune.
+
+La question qui tranche, dans tous les cas : *quelqu'un qui lit la documentation sans
+lire le code serait-il induit en erreur par ce changement ?*
 
 ---
 
@@ -374,6 +408,10 @@ régénération n'est pas facultative.
 - [ ] Tout `non_applicable` est justifié, en deux langues, dans le contrat du
       fournisseur.
 - [ ] `mise run gen-docs` a été lancé et le résultat committé.
+- [ ] Les pages **écrites à la main** que le contrôle rend fausses ont été relues, dans
+      les deux langues : limites connues, page de chaque fournisseur activé, périmètre.
+- [ ] Une ligne au CHANGELOG, dans les deux langues, si le contrôle est actif : un
+      contrôle activé déplace un verdict sur un tenant inchangé.
 - [ ] `mise run validate`, `mise run test` et `mise run audit` sont au vert.
 - [ ] Le commit suit Conventional Commits, en anglais, à l'impératif, sous 72 caractères.
 
