@@ -14,7 +14,7 @@ import rego.v1
 
 deny contains f if {
 	some r in resources_of_type("compute_instance")
-	object.get(r.attributes, "deletion_protection", true) == false
+	not truthy(object.get(r.attributes, "deletion_protection", true))
 	id := object.get(r.attributes, "vm_id", r.id)
 	f := {
 		"code": "compute_instance_deletion_protection",

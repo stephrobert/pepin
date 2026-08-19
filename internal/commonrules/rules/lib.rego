@@ -132,7 +132,14 @@ _to_bound(rule, from) := from if not _port_bound(rule, "port_to")
 # commun : protocol ∈ tcp|udp|icmp|all.
 proto_covers(rule, want) if lower(object.get(rule, "protocol", "")) == want
 
-proto_covers(rule, _) if lower(object.get(rule, "protocol", "")) == "all"
+# « tout protocole » se dit de plusieurs facons selon la source : « all », « any »,
+# le -1 de l'API Outscale (que les specs traduisent, mais pas toujours), ou un
+# champ absent/vide. Ne reconnaitre que « all » laissait passer une regle
+# any/any depuis Internet sans le moindre finding.
+proto_covers(rule, _) if {
+	p := lower(trim_space(sprintf("%v", [object.get(rule, "protocol", "")])))
+	p in {"all", "any", "-1", ""}
+}
 
 # sg_accepting — la règle AUTORISE le trafic. Ensemble EXPLICITE d'actions acceptantes
 # (accept/allow, ou absente ⇒ modèle allow-list type Outscale) : toute autre valeur
@@ -145,8 +152,21 @@ sg_accepting(rule) if lower(object.get(rule, "action", "accept")) in {"accept", 
 sg_inbound_from_internet(rule) if {
 	lower(object.get(rule, "direction", "")) == "inbound"
 	sg_accepting(rule)
-	some cidr in object.get(rule, "cidrs", [])
+	some cidr in cidr_list(object.get(rule, "cidrs", []))
 	is_public_cidr(cidr)
+}
+
+# cidr_list — accepte la liste du modele normalise AUSSI BIEN qu'un scalaire.
+# `pepin scan <provider> export.json` est une entree de premier rang alimentee par
+# un tiers : « cidrs »: "0.0.0.0/0" y arrive tel quel, et `some x in "0.0.0.0/0"`
+# est indefini en Rego — la regle se taisait sur un SSH grand ouvert.
+cidr_list(v) := v if is_array(v)
+
+cidr_list(v) := [v] if is_string(v)
+
+cidr_list(v) := [] if {
+	not is_array(v)
+	not is_string(v)
 }
 
 # sensitive_ports — ports d'administration distante, de partage de fichiers, de

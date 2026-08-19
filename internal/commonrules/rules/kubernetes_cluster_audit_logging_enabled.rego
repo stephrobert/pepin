@@ -16,7 +16,7 @@ import rego.v1
 # expose la capacité) ; un provider sans cet attribut ne déclenche pas la règle.
 deny contains f if {
 	some c in resources_of_type("kubernetes_cluster")
-	object.get(c.attributes, "audit_enabled", true) == false
+	not truthy(object.get(c.attributes, "audit_enabled", true))
 	name := object.get(c.attributes, "name", c.id)
 	f := {
 		"code": "kubernetes_cluster_audit_logging_enabled",

@@ -11,7 +11,7 @@ import rego.v1
 # Plan de contrôle non hautement disponible (mono-AZ).
 deny contains f if {
 	some c in resources_of_type("kubernetes_cluster")
-	object.get(c.attributes, "control_plane_multi_az", true) == false
+	not truthy(object.get(c.attributes, "control_plane_multi_az", true))
 	name := object.get(c.attributes, "name", c.id)
 	f := {
 		"code": "kubernetes_cluster_control_plane_highly_available",
@@ -26,7 +26,7 @@ deny contains f if {
 # Mises à jour automatiques désactivées.
 deny contains f if {
 	some c in resources_of_type("kubernetes_cluster")
-	object.get(c.attributes, "auto_upgrade", true) == false
+	not truthy(object.get(c.attributes, "auto_upgrade", true))
 	name := object.get(c.attributes, "name", c.id)
 	f := {
 		"code": "kubernetes_cluster_auto_upgrade_enabled",
@@ -41,7 +41,7 @@ deny contains f if {
 # Protection contre la suppression désactivée.
 deny contains f if {
 	some c in resources_of_type("kubernetes_cluster")
-	object.get(c.attributes, "deletion_protection", true) == false
+	not truthy(object.get(c.attributes, "deletion_protection", true))
 	name := object.get(c.attributes, "name", c.id)
 	f := {
 		"code": "kubernetes_cluster_deletion_protection",

@@ -13,7 +13,7 @@ import rego.v1
 deny contains f if {
 	some b in resources_of_type("object_storage_bucket")
 	"object_lock_enabled" in object.keys(b.attributes)
-	object.get(b.attributes, "object_lock_enabled", true) == false
+	not truthy(object.get(b.attributes, "object_lock_enabled", true))
 	name := object.get(b.attributes, "name", b.id)
 	f := {
 		"code": "objectstorage_bucket_object_lock_enabled",

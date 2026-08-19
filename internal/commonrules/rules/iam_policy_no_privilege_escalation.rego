@@ -64,8 +64,8 @@ _escalation_action(a) if {
 # l'auto-élévation. Les rôles prédéfinis (non éditables) sont hors scope.
 deny contains f if {
 	some r in resources_of_type("iam_role")
-	object.get(r.attributes, "editable", true) == true
-	object.get(r.attributes, "manages_iam", false) == true
+	truthy(object.get(r.attributes, "editable", true))
+	truthy(object.get(r.attributes, "manages_iam", false))
 	name := object.get(r.attributes, "name", r.id)
 	f := {
 		"code": "iam_policy_no_privilege_escalation",
@@ -81,7 +81,7 @@ deny contains f if {
 # de gestion d'identité (attribut dérivé manages_iam) → chemin d'élévation.
 deny contains f if {
 	some p in resources_of_type("iam_policy")
-	object.get(p.attributes, "manages_iam", false) == true
+	truthy(object.get(p.attributes, "manages_iam", false))
 	name := object.get(p.attributes, "policy_name", p.id)
 	f := {
 		"code": "iam_policy_no_privilege_escalation",

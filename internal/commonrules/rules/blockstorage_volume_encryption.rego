@@ -25,7 +25,7 @@ import rego.v1
 deny contains f if {
 	some v in resources_of_type("blockstorage_volume")
 	"encrypted" in object.keys(v.attributes)
-	object.get(v.attributes, "encrypted", true) == false
+	not truthy(object.get(v.attributes, "encrypted", true))
 	name := object.get(v.attributes, "volume_id", v.id)
 	f := {
 		"code": "blockstorage_volume_encryption",

@@ -17,7 +17,7 @@ import rego.v1
 deny contains f if {
 	some r in resources_of_type("managed_database")
 	"ip_filter" in object.keys(r.attributes)
-	some cidr in object.get(r.attributes, "ip_filter", [])
+	some cidr in cidr_list(object.get(r.attributes, "ip_filter", []))
 	is_public_cidr(cidr)
 	id := object.get(r.attributes, "database_id", r.id)
 	f := {

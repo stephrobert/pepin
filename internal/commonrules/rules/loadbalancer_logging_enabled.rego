@@ -23,5 +23,5 @@ deny contains f if {
 }
 
 _access_log_enabled(attrs) if {
-	object.get(object.get(attrs, "access_log", {}), "is_enabled", false) == true
+	truthy(object.get(object.get(attrs, "access_log", {}), "is_enabled", false))
 }

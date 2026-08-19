@@ -76,6 +76,37 @@ var requiredAttr = map[string][]string{
 	// Ce contrôle lit la RÉGION de chaque ressource (pas la ressource synthétique du
 	// fournisseur) : sans région collectée, il ne mesure rien.
 	"governance_resource_region_in_eu": {"region"},
+
+	// --- Verrous ajoutés après l'audit de livraison -------------------------
+	// Ces contrôles concluaient « conforme » alors que l'attribut qui porte leur
+	// décision n'avait jamais été collecté : la règle ne se déclenchait pas, donc
+	// aucun finding, donc « pass ». Un faux vert est invisible par construction,
+	// ce qui en fait le pire défaut possible pour un outil de posture.
+
+	// La base est ouverte tant qu'aucune ACL n'est posée (défaut d'API Scaleway) :
+	// sans ip_filter collecté, « conforme » est exactement l'inverse de la réalité.
+	"database_service_not_open_to_internet": {"ip_filter"},
+	"database_backup_enabled":               {"disable_backup"},
+
+	// `statements` est TOUJOURS posé par le collecteur, au besoin à [] quand le
+	// document n'a pas pu être analysé : le verrou ne vaut que parce que
+	// attrsByTypeOf ne compte plus une collection vide comme collectée.
+	"iam_policy_no_administrative_privileges": {"statements"},
+	"iam_policy_no_notaction_notresource":     {"statements"},
+	"iam_policy_no_wildcard_resource":         {"statements"},
+	"iam_policy_no_privilege_escalation":      {"statements", "manages_iam"},
+	"iam_role_key_lifetime_bounded":           {"max_session_ttl", "policy_has_expiration"},
+	"iam_role_no_admin_privileges":            {"admin_privileges"},
+	"iam_role_source_ip_restricted":           {"source_ip_restricted"},
+	"iam_apiaccessrule_no_public_cidr":        {"ip_ranges"},
+
+	"network_securitygroup_default_deny": {"inbound_default_policy"},
+	"network_flow_matrix_documented":     {"description"},
+
+	// Sur un plan Terraform, `state` arrive en after_unknown et aucun
+	// blockstorage_snapshot n'existe : le contrôle ne peut PAS y être évalué,
+	// et s'affichait pourtant vert sur l'exemple livré dans le dépôt.
+	"blockstorage_volume_snapshots_exist": {"state"},
 }
 
 // References converts a control's framework + SCSL mappings into exact, versioned references.

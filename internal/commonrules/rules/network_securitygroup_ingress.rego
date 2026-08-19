@@ -61,7 +61,7 @@ deny contains f if {
 	lower(object.get(r.attributes, "direction", "")) == "outbound"
 	sg_accepting(r.attributes)
 	lower(object.get(r.attributes, "protocol", "")) == "all"
-	some cidr in object.get(r.attributes, "cidrs", [])
+	some cidr in cidr_list(object.get(r.attributes, "cidrs", []))
 	is_public_cidr(cidr)
 	f := _sg_finding(r, "network_securitygroup_unrestricted_egress", "medium", "tout le trafic sortant")
 }

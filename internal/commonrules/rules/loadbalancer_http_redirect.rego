@@ -18,7 +18,7 @@ deny contains f if {
 	object.get(l, "load_balancer_protocol", "") == "HTTP"
 	object.get(l, "load_balancer_port", 0) == 80
 	"redirect_to_https" in object.keys(l) # garde de capacité : état de redirection réellement collecté
-	object.get(l, "redirect_to_https", true) == false
+	not truthy(object.get(l, "redirect_to_https", true))
 	name := object.get(lb.attributes, "load_balancer_name", lb.id)
 	f := {
 		"code": "loadbalancer_http_redirect_to_https",

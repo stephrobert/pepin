@@ -14,7 +14,7 @@ import rego.v1
 # Siège du fournisseur hors Union européenne.
 deny contains f if {
 	some r in resources_of_type("governance_provider")
-	object.get(r.attributes, "eu_established", true) == false
+	not truthy(object.get(r.attributes, "eu_established", true))
 	f := {
 		"code": "governance_provider_sovereignty",
 		"severity": "high",
@@ -61,7 +61,7 @@ deny contains f if {
 # (la qualification SecNumCloud vaut immunité).
 deny contains f if {
 	some r in resources_of_type("governance_provider")
-	object.get(r.attributes, "extraterritorial_exposure", false) == true
+	truthy(object.get(r.attributes, "extraterritorial_exposure", false))
 	object.get(r.attributes, "secnumcloud", "non") != "qualifie"
 	f := {
 		"code": "governance_provider_sovereignty",

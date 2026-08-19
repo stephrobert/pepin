@@ -369,6 +369,28 @@ func resourceTypesOf(input any) map[string]bool {
 // ressource. assess s'en sert pour n'affirmer un « pass » que si l'ATTRIBUT précis qu'un
 // contrôle lit a réellement été collecté (pas seulement le type) — sinon une garde de capacité
 // silencieuse produit un faux « pass » (ex. compute_instance présent mais sans user_data).
+// collected dit si la VALEUR d'un attribut porte une information exploitable.
+//
+// La présence de la clé ne suffit pas : `iamPolicyStatements` pose toujours
+// `statements`, y compris à [] quand le document n'a pas pu être analysé. Quatre
+// contrôles IAM critical/high concluaient alors « conforme » sur zéro information.
+//
+// `false`, `0` et `""` sont en revanche des informations parfaitement valides
+// (`encrypted: false` est justement ce qu'un contrôle cherche) : seules les
+// collections vides et les valeurs absentes comptent comme non collectées.
+func collected(v any) bool {
+	switch t := v.(type) {
+	case nil:
+		return false
+	case []any:
+		return len(t) > 0
+	case map[string]any:
+		return len(t) > 0
+	default:
+		return true
+	}
+}
+
 func attrsByTypeOf(input any) map[string]map[string]bool {
 	out := map[string]map[string]bool{}
 	add := func(typ string, attrs map[string]any) {
@@ -378,7 +400,10 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 		if out[typ] == nil {
 			out[typ] = map[string]bool{}
 		}
-		for k := range attrs {
+		for k, v := range attrs {
+			if !collected(v) {
+				continue
+			}
 			out[typ][k] = true
 		}
 	}

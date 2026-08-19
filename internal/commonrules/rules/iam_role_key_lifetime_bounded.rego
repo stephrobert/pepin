@@ -19,7 +19,7 @@ import rego.v1
 # attributs renseigné) — un provider sans ces dérivés ne déclenche pas la règle.
 deny contains f if {
 	some r in resources_of_type("iam_role")
-	object.get(r.attributes, "editable", true) == true # rôles prédéfinis (non éditables) hors scope
+	truthy(object.get(r.attributes, "editable", true)) # rôles prédéfinis (non éditables) hors scope
 	_role_exposes_lifetime(r)
 	not _lifetime_bounded(r)
 	name := object.get(r.attributes, "name", r.id)
@@ -43,4 +43,4 @@ _role_exposes_lifetime(r) if "policy_has_expiration" in object.keys(r.attributes
 _lifetime_bounded(r) if to_number(object.get(r.attributes, "max_session_ttl", 0)) > 0
 
 # …ou par une expiration exprimée dans la politique.
-_lifetime_bounded(r) if object.get(r.attributes, "policy_has_expiration", false) == true
+_lifetime_bounded(r) if truthy(object.get(r.attributes, "policy_has_expiration", false))

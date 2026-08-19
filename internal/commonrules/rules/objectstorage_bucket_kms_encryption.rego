@@ -34,7 +34,7 @@ _bucket_sensitive(b) if {
 deny contains f if {
 	some b in resources_of_type("object_storage_bucket")
 	"sse_kms_enabled" in object.keys(b.attributes)
-	object.get(b.attributes, "sse_kms_enabled", true) == false
+	not truthy(object.get(b.attributes, "sse_kms_enabled", true))
 	_bucket_sensitive(b)
 	name := object.get(b.attributes, "name", b.id)
 	f := {

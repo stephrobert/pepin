@@ -168,7 +168,15 @@ func TestRegoSeverityMatchesReferentiel(t *testing.T) {
 			code := text[c[2]:c[3]]
 			for _, s := range sevLocs {
 				if s[0] > c[1] {
-					sevOf[code] = text[s[2]:s[3]]
+					sev := text[s[2]:s[3]]
+					// Une règle peut émettre PLUSIEURS sévérités pour un même code
+					// (governance_resource_region_in_eu : low en zone de confiance,
+					// medium si la région n'est pas cataloguée, high hors UE). Le
+					// référentiel déclare la sévérité MAXIMALE du contrôle : c'est
+					// elle qui pilote la porte de CI, donc c'est elle qu'on compare.
+					if rank(sev) > rank(sevOf[code]) {
+						sevOf[code] = sev
+					}
 					break
 				}
 			}
@@ -182,6 +190,22 @@ func TestRegoSeverityMatchesReferentiel(t *testing.T) {
 		if ctl.Severite != sev {
 			t.Errorf("sévérité divergente %q : rego=%s, controles.yaml=%s", code, sev, ctl.Severite)
 		}
+	}
+}
+
+// rank ordonne les sévérités pour retenir la plus forte qu'une règle émet.
+func rank(sev string) int {
+	switch sev {
+	case "critical":
+		return 4
+	case "high":
+		return 3
+	case "medium":
+		return 2
+	case "low":
+		return 1
+	default:
+		return 0
 	}
 }
 

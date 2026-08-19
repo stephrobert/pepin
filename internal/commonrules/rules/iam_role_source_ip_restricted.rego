@@ -14,8 +14,8 @@ import rego.v1
 # collecteur a renseigné `source_ip_restricted` (provider exposant la capacité).
 deny contains f if {
 	some r in resources_of_type("iam_role")
-	object.get(r.attributes, "editable", true) == true # rôles prédéfinis (non éditables) hors scope
-	object.get(r.attributes, "source_ip_restricted", true) == false
+	truthy(object.get(r.attributes, "editable", true)) # rôles prédéfinis (non éditables) hors scope
+	not truthy(object.get(r.attributes, "source_ip_restricted", true))
 	name := object.get(r.attributes, "name", r.id)
 	f := {
 		"code": "iam_role_source_ip_restricted",

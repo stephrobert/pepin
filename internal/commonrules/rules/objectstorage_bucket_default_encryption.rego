@@ -16,7 +16,7 @@ import rego.v1
 
 deny contains f if {
 	some b in resources_of_type("object_storage_bucket")
-	object.get(b.attributes, "default_encryption_enabled", true) == false
+	not truthy(object.get(b.attributes, "default_encryption_enabled", true))
 	name := object.get(b.attributes, "name", b.id)
 	f := {
 		"code": "objectstorage_bucket_default_encryption",

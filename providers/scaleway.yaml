@@ -231,6 +231,11 @@ mapping_terraform:
       id: name
       map:
         name: name
+        # `acl` posée EN LIGNE sur la ressource bucket, sans passer par
+        # scaleway_object_bucket_acl. Sans ce mapping, un bucket public-read
+        # déclaré ainsi n'était pas collecté du tout : le contrôle sortait
+        # « non évalué » et le scan rendait « conforme ».
+        acl: acl
         object_lock_enabled: object_lock_enabled
   
     - tf_type: scaleway_iam_api_key

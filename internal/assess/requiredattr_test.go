@@ -38,11 +38,18 @@ func TestRequiredAttrGuardsExist(t *testing.T) {
 			t.Errorf("requiredAttr référence %q : aucune règle n'émet ce code (entrée périmée)", code)
 			continue
 		}
-		// L'attribut gaté doit être lu par le fichier qui émet ce code.
+		// L'attribut gaté doit être lu par le fichier qui émet ce code — ou par un
+		// helper partagé de lib.rego qu'il appelle. Une règle a le droit de déléguer
+		// la lecture d'un attribut (volume_in_use lit `state` pour le compte de
+		// blockstorage_volume_snapshots_exist) : ne regarder que le fichier de la
+		// règle ferait rejeter un gate pourtant légitime.
 		var src string
-		for _, body := range byFile {
+		for name, body := range byFile {
+			if name == "lib.rego" {
+				continue
+			}
 			if strings.Contains(body, `"`+code+`"`) {
-				src = body
+				src = body + byFile["lib.rego"]
 				break
 			}
 		}

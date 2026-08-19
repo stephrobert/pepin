@@ -8,32 +8,42 @@ package pepin.rules
 
 import rego.v1
 
-_public_canned_acls := {"public-read", "public-read-write"}
-_all_users_uri := "http://acs.amazonaws.com/groups/global/AllUsers"
+# `authenticated-read` accorde la lecture à TOUT utilisateur authentifié de la
+# plateforme, donc hors du tenant : c'est une exposition inter-tenant, pas une
+# nuance de configuration. Confirmé par la doc Outscale (« private | public-read |
+# public-read-write | authenticated-read ») et par le mapping Scaleway.
+_public_canned_acls := {"public-read", "public-read-write", "authenticated-read"}
+
+# Même raisonnement pour les grants : AuthenticatedUsers est un groupe global,
+# au même titre qu'AllUsers.
+_public_group_uris := {
+	"http://acs.amazonaws.com/groups/global/AllUsers",
+	"http://acs.amazonaws.com/groups/global/AuthenticatedUsers",
+}
 
 deny contains f if {
 	some r in resources_of_type("object_storage_bucket")
-	object.get(r.attributes, "acl", "") in _public_canned_acls
+	lower(object.get(r.attributes, "acl", "")) in _public_canned_acls
 	f := _bucket_public_finding(r, "ACL publique")
 }
 
 deny contains f if {
 	some r in resources_of_type("object_storage_bucket")
 	_acl_grant_public(r.attributes)
-	f := _bucket_public_finding(r, "ACL accordant l'accès au groupe public AllUsers")
+	f := _bucket_public_finding(r, "ACL accordant l'accès à un groupe global (AllUsers / AuthenticatedUsers)")
 }
 
 deny contains f if {
 	some r in resources_of_type("object_storage_bucket")
-	object.get(r.attributes, "policy_public", false) == true
+	truthy(object.get(r.attributes, "policy_public", false))
 	f := _bucket_public_finding(r, "bucket policy avec Principal « * »")
 }
 
-_acl_grant_public(attrs) if object.get(attrs, "public_via_acl", false) == true
+_acl_grant_public(attrs) if truthy(object.get(attrs, "public_via_acl", false))
 
 _acl_grant_public(attrs) if {
 	some g in object.get(attrs, "acl_grants", [])
-	object.get(object.get(g, "grantee", {}), "uri", "") == _all_users_uri
+	object.get(object.get(g, "grantee", {}), "uri", "") in _public_group_uris
 }
 
 _bucket_public_finding(r, cause) := {

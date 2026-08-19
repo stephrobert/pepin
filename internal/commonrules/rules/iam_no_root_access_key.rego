@@ -21,7 +21,7 @@ _eim_key_ids contains id if {
 }
 
 # root_owned explicite (Scaleway/fixtures).
-_root_key(r) if object.get(r.attributes, "root_owned", false) == true
+_root_key(r) if truthy(object.get(r.attributes, "root_owned", false))
 
 # root_owned dérivé (Outscale) : clé de niveau compte non attribuable à un user EIM.
 _root_key(r) if {

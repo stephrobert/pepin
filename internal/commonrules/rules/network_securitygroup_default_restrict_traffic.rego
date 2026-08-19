@@ -14,7 +14,7 @@ import rego.v1
 deny contains f if {
 	some r in resources_of_type("security_group_rule")
 	lower(object.get(r.attributes, "security_group_name", "")) == "default"
-	object.get(r.attributes, "direction", "") == "inbound"
+	lower(object.get(r.attributes, "direction", "")) == "inbound"
 	sg := object.get(r.attributes, "security_group_id", r.id)
 	f := {
 		"code": "network_securitygroup_default_restrict_traffic",

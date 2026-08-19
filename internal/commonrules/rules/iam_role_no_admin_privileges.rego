@@ -14,8 +14,8 @@ import rego.v1
 # collecteur a renseigné `admin_privileges` (provider exposant la capacité).
 deny contains f if {
 	some r in resources_of_type("iam_role")
-	object.get(r.attributes, "editable", true) == true # rôles prédéfinis (non éditables) hors scope
-	object.get(r.attributes, "admin_privileges", false) == true
+	truthy(object.get(r.attributes, "editable", true)) # rôles prédéfinis (non éditables) hors scope
+	truthy(object.get(r.attributes, "admin_privileges", false))
 	name := object.get(r.attributes, "name", r.id)
 	f := {
 		"code": "iam_role_no_admin_privileges",
