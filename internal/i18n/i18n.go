@@ -3,8 +3,8 @@
 //
 // Pépin est bilingue : le français est la langue de RÉFÉRENCE du contenu
 // normatif (référentiel, messages de règles), l'anglais en est la traduction
-// maintenue en parallèle. Une seule chose est résolue ici — laquelle des deux
-// s'affiche — et elle l'est UNE fois, au démarrage, avant que cobra ne fige les
+// maintenue en parallèle. Une seule chose est résolue ici, laquelle des deux
+// s'affiche, et elle l'est UNE fois, au démarrage, avant que cobra ne fige les
 // chaînes d'aide.
 //
 // Ordre de résolution, du plus explicite au plus implicite :
@@ -13,7 +13,7 @@
 //
 // La première source NON VIDE décide, et elle décide seule : c'est la règle
 // POSIX (LC_ALL l'emporte sur LANG), et c'est aussi la seule qui ne surprenne
-// pas — un LC_ALL posé volontairement ne doit pas être contourné par un LANG
+// pas : un LC_ALL posé volontairement ne doit pas être contourné par un LANG
 // resté d'une session précédente. Une valeur que Pépin ne parle pas
 // (LC_ALL=de_DE.UTF-8, LC_ALL=C.UTF-8) retombe sur l'anglais, sans erreur : un
 // outil de posture ne refuse pas de tourner parce qu'il ne connaît pas une

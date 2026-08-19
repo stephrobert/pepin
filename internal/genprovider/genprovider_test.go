@@ -97,7 +97,7 @@ func TestContractVerifiedTypesAreCollected(t *testing.T) {
 	}
 }
 
-// TestEveryContractJustificationIsBilingual — toute justification de
+// TestEveryContractJustificationIsBilingual : toute justification de
 // non-applicabilité porte sa traduction anglaise.
 //
 // Ces justifications ne sont pas de la décoration : ce sont elles qu'un auditeur

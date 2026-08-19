@@ -46,7 +46,7 @@ _acl_grant_public(attrs) if {
 	object.get(object.get(g, "grantee", {}), "uri", "") in _public_group_uris
 }
 
-# _bucket_public_finding — finding commun d'exposition d'un bucket. `cause` nomme
+# _bucket_public_finding : finding commun d'exposition d'un bucket. `cause` nomme
 # le vecteur d'exposition (fragment interpolé dans le message) ; `cause_en` en est
 # la contrepartie anglaise.
 _bucket_public_finding(r, cause, cause_en) := {

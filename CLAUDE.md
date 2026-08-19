@@ -75,8 +75,8 @@ chaque changement.
 
 **La CLI et le RÉFÉRENTIEL sont eux aussi bilingues** (issue #37) : la langue est
 DÉTECTÉE (`--lang` → `PEPIN_LANG` → `LC_ALL` → `LANG` → repli `en`, cf.
-`internal/i18n`), et elle vaut pour tout ce que l'outil imprime — rapport, verdict,
-aide, erreurs — comme pour les formats parsables (`json`, `sarif`, `oscal`,
+`internal/i18n`), et elle vaut pour tout ce que l'outil imprime (rapport, verdict,
+aide, erreurs) comme pour les formats parsables (`json`, `sarif`, `oscal`,
 `assessment`). Le **français reste la langue de RÉFÉRENCE du contenu normatif** :
 c'est lui qui fait foi, l'anglais en est la traduction maintenue en parallèle.
 
@@ -85,9 +85,9 @@ Concrètement, tout texte destiné à l'utilisateur s'écrit DEUX fois, côte à
 - **Go** : `i18n.T(fr, en)` au point de rendu ; les chaînes d'aide de cobra, figées
   à l'init, sont réécrites par `cmd.localize()` après résolution de la langue.
 - **Rego** : `message`/`remediation` en français, `labels.message_en` et
-  `labels.remediation_en` en anglais (`finding.Finding.Labels` est extensible —
-  **on ne modifie pas scankit**). Le scan consomme ces labels puis les RETIRE : ce
-  sont un transport, pas une donnée du rapport.
+  `labels.remediation_en` en anglais (`finding.Finding.Labels` est extensible :
+  **on ne modifie pas scankit**). Le scan consomme ces labels puis les RETIRE, car
+  ce sont un transport, pas une donnée du rapport.
 - **Référentiel** : `titre_en`, `description_en`, `remediation_en` à côté de leurs
   homologues français dans `referentiel/controles.yaml`.
 - **Contrats providers** : `reason_en` à côté de `reason` (justifications de
@@ -120,7 +120,7 @@ source du contrat dans l'en-tête de chaque règle.
   `severity` (`critical|high|medium|low`), `subject` (ressource fautive),
   `message` (FR actionnable), `remediation` (FR), et
   `labels: {"provider": provider_of(r), "category": "security|compliance",
-  "message_en": …, "remediation_en": …}` — **`provider` tiré de la ressource via le
+  "message_en": …, "remediation_en": …}` : **`provider` tiré de la ressource via le
   helper `provider_of`, jamais en dur**, et les deux labels `_en` OBLIGATOIRES
   (§1.2 : la traduction voyage dans les labels, scankit n'est pas modifié).
 - **`code` = identifiant de check agnostique, COMMUN à tous les providers**
@@ -214,7 +214,7 @@ Les artefacts pilotent tout : `catalogue.yaml` (QUOI), `contrats/<provider>.yaml
    génère : `python3 scripts/gen-collector.py <provider>`.
 5. **Règle commune.** UNE règle dans `internal/commonrules/rules/` (`package
    pepin.rules`, `labels.provider: provider_of(r)`, plus `labels.message_en` et
-   `labels.remediation_en` — §1.2) + test `*_test.rego` (✓ et ✗).
+   `labels.remediation_en`, cf. §1.2) + test `*_test.rego` (✓ et ✗).
    Passer l'entrée du catalogue en `statut: implemente`.
 6. **Valider.** `mise run validate` (codes↔règles↔SCSL gelé↔catalogue) **puis**
    `mise run test` + `mise run audit` au vert. Aucun commit si l'un échoue (§1, §7).

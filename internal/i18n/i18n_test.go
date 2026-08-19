@@ -75,7 +75,7 @@ func TestResolveWithoutEnvReader(t *testing.T) {
 	}
 }
 
-// TestCurrentDefaultsToEnglish : sans Set, la langue est l'anglais — jamais une
+// TestCurrentDefaultsToEnglish : sans Set, la langue est l'anglais, jamais une
 // valeur vide qui traverserait le rendu.
 func TestCurrentDefaultsToEnglish(t *testing.T) {
 	defer Set(Current())

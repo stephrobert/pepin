@@ -6,8 +6,8 @@ package cmd
 // un `Short:` écrit dans un littéral de struct est évalué avant que la moindre
 // option n'ait été lue, donc avant qu'on sache dans quelle langue parler. Les
 // littéraux restent donc en français (langue de référence, et ce qu'on lit dans
-// le code), et `localize` les REMPLACE une fois la langue résolue — juste avant
-// `Execute`, juste après la lecture de --lang.
+// le code), et `localize` les REMPLACE une fois la langue résolue, juste avant
+// `Execute` et juste après la lecture de --lang.
 //
 // Les chaînes produites PENDANT l'exécution (messages d'erreur, verdict,
 // bandeau) n'ont pas ce problème : `tr` y est appelée au moment du rendu.

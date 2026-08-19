@@ -26,7 +26,7 @@ const (
 // Gelée dans cmd/testdata/frozen/cli.json ; la procédure de changement délibéré
 // est décrite dans RELEASING.md (frozen-update, bump, ligne de CHANGELOG).
 //
-// v2 : ajout du drapeau persistant `--lang` (fr | en). Ajout pur — aucun verbe,
+// v2 : ajout du drapeau persistant `--lang` (fr | en). Ajout pur : aucun verbe,
 // aucun autre drapeau ni aucun code de sortie ne bouge.
 const cliSurfaceVersion = 2
 

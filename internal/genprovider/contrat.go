@@ -26,13 +26,13 @@ func ControlNonApplicable(providerName, code string) bool {
 //
 // La justification est BILINGUE : elle est rendue à l'auditeur dans `--format
 // assessment`, dans l'OSCAL et dans le bundle scellé. i18n.Pick dégrade vers le
-// français quand `reason_en` manque — l'absence est refusée en CI
+// français quand `reason_en` manque : l'absence est refusée en CI
 // (TestEveryContractJustificationIsBilingual), jamais découverte par le lecteur.
 func NonApplicableReason(providerName, code string) string {
 	return NonApplicableReasonIn(i18n.Current(), providerName, code)
 }
 
-// NonApplicableReasonIn est NonApplicableReason pour une langue explicite — la
+// NonApplicableReasonIn est NonApplicableReason pour une langue explicite : la
 // documentation bilingue rend les deux versions dans une seule exécution.
 func NonApplicableReasonIn(l i18n.Lang, providerName, code string) string {
 	d := registry[providerName]

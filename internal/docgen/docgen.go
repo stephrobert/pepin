@@ -52,7 +52,7 @@ func Generate(root, bin string) (map[string]string, error) {
 	}
 	// Une campagne de captures PAR LANGUE : Pépin est bilingue, donc la page anglaise
 	// doit montrer la sortie anglaise et la page française la sortie française. Une
-	// campagne unique recopiée dans les deux pages ferait mentir l'une des deux — et
+	// campagne unique recopiée dans les deux pages ferait mentir l'une des deux, et
 	// c'est précisément le défaut que l'internationalisation vient corriger.
 	// Idem pour la matrice, qui porte de la prose (titres de contrôles, motifs) :
 	// une par langue, sinon la page française citerait des motifs anglais.

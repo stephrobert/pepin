@@ -352,7 +352,7 @@ const (
 //
 // Le retrait n'est pas cosmétique : `labels` est publié tel quel dans `--format json`,
 // dans le SARIF et dans l'assessment scellé. Les y laisser ferait voyager les deux
-// langues dans chaque finding — un rapport français porterait sa traduction anglaise,
+// langues dans chaque finding : un rapport français porterait sa traduction anglaise,
 // et le digest du bundle changerait pour une raison qui ne regarde pas la posture.
 // Les labels sont un TRANSPORT ; ils ne sont pas une donnée du rapport.
 //

@@ -49,7 +49,7 @@ l'une ni l'autre appartient au `git log`.
   n'est plus signalé comme une falsification. À noter : l'empreinte du bundle
   dépend bien de la langue, puisque la prose de l'assessment fait partie de ce
   qui est scellé.
-- **Surface CLI v1 → v2** : ajout du drapeau persistant `--lang`. Ajout pur —
+- **Surface CLI v1 → v2** : ajout du drapeau persistant `--lang`. Ajout pur :
   aucun verbe, aucun autre drapeau ni aucun code de sortie ne bouge.
 
 ## [0.1.1] - 2026-08-19

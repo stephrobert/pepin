@@ -254,25 +254,25 @@ func loadFrameworkIDs(t *testing.T) map[string]map[string]bool {
 // (frameworks: {norme: [ids]}) doit être défini dans le catalogue de cette norme
 // (frameworks/<norme>.yaml). Anti-invention symétrique de TestSCSLReferencesExist :
 // interdit qu'un mapping cite un numéro d'exigence qui n'existe pas dans le texte.
-// TestEveryFindingCarriesRemediation — tout finding émis porte une remédiation,
+// TestEveryFindingCarriesRemediation : tout finding émis porte une remédiation,
 // ET les deux langues de Pépin.
 //
 // CLAUDE.md §3 impose la remédiation, et le rendu l'affiche (terminal, CSV,
 // JUnit) : un écart sans remédiation dit à l'utilisateur que quelque chose ne va
 // pas sans lui dire quoi faire, ce qui est la moitié du travail d'un outil de
 // posture. Rien ne l'imposait jusqu'ici : le modèle amont
-// `scankit/finding.Finding` déclare `Remediation` en `omitempty` — optionnel pour
+// `scankit/finding.Finding` déclare `Remediation` en `omitempty` : optionnel pour
 // la bibliothèque, obligatoire pour Pépin.
 //
 // Le test porte AUSSI les deux labels de traduction (`message_en`,
 // `remediation_en`) : Pépin est bilingue, et une règle qui les omettrait ferait
 // basculer une sortie anglaise au français au milieu d'un rapport. Un seul
-// parcours, un seul appariement — l'invariant de langue est de même nature que
+// parcours, un seul appariement : l'invariant de langue est de même nature que
 // celui de remédiation, il n'appelle pas une deuxième mécanique.
 //
 // L'ancrage se fait sur "message" et NON sur "code" : deux findings communs
 // (_sg_finding, _bucket_public_finding) reçoivent leur code en PARAMÈTRE, donc un
-// ancrage sur un littéral `"code": "…"` les manquait entièrement — six règles
+// ancrage sur un littéral `"code": "…"` les manquait entièrement : six règles
 // d'exposition réseau et le contrôle de bucket public échappaient au contrôle.
 // Tout finding porte un message ; c'est lui la borne fiable.
 func TestEveryFindingCarriesRemediation(t *testing.T) {
@@ -400,7 +400,7 @@ func TestFrameworkReferencesExist(t *testing.T) {
 	}
 }
 
-// TestEveryControlIsBilingual — tout contrôle porte ses trois champs anglais.
+// TestEveryControlIsBilingual : tout contrôle porte ses trois champs anglais.
 //
 // Pépin est bilingue et la langue est DÉTECTÉE : un lecteur anglophone reçoit
 // `titre_en`, `description_en`, `remediation_en`. Le rendu dégrade proprement
@@ -441,7 +441,7 @@ func TestEveryControlIsBilingual(t *testing.T) {
 	}
 }
 
-// TestEnglishControlFieldsCarryNoAccent — les champs anglais ne portent aucune
+// TestEnglishControlFieldsCarryNoAccent : les champs anglais ne portent aucune
 // lettre accentuée.
 //
 // C'est le critère d'acceptation « LANG=en ne produit aucun caractère accenté »,

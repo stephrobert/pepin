@@ -162,8 +162,8 @@ func reDerive(ctx context.Context, dir string) error {
 	// Un bundle porte la LANGUE du scan qui l'a produit ; le vérificateur, lui, tourne
 	// dans la sienne. Comparer sans en tenir compte ferait diverger un bundle
 	// parfaitement fidèle pour la seule raison que son lecteur ne parle pas la même
-	// langue que son auteur — un faux positif de falsification, le pire verdict qu'un
-	// vérificateur puisse rendre. On rejoue donc dans les deux langues : ce qui est
+	// langue que son auteur, un faux positif de falsification qui est le pire verdict
+	// qu'un vérificateur puisse rendre. On rejoue donc dans les deux langues : ce qui est
 	// comparé (statuts, sujets, références, provenance) est identique, seule la
 	// formulation change, et une seule concordance suffit à établir la fidélité.
 	got, matched := reDeriveInEitherLanguage(name, findings, input, sealed.Run, string(sealedJSON))

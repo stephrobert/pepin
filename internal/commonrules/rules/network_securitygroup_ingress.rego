@@ -66,7 +66,7 @@ deny contains f if {
 	f := _sg_finding(r, "network_securitygroup_unrestricted_egress", "medium", "tout le trafic sortant", "all outbound traffic")
 }
 
-# _sg_finding — finding commun des règles d'exposition. `what` nomme CE QUI est
+# _sg_finding : finding commun des règles d'exposition. `what` nomme CE QUI est
 # accepté (le fragment interpolé dans le message) ; `what_en` en est la
 # contrepartie anglaise, passée par l'appelant pour que la phrase anglaise reste
 # entière plutôt que mi-traduite.

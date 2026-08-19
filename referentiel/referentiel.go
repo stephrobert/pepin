@@ -21,7 +21,7 @@ var raw []byte
 //
 // Les champs de PROSE sont bilingues : le français est la langue de référence du
 // contenu normatif, `*En` en est la traduction anglaise. Les deux vivent dans le
-// MÊME fichier versionné — une source de vérité unique, dont `mise run validate`
+// MÊME fichier versionné, une source de vérité unique dont `mise run validate`
 // exige la complétude (TestEveryControlIsBilingual). Ne pas les lire directement
 // pour un affichage : passer par TitreIn/DescriptionIn/RemediationIn, qui portent
 // la dégradation vers le français.

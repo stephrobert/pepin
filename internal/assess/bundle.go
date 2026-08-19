@@ -32,7 +32,7 @@ const BundleFormat = "pepin-assessment-bundle/v1"
 // manifest du bundle, deux endroits où un lecteur anglophone doit pouvoir le lire.
 func ScopeDisclaimer() string { return ScopeDisclaimerIn(i18n.Current()) }
 
-// ScopeDisclaimerIn est ScopeDisclaimer pour une langue explicite — la documentation
+// ScopeDisclaimerIn est ScopeDisclaimer pour une langue explicite : la documentation
 // bilingue rend les deux versions dans une seule exécution.
 func ScopeDisclaimerIn(l i18n.Lang) string {
 	return i18n.TIn(l,

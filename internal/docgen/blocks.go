@@ -389,7 +389,7 @@ func notEvaluatedReasons(t blockStrings, c captures) string {
 }
 
 // quotedName repère un nom (type, attribut, état) cité par le moteur : guillemets
-// français en français, guillemets droits en anglais — le moteur cite dans la langue
+// français en français, guillemets droits en anglais. Le moteur cite dans la langue
 // du rapport, la généralisation doit donc reconnaître les deux.
 var quotedName = regexp.MustCompile(`«[^»]*»|"[^"]*"`)
 

@@ -59,7 +59,7 @@ type Cell struct {
 	Reason string // actionnable, dans la langue de la matrice ; vide pour Supported
 	// Undeclared distingue le seul cas d'Unsupported qui n'apprend rien : le contrôle
 	// n'est pas déclaré pour ce fournisseur au référentiel. Un drapeau plutôt qu'un
-	// test sur le texte du motif — un motif est traduit, un drapeau ne l'est pas.
+	// test sur le texte du motif : un motif est traduit, un drapeau ne l'est pas.
 	Undeclared bool
 }
 

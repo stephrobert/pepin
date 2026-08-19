@@ -63,7 +63,7 @@ _is_base64(s) if {
 	regex.match(`^[[:print:][:space:]]*$`, base64.decode(s))
 }
 
-# _secret_regexes — motifs de détection, chacun avec son LIBELLÉ dans les deux
+# _secret_regexes : motifs de détection, chacun avec son LIBELLÉ dans les deux
 # langues. Le libellé est interpolé dans le message du finding : le garder
 # monolingue produirait une phrase anglaise à moitié française, exactement ce que
 # l'internationalisation corrige. La clé de la carte est le libellé français

@@ -6,7 +6,7 @@ package cmd
 // Deux invariants, et ils tirent dans des directions opposées, ce qui est le
 // point : l'anglais ne doit plus laisser passer un mot de français, et le
 // français ne doit pas avoir bougé d'un caractère. Le second est celui qu'on
-// oublie — une internationalisation réussie qui déplacerait la sortie française
+// oublie : une internationalisation réussie qui déplacerait la sortie française
 // casserait les portes de CI de tous ses utilisateurs actuels.
 
 import (
@@ -75,8 +75,8 @@ func asExitError(err error, target **exec.ExitError) bool {
 // testdata/lang/). Le français est la langue de référence : le rendre bilingue ne
 // devait rien y changer, et « rien » se prouve octet par octet.
 //
-// La référence n'est pas une capture du code d'aujourd'hui — ce serait un test
-// qui se compare à lui-même. C'est la sortie de la version publiée.
+// La référence n'est pas une capture du code d'aujourd'hui, ce qui reviendrait à
+// se comparer à soi-même. C'est la sortie de la version publiée.
 func TestFrenchScanOutputHasNotMovedOneCharacter(t *testing.T) {
 	bin := buildPepin(t)
 	// LANG seul, sans PEPIN_LANG ni LC_ALL : c'est le chemin de résolution du poste
@@ -105,7 +105,7 @@ func TestFrenchScanOutputHasNotMovedOneCharacter(t *testing.T) {
 // au jugement : un mot accenté n'est toléré que s'il figure tel quel dans la
 // fixture scannée, donc s'il vient de la donnée auditée et non du texte de Pépin.
 // Le plan d'exemple porte justement de la prose française dans une `description`
-// Terraform — le jour où le rapport la citera, ce test dira que c'est une donnée
+// Terraform : le jour où le rapport la citera, ce test dira que c'est une donnée
 // de l'inventaire, pas une régression de traduction.
 //
 // Seules les LETTRES sont regardées. Le bandeau ASCII, « — », « … », « · », « ⓘ »
@@ -200,7 +200,7 @@ func TestTheLangFlagBeatsTheEnvironment(t *testing.T) {
 // TestTheTranslationLabelsNeverReachTheOutput : `message_en` et `remediation_en`
 // sont un TRANSPORT entre la règle Rego et le rendu, pas une donnée du rapport.
 // Les laisser dans `labels` ferait voyager les deux langues dans chaque finding
-// de `--format json`, du SARIF et de l'assessment scellé — et changerait le digest
+// de `--format json`, du SARIF et de l'assessment scellé, et changerait le digest
 // du bundle pour une raison qui ne regarde pas la posture du tenant.
 func TestTheTranslationLabelsNeverReachTheOutput(t *testing.T) {
 	bin := buildPepin(t)
