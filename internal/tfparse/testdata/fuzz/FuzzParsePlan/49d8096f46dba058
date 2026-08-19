@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"vAlues\":{\"root_module\":{\"resourCes\":[{}]}}}")

@@ -80,6 +80,16 @@ func ParsePlan(path string) ([]Resource, error) {
 // d'osc-policy sur planned_values).
 func collect(out *[]Resource, m module) {
 	for _, r := range m.Resources {
+		// Une ressource sans type n'est évaluable par AUCUNE règle : toutes
+		// sélectionnent par `resources_of_type(...)`. La laisser entrer ajoute une
+		// entrée que rien ne contrôle et pollue le relevé des types collectés, sur
+		// lequel repose le verrou de capacité. Trouvé par FuzzParsePlan, sur un plan
+		// où `resources: [{}]` — encoding/json apparie les clés sans tenir compte de
+		// la casse, donc un plan forgé atteint ce chemin plus facilement qu'il n'y
+		// paraît.
+		if r.Type == "" {
+			continue
+		}
 		*out = append(*out, Resource{Type: r.Type, Name: r.Name, Address: r.Address, Values: r.Values})
 	}
 	for _, child := range m.ChildModules {
