@@ -1,8 +1,9 @@
 package objectstorage
 
-import "errors"
-
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestPolicyAllowsPublic(t *testing.T) {
 	cases := []struct {

@@ -134,6 +134,8 @@ jobs:
           sleep 2
 
       - name: A genuine binary is accepted, and it runs
+        env:
+          PEPIN_SKIP_ATTESTATION: '1'   # artefact local : aucune provenance à présenter
         run: |
           set -u
           mkdir -p inst
@@ -145,6 +147,8 @@ jobs:
       # d'empreintes inchangée. Si install.sh installe quand même, la
       # vérification est un commentaire, pas un contrôle.
       - name: The same binary corrupted by one byte is refused
+        env:
+          PEPIN_SKIP_ATTESTATION: '1'
         run: |
           set -u
           printf 'X' | dd of=serve/pepin-linux-amd64 bs=1 seek=100 count=1 conv=notrunc
@@ -157,6 +161,39 @@ jobs:
             echo "install.sh a refusé, mais un binaire a quand même été installé" >&2
             exit 1
           fi
+
+      # L'attaque que la liste d'empreintes ne peut PAS voir : le binaire est
+      # remplacé ET checksums.txt régénéré pour concorder — ce que fait quiconque
+      # peut réécrire les assets d'une release. sha256sum -c passe alors sans
+      # broncher. Seule la provenance distingue les deux cas, donc ce test tourne
+      # SANS PEPIN_SKIP_ATTESTATION : l'installation doit être refusée.
+      - name: A substituted binary with a matching checksum is refused
+        run: |
+          set -u
+          printf 'MALVEILLANT' > serve/pepin-linux-amd64
+          (cd serve && sha256sum pepin-linux-amd64 > checksums.txt)
+          mkdir -p inst3
+          if .github/actions/pepin-scan/install.sh 0.0.0-ci inst3 http://127.0.0.1:8931; then
+            echo "install.sh a accepté un binaire substitué dont l'empreinte concorde" >&2
+            echo "-> la vérification d'authenticité ne protège rien" >&2
+            exit 1
+          fi
+          if [ -e inst3/pepin ]; then
+            echo "install.sh a refusé, mais un binaire a quand même été installé" >&2
+            exit 1
+          fi
+
+      # On restaure un artefact authentique et cohérent pour la suite du job.
+      - name: Restore a genuine artefact
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          go build -trimpath \
+            -ldflags="-s -w -X github.com/stephrobert/pepin/cmd.version=v0.0.0-ci" \
+            -o serve/pepin-linux-amd64 .
+          (cd serve && sha256sum pepin-linux-amd64 > checksums.txt)
+          rm -rf inst && mkdir -p inst
+          PEPIN_SKIP_ATTESTATION=1 .github/actions/pepin-scan/install.sh 0.0.0-ci inst http://127.0.0.1:8931
 
       # Les quatre chemins de scan.sh, avec le binaire vérifié : 0 passe,
       # 1 échoue par défaut, 1 devient un avertissement en mode rapport, et

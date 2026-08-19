@@ -1,6 +1,6 @@
 module github.com/stephrobert/pepin
 
-go 1.26.5
+go 1.26.6
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.42.0
@@ -60,7 +60,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/spf13/pflag v1.0.10
 	github.com/stephrobert/scankit v0.2.1
 	github.com/tchap/go-patricia/v2 v2.3.3 // indirect
 	github.com/valyala/fastjson v1.6.10 // indirect

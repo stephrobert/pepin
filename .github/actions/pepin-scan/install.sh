@@ -30,9 +30,29 @@ trap 'rm -rf "${workdir}"' EXIT
 curl --retry 3 --retry-connrefused -fsSL -o "${workdir}/${asset}" "${BASE}/${asset}"
 curl --retry 3 --retry-connrefused -fsSL -o "${workdir}/checksums.txt" "${BASE}/checksums.txt"
 
-# The bytes are checked before anything runs them. The cosign signature over
-# the checksum list is the stronger half and needs cosign, which a CI job may
-# not have; docs/install.md carries that command for anyone who wants it.
+# Authenticity BEFORE integrity. Comparing the binary against checksums.txt
+# proves only that the two files agree, and both come from the same origin:
+# whoever can replace the release assets replaces both, and the check passes.
+# The release publishes build provenance attestations precisely to settle this,
+# so the installer verifies them instead of pointing at the docs.
+#
+# `gh` ships on every GitHub-hosted runner. The skip is an EXPLICIT opt-out, not
+# a side effect of passing a base URL: the CI job that serves locally built
+# artefacts has no attestation to show, but every other caller must be covered
+# -- and a test can then prove the check actually refuses an unattested binary.
+if [ "${PEPIN_SKIP_ATTESTATION:-0}" != "1" ]; then
+  if command -v gh >/dev/null 2>&1; then
+    gh attestation verify "${workdir}/${asset}" \
+      --repo stephrobert/pepin \
+      --signer-workflow stephrobert/pepin/.github/workflows/release.yml \
+      || { echo "provenance non vérifiée pour ${asset} : installation refusée" >&2; exit 1; }
+  else
+    echo "AVERTISSEMENT : gh absent, provenance non vérifiée — empreinte seule." >&2
+    echo "  Vérification manuelle : docs/install.md (cosign verify-blob)." >&2
+  fi
+fi
+
+# The bytes are checked before anything runs them.
 (cd "${workdir}" && grep " ${asset}$" checksums.txt | sha256sum -c -)
 
 install -m 0755 "${workdir}/${asset}" "${DEST}/pepin"

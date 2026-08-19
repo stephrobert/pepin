@@ -206,7 +206,13 @@ fi
 # les fait tourner sur chaque push ; ceci vérifie qu'elle l'a fait sur CE
 # commit. Une mesure qui échoue et un résultat absent sont deux réponses
 # différentes, et une seule des deux parle du dépôt.
-ci_jobs='^(Build \+ Test|golangci-lint)$'
+# TOUS les jobs qui gardent la livraison, pas seulement ceux de ci.yml. Le filtre
+# précédent ne retenait que « Build + Test » et « golangci-lint » : CodeQL, l'audit,
+# la revue de dépendances, le scan de secrets et les deux jobs entrypoints pouvaient
+# être ROUGES pendant que le preflight annonçait « la CI est verte » et autorisait le
+# tag. Les lignes ci-dessus délèguent l'audit à la CI : la délégation doit pointer
+# vers ce qu'elle prétend déléguer.
+ci_jobs='^(Build \+ Test|golangci-lint|Audit \(gosec \+ govulncheck\)|Analyze \(go\)|Dependency Review|Secret scanning|Secret scanning \(pattern-based\)|The image scans for real|The action installs only what it verified)$'
 if git remote | grep -q . && command -v gh >/dev/null 2>&1; then
   sha="$(git rev-parse HEAD)"
   if runs="$(gh api "repos/{owner}/{repo}/commits/$sha/check-runs?per_page=100" \

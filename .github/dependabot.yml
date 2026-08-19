@@ -4,6 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
     groups:
       go-dependencies:
@@ -12,6 +14,17 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]
+
+  # L'image de base est epinglee par digest (Dockerfile) : sans suivi, ce digest
+  # vieillit avec ses CVE, en silence. C'est le revers de l'epinglage.
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

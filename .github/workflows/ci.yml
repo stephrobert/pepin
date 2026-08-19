@@ -18,6 +18,11 @@ jobs:
     name: Build + Test
     runs-on: ubuntu-latest
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
@@ -60,15 +65,65 @@ jobs:
 
       - name: OSCAL conforme au schéma NIST 1.1.2
         run: |
-          pipx install check-jsonschema
-          curl -sSL -o oscal-ar.json https://github.com/usnistgov/OSCAL/releases/download/v1.1.2/oscal_assessment-results_schema.json
+          # Outil tiers et schema figes : sans version ni empreinte, ce job execute
+          # a chaque fois du code et des donnees qu'il n'a pas choisis.
+          pipx install 'check-jsonschema==0.33.4'
+          curl -sSL --retry 3 -o oscal-ar.json https://github.com/usnistgov/OSCAL/releases/download/v1.1.2/oscal_assessment-results_schema.json
+          echo "d033da70154cf6625ae46a746199e88e58f2928b1387dfac051d381b92f41b0d  oscal-ar.json" | sha256sum -c -
+          # `|| true` : un scan non conforme sort 1, ce qui est le comportement
+          # attendu ici — c'est la validite OSCAL qu'on mesure, pas la posture.
           ./pepin scan scaleway examples/scaleway/inventory.json --format oscal > out.oscal.json || true
           check-jsonschema --schemafile oscal-ar.json out.oscal.json
+
+  # CLAUDE.md §5 pose que gosec et govulncheck doivent passer. Aucun workflow ne
+  # les invoquait : la porte n'existait que comme convention locale, et elle etait
+  # rouge (5 vulnerabilites stdlib atteignables au moment de l'audit).
+  audit:
+    name: Audit (gosec + govulncheck)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Actions officielles ÉPINGLÉES par SHA plutôt que `go install @version` :
+      # Dependabot ne lit pas mise.toml, alors qu'il suit l'écosystème
+      # github-actions. Un outil de sécurité installé sans suivi vieillit en
+      # silence — le reproche même qu'on fait à un digest non surveillé.
+      # OSV n'est pas repris ici : osv-scanner.yml le couvre déjà, en PR et en
+      # scan planifié (les paquets reclassés MAL- après coup).
+      - name: Sécurité du code (gosec)
+        uses: securego/gosec@9e75c0576c9878035d4221392108d458abe10fc3 # v2.28.0
+        with:
+          args: -quiet ./...
+
+      - name: Vulnérabilités appelées (govulncheck)
+        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
+        with:
+          go-version-file: go.mod
+          repo-checkout: false
 
   lint:
     name: golangci-lint
     runs-on: ubuntu-latest
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false

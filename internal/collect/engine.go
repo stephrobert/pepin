@@ -450,7 +450,7 @@ func splitRange(s string) (int64, int64, bool) {
 	return from, to, true
 }
 
-// iamPolicyStatements parse un document de politique au format JSON de statements
+// IAMPolicyStatements parse un document de politique au format JSON de statements
 // (string {Statement:[{Effect, Action, Resource, NotAction, NotResource}]}) en
 // statements normalisés [{effect, actions[], resources[], not_action[],
 // not_resource[]}]. Helper COMMUN aux providers dont les politiques suivent ce

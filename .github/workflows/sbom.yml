@@ -3,21 +3,25 @@ name: sbom
 on:
   push:
     branches: [main]
-  release:
-    types: [published]
 
 concurrency:
   group: sbom-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   generate:
     runs-on: ubuntu-latest
     permissions:
-      contents: write    # upload SBOM to release assets
+      contents: read
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
@@ -29,4 +33,6 @@ jobs:
           output-file: pepin.spdx.json
           artifact-name: pepin.spdx.json
           upload-artifact: true
-          upload-release-assets: ${{ github.event_name == 'release' }}
+          # release.yml produit et attache deja le SBOM de la release ;
+          # ce job ne sert qu'a suivre la SBOM de main.
+          upload-release-assets: false

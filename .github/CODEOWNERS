@@ -1,0 +1,16 @@
+# Propriétaires par défaut : toute modification requiert leur revue.
+# Sans ce fichier, aucune revue n'est exigible sur les chemins sensibles, et
+# OpenSSF Scorecard — dont ce dépôt publie le score — le compte comme un manque.
+*                       @stephrobert
+
+# Chaîne de construction et de publication : une modification ici change ce qui
+# est livré aux consommateurs, pas seulement ce que fait le code.
+/.github/               @stephrobert
+/tools/release/         @stephrobert
+/Dockerfile             @stephrobert
+/mise.toml              @stephrobert
+
+# Référentiel et règles : ils décident de ce qui est déclaré conforme.
+/referentiel/           @stephrobert
+/internal/commonrules/  @stephrobert
+/providers/             @stephrobert
