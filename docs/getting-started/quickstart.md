@@ -127,15 +127,26 @@ echo $?   # 1 — at least one critical or high deviation
 
 ## 4. Read one FAIL
 
-Take `CLD-CHF-2`, *managed database without encryption at rest*, severity `high`:
+Take `CLD-CHF-2`, *managed database without encryption at rest*, severity `high`. Its block,
+lifted from the run above:
 
-```
+<!-- pepin:gen scan-control-encryption -->
+```text
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-CHF-2  ·  scaleway
+ Base de données managée sans chiffrement au repos
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
   Details:
       HIGH  pepin-test-rdb — Base de données managée « pepin-test-rdb » sans chiffrement au repos.
 
   Remediation
     Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-CHF-2
 ```
+<!-- /pepin:gen scan-control-encryption -->
 
 Read it backwards, which is how it was produced:
 

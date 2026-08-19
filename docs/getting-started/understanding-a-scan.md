@@ -234,10 +234,15 @@ large tenant, you want to know the tool started. The closing line is
 
 ### Header
 
-```
+<!-- pepin:gen scan-header -->
+```text
+──────────────────────────────────────────────────────────────────────────────
  Mode      scan scaleway (terraform)
  Source    examples/scaleway/terraform/plan.json
+──────────────────────────────────────────────────────────────────────────────
+[…]
 ```
+<!-- /pepin:gen scan-header -->
 
 `Mode` names the **provider** and the **source**. `(terraform)` means a plan was projected
 through the provider's Terraform mapping; `(live)` would mean the API was queried, and `Source`
@@ -255,10 +260,25 @@ screen of a long report is already actionable.
 
 ### One block per control
 
-```
+<!-- pepin:gen scan-control-objectstore -->
+```text
+──────────────────────────────────────────────────────────────────────────────
  CRITICAL  ·  CLD-STO-1  ·  scaleway
  Stockage objet exposé publiquement
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
+
+  Remediation
+    Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-1
 ```
+<!-- /pepin:gen scan-control-objectstore -->
+
+Read the header line first:
 
 - **severity** — `critical`, `high`, `medium`, `low`, from the reference.
 - **`CLD-STO-1`** — the **control** identifier, that is the frozen SCSL requirement. The rules
@@ -268,13 +288,8 @@ screen of a long report is already actionable.
   hardcoded in a rule.
 - the title, then `Total deviations`, then one `Details` line per offending subject.
 
-`Details` is the **evidence**: the resource that failed, and the observed fact about it.
-
-```
-      CRIT  scaleway_object_bucket_acl.backups — Bucket « … » accessible publiquement (ACL publique).
-```
-
-Then the **remediation**, and a `docs:` link to the SCSL page of the requirement.
+`Details` is the **evidence**: the resource that failed, and the observed fact about it. Then
+the **remediation**, and a `docs:` link to the SCSL page of the requirement.
 
 ### Controls table and summary
 

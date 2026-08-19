@@ -144,6 +144,9 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"scan-vulnerable-full":      Fence("text", c.vulnerable.Stdout),
 		"scan-vulnerable-banner":    Fence("text", c.vulnerable.Stderr),
 		"scan-fixed-full":           Fence("text", c.fixed.Stdout),
+		"scan-header":               Fence("text", Head(c.vulnerable.Stdout, 4)),
+		"scan-control-encryption":   Fence("text", controlBlock(c.vulnerable.Stdout, "CLD-CHF-2")),
+		"scan-control-objectstore":  Fence("text", controlBlock(c.vulnerable.Stdout, "CLD-STO-1")),
 		"provider-list":             Fence("text", c.providers.Stdout),
 		"fixture-empty-inventory":   Fence("json", emptyInventory),
 		"fixture-tagless-inventory": Fence("json", taglessInventory),
@@ -164,6 +167,36 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"control-counts":            controlCountsTable(t, m),
 	}
 	return b
+}
+
+// controlBlock extrait du rapport terminal le bloc d'UN contrôle, de la règle horizontale qui
+// l'ouvre jusqu'à sa ligne de documentation. Sert à commenter un écart précis sans recopier
+// à la main un fragment de sortie : recopié, il survivrait à un changement de rendu et
+// contredirait le rapport complet affiché quelques lignes plus haut.
+//
+// Un contrôle absent du scan rend une note EXPLICITE plutôt qu'un bloc vide : la page doit
+// dire qu'elle n'a pas l'exemple, jamais faire semblant de l'avoir.
+func controlBlock(stdout, code string) string {
+	lines := strings.Split(stdout, "\n")
+	start := -1
+	for i, l := range lines {
+		if strings.Contains(l, "·  "+code+"  ·") {
+			start = i
+			break
+		}
+	}
+	if start < 0 {
+		return "(aucun écart " + code + " sur ce scan)"
+	}
+	if start > 0 && strings.HasPrefix(strings.TrimSpace(lines[start-1]), "─") {
+		start-- // la règle horizontale qui ouvre le bloc
+	}
+	for j := start; j < len(lines); j++ {
+		if strings.Contains(lines[j], "↳ docs:") {
+			return strings.Join(lines[start:j+1], "\n")
+		}
+	}
+	return strings.Join(lines[start:], "\n")
 }
 
 // wrapDisclaimer replie l'avertissement de portée à une largeur lisible, sans changer un mot :

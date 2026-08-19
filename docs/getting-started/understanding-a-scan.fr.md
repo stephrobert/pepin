@@ -235,10 +235,15 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
 
 ### En-tête
 
-```
+<!-- pepin:gen scan-header -->
+```text
+──────────────────────────────────────────────────────────────────────────────
  Mode      scan scaleway (terraform)
  Source    examples/scaleway/terraform/plan.json
+──────────────────────────────────────────────────────────────────────────────
+[…]
 ```
+<!-- /pepin:gen scan-header -->
 
 `Mode` nomme le **fournisseur** et la **source**. `(terraform)` signifie qu'un plan a été
 projeté par le mapping Terraform du fournisseur ; `(live)` signifierait que l'API a été
@@ -257,10 +262,25 @@ premier écran d'un long rapport soit déjà actionnable.
 
 ### Un bloc par contrôle
 
-```
+<!-- pepin:gen scan-control-objectstore -->
+```text
+──────────────────────────────────────────────────────────────────────────────
  CRITICAL  ·  CLD-STO-1  ·  scaleway
  Stockage objet exposé publiquement
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
+
+  Remediation
+    Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-1
 ```
+<!-- /pepin:gen scan-control-objectstore -->
+
+La ligne d'en-tête se lit d'abord :
 
 - **sévérité** : `critical`, `high`, `medium`, `low`, issue du référentiel.
 - **`CLD-STO-1`** : l'identifiant du **contrôle**, c'est-à-dire l'exigence SCSL gelée. Les
@@ -271,13 +291,8 @@ premier écran d'un long rapport soit déjà actionnable.
   en dur dans une règle.
 - le titre, puis `Total deviations`, puis une ligne `Details` par sujet fautif.
 
-`Details` porte la **preuve** : la ressource en écart, et le fait observé à son sujet.
-
-```
-      CRIT  scaleway_object_bucket_acl.backups — Bucket « … » accessible publiquement (ACL publique).
-```
-
-Vient ensuite la **remédiation**, puis un lien `docs:` vers la page SCSL de l'exigence.
+`Details` porte la **preuve** : la ressource en écart, et le fait observé à son sujet. Vient
+ensuite la **remédiation**, puis un lien `docs:` vers la page SCSL de l'exigence.
 
 ### Tableau des contrôles et résumé
 

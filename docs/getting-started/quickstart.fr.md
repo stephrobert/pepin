@@ -130,15 +130,26 @@ echo $?   # 1 : au moins un écart critical ou high
 
 ## 4. Lire un FAIL
 
-Prenons `CLD-CHF-2`, « base de données managée sans chiffrement au repos », sévérité `high` :
+Prenons `CLD-CHF-2`, « base de données managée sans chiffrement au repos », sévérité `high`.
+Son bloc, extrait du run ci-dessus :
 
-```
+<!-- pepin:gen scan-control-encryption -->
+```text
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-CHF-2  ·  scaleway
+ Base de données managée sans chiffrement au repos
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
   Details:
       HIGH  pepin-test-rdb — Base de données managée « pepin-test-rdb » sans chiffrement au repos.
 
   Remediation
     Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
+
+  ↳ docs: https://stephane-robert.info/scsl/CLD-CHF-2
 ```
+<!-- /pepin:gen scan-control-encryption -->
 
 Il se lit à rebours, dans l'ordre où il a été produit :
 
