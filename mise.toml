@@ -48,6 +48,16 @@ run = "./pepin scsl"
 description = "(Re)génère les exigences SCSL fines dans framework-scsl"
 run = "python3 scripts/gen-scsl-cloud.py"
 
+# La documentation dérivée (matrice de couverture, sorties de commande montrées dans docs/)
+# est GÉNÉRÉE, jamais recopiée : une page recopiée diverge au premier contrôle ajouté, et une
+# doc de CSPM qui ment sur sa couverture est pire que pas de doc.
+# La VÉRIFICATION n'est volontairement pas une tâche séparée qu'on peut oublier : c'est
+# TestGeneratedDocsAreUpToDate (internal/docgen), donc `mise run test` et la CI.
+[tasks.gen-docs]
+description = "Régénère docs/coverage.md et les régions générées des pages de docs/"
+depends = ["build"]
+run = "go run ./tools/docgen -root ."
+
 [tasks.fetch-docs]
 description = "Met en cache la doc officielle des providers en Markdown (trafilatura)"
 run = "python3 scripts/fetch-docs.py"
