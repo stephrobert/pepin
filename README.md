@@ -111,6 +111,8 @@ control is the one that governs.
   `not-applicable` and `not-evaluated` actually assert.
 - [Coverage matrix](docs/coverage.md) — what is measurable, per provider and per source.
   **Generated** from the reference and the provider descriptors, and verified in CI.
+- [Control catalogue](docs/controls/index.md) — one generated page per control: what it
+  concludes, from which source, and how to fix what it finds.
 - [Known limitations](docs/known-limitations.md) — the blind spots, named.
 - [Scope and non-goals](docs/concepts/scope.md) — what a Pépin report is not.
 - [Terraform plan vs live scan](docs/concepts/terraform-vs-live.md) — choosing the
@@ -120,9 +122,13 @@ control is the one that governs.
   read-only permissions, coverage.
 - Reference: [CLI](docs/reference/cli.md) · [Exit codes](docs/reference/exit-codes.md) ·
   [Output formats](docs/reference/output-formats.md).
-- Guides: [Evidence bundles](docs/guides/evidence-bundles.md) ·
+- Guides: [Remediation](docs/guides/remediation.md) ·
+  [Evidence bundles](docs/guides/evidence-bundles.md) ·
   [GitHub Actions](docs/guides/github-actions.md) · [GitLab CI](docs/guides/gitlab-ci.md).
-- [Install](docs/install.md)
+- Contributing: [Adding a control](docs/contributing/adding-a-control.md) ·
+  [Adding a provider](docs/contributing/adding-a-provider.md) ·
+  [Architecture](docs/project/architecture.md).
+- [Install](docs/install.md) · [Roadmap](ROADMAP.md) — where the effort goes next.
 
 ## Architecture (in brief)
 

@@ -111,6 +111,8 @@ d'un contrôle qui fait foi.
   `not-applicable` et `not-evaluated` affirment réellement.
 - [Matrice de couverture](docs/coverage.fr.md) : ce qui est mesurable, par fournisseur et par
   source. **Générée** depuis le référentiel et les descripteurs, vérifiée en CI.
+- [Catalogue des contrôles](docs/controls/index.fr.md) : une page générée par contrôle,
+  ce qu'il conclut, depuis quelle source, et comment corriger ce qu'il trouve.
 - [Limites connues](docs/known-limitations.fr.md) : les angles morts, nommés.
 - [Périmètre et non-objectifs](docs/concepts/scope.fr.md) : ce qu'un rapport Pépin n'est pas.
 - [Plan Terraform contre scan live](docs/concepts/terraform-vs-live.fr.md) : choisir la
@@ -121,11 +123,15 @@ d'un contrôle qui fait foi.
 - Référence : [CLI](docs/reference/cli.fr.md) ·
   [Codes de sortie](docs/reference/exit-codes.fr.md) ·
   [Formats de sortie](docs/reference/output-formats.fr.md).
-- Guides : [Le bundle de preuve](docs/guides/evidence-bundles.fr.md) ·
+- Guides : [Remédiation](docs/guides/remediation.fr.md) ·
+  [Le bundle de preuve](docs/guides/evidence-bundles.fr.md) ·
   [GitHub Actions](docs/guides/github-actions.fr.md) ·
   [GitLab CI](docs/guides/gitlab-ci.fr.md).
-- [Installation](docs/install.fr.md) · [Feuille de route](docs/roadmap.md) (document de
-  travail interne)
+- Contribution : [Ajouter un contrôle](docs/contributing/adding-a-control.fr.md) ·
+  [Ajouter un fournisseur](docs/contributing/adding-a-provider.fr.md) ·
+  [Architecture](docs/project/architecture.fr.md).
+- [Installation](docs/install.fr.md) · [Feuille de route](ROADMAP.fr.md) : où va l'effort
+  ensuite.
 
 ## Architecture (en bref)
 

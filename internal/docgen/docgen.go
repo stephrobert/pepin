@@ -13,6 +13,12 @@ import (
 // de la prose (elle explique, elle argumente) ; ce qui s'y périme — sorties de commande,
 // tableaux dérivés du référentiel — est injecté.
 var injectedPages = []string{
+	// La feuille de route publique vit à la racine, à côté du README : c'est une page
+	// produit, pas une page de docs/. Elle ne porte que des chiffres GÉNÉRÉS (référentiel,
+	// descripteurs, binaire), pour qu'une roadmap ne puisse pas annoncer une couverture
+	// que le dépôt n'a pas.
+	"ROADMAP.md",
+	"ROADMAP.fr.md",
 	"docs/getting-started/quickstart.md",
 	"docs/getting-started/quickstart.fr.md",
 	"docs/getting-started/understanding-a-scan.md",

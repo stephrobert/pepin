@@ -167,7 +167,7 @@ func TestInternalDocLinksResolve(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parcours de docs/ : %v", err)
 	}
-	for _, name := range []string{"README.md", "README.fr.md"} {
+	for _, name := range []string{"README.md", "README.fr.md", "ROADMAP.md", "ROADMAP.fr.md"} {
 		pages = append(pages, filepath.Join(repoRoot, name))
 	}
 	if len(pages) == 0 {
