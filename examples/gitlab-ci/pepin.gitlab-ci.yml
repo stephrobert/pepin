@@ -1,7 +1,7 @@
 # Pépin in GitLab CI — an includable template.
 #
 #   include:
-#     - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.1.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
+#     - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.2.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
 #
 # then `extends: .pepin` in your own job (see .gitlab-ci.yml beside this file).
 # The remote include is pinned to a tag on purpose: an unpinned include runs
@@ -13,9 +13,10 @@
 # cosign or gh; docs/install.md carries those commands.
 #
 # Exit codes are the contract: 0 compliant, 1 non-compliance, 2 technical
-# error (3 under --strict). The default below fails the job on any non-zero
-# code. To *report* the posture without gating on it, allow the verdict codes
-# and only them — never 2, which means the scan measured nothing:
+# error, 3 nothing measured (or medium/low under --strict). The default below
+# fails the job on any non-zero code. To *report* the posture without gating
+# on it, allow the verdict codes and only them — never 2, which means the scan
+# could not conclude:
 #
 #   pepin-scan:
 #     extends: .pepin
@@ -23,7 +24,11 @@
 #       exit_codes: [1, 3]
 
 variables:
-  PEPIN_VERSION: "0.1.0"
+  PEPIN_VERSION: "0.2.0"
+  # Codes, identifiers, severities and exit codes are identical in both
+  # languages; titles, messages and remediations are not. A pipeline that
+  # compares report TEXT between runs pins the language.
+  PEPIN_LANG: "en"
 
 .pepin:
   image: alpine:3.21
@@ -39,6 +44,9 @@ variables:
 # Audit a Terraform plan: no credential, nothing provisioned. Expects a
 # `plan.json` artifact from an earlier stage (`terraform show -json`).
 # Override PEPIN_PROVIDER and the path to match your pipeline.
+#
+# This job GATES: any non-zero code fails the pipeline, and the three of them
+# stay distinguishable in the job log and in its exit code.
 pepin-terraform-plan:
   extends: .pepin
   stage: test
@@ -46,6 +54,24 @@ pepin-terraform-plan:
     PEPIN_PROVIDER: scaleway
   script:
     - pepin scan "${PEPIN_PROVIDER}" --terraform plan.json --format json > pepin-report.json
+  artifacts:
+    when: always
+    paths: [pepin-report.json]
+    expire_in: 1 week
+
+# The same audit, reporting instead of gating. `allow_failure.exit_codes`
+# lists the VERDICT codes and only them: 2 is absent, so a technical error
+# still fails the pipeline. Listing it would turn "the scan could not
+# conclude" into a green pipeline.
+pepin-terraform-plan-report:
+  extends: .pepin
+  stage: test
+  variables:
+    PEPIN_PROVIDER: scaleway
+  script:
+    - pepin scan "${PEPIN_PROVIDER}" --terraform plan.json --format json > pepin-report.json
+  allow_failure:
+    exit_codes: [1, 3]
   artifacts:
     when: always
     paths: [pepin-report.json]
@@ -78,6 +104,8 @@ pepin-live:
     PEPIN_PROVIDER: scaleway
   script:
     - pepin scan "${PEPIN_PROVIDER}" --live --format json --seal bundle --redact > pepin-report.json
+  allow_failure:
+    exit_codes: [1, 3]
   artifacts:
     when: always
     paths:

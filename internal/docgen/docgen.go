@@ -33,6 +33,10 @@ var injectedPages = []string{
 	"docs/concepts/terraform-vs-live.fr.md",
 	"docs/guides/evidence-bundles.md",
 	"docs/guides/evidence-bundles.fr.md",
+	"docs/guides/github-actions.md",
+	"docs/guides/github-actions.fr.md",
+	"docs/guides/gitlab-ci.md",
+	"docs/guides/gitlab-ci.fr.md",
 }
 
 // generatedPages : les pages entièrement calculées, sans une ligne écrite à la main.

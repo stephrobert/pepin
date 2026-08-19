@@ -3,13 +3,14 @@
 # Copy into a repository holding a Terraform configuration for Exoscale,
 # Outscale or Scaleway. The `plan` job renders the plan; the included template
 # audits it with no credential and nothing provisioned. The pipeline fails on
-# a non-compliant posture (exit 1) and on a technical error (exit 2), and the
-# two are distinguishable in the job log and its exit code.
+# a non-compliant posture (exit 1), on a scan that measured nothing (exit 3)
+# and on a technical error (exit 2), and the three are distinguishable in the
+# job log and in its exit code.
 
 include:
   # Pinned to a tag: an unpinned include runs whatever the default branch
   # says tomorrow.
-  - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.1.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
+  - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.2.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
 
 stages: [plan, test]
 
@@ -26,9 +27,11 @@ plan:
     paths: [plan.json]
     expire_in: 1 day
 
-# The template's job as-is gates the pipeline. To report without gating,
-# override it — allowing only the verdict codes, never 2:
+# The template ships three jobs: `pepin-terraform-plan` (gating),
+# `pepin-terraform-plan-report` (report only, allow_failure on the verdict
+# codes 1 and 3 but never on 2) and `pepin-live` (manual). Keep the one you
+# want and disable the others, for instance:
 #
-#   pepin-terraform-plan:
-#     allow_failure:
-#       exit_codes: [1, 3]
+#   pepin-terraform-plan-report:
+#     rules:
+#       - when: never

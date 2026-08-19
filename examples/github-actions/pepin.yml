@@ -1,38 +1,57 @@
 # Gate a pipeline on the posture of a sovereign cloud — Pépin in GitHub Actions.
 #
 # Copy this into `.github/workflows/` of a repository holding a Terraform
-# configuration for Exoscale, Outscale or Scaleway. The first job needs no
-# credential at all: it audits the *plan*, so nothing is provisioned and there
-# is no secret to create. The second job shows the live variant, disabled by
+# configuration for Exoscale, Outscale or Scaleway. The first two jobs need no
+# credential at all: they audit the *plan*, so nothing is provisioned and there
+# is no secret to create. The third shows the live variant, disabled by
 # default, because it reads a real tenant with real credentials.
 #
 # The exit codes are the contract: 0 compliant, 1 non-compliance, 2 technical
-# error. The action fails the job on 1 unless you set
-# `fail-on-nonconformity: 'false'`, and it fails on 2 whatever you set:
-# a swallowed technical error would report a posture nobody measured.
+# error, 3 nothing measured (or medium/low under --strict). The action fails
+# the job on 1 and 3 unless you set `fail-on-nonconformity: 'false'`, and it
+# fails on 2 whatever you set: a swallowed technical error would report a
+# posture nobody measured.
+#
+# Everything is pinned by commit SHA, this repository's own action included.
+# A mutable reference (@main, @v1) runs whatever that reference says tomorrow.
+#
+# Pin at least v0.2.0 of the action: in v0.1.0 and v0.1.1 its installer called
+# `gh attestation verify` without a token, which refused EVERY installation.
 
 name: cloud posture
 
 on:
   pull_request:
+  schedule:
+    - cron: '17 4 * * 1'   # the live job below, once a week
   workflow_dispatch:
 
 permissions: {}
 
+env:
+  # Codes, identifiers, severities and exit codes are identical in both
+  # languages; titles, messages and remediations are not. A pipeline that
+  # compares report TEXT between runs pins the language. One that reads exit
+  # codes does not have to, and pinning costs nothing.
+  PEPIN_LANG: en
+
 jobs:
+  # ---------------------------------------------------------------- blocking
   # No account, no secret, nothing billed: the plan is audited, not the cloud.
+  # This job GATES: a critical/high deviation fails the pull request.
   terraform-plan:
-    name: audit the Terraform plan
+    name: audit the Terraform plan (blocking)
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
           terraform_wrapper: false
 
@@ -46,21 +65,83 @@ jobs:
           terraform show -json tfplan > plan.json
 
       - name: Pépin — the posture gate
-        uses: stephrobert/pepin/.github/actions/pepin-scan@v0.1.0
+        uses: stephrobert/pepin/.github/actions/pepin-scan@a02e42d054dc9d8a5a41ece5b46f6c1111659a70 # v0.2.0
         with:
-          version: 0.1.0
+          version: '0.2.0'
           provider: scaleway
           terraform-plan: plan.json
 
-  # The live variant reads the real tenant. Credentials come from repository
-  # secrets, through `env:`, in the provider's own variable names — never as
-  # action inputs, never in the repository. Pépin does not print them, but the
-  # evidence bundle embeds the tenant's INVENTORY: keep `redact` at its
-  # default, keep the artifact retention short, and remember that artifacts of
-  # a public repository are downloadable by anyone with read access.
+  # ------------------------------------------------------------- report only
+  # The same audit, without gating: the verdict is reported and published to
+  # Code Scanning, and only a TECHNICAL error fails the job.
+  terraform-plan-report:
+    name: audit the Terraform plan (report only)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write   # required by upload-sarif, and by nothing else
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      - name: Render the plan as JSON
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform show -json tfplan > plan.json
+
+      - name: Pépin — report the posture as SARIF
+        id: scan
+        uses: stephrobert/pepin/.github/actions/pepin-scan@a02e42d054dc9d8a5a41ece5b46f6c1111659a70 # v0.2.0
+        with:
+          version: '0.2.0'
+          provider: scaleway
+          terraform-plan: plan.json
+          format: sarif
+          output-file: pepin.sarif
+          fail-on-nonconformity: 'false'   # 1 and 3 warn; 2 still fails the job
+
+      # SARIF is the format the Code Scanning tab reads. Alerts land on the
+      # scanned file (the plan), because a normalized resource does not carry
+      # the line of the .tf file it came from.
+      - name: Publish the findings to Code Scanning
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          sarif_file: pepin.sarif
+          category: pepin
+
+      # The three codes, treated explicitly. 2 has already failed the step
+      # above, whatever `fail-on-nonconformity` says; this is what a reader of
+      # the job summary sees.
+      - name: Read the verdict
+        env:
+          CODE: ${{ steps.scan.outputs.exit-code }}
+          VERDICT: ${{ steps.scan.outputs.verdict }}
+        run: |
+          case "${CODE}" in
+            0) echo "::notice::compliant (${VERDICT})" ;;
+            1) echo "::warning::non-compliance: at least one critical/high deviation" ;;
+            3) echo "::warning::nothing measured, or medium/low deviations under --strict" ;;
+            *) echo "::error::pepin could not conclude (exit ${CODE})" ; exit 1 ;;
+          esac
+
+  # -------------------------------------------------------------------- live
+  # Reads the real tenant. Credentials come from repository secrets, through
+  # `env:`, in the provider's own variable names — never as action inputs,
+  # never in the repository. Pépin does not print them, but the evidence
+  # bundle embeds the tenant's INVENTORY: keep `redact` at its default, keep
+  # the artifact retention short, and remember that artifacts of a public
+  # repository are downloadable by anyone with read access.
   live-scan:
     name: scan the live tenant
-    if: false   # remove this line once the secrets below exist
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -71,15 +152,15 @@ jobs:
       SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
       SCW_DEFAULT_REGION: fr-par
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Pépin — live scan, report only, sealed evidence
         id: scan
-        uses: stephrobert/pepin/.github/actions/pepin-scan@v0.1.0
+        uses: stephrobert/pepin/.github/actions/pepin-scan@a02e42d054dc9d8a5a41ece5b46f6c1111659a70 # v0.2.0
         with:
-          version: 0.1.0
+          version: '0.2.0'
           provider: scaleway
           live: 'true'
           format: json
@@ -91,7 +172,7 @@ jobs:
       # tenant. Short retention, and redacted by default (the action passes
       # --redact unless told otherwise). A bundle meant for a third party
       # verifies with `pepin verify` against its cosign signature.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pepin-evidence
           path: |

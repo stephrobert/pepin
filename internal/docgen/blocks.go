@@ -83,6 +83,9 @@ type captures struct {
 	// Surfaces gelées : la version de forme de chacune, lue dans sa fixture.
 	frozenVersions map[string]int
 	cliSurface     cliFrozen
+	// Fichiers d'exemple montrés tels quels (pipelines de CI), indexés par identifiant
+	// de région.
+	exampleFiles map[string]string
 }
 
 // all rend chaque capture du jeu. La neutralisation de la version de build s'y adosse : une
@@ -193,6 +196,15 @@ func captureAll(root, bin, lang string) (captures, error) {
 	return c, nil
 }
 
+// exampleSources : les pipelines d'exemple que les guides d'intégration montrent, avec
+// l'identifiant de la région qui les porte. Ce sont des fichiers exécutables du dépôt
+// (actionlint les valide), pas des extraits écrits dans une page.
+var exampleSources = map[string]string{
+	"example-github-workflow": "examples/github-actions/pepin.yml",
+	"example-gitlab-template": "examples/gitlab-ci/pepin.gitlab-ci.yml",
+	"example-gitlab-pipeline": "examples/gitlab-ci/.gitlab-ci.yml",
+}
+
 // captureReference joue les exécutions dont vivent les pages de référence (aides de la CLI,
 // formats de sortie), la page de comparaison plan/live et les pages de fournisseurs, puis lit
 // les surfaces gelées et les extraits de plans committés.
@@ -274,6 +286,21 @@ func (c *captures) captureReference(r Runner, root, tmp string) error {
 		c.providerScans[name] = &s
 	}
 
+	// Les pipelines d'exemple sont MONTRÉS depuis leur fichier, jamais recopiés : un
+	// extrait recopié se périme au premier changement d'épinglage, et une doc de CI qui
+	// donne un SHA obsolète fait installer autre chose que ce qu'elle annonce.
+	c.exampleFiles = map[string]string{}
+	for id, rel := range exampleSources {
+		raw, rerr := os.ReadFile(filepath.Join(root, rel)) // #nosec G304 -- chemin d'une table constante du paquet.
+		if rerr != nil {
+			return fmt.Errorf("lecture du pipeline d'exemple %s : %w", rel, rerr)
+		}
+		if strings.TrimSpace(string(raw)) == "" {
+			return fmt.Errorf("pipeline d'exemple %s vide : la page ne montrerait rien", rel)
+		}
+		c.exampleFiles[id] = string(raw)
+	}
+
 	// Les deux extraits de plan que la page de comparaison commente. Ils sont LUS dans les
 	// fixtures committées : un extrait recopié survivrait à la disparition de ce qu'il
 	// illustre, et c'est précisément la divergence que la page dénonce.
@@ -341,6 +368,9 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 	// Les régions des pages de la vague 2. Elles vivent dans leurs propres fichiers (la
 	// référence CLI, les formats, la comparaison plan/live, le bundle, les fournisseurs)
 	// pour que chacune reste lisible, et se fondent ici en un seul index de régions.
+	for id, body := range c.exampleFiles {
+		b[id] = Fence("yaml", body)
+	}
 	for _, extra := range []map[string]string{
 		referenceBlocks(lang, c),
 		formatBlocks(lang, c),
