@@ -21,7 +21,11 @@ const repoRoot = "../.."
 // cela fait échouer ce test tant que `mise run gen-docs` n'a pas été relancé et le résultat
 // committé. Une page de couverture périmée ne peut donc pas atteindre `main`.
 func TestGeneratedDocsAreUpToDate(t *testing.T) {
-	bin, err := ResolveBinary(repoRoot, t.TempDir())
+	// BuildBinary, pas ResolveBinary : la porte doit compiler ce qu'elle mesure.
+	// Réutiliser un ./pepin déjà présent laisse un artefact périmé valider une doc
+	// périmée, ce qui est arrivé — le test passait pendant que la documentation
+	// annonçait un finding supprimé depuis.
+	bin, err := BuildBinary(repoRoot, t.TempDir())
 	if err != nil {
 		t.Fatalf("binaire de capture indisponible : %v", err)
 	}

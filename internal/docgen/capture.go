@@ -63,6 +63,9 @@ func (r Runner) Run(args ...string) (Capture, error) {
 // racine (celui que `mise run build` produit, et que la CI construit avant les tests), sinon
 // une compilation jetable. Un binaire absent ne doit pas rendre la documentation
 // « inchangée » : ce serait un contrôle qui se déclare vert parce qu'il n'a rien regardé.
+//
+// Réservé à la GÉNÉRATION, où réutiliser un binaire déjà construit fait gagner du temps.
+// La porte de non-dérive, elle, passe par BuildBinary : voir la raison là-bas.
 func ResolveBinary(root, tmpDir string) (string, error) {
 	if bin := os.Getenv("PEPIN_BIN"); bin != "" {
 		return bin, nil
@@ -71,6 +74,18 @@ func ResolveBinary(root, tmpDir string) (string, error) {
 	if st, err := os.Stat(built); err == nil && !st.IsDir() && st.Mode()&0o111 != 0 {
 		return filepath.Abs(built)
 	}
+	return BuildBinary(root, tmpDir)
+}
+
+// BuildBinary compile TOUJOURS depuis les sources, sans jamais réutiliser un artefact déjà
+// présent.
+//
+// C'est ce dont la porte de non-dérive a besoin, et la nuance a déjà coûté une fausse
+// assurance : `./pepin` traînait à la racine, construit avant un correctif de règle, et le
+// test a comparé la documentation à un binaire périmé. Il a conclu « à jour » alors que la
+// doc annonçait un finding que le produit ne produisait plus. Une porte adossée à un artefact
+// qu'elle n'a pas fabriqué ne mesure pas le code : elle mesure ce qui traînait sur le disque.
+func BuildBinary(root, tmpDir string) (string, error) {
 	out, err := filepath.Abs(filepath.Join(tmpDir, "pepin"))
 	if err != nil {
 		return "", err
