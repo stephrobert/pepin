@@ -22,6 +22,8 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-19
+
 ### Ajouté
 
 - **Pépin est bilingue, et détecte la langue.** Rapports, verdict, aide, erreurs
@@ -34,6 +36,12 @@ l'une ni l'autre appartient au `git log`.
   Le français reste la langue de référence du contenu normatif : le référentiel
   et les règles s'écrivent en français d'abord, et là où une lecture juridique
   est en jeu, c'est la formulation française d'un contrôle qui fait foi.
+
+- **Le projet a une marque.** `docs/assets/brand/` porte l'icône et les
+  verrouillages en SVG et PNG, clair, sombre et monochrome, avec les générateurs
+  qui les produisent (`scripts/generer-marque.py`,
+  `scripts/generer-png-marque.py`) et les règles d'usage dans `docs/brand.fr.md`.
+  Les deux README s'ouvrent dessus.
 
 ### Modifié
 
@@ -51,6 +59,30 @@ l'une ni l'autre appartient au `git log`.
   qui est scellé.
 - **Surface CLI v1 → v2** : ajout du drapeau persistant `--lang`. Ajout pur :
   aucun verbe, aucun autre drapeau ni aucun code de sortie ne bouge.
+
+
+- **`docs/doc-cache-brief.md` sort de la documentation produit.** C'était un
+  mémo de mainteneur s'adressant à une machine (« déjà téléchargée sur cette
+  machine »), décrivant un cache qu'un clone ne peut pas avoir, lié de nulle
+  part, et portant six chemins absolus vers un répertoire personnel. Ce qu'il
+  contenait de précieux rejoint `references/docs/README.md`, à côté du
+  `sources.yaml` qu'il décrit, dont le piège qui compte le plus : la
+  documentation n'est pas le contrat.
+
+### Corrigé
+
+- **L'action publiée installe de nouveau.** La vérification de provenance
+  ajoutée en 0.1.0 appelait `gh attestation verify` sans jeton ; `gh` refuse de
+  tourner dans un workflow sans `GH_TOKEN`, si bien que l'installateur tenait
+  tout binaire pour invérifiable et le refusait, chez tous les consommateurs, en
+  0.1.0 comme en 0.1.1. L'action fournit désormais `github.token` elle-même :
+  personne ne devrait avoir à câbler un jeton pour installer un binaire.
+
+  L'angle mort mérite d'être nommé. Le job de pull request servait `install.sh`
+  en boucle locale avec la vérification sautée, donc le chemin public n'était
+  jamais exercé avant le job d'après-publication, c'est-à-dire après que le tag
+  existe. Un job appelle maintenant l'action contre une version déjà publiée, à
+  chaque pull request.
 
 ## [0.1.1] - 2026-08-19
 

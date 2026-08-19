@@ -21,6 +21,8 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-19
+
 ### Added
 
 - **Pépin is bilingual, and detects the language.** Reports, verdict, help,
@@ -33,6 +35,11 @@ belongs in `git log`.
   French remains the reference language of the normative content: the reference
   and the rules are written in French first, and where a legal reading is at
   stake it is the French wording of a control that governs.
+
+- **The project has a mark.** `docs/assets/brand/` holds the icon and the
+  lockups in SVG and PNG, light, dark and monochrome, with the generators that
+  produce them (`scripts/generer-marque.py`, `scripts/generer-png-marque.py`)
+  and the usage rules in `docs/brand.md`. Both READMEs open on it.
 
 ### Changed
 
@@ -48,6 +55,29 @@ belongs in `git log`.
   the assessment's prose is part of what is sealed.
 - **CLI surface v1 → v2**: the persistent `--lang` flag is added. Pure addition —
   no verb, no other flag and no exit code moved.
+
+
+- **`docs/doc-cache-brief.md` moves out of the product documentation.** It was a
+  maintainer's memo addressing a machine ("already downloaded on this machine"),
+  describing a cache a clone cannot have, linked from nowhere, and carrying six
+  absolute paths into a home directory. What it held that was worth keeping
+  moves to `references/docs/README.md`, beside the `sources.yaml` it describes --
+  including the trap that matters most: the documentation is not the contract.
+
+### Fixed
+
+- **The published action installs again.** The provenance check added in 0.1.0
+  called `gh attestation verify` without a token; `gh` refuses to run in a
+  workflow without `GH_TOKEN`, so the installer treated every binary as
+  unverifiable and refused it -- for every consumer, on both 0.1.0 and 0.1.1.
+  The action now supplies `github.token` itself: nobody should have to wire up a
+  token to install a binary.
+
+  The gap that let it ship is worth naming. The pull-request job served
+  `install.sh` over a loopback with the attestation check skipped, so the public
+  path was never exercised until the post-publication job ran -- after the tag
+  existed. A job now calls the action against an already-published version on
+  every pull request.
 
 ## [0.1.1] - 2026-08-19
 
