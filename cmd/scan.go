@@ -38,6 +38,7 @@ var (
 	scanLive       bool
 	scanRegion     string
 	scanProfile    string
+	scanKubeconfig string
 	scanS3Endpoint string
 	scanSeal       string
 	scanRedact     bool   // caviarder les valeurs sensibles de l'input.json embarqué
@@ -164,12 +165,12 @@ var scanCmd = &cobra.Command{
 		// ne prouve pas une qualification, seulement la posture d'un tenant).
 		_, _ = fmt.Fprintf(os.Stderr, "\nⓘ %s\n", assess.ScopeDisclaimer)
 		if !res.Conforme {
-			os.Exit(1)
+			os.Exit(exitNonConformite)
 		}
 		// --strict : porte CI honnête. Sort ≠ 0 si un scan n'a RIEN mesuré (couverture nulle hors
 		// gouvernance) ou s'il subsiste des écarts medium/low (que le code de sortie normal ignore).
 		if scanStrict && (evaluatedNonGov(asmt) == 0 || res.Medium+res.Low > 0) {
-			os.Exit(3)
+			os.Exit(exitStrict)
 		}
 		return nil
 	},
@@ -261,6 +262,7 @@ func init() {
 	scanCmd.Flags().BoolVar(&scanLive, "live", false,
 		"collecter l'inventaire en direct via l'API du provider (identifiants requis)")
 	scanCmd.Flags().StringVar(&scanRegion, "region", "", "région cible pour la collecte live")
+	scanCmd.Flags().StringVar(&scanKubeconfig, "kubeconfig", "", "chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)")
 	scanCmd.Flags().StringVar(&scanProfile, "profile", "", "profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)")
 	scanCmd.Flags().StringVar(&scanS3Endpoint, "s3-endpoint", "", "endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)")
 	scanCmd.Flags().StringVar(&scanSeal, "seal", "", "écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier")
@@ -352,6 +354,19 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 			out[typ][k] = true
 		}
 	}
+	// La RÉGION est un champ de la ressource, pas un attribut : on l'enregistre sous la clé
+	// vide, celle des contrôles de gouvernance (dont le type visé est ""). Sans ça,
+	// governance_resource_region_in_eu — qui lit r.region sur CHAQUE ressource — pouvait
+	// s'afficher conforme alors qu'aucune région n'avait été collectée.
+	addRegion := func(region string) {
+		if region == "" {
+			return
+		}
+		if out[""] == nil {
+			out[""] = map[string]bool{}
+		}
+		out[""]["region"] = true
+	}
 	m, ok := input.(map[string]any)
 	if !ok {
 		return out
@@ -360,6 +375,7 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 	case []model.Resource:
 		for _, r := range rs {
 			add(r.Type, r.Attributes)
+			addRegion(r.Region)
 		}
 	case []any:
 		for _, it := range rs {
@@ -367,6 +383,8 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 				t, _ := rm["type"].(string)
 				attrs, _ := rm["attributes"].(map[string]any)
 				add(t, attrs)
+				reg, _ := rm["region"].(string)
+				addRegion(reg)
 			}
 		}
 	}
@@ -513,8 +531,17 @@ func configDigest() string {
 func loadInput(ctx context.Context, p provider.Provider, path string) (any, error) {
 	if scanLive {
 		cfg := provider.Config{Profile: scanProfile, Region: scanRegion}
+		// Une seule map, alimentée par toutes les options : deux affectations successives
+		// faisaient perdre la première (--s3-endpoint écrasait --kubeconfig).
+		opts := map[string]string{}
+		if scanKubeconfig != "" {
+			opts["kubeconfig"] = scanKubeconfig
+		}
 		if scanS3Endpoint != "" {
-			cfg.Options = map[string]string{"s3_endpoint": scanS3Endpoint}
+			opts["s3_endpoint"] = scanS3Endpoint
+		}
+		if len(opts) > 0 {
+			cfg.Options = opts
 		}
 		resources, err := p.Collect(ctx, cfg)
 		if err != nil {

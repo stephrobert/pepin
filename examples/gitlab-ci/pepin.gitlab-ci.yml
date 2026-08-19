@@ -1,0 +1,87 @@
+# Pépin in GitLab CI — an includable template.
+#
+#   include:
+#     - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.1.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
+#
+# then `extends: .pepin` in your own job (see .gitlab-ci.yml beside this file).
+# The remote include is pinned to a tag on purpose: an unpinned include runs
+# whatever the default branch says tomorrow.
+#
+# The released binary is downloaded and its SHA-256 verified against the
+# release's checksum list BEFORE anything runs it. The stronger half of the
+# chain (the cosign signature over that list, the SLSA provenance) needs
+# cosign or gh; docs/install.md carries those commands.
+#
+# Exit codes are the contract: 0 compliant, 1 non-compliance, 2 technical
+# error (3 under --strict). The default below fails the job on any non-zero
+# code. To *report* the posture without gating on it, allow the verdict codes
+# and only them — never 2, which means the scan measured nothing:
+#
+#   pepin-scan:
+#     extends: .pepin
+#     allow_failure:
+#       exit_codes: [1, 3]
+
+variables:
+  PEPIN_VERSION: "0.1.0"
+
+.pepin:
+  image: alpine:3.21
+  variables:
+    PEPIN_BASE: "https://github.com/stephrobert/pepin/releases/download/v${PEPIN_VERSION}"
+  before_script:
+    - wget -q "${PEPIN_BASE}/pepin-linux-amd64" "${PEPIN_BASE}/checksums.txt"
+    # The bytes are checked before anything runs them; a corrupted download
+    # stops the job here, with the checksum mismatch named in the log.
+    - grep " pepin-linux-amd64$" checksums.txt | sha256sum -c -
+    - chmod 0755 pepin-linux-amd64 && mv pepin-linux-amd64 /usr/local/bin/pepin
+
+# Audit a Terraform plan: no credential, nothing provisioned. Expects a
+# `plan.json` artifact from an earlier stage (`terraform show -json`).
+# Override PEPIN_PROVIDER and the path to match your pipeline.
+pepin-terraform-plan:
+  extends: .pepin
+  stage: test
+  variables:
+    PEPIN_PROVIDER: scaleway
+  script:
+    - pepin scan "${PEPIN_PROVIDER}" --terraform plan.json --format json > pepin-report.json
+  artifacts:
+    when: always
+    paths: [pepin-report.json]
+    expire_in: 1 week
+
+# Live scan of the real tenant — disabled until triggered by hand, because it
+# reads a real account. Credentials come from masked, protected CI/CD
+# variables in the provider's OWN names (Settings > CI/CD > Variables):
+#
+#   Scaleway  SCW_ACCESS_KEY, SCW_SECRET_KEY, SCW_DEFAULT_ORGANIZATION_ID,
+#             SCW_DEFAULT_REGION
+#   Outscale  OSC_ACCESS_KEY, OSC_SECRET_KEY, OSC_REGION
+#   Exoscale  EXOSCALE_API_KEY, EXOSCALE_API_SECRET, EXOSCALE_ZONE
+#
+# Never write them in this file, and never echo them in a script line. Pépin
+# reads them from the environment and does not print them.
+#
+# The evidence bundle embeds the tenant's inventory. It is sealed with
+# --redact here (secrets like user-data and policy documents are replaced by
+# their digest), the artifact expires after a week, and it is kept away from
+# public pipeline pages. A bundle for a third party verifies with
+# `pepin verify` against its cosign signature; only drop --redact when you
+# need `verify --re-derive`, and then treat the bundle itself as a secret.
+pepin-live:
+  extends: .pepin
+  stage: test
+  rules:
+    - when: manual
+  variables:
+    PEPIN_PROVIDER: scaleway
+  script:
+    - pepin scan "${PEPIN_PROVIDER}" --live --format json --seal bundle --redact > pepin-report.json
+  artifacts:
+    when: always
+    paths:
+      - pepin-report.json
+      - bundle/
+    expire_in: 1 week
+    public: false

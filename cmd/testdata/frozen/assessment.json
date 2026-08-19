@@ -1,0 +1,72 @@
+{
+  "history": [
+    {
+      "schema_version": 1,
+      "content": {
+        "results": [
+          {
+            "control": "string",
+            "evidence": {
+              "attribute": "string",
+              "expected": "string",
+              "observed": "string",
+              "proves": [
+                "string"
+              ],
+              "source": "string",
+              "type": "string"
+            },
+            "labels": {
+              "*": "string"
+            },
+            "references": [
+              {
+                "framework": "string",
+                "id": "string",
+                "version": "string"
+              }
+            ],
+            "remediation": "string",
+            "severity": "string",
+            "status": "string",
+            "subject": "string",
+            "title": "string",
+            "waiver": {
+              "justification": "string",
+              "until": "string"
+            }
+          }
+        ],
+        "run": {
+          "ruleset": {
+            "digest": "string",
+            "name": "string",
+            "version": "string"
+          },
+          "scope": {
+            "excluded": [
+              "string"
+            ],
+            "included": [
+              "string"
+            ],
+            "note": "string"
+          },
+          "source": "string",
+          "target": {
+            "id": "string",
+            "platform": "string",
+            "provider": "string",
+            "region": "string"
+          },
+          "timestamp": "string",
+          "tool": {
+            "digest": "string",
+            "name": "string",
+            "version": "string"
+          }
+        }
+      }
+    }
+  ]
+}

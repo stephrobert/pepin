@@ -364,6 +364,24 @@ controles:
       iso_27001_2022: ["A.8.20", "A.8.22"]
     fournisseurs: [outscale, scaleway, exoscale]
 
+  - code: network_securitygroup_default_restrict_traffic
+    famille: reseau
+    titre: Security group « default » non restrictif
+    severite: high
+    description: >
+      Le security group « default » est attaché d'office à toute ressource créée sans
+      groupe explicite : la moindre règle entrante qu'il porte s'applique alors
+      silencieusement, sans décision de l'exploitant.
+    remediation: >
+      Vider le security group « default » de toutes ses règles et attacher
+      explicitement un groupe dédié et restrictif à chaque ressource.
+    scsl: [CLD-NET-4]
+    frameworks:
+      secnumcloud_3_2: ["13.2"]
+      cis_controls_v8: ["4.4"]
+      iso_27001_2022: ["A.8.20", "A.8.22"]
+    fournisseurs: [outscale]
+
   - code: network_securitygroup_unrestricted_egress
     famille: reseau
     titre: Filtrage sortant non restreint
@@ -485,6 +503,79 @@ controles:
       secnumcloud_3_2: ["10.5"]
     fournisseurs: [outscale, exoscale, scaleway]
 
+  - code: k8s_rbac_no_cluster_admin_binding
+    famille: compute
+    titre: cluster-admin accordé au-delà du binding natif
+    severite: critical
+    description: >
+      Un ClusterRoleBinding accorde le rôle cluster-admin à un sujet autre que le
+      groupe natif system:masters : ce sujet dispose des pleins pouvoirs sur le
+      cluster, au-delà du moindre privilège.
+    remediation: >
+      Retirer cluster-admin de ce sujet et lui accorder un Role/ClusterRole
+      restreint au strict nécessaire.
+    scsl: [CLD-K8S-4]
+    frameworks:
+      secnumcloud_3_2: ["9.1", "9.3"]
+      cis_controls_v8: ["6.8"]
+      iso_27001_2022: ["A.5.15", "A.8.2"]
+    fournisseurs: [kubernetes]
+
+  - code: k8s_namespace_pod_security_enforced
+    famille: compute
+    titre: Pod Security Standards non imposés sur un namespace
+    severite: high
+    description: >
+      Un namespace applicatif n'a pas de label pod-security.kubernetes.io/enforce :
+      aucun garde-fou n'empêche d'y déployer un pod privilégié (accès à l'hôte,
+      élévation de privilèges).
+    remediation: >
+      Poser le label pod-security.kubernetes.io/enforce (baseline ou restricted)
+      sur le namespace.
+    scsl: [CLD-K8S-5]
+    frameworks:
+      # Pas de correspondance CIS Controls v8 défendable au catalogue : aucune safeguard
+      # ne porte la restriction des charges privilégiées. On ne force pas un mapping.
+      secnumcloud_3_2: ["9.1"]
+      iso_27001_2022: ["A.8.9"]
+    fournisseurs: [kubernetes]
+
+  - code: k8s_secrets_external_manager
+    famille: chiffrement
+    titre: Secrets Kubernetes sans coffre externe
+    severite: high
+    description: >
+      Aucun gestionnaire de secrets externes n'est déployé dans le cluster : les
+      secrets reposent sur le stockage natif de Kubernetes (encodés en base64 dans
+      etcd), sans coffre, sans rotation et exposés à quiconque peut les lire.
+    remediation: >
+      Déployer un gestionnaire de secrets externes (External Secrets Operator ou
+      Secrets Store CSI) et monter les secrets depuis le coffre ; ne jamais placer
+      de secret en clair dans un manifest ou une variable d'environnement.
+    scsl: [CLD-K8S-10]
+    frameworks:
+      secnumcloud_3_2: ["10.5"]
+      iso_27001_2022: ["A.8.24"]
+    fournisseurs: [kubernetes]
+
+  - code: k8s_namespace_network_policy_defined
+    famille: reseau
+    titre: Namespace sans NetworkPolicy (réseau plat)
+    severite: high
+    description: >
+      Aucune NetworkPolicy n'existe dans un namespace applicatif : tout pod peut
+      joindre tout autre pod du cluster, sans cloisonnement — un pod compromis se
+      déplace latéralement sans obstacle.
+    remediation: >
+      Définir une NetworkPolicy de refus par défaut (ingress et egress) dans le
+      namespace, puis autoriser explicitement les flux légitimes.
+    scsl: [CLD-K8S-6]
+    frameworks:
+      secnumcloud_3_2: ["13.2"]
+      cis_controls_v8: ["12.2"]
+      iso_27001_2022: ["A.8.22"]
+    fournisseurs: [kubernetes]
+
   - code: kubernetes_cluster_not_publicly_accessible
     famille: compute
     titre: API server Kubernetes exposé à Internet
@@ -531,6 +622,21 @@ controles:
       secnumcloud_3_2: ["12.11"]
       cis_controls_v8: ["7.4"]
     fournisseurs: [outscale, exoscale]
+
+  - code: compute_instance_deletion_protection
+    famille: compute
+    titre: Instance sans protection contre la suppression
+    severite: medium
+    description: >
+      Une instance de calcul n'a pas de protection contre la suppression : une
+      commande accidentelle ou malveillante détruit le service et ses données
+      locales, sans compromission préalable.
+    remediation: >
+      Activer la protection contre la suppression sur les instances portant un
+      service en production.
+    scsl: [CLD-CMP-10]
+    frameworks:
+    fournisseurs: [outscale]
 
   - code: kubernetes_cluster_deletion_protection
     famille: compute
@@ -666,7 +772,11 @@ controles:
       secnumcloud_3_2: ["10.2"]
       cis_controls_v8: ["3.10"]
       iso_27001_2022: ["A.8.24"]
-    fournisseurs: [outscale]
+    # Dormant : chez Outscale, `ListenerRule.Action` vaut « always forward » au contrat —
+    # aucune action de redirection n'existe (cf. non_applicable outscale.yaml). Ancrable chez
+    # Scaleway (redirection via ACL de frontend LB) une fois le type load_balancer
+    # câblé — cf. roadmap §3. Aucun fournisseur actif pour l'instant.
+    fournisseurs: []
 
   - code: blockstorage_volume_encryption
     famille: chiffrement
@@ -686,6 +796,23 @@ controles:
       secnumcloud_3_2: ["10.1"]
       iso_27001_2022: ["A.8.24"]
     fournisseurs: [exoscale]
+
+  - code: objectstorage_bucket_default_encryption
+    famille: chiffrement
+    titre: Bucket sans chiffrement par défaut au repos
+    severite: medium
+    description: >
+      Un bucket de stockage objet n'a pas de chiffrement par défaut : les objets y
+      sont écrits en clair côté fournisseur. Le chiffrement au repos est opt-in par
+      bucket chez plusieurs fournisseurs souverains — son absence est un écart réel.
+    remediation: >
+      Activer le chiffrement par défaut du bucket (SSE) et vérifier que les objets
+      déjà déposés sont ré-écrits chiffrés.
+    scsl: [CLD-CHF-2]
+    frameworks:
+      secnumcloud_3_2: ["10.1"]
+      iso_27001_2022: ["A.8.24"]
+    fournisseurs: [outscale]
 
   - code: objectstorage_bucket_kms_encryption
     famille: chiffrement

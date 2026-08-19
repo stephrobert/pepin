@@ -82,9 +82,9 @@ get_tag(tags, key) := v if {
 
 # volume_in_use — le volume block storage est rattaché à une machine (en usage),
 # donc à protéger par une sauvegarde. Valeurs d'état NATIVES normalisées :
-# Outscale `in-use`, Exoscale `attached`. Un état inconnu n'est pas considéré en
-# usage (pas de faux positif).
-volume_in_use(v) if object.get(v.attributes, "state", "") in {"in-use", "attached"}
+# Outscale `in-use`, Exoscale `attached`, Scaleway `in_use` (api/block/v1, underscore).
+# Un état inconnu n'est pas considéré en usage (pas de faux positif).
+volume_in_use(v) if object.get(v.attributes, "state", "") in {"in-use", "in_use", "attached"}
 
 # covers_port — la règle de filtrage couvre le port p (schéma SG commun : port_from/port_to).
 # Deux cas :
@@ -219,7 +219,7 @@ provider_of(r) := object.get(r, "provider", "")
 _eu_regions := {
 	"scaleway": {"fr-par", "nl-ams", "pl-waw"},
 	"outscale": {"eu-west-2", "cloudgouv-eu-west-1"},
-	"exoscale": {"de-fra", "de-muc", "at-vie", "bg-sof", "hr-zag", "de-fra-1", "de-muc-1", "at-vie-1", "at-vie-2", "bg-sof-1", "hr-zag-1"},
+	"exoscale": {"de-fra-1", "de-muc-1", "at-vie-1", "at-vie-2", "bg-sof-1", "hr-zag-1"},
 }
 
 _trusted_regions := {
@@ -230,7 +230,7 @@ _trusted_regions := {
 
 _noneu_regions := {
 	"scaleway": set(),
-	"outscale": {"us-east-2", "us-west-1", "ap-northeast-1", "cn-southeast-1"},
+	"outscale": {"us-east-2", "us-west-1", "ap-northeast-1"},
 	"exoscale": set(),
 }
 

@@ -98,7 +98,11 @@ func TestBuildStatuses(t *testing.T) {
 	// (a compute_instance is present) but NOT verified — its data may not be collected.
 	// compute_image_only is verified but its EXACT type is absent (only compute_instance).
 	verified := map[string]bool{"objectstorage_bucket_public_access": true, "compute_image_only": true}
-	a := Build("outscale", controls, findings, rtypes, nil, verified, ct, nil, run)
+	// Le contrôle bucket est GATÉ sur ses signaux d'exposition (requiredAttr) : sans l'un
+	// d'eux réellement collecté, un pass serait un faux vert. On fournit donc l'attribut
+	// pour exercer le chemin « pass » que ce test vise.
+	attrs := map[string]map[string]bool{"object_storage_bucket": {"acl": true}}
+	a := Build("outscale", controls, findings, rtypes, nil, verified, ct, attrs, run)
 	byControl := map[string]assessment.Result{}
 	for _, r := range a.Results {
 		byControl[r.Control] = r

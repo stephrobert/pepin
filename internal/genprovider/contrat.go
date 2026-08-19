@@ -67,6 +67,13 @@ func ControlType(code string) string {
 		return "compute_instance"
 	case strings.HasPrefix(code, "kubernetes_cluster"):
 		return "kubernetes_cluster"
+	// État DANS le cluster (mode --kubeconfig), distinct du plan de contrôle managé.
+	case strings.HasPrefix(code, "k8s_rbac"):
+		return "k8s_cluster_role_binding"
+	case strings.HasPrefix(code, "k8s_namespace"):
+		return "k8s_namespace"
+	case strings.HasPrefix(code, "k8s_secrets"):
+		return "k8s_crd"
 	case strings.HasPrefix(code, "objectstorage_bucket"):
 		return "object_storage_bucket"
 	case strings.HasPrefix(code, "blockstorage_snapshot"):
@@ -93,4 +100,18 @@ func ControlType(code string) string {
 		return "api_access_summary"
 	}
 	return ""
+}
+
+// NonCloudProviders retourne les providers dont la PORTÉE n'est pas le plan de contrôle
+// cloud (ex. `kubernetes`, qui audite l'intérieur d'un cluster). Les comparer en parité
+// avec des clouds n'a pas de sens : ni les uns ni les autres ne peuvent couvrir les
+// exigences de l'autre portée.
+func NonCloudProviders() map[string]bool {
+	out := map[string]bool{}
+	for name, d := range registry {
+		if d.Scope != "" && d.Scope != "cloud" {
+			out[name] = true
+		}
+	}
+	return out
 }

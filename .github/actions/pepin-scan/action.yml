@@ -1,0 +1,151 @@
+# Scan a sovereign-cloud posture in a GitHub job, with a binary that is
+# verified before it runs.
+#
+# Why an action at all, when four shell lines do the same thing: a workflow is
+# read more often than it is run. Somebody inspecting another project's
+# pipeline sees `uses: stephrobert/pepin/.github/actions/pepin-scan@...` and
+# learns the tool exists; they do not learn it from a curl into a chmod.
+# Discovery is the point, and the convenience is the excuse.
+#
+# The one part that is not convenience: the downloaded binary's SHA-256 is
+# checked against the release's published checksum list before anything runs
+# it (install.sh). A CI job in this repository corrupts one byte of that
+# download and requires the verification to refuse it.
+#
+# Credentials are NEVER inputs of this action. `pepin` reads each provider's
+# native environment variables, and renaming them through inputs would only
+# add a place for them to leak. Pass them on the job or step through `env:`
+# from repository secrets, and only for `live: true`:
+#
+#   Scaleway  SCW_ACCESS_KEY, SCW_SECRET_KEY, SCW_DEFAULT_ORGANIZATION_ID,
+#             SCW_DEFAULT_REGION
+#   Outscale  OSC_ACCESS_KEY, OSC_SECRET_KEY, OSC_REGION
+#   Exoscale  EXOSCALE_API_KEY, EXOSCALE_API_SECRET, EXOSCALE_ZONE
+#
+# The Terraform-plan and inventory modes need no credential at all.
+name: Pépin scan
+description: >-
+  Audit the posture of a European sovereign cloud (Exoscale, Outscale,
+  Scaleway) against SecNumCloud-anchored controls, from a Terraform plan,
+  an inventory export, or the live API.
+author: stephrobert
+
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  version:
+    description: >-
+      The released version to install, without the leading `v` (for example
+      `0.1.0`). Named rather than defaulted to latest: a mutable reference
+      installs whatever is newest, which is a binary nobody can name
+      afterwards.
+    required: true
+  provider:
+    description: "The provider to scan: scaleway, outscale, exoscale or kubernetes."
+    required: true
+  inventory:
+    description: Path to a normalized inventory export (JSON). One source only.
+    required: false
+    default: ''
+  terraform-plan:
+    description: >-
+      Path to a Terraform plan in JSON form (`terraform show -json`). Audits
+      the plan without provisioning anything and without any credential.
+    required: false
+    default: ''
+  live:
+    description: >-
+      When `true`, collect the inventory from the provider's API. Credentials
+      must be present in the environment (see the header of this file); they
+      are never passed as inputs.
+    required: false
+    default: 'false'
+  region:
+    description: Region for live collection.
+    required: false
+    default: ''
+  format:
+    description: "Output format: table, json, assessment, oscal or sarif."
+    required: false
+    default: 'table'
+  output-file:
+    description: Write the report there instead of the step log.
+    required: false
+    default: ''
+  policy-dir:
+    description: Directory of extra Rego rules, loaded without recompiling.
+    required: false
+    default: ''
+  strict:
+    description: >-
+      Pass `--strict`: non-zero exit when nothing was measured or when
+      medium/low findings remain.
+    required: false
+    default: 'false'
+  seal:
+    description: >-
+      Directory where the evidence bundle is written. The bundle embeds the
+      evaluated inventory of a real tenant: treat it as sensitive. If you
+      upload it, keep the artifact private and short-lived.
+    required: false
+    default: ''
+  redact:
+    description: >-
+      Redact sensitive values (user-data, policy documents) from the sealed
+      bundle. Defaults to true in CI; set to `false` only when the bundle must
+      support `pepin verify --re-derive`, and then treat it as a secret.
+    required: false
+    default: 'true'
+  fail-on-nonconformity:
+    description: >-
+      When `false`, a non-compliant posture (exit 1, or 3 under strict) is
+      reported as a warning instead of failing the job. A technical error
+      (exit 2) always fails the job, whatever this input says: swallowing it
+      would report a posture nobody measured.
+    required: false
+    default: 'true'
+
+outputs:
+  exit-code:
+    description: "The scan's raw exit code: 0 compliant, 1 non-compliance, 2 technical error, 3 strict gate."
+    value: ${{ steps.scan.outputs.exit-code }}
+  verdict:
+    description: "compliant, non-compliant, or error."
+    value: ${{ steps.scan.outputs.verdict }}
+
+runs:
+  using: composite
+  steps:
+    - name: Download and verify the released binary
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      # The PATH line lets later steps of the calling job run `pepin` (verify a
+      # bundle, re-scan). What lands on the PATH is RUNNER_TEMP, a value the
+      # runner owns, holding a binary whose checksum was verified one line
+      # above; no user-controlled value reaches GITHUB_PATH.
+      run: | # zizmor: ignore[github-env]
+        "${GITHUB_ACTION_PATH}/install.sh" "${VERSION}" "${RUNNER_TEMP}"
+        echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+    - name: Scan
+      id: scan
+      shell: bash
+      env:
+        PEPIN_BIN: ${{ runner.temp }}/pepin
+        PROVIDER: ${{ inputs.provider }}
+        INVENTORY: ${{ inputs.inventory }}
+        TERRAFORM_PLAN: ${{ inputs.terraform-plan }}
+        LIVE: ${{ inputs.live }}
+        REGION: ${{ inputs.region }}
+        FORMAT: ${{ inputs.format }}
+        OUTPUT_FILE: ${{ inputs.output-file }}
+        POLICY_DIR: ${{ inputs.policy-dir }}
+        STRICT: ${{ inputs.strict }}
+        SEAL: ${{ inputs.seal }}
+        REDACT: ${{ inputs.redact }}
+        FAIL_ON_NONCONFORMITY: ${{ inputs.fail-on-nonconformity }}
+      run: |
+        "${GITHUB_ACTION_PATH}/scan.sh"

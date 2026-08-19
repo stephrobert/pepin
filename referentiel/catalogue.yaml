@@ -147,7 +147,6 @@ catalogue:
   - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_sql_server_1433_1434, severite: high, statut: a_trier }
   - { code: network_securitygroup_allow_ingress_from_internet_to_tcp_port_telnet_23, severite: high, statut: a_trier }
   - { code: network_securitygroup_allow_wide_open_public_ipv4, severite: high, statut: a_trier }
-  - { code: network_securitygroup_default_restrict_traffic, severite: high, statut: a_trier }
   - { code: network_securitygroup_from_launch_wizard, severite: medium, statut: a_trier }
   - { code: network_securitygroup_not_used, severite: low, statut: a_trier }
   - { code: network_securitygroup_with_many_ingress_egress_rules, severite: medium, statut: a_trier }
@@ -169,7 +168,6 @@ catalogue:
   - { code: objectstorage_bucket_acl_prohibited, severite: medium, statut: a_trier }
   - { code: objectstorage_bucket_cross_account_access, severite: high, statut: a_trier }
   - { code: objectstorage_bucket_cross_region_replication, severite: low, statut: a_trier }
-  - { code: objectstorage_bucket_default_encryption, severite: medium, statut: a_trier }
   - { code: objectstorage_bucket_event_notifications_enabled, severite: low, statut: a_trier }
   - { code: objectstorage_bucket_kms_encryption, severite: medium, statut: implemente }
   - { code: objectstorage_bucket_level_public_access_block, severite: high, statut: a_trier }

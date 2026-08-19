@@ -46,6 +46,25 @@ run = "python3 scripts/gen-scsl-cloud.py"
 description = "Met en cache la doc officielle des providers en Markdown (trafilatura)"
 run = "python3 scripts/fetch-docs.py"
 
+# Convention de sortie des outils de dérive et de release (distincte de celle de
+# `pepin scan`, où 2 est l'erreur technique) : 0 rien à signaler · 1 erreur ·
+# 2 dérive non triée. La CI et le preflight distinguent les trois.
+[tasks.scsl-drift]
+description = "Dérive de l'index SCSL vivant depuis la baseline versionnée (exit 2 = dérive à trier)"
+run = "python3 scripts/scsl-drift.py"
+
+[tasks.scsl-drift-update]
+description = "Réécrit la baseline SCSL depuis l'index vivant, APRÈS triage humain des écarts"
+run = "python3 scripts/scsl-drift.py --update"
+
+[tasks.frozen-update]
+description = "Régénère les fixtures de surface gelée (cmd/testdata/frozen/) après un changement délibéré ; incrémenter ensuite la constante de version de la surface"
+run = "PEPIN_UPDATE_FROZEN=1 go test ./cmd/ -run 'Frozen|Fixture|VersionBump' -count=1"
+
+[tasks.release-check]
+description = "Tout ce qui doit être vrai avant qu'un tag existe : mise run release-check -- vX.Y.Z"
+run = "tools/release/preflight.sh"
+
 [tasks.vet]
 description = "Analyse statique du compilateur"
 run = "go vet ./..."

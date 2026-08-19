@@ -5,9 +5,25 @@ import rego.v1
 _pol(stmts) := {"resources": [{"provider": "outscale", "type": "iam_policy", "id": "p1", "attributes": {"policy_name": "p1", "statements": stmts}}]}
 
 # ✗ allow d'une action d'escalade (préfixe de service ignoré) → finding IAM-12.
+# NB : on teste des actions RÉELLES du contrat OAPI. L'ancien test utilisait
+# « AttachUserPolicy », un nom AWS qui n'existe pas chez Outscale : il validait une
+# détection factice pendant que les vraies actions passaient au travers.
 test_escalation_allowed_denied if {
-	some f in deny with input as _pol([{"effect": "Allow", "actions": ["api:AttachUserPolicy"], "resources": ["*"]}])
+	some f in deny with input as _pol([{"effect": "Allow", "actions": ["api:LinkPolicy"], "resources": ["*"]}])
 	f.code == "iam_policy_no_privilege_escalation"
+}
+
+# ✗ Les autres chemins d'auto-élévation réels du contrat OAPI.
+test_escalation_real_oapi_actions_denied if {
+	every act in ["api:PutUserGroupPolicy", "eim:AddUserToUserGroup", "api:SetDefaultPolicyVersion", "api:UpdateApiAccessPolicy"] {
+		count({f | some f in deny with input as _pol([{"effect": "Allow", "actions": [act], "resources": ["*"]}]); f.code == "iam_policy_no_privilege_escalation"}) > 0
+	}
+}
+
+# ✓ UnlinkPolicy RETIRE une policy : ce n'est pas une élévation. Le matching par préfixe
+# (et non par sous-chaîne) évite de le confondre avec LinkPolicy.
+test_unlink_policy_not_escalation if {
+	count({f | some f in deny; f.code == "iam_policy_no_privilege_escalation"}) == 0 with input as _pol([{"effect": "Allow", "actions": ["api:UnlinkPolicy"], "resources": ["x"]}])
 }
 
 # ✗ CreateAccessKey autorisé → finding.

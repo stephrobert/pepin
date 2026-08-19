@@ -1,0 +1,30 @@
+{
+  "history": [
+    {
+      "schema_version": 1,
+      "content": {
+        "findings": [
+          {
+            "code": "string",
+            "labels": {
+              "*": "string"
+            },
+            "message": "string",
+            "remediation": "string",
+            "severity": "string",
+            "subject": "string",
+            "title": "string"
+          }
+        ],
+        "summary": {
+          "conforme": "boolean",
+          "critical": "number",
+          "high": "number",
+          "low": "number",
+          "medium": "number",
+          "total": "number"
+        }
+      }
+    }
+  ]
+}

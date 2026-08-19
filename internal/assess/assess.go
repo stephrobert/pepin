@@ -39,17 +39,43 @@ var frameworkSlug = map[string]string{
 // pass. Listed here, such a control becomes NotEvaluated when the attribute was not collected on
 // any resource of its type. Controls NOT listed are evaluated by the presence of a finding
 // (absence of a bad config = genuinely compliant) and need no attribute gate. This map must stay
-// in sync with the rules' capability guards (TestRequiredAttrGuardsExist checks it).
-var requiredAttr = map[string]string{
-	"compute_instance_no_secrets_in_user_data": "user_data",
-	"iam_user_mfa_enabled":                     "mfa_enabled",
-	"iam_account_mfa_enforced":                 "require_trusted_env",
-	"blockstorage_volume_encryption":           "encrypted",
-	"objectstorage_bucket_object_lock_enabled": "object_lock_enabled",
-	"objectstorage_bucket_kms_encryption":      "sse_kms_enabled",
-	"database_encryption_at_rest_enabled":      "encryption_at_rest",
-	"loadbalancer_http_redirect_to_https":      "redirect_to_https",
-	"iam_apiaccesspolicy_max_key_expiration":   "max_access_key_expiration_seconds",
+// in sync with the rules' capability guards — TestRequiredAttrGuardsExist enforces that.
+// Valeur = attributs acceptés (any-of) : le gate passe si AU MOINS UN est présent. Permet
+// à un contrôle d'être évaluable par plusieurs dérivations selon le fournisseur (ex.
+// iam_no_root : flag explicite `root_owned` chez l'un, tag `scope` account/eim chez l'autre).
+var requiredAttr = map[string][]string{
+	"compute_instance_deletion_protection":               {"deletion_protection"},
+	"compute_instance_no_secrets_in_user_data":           {"user_data"},
+	"compute_instance_has_security_group":                {"security_group_ids"},
+	"compute_instance_public_ip_with_open_securitygroup": {"public_ip"},
+	"compute_image_not_public":                           {"public"},
+	"iam_no_root_access_key":                             {"root_owned", "scope"},
+	"iam_user_mfa_enabled":                               {"mfa_enabled"},
+	"iam_account_mfa_enforced":                           {"require_trusted_env"},
+	"iam_apiaccesspolicy_max_key_expiration":             {"max_access_key_expiration_seconds"},
+	"blockstorage_volume_encryption":                     {"encrypted"},
+	"blockstorage_snapshot_not_public":                   {"global_permission"},
+	"objectstorage_bucket_object_lock_enabled":           {"object_lock_enabled"},
+	"objectstorage_bucket_kms_encryption":                {"sse_kms_enabled"},
+	"objectstorage_bucket_versioning_enabled":            {"versioning"},
+	"objectstorage_bucket_default_encryption":            {"default_encryption_enabled"},
+	// Un 403 sur GetBucketAcl ne doit pas rendre un bucket public « conforme » : il faut
+	// qu'AU MOINS un des signaux d'exposition ait été réellement collecté.
+	"objectstorage_bucket_public_access":                {"acl", "acl_grants", "public_via_acl", "policy_public"},
+	"database_encryption_at_rest_enabled":               {"encryption_at_rest"},
+	"loadbalancer_http_redirect_to_https":               {"redirect_to_https"},
+	"loadbalancer_ssl_listeners":                        {"load_balancer_type"},
+	"network_subnet_no_public_ip_by_default":            {"map_public_ip_on_launch"},
+	"network_securitygroup_default_restrict_traffic":    {"security_group_name"},
+	"network_peering_cross_organization":                {"source_account", "accepter_account"},
+	"kubernetes_cluster_not_publicly_accessible":        {"admin_whitelist"},
+	"kubernetes_cluster_control_plane_highly_available": {"control_plane_multi_az"},
+	"kubernetes_cluster_auto_upgrade_enabled":           {"auto_upgrade"},
+	"kubernetes_cluster_deletion_protection":            {"deletion_protection"},
+	"kubernetes_cluster_audit_logging_enabled":          {"audit_enabled"},
+	// Ce contrôle lit la RÉGION de chaque ressource (pas la ressource synthétique du
+	// fournisseur) : sans région collectée, il ne mesure rien.
+	"governance_resource_region_in_eu": {"region"},
 }
 
 // References converts a control's framework + SCSL mappings into exact, versioned references.
@@ -159,7 +185,10 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 				observed := "aucune non-conformité détectée (contrat vérifié)"
 				if typ != "" {
 					observed = fmt.Sprintf("aucune non-conformité détectée sur les ressources de type « %s » collectées (contrat vérifié)", typ)
-				} else if strings.HasPrefix(code, "governance_") {
+				} else if strings.HasPrefix(code, "governance_provider_") {
+					// Réservé aux contrôles dont la donnée EST le descripteur. Les
+					// governance_resource_* sont mesurés sur le tenant : leur attribuer
+					// cette preuve serait un mensonge.
 					observed = "conforme selon les faits de souveraineté déclarés au descripteur du fournisseur (attestation, non mesuré sur le tenant)"
 				}
 				res.Evidence = assessment.Evidence{Observed: observed, Source: run.Source}
@@ -180,11 +209,16 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 // une ressource de son type. Sans attribut requis déclaré, true (le contrôle s'évalue par la
 // présence d'un finding). C'est le verrou par ATTRIBUT (pas seulement par type) du « pass ».
 func attrCollected(code, typ string, attrsByType map[string]map[string]bool) bool {
-	a := requiredAttr[code]
-	if a == "" {
+	attrs := requiredAttr[code]
+	if len(attrs) == 0 {
 		return true
 	}
-	return attrsByType[typ][a]
+	for _, a := range attrs {
+		if attrsByType[typ][a] {
+			return true
+		}
+	}
+	return false
 }
 
 // notEvaluatedReason explique POURQUOI un contrôle n'a pas pu être évalué — un « non évalué »
@@ -196,8 +230,12 @@ func notEvaluatedReason(code, typ string, verified bool, resourceTypes map[strin
 	if typ != "" && !resourceTypes[typ] {
 		return fmt.Sprintf("aucune ressource de type « %s » dans l'inventaire évalué", typ)
 	}
-	if a := requiredAttr[code]; a != "" && !attrsByType[typ][a] {
-		return fmt.Sprintf("attribut « %s » non collecté sur les ressources de type « %s » (garde de capacité)", a, typ)
+	if attrs := requiredAttr[code]; len(attrs) > 0 && !attrCollected(code, typ, attrsByType) {
+		where := fmt.Sprintf("les ressources de type « %s »", typ)
+		if typ == "" { // contrôle transverse (gouvernance) : aucun type visé
+			where = "les ressources collectées"
+		}
+		return fmt.Sprintf("attribut « %s » non collecté sur %s (garde de capacité)", strings.Join(attrs, " / "), where)
 	}
 	return "contrôle non évaluable sur cet inventaire"
 }

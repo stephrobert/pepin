@@ -35,6 +35,10 @@ et un dossier de preuve scellé.
 
 ## Démarrage
 
+Les binaires publiés (empreintes, signature, provenance SLSA), l'image de
+conteneur, l'action GitHub et le modèle GitLab sont documentés dans
+[docs/install.fr.md](docs/install.fr.md). Depuis les sources :
+
 ```bash
 # build (Go 1.26+)
 go build -o pepin .

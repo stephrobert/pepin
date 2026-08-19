@@ -67,6 +67,12 @@ test_volume_detached_exoscale_ok if {
 	count({f | some f in deny; f.code == "blockstorage_volume_snapshots_exist"}) == 0 with input as {"resources": [{"provider": "exoscale", "type": "blockstorage_volume", "id": "v-1", "attributes": {"volume_id": "v-1", "state": "detached"}}]}
 }
 
+# Scaleway : état natif « in_use » (api/block/v1, underscore) = en usage → finding.
+test_volume_in_use_scaleway_denied if {
+	some f in deny with input as {"resources": [{"provider": "scaleway", "type": "blockstorage_volume", "id": "v-1", "attributes": {"volume_id": "v-1", "state": "in_use"}}]}
+	f.code == "blockstorage_volume_snapshots_exist"
+}
+
 # ---- compute_instance_has_security_group ----
 test_vm_no_sg_denied if {
 	some f in deny with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": {"vm_id": "i-1", "security_group_ids": []}}]}
@@ -135,5 +141,33 @@ test_userdata_base64_encoded_secret_denied if {
 #   le décodage donne du binaire NON imprimable → traité comme texte brut → toujours détecté.
 test_userdata_plaintext_looks_base64_denied if {
 	some f in deny with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-9", "attributes": {"vm_id": "i-9", "security_group_ids": ["sg-1"], "user_data": "AKIAABCDEFGHIJKLMNOP"}}]}
+	f.code == "compute_instance_no_secrets_in_user_data"
+}
+
+# ── compute_instance_deletion_protection (CLD-CMP-10) ──
+
+_vm_del(attrs) := {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": attrs}]}
+
+# ✗ Protection désactivée → finding.
+test_vm_deletion_protection_off_denied if {
+	some f in deny with input as _vm_del({"vm_id": "i-1", "deletion_protection": false})
+	f.code == "compute_instance_deletion_protection"
+}
+
+# ✓ Protection activée → conforme.
+test_vm_deletion_protection_on_ok if {
+	count({f | some f in deny; f.code == "compute_instance_deletion_protection"}) == 0 with input as _vm_del({"vm_id": "i-1", "deletion_protection": true})
+}
+
+# ✓ Attribut ABSENT (mode plan Terraform) : garde de capacité, aucun finding — l'assessment
+# le rend « non évalué » via requiredAttr plutôt qu'un faux vert.
+test_vm_deletion_protection_absent_silent if {
+	count({f | some f in deny; f.code == "compute_instance_deletion_protection"}) == 0 with input as _vm_del({"vm_id": "i-1"})
+}
+
+# ✗ FN : le bloc cloud-init `chpasswd` avec une liste `utilisateur:motdepasse` est la façon
+# la plus courante de poser un mot de passe en user-data — il échappait au détecteur.
+test_userdata_cloudinit_chpasswd_list_denied if {
+	some f in deny with input as {"resources": [{"provider": "outscale", "type": "compute_instance", "id": "i-8", "attributes": {"vm_id": "i-8", "security_group_ids": ["sg-1"], "user_data": "#cloud-config\nchpasswd:\n  list: |\n    root:SuperSecret123\n    ubuntu:Another0ne\n"}}]}
 	f.code == "compute_instance_no_secrets_in_user_data"
 }

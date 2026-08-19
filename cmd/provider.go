@@ -77,7 +77,7 @@ var providerValidateCmd = &cobra.Command{
 		}
 		fmt.Println()
 		if !conforme {
-			os.Exit(1)
+			os.Exit(exitNonConformite)
 		}
 		return nil
 	},

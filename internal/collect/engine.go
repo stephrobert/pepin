@@ -39,6 +39,7 @@ type Paging struct {
 	SizeParam  string `yaml:"size_param"`  // ex. page_size
 	Size       int    `yaml:"size"`        // ex. 100
 	TokenParam string `yaml:"token_param"` // token : param de requête portant le jeton de page suivante
+	MorePath   string `yaml:"more_path"`   // offset : chemin JSON d'un booléen « il reste des items » (ex. HasMoreItems)
 	TokenPath  string `yaml:"token_path"`  // token : chemin JSON du jeton suivant dans la réponse (ex. NextPageToken)
 	MaxPages   int    `yaml:"max_pages"`   // borne de sécurité anti-boucle (défaut defaultMaxPages)
 }
@@ -172,7 +173,10 @@ func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsP
 	var items []any
 	token := ""
 	for page := 1; page <= max; page++ {
-		doc, err := fetch(ctx, hc, fullURL, auth, paging, page, token, method, body)
+		// L'offset avance du nombre d'items RÉELLEMENT reçus, jamais de la taille
+		// demandée : un serveur qui plafonne la page sous `size` (Outscale borne à 100
+		// même si l'on demande 1000) ferait sinon sauter des items.
+		doc, err := fetch(ctx, hc, fullURL, auth, paging, page, len(items), token, method, body)
 		if err != nil {
 			return nil, err
 		}
@@ -182,11 +186,23 @@ func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsP
 			return items, nil
 		}
 		switch paging.Style {
-		case "page":
-			if len(batch) < paging.Size || len(batch) == 0 {
+		case "page", "offset-body":
+			if len(batch) == 0 {
 				return items, nil
 			}
-		case "token":
+			// Quand l'API dit elle-même s'il reste des items (HasMoreItems), on la croit :
+			// c'est le seul critère fiable si elle plafonne la page sous `size`.
+			if paging.MorePath != "" {
+				if !boolFromDoc(doc, paging.MorePath) {
+					return items, nil
+				}
+				continue
+			}
+			// À défaut : une page incomplète est la dernière.
+			if len(batch) < paging.Size {
+				return items, nil
+			}
+		case "token", "token-body":
 			token = tokenFromDoc(doc, paging.TokenPath)
 			if token == "" {
 				return items, nil
@@ -196,6 +212,41 @@ func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsP
 		}
 	}
 	return nil, fmt.Errorf("pagination : borne de %d pages atteinte sur %s — collecte tronquée (vérifier la config de pagination)", max, fullURL)
+}
+
+// withBodyPaging fusionne les paramètres de pagination dans le body JSON d'un POST.
+// OAPI Outscale : NextPageToken (style token-body) ou FirstItem+ResultsPerPage (offset-body)
+// se passent dans le body, pas en query. La taille de page (SizeParam) est toujours posée
+// si configurée ; FirstItem = (page-1)*Size pour l'offset.
+func withBodyPaging(body string, p *Paging, offset int, token string) string {
+	m := map[string]any{}
+	if strings.TrimSpace(body) != "" {
+		_ = json.Unmarshal([]byte(body), &m)
+	}
+	if p.SizeParam != "" && p.Size > 0 {
+		m[p.SizeParam] = p.Size
+	}
+	switch p.Style {
+	case "token-body":
+		if token != "" && p.TokenParam != "" {
+			m[p.TokenParam] = token
+		}
+	case "offset-body":
+		if p.Param != "" {
+			m[p.Param] = offset // 0-basé, vérifié sur l'API réelle
+		}
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return body
+	}
+	return string(b)
+}
+
+// boolFromDoc lit un booléen à `path` dans la réponse (ex. HasMoreItems).
+func boolFromDoc(doc any, path string) bool {
+	b, _ := lookup(doc, path).(bool)
+	return b
 }
 
 // tokenFromDoc extrait le jeton de page suivante à `path` dans la réponse (chaîne ; "" = fin).
@@ -293,7 +344,7 @@ func lookupCoalesce(it any, path string) any {
 	return nil
 }
 
-func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Paging, page int, token, method, body string) (any, error) {
+func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Paging, page, offset int, token, method, body string) (any, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, err
@@ -310,6 +361,11 @@ func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Pa
 		q := u.Query()
 		q.Set(p.TokenParam, token)
 		u.RawQuery = q.Encode()
+	}
+	// OAPI Outscale : le jeton de page suivante (NextPageToken) et l'offset (FirstItem +
+	// ResultsPerPage) se passent DANS LE BODY JSON du POST, pas en query. On les y fusionne.
+	if p != nil && (p.Style == "token-body" || p.Style == "offset-body") {
+		body = withBodyPaging(body, p, offset, token)
 	}
 	if method == "" {
 		method = http.MethodGet
@@ -391,6 +447,10 @@ func splitRange(s string) (int64, int64, bool) {
 // statements normalisés [{effect, actions[], resources[], not_action[],
 // not_resource[]}]. Helper COMMUN aux providers dont les politiques suivent ce
 // format de statements (ex. Outscale EIM).
+// IAMPolicyStatements expose le parseur pour les collecteurs Go qui doivent normaliser
+// un document de politique hors du moteur YAML (ex. policies EIM inline, chaîne à 3 niveaux).
+func IAMPolicyStatements(v any) []any { return iamPolicyStatements(v) }
+
 func iamPolicyStatements(v any) []any {
 	doc, ok := v.(string)
 	if !ok || doc == "" {
@@ -517,6 +577,7 @@ func lookup(v any, path string) any {
 var knownBareTransforms = map[string]bool{
 	"lower": true, "upper": true, "first": true, "range_from": true, "range_to": true,
 	"iampolicy": true, "list": true, "kv": true, "to_int": true, "nonempty": true,
+	"snake_keys": true,
 }
 
 // knownTransformPrefixes : préfixes de transforms paramétrés (`default:val`, `equals:val`…).
@@ -654,6 +715,13 @@ func applyTransform(v any, spec any) any {
 				return n
 			}
 			return v
+		case "snake_keys":
+			// Renomme RÉCURSIVEMENT les clés PascalCase -> snake_case d'un objet ou d'une
+			// liste d'objets imbriqués (le map: de premier niveau ne renomme pas l'intérieur
+			// d'une structure). Ne touche QUE les clés, jamais les valeurs (ex. un protocole
+			// "HTTPS" reste "HTTPS"). Sert aux réponses OAPI PascalCase (Listeners[], AccessLog)
+			// dont les règles agnostiques lisent les champs en snake_case.
+			return snakeKeys(v)
 		case "nonempty":
 			// Booléen : la valeur source est-elle renseignée (présence d'un endpoint,
 			// d'une liste non vide…). Sert à DÉRIVER un drapeau « activé » d'un champ
@@ -677,6 +745,55 @@ func applyTransform(v any, spec any) any {
 		}
 	}
 	return v
+}
+
+// snakeKeys convertit récursivement les clés d'un objet (ou d'une liste d'objets)
+// de PascalCase vers snake_case. Les valeurs sont laissées intactes.
+func snakeKeys(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(x))
+		for k, val := range x {
+			out[toSnakeCase(k)] = snakeKeys(val)
+		}
+		return out
+	case []any:
+		out := make([]any, len(x))
+		for i, el := range x {
+			out[i] = snakeKeys(el)
+		}
+		return out
+	default:
+		return v
+	}
+}
+
+// toSnakeCase : "LoadBalancerProtocol" -> "load_balancer_protocol", "IsEnabled" ->
+// "is_enabled". Insère un underscore avant une majuscule précédée d'une minuscule/chiffre,
+// ou en fin d'acronyme (majuscule suivie d'une minuscule).
+func toSnakeCase(s string) string {
+	var b strings.Builder
+	rs := []rune(s)
+	for i, r := range rs {
+		if r >= 'A' && r <= 'Z' {
+			if i > 0 {
+				prev := rs[i-1]
+				var next rune
+				if i+1 < len(rs) {
+					next = rs[i+1]
+				}
+				lowerPrev := (prev >= 'a' && prev <= 'z') || (prev >= '0' && prev <= '9')
+				acronymEnd := prev >= 'A' && prev <= 'Z' && next >= 'a' && next <= 'z'
+				if lowerPrev || acronymEnd {
+					b.WriteByte('_')
+				}
+			}
+			b.WriteRune(r - 'A' + 'a')
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // firstNonNil retourne la première valeur non nil.

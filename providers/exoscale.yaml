@@ -9,10 +9,13 @@ region_key: zone
 souverainete:
   eu_etabli: false            # Akenes SA, siège en Suisse — hors Union européenne
   juridiction: CH
-  controle_capitalistique: a_verifier   # A1 Digital (A1 Telekom Austria, Autriche/UE) ; actionnariat ultime à confirmer
+  # Chaîne capitalistique ultime établie : Akenes SA → A1 Digital → A1 Telekom
+  # Austria Group → América Móvil (Mexique) 60,8 % (09/2025), ÖBAG (État autrichien)
+  # 28,4 %. Le contrôle déterminant est extra-UE (mexicain).
+  controle_capitalistique: extra_ue
   secnumcloud: non
-  exposition_extraterritoriale: false   # hors Cloud Act US ; cadre juridique suisse
-  sources: "exoscale.com/about-us ; a1.digital/european-cloud (acquisition A1 Digital 2017)"
+  exposition_extraterritoriale: false   # chaîne CH/AT/MX hors Cloud Act US ; pas de loi extraterritoriale mexicaine notoire équivalente (à noter maintenant que le contrôle MX est établi)
+  sources: "exoscale.com/about-us ; newsroom.a1.com (A1 Digital acquiert Exoscale) ; América Móvil 60,8 % / ÖBAG 28,4 % du groupe A1 Telekom Austria (09/2025)"
 auth:
   type: exoscale-hmac
 credentials:
@@ -396,8 +399,12 @@ contrat:
   # est NON SATISFAIT (écart), pas « sans objet » — à exposer comme tel ultérieurement.
   - control: blockstorage_snapshot_not_public
     reason: "Snapshots block-storage Exoscale non exportables/partageables (doc officielle) : le risque d'exposition publique est structurellement absent, conforme par construction (STO-2)."
-  # CHF-4 : SOS n'offre que SSE-C (clé client PAR-OBJET, non observable au niveau
-  # bucket ; Exoscale ne stocke pas la clé) ; SSE-KMS « planned », absent à ce jour
-  # (doc storage/object-storage/how-to/encryption) → BYOK non observable au niveau bucket.
+  # CHF-4 : depuis 2025, SOS chiffre au repos par défaut via SSE-SOS (clés gérées
+  # par Exoscale, type SSE-S3, activé d'office sur les nouveaux buckets, doc
+  # storage/object-storage/how-to/encryption). Mais SSE-SOS n'est PAS du BYOK/KMS
+  # client : aucune clé maître gérée par le client au niveau bucket (SSE-C reste
+  # par-objet et non observable). Le contrôle BYOK-au-bucket reste donc sans objet.
+  # NB : un check « SSE-SOS activé » (GetBucketEncryption) est désormais collectable
+  # et attraperait les buckets antérieurs au défaut — à câbler (cf. roadmap §2).
   - control: objectstorage_bucket_kms_encryption
-    reason: "SOS n'offre que SSE-C (clé client par-objet, non observable au niveau bucket ; Exoscale ne stocke pas la clé) ; SSE-KMS annoncé mais absent à ce jour (doc object-storage/encryption) → BYOK non observable au niveau bucket (CHF-4)."
+    reason: "SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4)."

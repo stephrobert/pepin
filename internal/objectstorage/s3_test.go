@@ -1,5 +1,7 @@
 package objectstorage
 
+import "errors"
+
 import "testing"
 
 func TestPolicyAllowsPublic(t *testing.T) {
@@ -85,5 +87,35 @@ func TestPolicyAllowsPublic(t *testing.T) {
 				t.Errorf("policyAllowsPublic() = %v, want %v", got, c.want)
 			}
 		})
+	}
+}
+
+// RÉGRESSION : un opérateur NÉGATIF rend la policy PLUS publique (tout Internet sauf une
+// exception), or `conditionRestrictsSource` concluait « restreinte » sur la seule présence
+// de la clé de condition — un bucket public devenait invisible.
+func TestConditionNegativeOperatorIsNotARestriction(t *testing.T) {
+	cases := map[string]string{
+		"NotIpAddress":    `{"NotIpAddress":{"aws:SourceIp":["10.0.0.0/8"]}}`,
+		"StringNotEquals": `{"StringNotEquals":{"aws:PrincipalAccount":["123456789012"]}}`,
+		"ArnNotLike":      `{"ArnNotLike":{"aws:PrincipalArn":["arn:x"]}}`,
+	}
+	for name, cond := range cases {
+		if conditionRestrictsSource([]byte(cond)) {
+			t.Errorf("%s : classé « restreint » alors qu'il ÉLARGIT l'accès", name)
+		}
+	}
+	// Contrôle positif : une condition positive reste bien une restriction.
+	if !conditionRestrictsSource([]byte(`{"IpAddress":{"aws:SourceIp":["10.0.0.0/8"]}}`)) {
+		t.Error("IpAddress positif : devrait être reconnu comme une restriction")
+	}
+}
+
+// RÉGRESSION : « aucun tag » (NoSuchTagSet) est une valeur, pas une erreur de collecte.
+func TestEmptyTagSetIsAValue(t *testing.T) {
+	if !isEmptyTagSet(errors.New("operation error S3: GetBucketTagging, NoSuchTagSet: The TagSet does not exist")) {
+		t.Error("NoSuchTagSet doit être reconnu comme « aucun tag », sinon l'attribut reste absent et le bucket passe au vert")
+	}
+	if isEmptyTagSet(errors.New("AccessDenied")) {
+		t.Error("une vraie erreur ne doit pas être confondue avec un TagSet vide")
 	}
 }

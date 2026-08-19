@@ -12,7 +12,7 @@ import (
 // authTypes et credFormats définissent le CONTRAT d'un provider : seuls ces
 // schémas d'authentification et formats de fichier d'identifiants sont supportés.
 var (
-	authTypes   = map[string]bool{"header": true, "sigv4": true, "exoscale-hmac": true}
+	authTypes   = map[string]bool{"header": true, "sigv4": true, "exoscale-hmac": true, "kubeconfig": true}
 	credFormats = map[string]bool{"": true, "scw": true, "osc": true, "exoscale": true}
 )
 
@@ -32,7 +32,7 @@ func Validate(name string, desc Descriptor) []string {
 		add("champ `description` manquant")
 	}
 	if !authTypes[desc.Auth.Type] {
-		add("auth.type %q inconnu (header|sigv4|exoscale-hmac)", desc.Auth.Type)
+		add("auth.type %q inconnu (header|sigv4|exoscale-hmac|kubeconfig)", desc.Auth.Type)
 	}
 	switch desc.Auth.Type {
 	case "header":
@@ -47,7 +47,9 @@ func Validate(name string, desc Descriptor) []string {
 	if !credFormats[desc.Credentials.File.Format] {
 		add("credentials.file.format %q inconnu (scw|osc|exoscale)", desc.Credentials.File.Format)
 	}
-	if desc.Credentials.Env["access_key"] == "" && desc.Credentials.File.Format == "" {
+	// L'auth par kubeconfig ne repose pas sur une paire de clés : c'est le fichier
+	// (et les droits qu'il porte) qui authentifie.
+	if desc.Auth.Type != "kubeconfig" && desc.Credentials.Env["access_key"] == "" && desc.Credentials.File.Format == "" {
 		add("aucune source d'identifiants (env.access_key ou file)")
 	}
 

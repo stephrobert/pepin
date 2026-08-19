@@ -9,7 +9,7 @@ souverainete:
   eu_etabli: true             # Scaleway SAS, siège en France
   juridiction: FR
   controle_capitalistique: FR  # groupe Iliad (Xavier Niel / HoldCo II) — capital 100% européen
-  secnumcloud: en_cours        # processus de qualification ANSSI engagé (cible 2025)
+  secnumcloud: en_cours        # ANSSI : recevabilité validée (12/2024), jalon 1 franchi (07/2025) ; qualification non obtenue à ce jour
   exposition_extraterritoriale: false
   sources: "iliad.fr (entrée processus SecNumCloud) ; en.wikipedia.org/wiki/Scaleway (capital européen)"
 
@@ -399,3 +399,8 @@ contrat:
   # aucun champ de chiffrement → non observable côté plateforme.
   - control: blockstorage_volume_encryption
     reason: "Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2)."
+  # STO-2 : les snapshots block Scaleway (api/block/v1) n'ont AUCUN mécanisme de
+  # partage/export public (pas d'opération de partage inter-comptes, contrairement à
+  # AWS/Outscale) → le risque d'exposition publique est structurellement absent.
+  - control: blockstorage_snapshot_not_public
+    reason: "Les snapshots block Scaleway (api/block/v1) n'exposent aucun mécanisme de partage ou d'export public : le risque d'exposition publique est structurellement absent, conforme par construction (STO-2)."

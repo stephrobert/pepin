@@ -22,7 +22,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, errStyle.Render("erreur : ")+err.Error())
-		os.Exit(2)
+		os.Exit(exitErreur)
 	}
 }
 

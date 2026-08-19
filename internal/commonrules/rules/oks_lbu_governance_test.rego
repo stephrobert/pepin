@@ -55,3 +55,27 @@ test_tags_complete_ok if {
 test_tags_not_exposed_ok if {
 	count({f | some f in deny; f.code == "governance_resource_required_tags"}) == 0 with input as {"resources": [{"provider": "exoscale", "type": "compute_instance", "id": "i-9", "attributes": {"vm_id": "i-9", "security_group_ids": ["sg-1"]}}]}
 }
+
+# ✓ FP : un LBU internet-facing en TLS PASSTHROUGH (listener TCP:443, TLS terminé au
+# backend) est chiffré de bout en bout — le flaguer « trafic en clair » était un faux positif.
+test_lbu_tcp_passthrough_not_cleartext if {
+	count({f | some f in deny; f.code == "loadbalancer_ssl_listeners"}) == 0 with input as {"resources": [{
+		"provider": "outscale", "type": "load_balancer", "id": "lb-1",
+		"attributes": {
+			"load_balancer_name": "lb-1", "load_balancer_type": "internet-facing",
+			"listeners": [{"load_balancer_protocol": "TCP", "load_balancer_port": 443}],
+		},
+	}]}
+}
+
+# ✗ En revanche un listener TCP:80 reste bien du trafic en clair.
+test_lbu_tcp_port80_denied if {
+	some f in deny with input as {"resources": [{
+		"provider": "outscale", "type": "load_balancer", "id": "lb-2",
+		"attributes": {
+			"load_balancer_name": "lb-2", "load_balancer_type": "internet-facing",
+			"listeners": [{"load_balancer_protocol": "TCP", "load_balancer_port": 80}],
+		},
+	}]}
+	f.code == "loadbalancer_ssl_listeners"
+}

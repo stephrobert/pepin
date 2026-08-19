@@ -1,0 +1,185 @@
+name: entrypoints
+
+# Les portes d'entrée (image OCI, action composite) sont éprouvées à chaque
+# pull request, AVANT qu'une release existe : l'image se construit depuis un
+# binaire local et doit scanner vraiment, l'installateur de l'action doit
+# accepter un binaire authentique et refuser le même binaire corrompu d'un
+# octet, et la traduction des codes de sortie doit tenir sur les quatre
+# chemins. release.yml rejoue ensuite les mêmes promesses contre les artefacts
+# publiés, au seul moment où ce test-là peut exister.
+#
+# La règle appliquée ici : un commentaire n'est pas un contrôle. La
+# vérification d'empreinte de install.sh n'est pas « présente », elle est
+# déclenchée, dans les deux sens.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: entrypoints-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    name: The image scans for real
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build the static binary the Dockerfile copies
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          go build -trimpath \
+            -ldflags="-s -w -X github.com/stephrobert/pepin/cmd.version=v0.0.0-ci" \
+            -o dist/pepin-linux-amd64 .
+
+      - name: Build the image
+        run: docker build -t pepin:ci --build-arg VERSION=v0.0.0-ci .
+
+      # Un `--help` qui répond ne prouve rien : l'image doit produire un
+      # rapport sur les entrées du dépôt, et rendre les trois codes de sortie
+      # que le README publie, à travers docker run, volume monté compris.
+      - name: The image scans and keeps the exit codes
+        run: |
+          set -u
+          got="$(docker run --rm pepin:ci version)"
+          [ "$got" = "pépin v0.0.0-ci" ] || { echo "version à travers l'image : '$got'" >&2; exit 1; }
+          rc=0
+          docker run --rm -v "$PWD/examples:/work/examples:ro" pepin:ci \
+            scan scaleway --terraform examples/scaleway/terraform/plan.json --format json >/dev/null || rc=$?
+          [ "$rc" -eq 1 ] || { echo "plan Terraform à travers l'image : exit $rc, attendu 1" >&2; exit 1; }
+          rc=0
+          docker run --rm -v "$PWD/examples:/work/examples:ro" pepin:ci \
+            scan scaleway examples/scaleway/inventory.json --format json >/dev/null || rc=$?
+          [ "$rc" -eq 1 ] || { echo "inventaire non conforme : exit $rc, attendu 1" >&2; exit 1; }
+          docker run --rm -v "$PWD/examples:/work/examples:ro" pepin:ci \
+            scan scaleway examples/scaleway/inventory-ok.json --format json >/dev/null || {
+            echo "inventaire conforme : exit non nul, attendu 0" >&2; exit 1; }
+          rc=0
+          docker run --rm pepin:ci scan scaleway /absent.json >/dev/null 2>&1 || rc=$?
+          [ "$rc" -eq 2 ] || { echo "erreur technique : exit $rc, attendu 2" >&2; exit 1; }
+
+      # Le bundle de preuve traverse aussi l'image : scellé dedans (uid du
+      # runner, parce que le volume lui appartient), vérifié dehors par le
+      # binaire nu. C'est le trajet documenté par docs/install.md.
+      - name: A bundle sealed through the image verifies outside it
+        run: |
+          set -u
+          mkdir -p out
+          rc=0
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD/examples:/work/examples:ro" -v "$PWD/out:/work/out" pepin:ci \
+            scan scaleway --terraform examples/scaleway/terraform/plan.json \
+            --seal /work/out/bundle --redact --format json >/dev/null || rc=$?
+          [ "$rc" -eq 1 ] || { echo "scan --seal à travers l'image : exit $rc, attendu 1" >&2; exit 1; }
+          chmod +x dist/pepin-linux-amd64
+          dist/pepin-linux-amd64 verify out/bundle
+
+  action:
+    name: The action installs only what it verified
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Des artefacts de release factices, servis en boucle locale : le chemin
+      # de code de install.sh est EXACTEMENT celui d'un consommateur, seule
+      # l'URL de base change, et elle n'est surchargée que par ce test.
+      - name: Serve locally built release artefacts
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          go build -trimpath \
+            -ldflags="-s -w -X github.com/stephrobert/pepin/cmd.version=v0.0.0-ci" \
+            -o serve/pepin-linux-amd64 .
+          (cd serve && sha256sum pepin-linux-amd64 > checksums.txt)
+          python3 -m http.server 8931 --bind 127.0.0.1 --directory serve &
+          sleep 2
+
+      - name: A genuine binary is accepted, and it runs
+        run: |
+          set -u
+          mkdir -p inst
+          .github/actions/pepin-scan/install.sh 0.0.0-ci inst http://127.0.0.1:8931
+          got="$(inst/pepin version)"
+          [ "$got" = "pépin v0.0.0-ci" ] || { echo "le binaire installé répond '$got'" >&2; exit 1; }
+
+      # La falsification : un octet retourné dans le binaire servi, la liste
+      # d'empreintes inchangée. Si install.sh installe quand même, la
+      # vérification est un commentaire, pas un contrôle.
+      - name: The same binary corrupted by one byte is refused
+        run: |
+          set -u
+          printf 'X' | dd of=serve/pepin-linux-amd64 bs=1 seek=100 count=1 conv=notrunc
+          mkdir -p inst2
+          if .github/actions/pepin-scan/install.sh 0.0.0-ci inst2 http://127.0.0.1:8931; then
+            echo "install.sh a accepté un binaire corrompu" >&2
+            exit 1
+          fi
+          if [ -e inst2/pepin ]; then
+            echo "install.sh a refusé, mais un binaire a quand même été installé" >&2
+            exit 1
+          fi
+
+      # Les quatre chemins de scan.sh, avec le binaire vérifié : 0 passe,
+      # 1 échoue par défaut, 1 devient un avertissement en mode rapport, et
+      # 2 échoue TOUJOURS, même en mode rapport. C'est la distinction que
+      # l'action promet de ne jamais brouiller.
+      - name: scan.sh maps the exit codes without blurring them
+        env:
+          PEPIN_BIN: inst/pepin
+        run: |
+          set -u
+          run_case() {
+            local expect="$1"; shift
+            local out; out="$(mktemp)"
+            local rc=0
+            GITHUB_OUTPUT="$out" "$@" .github/actions/pepin-scan/scan.sh >/dev/null 2>&1 || rc=$?
+            if [ "$rc" -ne "$expect" ]; then
+              echo "attendu exit $expect, obtenu $rc (outputs : $(tr '\n' ' ' < "$out"))" >&2
+              exit 1
+            fi
+          }
+          run_case 0 env PROVIDER=scaleway INVENTORY=examples/scaleway/inventory-ok.json FORMAT=json
+          run_case 1 env PROVIDER=scaleway INVENTORY=examples/scaleway/inventory.json FORMAT=json
+          run_case 0 env PROVIDER=scaleway INVENTORY=examples/scaleway/inventory.json FORMAT=json FAIL_ON_NONCONFORMITY=false
+          run_case 2 env PROVIDER=scaleway INVENTORY=/absent.json FAIL_ON_NONCONFORMITY=false
+          run_case 2 env PROVIDER=scaleway
+          echo "les quatre chemins répondent le code documenté"

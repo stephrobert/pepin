@@ -1,0 +1,20 @@
+# Dérivation de la version depuis les Conventional Commits (commitizen).
+#
+# La version ne vit QUE dans les tags git (`version_provider = "scm"`) : un
+# fichier qui la porterait serait une seconde source capable de contredire le
+# tag. `cz bump --dry-run` propose le numéro que les commits impliquent (fix →
+# patch, feat → minor, `!` → break), et tools/release/preflight.sh vérifie que
+# le tag demandé est bien celui-là. Personne n'installe rien : le preflight
+# passe par uvx, à une version épinglée dans le script.
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "scm"
+version_scheme = "semver"
+tag_format = "v$version"
+# Le CHANGELOG est écrit, pas généré : sa règle éditoriale (en tête du fichier)
+# dit ce qui mérite une ligne, et un générateur qui émettrait chaque sujet de
+# commit enterrerait ces lignes sous les refactors.
+update_changelog_on_bump = false
+# Avant 1.0, un break reste dans 0.x : un seul `feat!` ne doit pas faire sauter
+# 0.1.0 à 1.0.0 et annoncer une stabilité que personne n'a promise.
+major_version_zero = true

@@ -1,17 +1,20 @@
 code: secnumcloud_3_2
-name: SecNumCloud — Prestataires de services cloud
+name: ANSSI SecNumCloud 3.2
 version: "3.2"
 url: https://cyber.gouv.fr/sites/default/files/document/secnumcloud-referentiel-exigences-v3.2.pdf
 description: |
-  Référentiel d'exigences applicables aux prestataires de services d'informatique
-  en nuage (SecNumCloud), version 3.2 du 08/03/2022, publié par l'ANSSI. Les
-  exigences sont réparties sur les chapitres 5 à 19 (structure calquée sur l'annexe
-  A d'ISO/IEC 27001, augmentée d'exigences additionnelles au chapitre 19).
+  Référentiel SecNumCloud v3.2 (08/03/2022) publié par l'ANSSI. À l'origine, il
+  qualifie les PRESTATAIRES de services cloud ; cette vue ne prétend donc PAS
+  qualifier qui que ce soit. Elle sert au CLIENT du cloud à voir quelles exigences
+  SecNumCloud techniquement observables la configuration de son tenant recouvre.
+  Les exigences sont réparties sur les chapitres 5 à 19 (structure calquée sur
+  l'annexe A d'ISO/IEC 27001, augmentée d'exigences additionnelles au chapitre 19).
   Ce catalogue ne référence QUE les sous-sections observables au niveau de la
   configuration d'un tenant IaaS : les intitulés sont repris VERBATIM de la table
   des matières officielle (chapitres 8 à 19). Les exigences organisationnelles ou
-  contractuelles (revues, procédures, relations tiers…) sortent du périmètre d'un
-  scanner de posture et ne sont pas mappées (cf. gaps.md, bucket D).
+  contractuelles (revues, procédures, relations tiers…, et la qualification du
+  prestataire elle-même) sortent du périmètre d'un scanner de posture et ne sont
+  pas mappées (cf. gaps.md, bucket D).
 
 controls:
   # ── 8. Gestion des actifs ──

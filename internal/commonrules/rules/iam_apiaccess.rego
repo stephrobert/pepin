@@ -7,11 +7,16 @@ package pepin.rules
 
 import rego.v1
 
-# Règle d'accès API ouverte à un CIDR public.
+# Règle d'accès API ouverte à un CIDR public — SAUF si elle exige un certificat
+# client (CaIds/Cns) : dans ce cas la plage IP ouverte ne suffit pas à appeler l'API,
+# l'appelant doit présenter un certificat émis par une CA déclarée. Flaguer une telle
+# règle serait un faux positif. Attributs absents (provider ne les exposant pas) ⇒
+# comportement inchangé (on flague), donc rétro-compatible.
 deny contains f if {
 	some r in resources_of_type("api_access_rule")
 	some cidr in object.get(r.attributes, "ip_ranges", [])
 	is_public_cidr(cidr)
+	not _requires_client_cert(r)
 	f := {
 		"code": "iam_apiaccessrule_no_public_cidr",
 		"severity": "high",
@@ -21,6 +26,11 @@ deny contains f if {
 		"labels": {"provider": provider_of(r), "category": "security"},
 	}
 }
+
+# La règle impose un certificat client : CA déclarée(s) ou Common Name(s) exigé(s).
+_requires_client_cert(r) if count(object.get(r.attributes, "ca_ids", [])) > 0
+
+_requires_client_cert(r) if count(object.get(r.attributes, "cns", [])) > 0
 
 # Aucune règle d'accès API définie (API ouverte depuis n'importe où).
 deny contains f if {

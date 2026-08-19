@@ -2,10 +2,13 @@
 #   gestion d'identité permettant à un principal de s'octroyer plus de droits
 #   (attacher une politique, créer/modifier une politique, créer une clé d'accès…).
 #   Type normalisé `iam_policy`, attribut statements [{effect, actions[], ...}].
-# Ancrage Outscale (EIM) : actions de gestion d'identité de la doc locale (eim) —
-#   AttachUserPolicy/AttachGroupPolicy/LinkManagedPolicyToUserGroup, CreatePolicy/
-#   CreatePolicyVersion, PutUserPolicy/PutGroupPolicy, CreateAccessKey/UpdateAccessKey.
-#   Matching par NOM d'action (insensible à la casse et au préfixe de service).
+# Ancrage Outscale (EIM) : noms d'actions RÉELS du contrat OAPI (osc-api), pas leurs
+#   équivalents AWS — LinkPolicy, LinkManagedPolicyToUserGroup, PutUserPolicy,
+#   PutUserGroupPolicy, AddUserToUserGroup (s'ajouter à un groupe privilégié),
+#   CreatePolicy/CreatePolicyVersion, SetDefaultPolicyVersion (basculer une policy sur
+#   une version plus permissive), CreateAccessKey/UpdateAccessKey, UpdateApiAccessPolicy.
+#   Matching sur le nom SANS préfixe de service, par PRÉFIXE : `UnlinkPolicy` (qui retire
+#   une policy) ne doit pas être confondu avec `LinkPolicy`.
 # SCSL : CLD-IAM-12 (aucune politique ne permet une élévation de privilèges).
 package pepin.rules
 
@@ -13,9 +16,11 @@ import rego.v1
 
 # Verbes d'actions de gestion d'identité permettant l'auto-élévation (minuscules).
 _escalation_actions := {
-	"attachuserpolicy", "attachgrouppolicy", "linkmanagedpolicytousergroup",
-	"createpolicy", "createpolicyversion", "putuserpolicy", "putgrouppolicy",
-	"createaccesskey", "updateaccesskey",
+	"linkpolicy", "linkmanagedpolicytousergroup",
+	"putuserpolicy", "putusergrouppolicy",
+	"addusertousergroup",
+	"createpolicy", "setdefaultpolicyversion",
+	"createaccesskey", "updateaccesskey", "updateapiaccesspolicy",
 }
 
 deny contains f if {
@@ -35,9 +40,15 @@ deny contains f if {
 	}
 }
 
+# Nom d'action sans son préfixe de service (`api:LinkPolicy` -> `linkpolicy`).
+_action_name(a) := n if {
+	parts := split(lower(a), ":")
+	n := parts[count(parts) - 1]
+}
+
 _escalation_action(a) if {
 	some esc in _escalation_actions
-	contains(lower(a), esc)
+	startswith(_action_name(a), esc)
 }
 
 # Joker de SERVICE d'identité (`eim:*`, `iam:*`) : il confère TOUTES les actions de gestion

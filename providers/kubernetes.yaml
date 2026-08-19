@@ -1,0 +1,90 @@
+# Descripteur du provider Kubernetes — audite l'état DANS un cluster (RBAC, Pod Security,
+# NetworkPolicy), complément des collecteurs de plan de contrôle managé (OKS/SKS/Kapsule).
+#
+# L'API Kubernetes est une simple API REST/JSON : le moteur de collecte générique suffit,
+# seul le TRANSPORT change (mTLS ou jeton porteur issus du kubeconfig, cf. internal/kubeauth).
+# Aucune dépendance client-go : la chaîne d'approvisionnement reste auditable.
+#
+# POSTURE D'EXÉCUTION (à respecter) : fournir un kubeconfig en LECTURE SEULE, à durée de vie
+# courte et sous une identité nominative — jamais cluster-admin. Chez Outscale OKS :
+#   oks-cli cluster kubeconfig -p <projet> -c <cluster> --group readonly-users \
+#     --user <identité> --ttl 3h --refresh
+# (le groupe `readonly-users` suppose le ClusterRole `readonly` en get/list/watch,
+#  cf. doc « Managing Access For OKS Users »). Un scanner qui ne PEUT pas écrire est un
+#  argument d'opposabilité, pas seulement une précaution.
+# Portée « in-cluster » : ce provider n'audite PAS un plan de contrôle cloud. Il est donc
+# exclu de la comparaison de parité entre clouds (aucun cloud ne peut couvrir du RBAC
+# in-cluster, et lui ne peut pas couvrir des buckets ou des security groups).
+scope: in-cluster
+name: kubernetes
+description: "Kubernetes (in-cluster) — RBAC, Pod Security Standards, NetworkPolicy"
+
+auth:
+  type: kubeconfig
+credentials:
+  env:
+    kubeconfig: KUBECONFIG
+
+collecte:
+  # {server} est injecté depuis le kubeconfig (pas du descripteur).
+  base_url: "{server}"
+  resources:
+    # Namespaces → k8s_namespace. Le label `pod-security.kubernetes.io/enforce` porte le
+    # niveau de Pod Security Standards RÉELLEMENT imposé (absent = aucun rempart).
+    - type: k8s_namespace
+      path: /api/v1/namespaces
+      items: items
+      id: name
+      map:
+        name: metadata.name
+        # La clé de label contient des points ET un slash : on collecte la MAP entière et
+        # la règle y lit `pod-security.kubernetes.io/enforce` (un chemin pointé ne peut pas
+        # exprimer cette clé).
+        labels: metadata.labels
+
+    # ClusterRoleBindings → k8s_cluster_role_binding. Un binding vers le ClusterRole
+    # `cluster-admin` donne les pleins pouvoirs sur le cluster.
+    - type: k8s_cluster_role_binding
+      path: /apis/rbac.authorization.k8s.io/v1/clusterrolebindings
+      items: items
+      id: name
+      map:
+        name: metadata.name
+        role_ref: roleRef.name
+        subjects: subjects
+      transforms:
+        subjects: snake_keys
+
+    # CRD → k8s_crd. Sert à constater la PRÉSENCE d'un opérateur (fait binaire, pas une
+    # heuristique) : un gestionnaire de secrets externes s'installe via ses CRD.
+    - type: k8s_crd
+      path: /apis/apiextensions.k8s.io/v1/customresourcedefinitions
+      items: items
+      id: name
+      map:
+        name: metadata.name
+
+    # NetworkPolicies → k8s_network_policy. Leur ABSENCE dans un namespace vaut réseau
+    # plat (tout pod joint tout pod) : le contrôle raisonne sur l'ensemble collecté.
+    - type: k8s_network_policy
+      path: /apis/networking.k8s.io/v1/networkpolicies
+      items: items
+      id: name
+      map:
+        name: metadata.name
+        namespace: metadata.namespace
+
+contrat:
+  types:
+    k8s_namespace:
+      etat: verifie
+      source: API Kubernetes core/v1 — metadata.labels (la règle y lit pod-security.kubernetes.io/enforce)
+    k8s_cluster_role_binding:
+      etat: verifie
+      source: API Kubernetes rbac.authorization.k8s.io/v1 — roleRef.name + subjects[]
+    k8s_crd:
+      etat: verifie
+      source: API Kubernetes apiextensions.k8s.io/v1 — metadata.name
+    k8s_network_policy:
+      etat: verifie
+      source: API Kubernetes networking.k8s.io/v1 — metadata.namespace

@@ -36,6 +36,10 @@ evidence bundle.
 
 ## Getting started
 
+Released binaries (checksummed, signed, with SLSA provenance), a container
+image, a GitHub action and a GitLab template are documented in
+[docs/install.md](docs/install.md). From source:
+
 ```bash
 # build (Go 1.26+)
 go build -o pepin .

@@ -27,6 +27,17 @@ credentials:
   defaults: { region: eu-west-2, host: outscale.com }
 s3:
   endpoint: "https://oos.{region}.outscale.com"
+# Politiques EIM INLINE (attachées à un utilisateur) : chaîne ReadUsers → ReadUserPolicies
+# → ReadUserPolicy, à 3 niveaux, inexprimable par le for_each mono-niveau du moteur.
+# Sans elles, une policy inline « Action:* » échappe à TOUS les contrôles iam_policy_*
+# (faux négatif vérifié : le contrôle passait au vert avec une telle policy en place).
+eim:
+  inline_policies: true
+# OKS (Kubernetes managé) : API DISTINCTE de l'OAPI — host dédié, /api/v2, auth
+# bi-en-têtes AccessKey/SecretKey. Collecteur Go (internal/oks) car le moteur YAML
+# (SigV4, host unique) ne peut pas l'exprimer. Disponible en eu-west-2 (pas cloudgouv).
+oks:
+  endpoint: "https://api.{region}.oks.outscale.com"
 
 collecte:
   # Collecte live Outscale PILOTÉE PAR YAML (moteur internal/collect, SigV4).
@@ -42,15 +53,17 @@ collecte:
       body: "{}"
       items: SecurityGroups[*].InboundRules[*]
       id: security_group_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
       const: { direction: inbound, action: accept }
       map:
         security_group_id: _parent.SecurityGroupId
+        security_group_name: _parent.SecurityGroupName
         protocol: IpProtocol
         cidrs: IpRanges
         port_from: FromPortRange
         port_to: ToPortRange
       transforms:
-        protocol: [lower, { "-1": all, any: all, "": all }]
+        protocol: [lower, { "-1": all, any: all, "": all, "1": icmp, "6": tcp, "17": udp }]
         cidrs: list
     - type: security_group_rule
       path: /ReadSecurityGroups
@@ -58,15 +71,17 @@ collecte:
       body: "{}"
       items: SecurityGroups[*].OutboundRules[*]
       id: security_group_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
       const: { direction: outbound, action: accept }
       map:
         security_group_id: _parent.SecurityGroupId
+        security_group_name: _parent.SecurityGroupName
         protocol: IpProtocol
         cidrs: IpRanges
         port_from: FromPortRange
         port_to: ToPortRange
       transforms:
-        protocol: [lower, { "-1": all, any: all, "": all }]
+        protocol: [lower, { "-1": all, any: all, "": all, "1": icmp, "6": tcp, "17": udp }]
         cidrs: list
   
     # Machines.
@@ -76,26 +91,62 @@ collecte:
       body: "{}"
       items: Vms
       id: vm_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
       map:
         vm_id: VmId
         state: State
+        deletion_protection: DeletionProtection
+        # `PublicIp` ne couvre que la carte PRIMAIRE : une IP publique portée par une NIC
+        # secondaire rendait la VM « publique » invisible au contrôle CLD-NET-3. On collecte
+        # aussi les IP des NICs et la règle prend l'union (contrat : NicLight.LinkPublicIp).
         public_ip: PublicIp
+        nic_public_ips: Nics
         security_group_ids: SecurityGroups
         user_data: UserData
         tags: Tags
       transforms:
         security_group_ids: pluck:SecurityGroupId
+        nic_public_ips: [pluck:LinkPublicIp, pluck:PublicIp]
         tags: kv
   
-    # Clés d'accès.
+    # Clés d'accès de NIVEAU COMPTE (appelant). ReadAccessKeys sans UserName renvoie les
+    # clés de l'identité de scan ; si elle est le root (cas d'un scan account-owner/admin),
+    # ce sont les clés du root. `scope: account` les marque pour la dérivation root_owned.
     - type: access_key
       path: /ReadAccessKeys
       method: POST
       body: "{}"
       items: AccessKeys
       id: access_key_id
+      const: { scope: account }
       map:
         access_key_id: AccessKeyId
+        state: State
+        expiration_date: ExpirationDate
+
+    # Clés d'accès des utilisateurs EIM (F4) : ReadAccessKeys UserName=<user>, pour CHAQUE
+    # user EIM. Ces clés sont NON-root (attribuées à un user) — d'où `scope: eim`. Double
+    # usage : (a) auditer leur expiration comme les autres clés ; (b) dériver root_owned
+    # par DIFFÉRENCE (une clé scope:account absente de l'ensemble EIM appartient au root).
+    # NB : un scan mené SOUS un user EIM est aveugle aux clés du root (limite d'API Outscale) ;
+    # auditer les clés root exige des identifiants account-owner/admin.
+    - type: access_key
+      for_each:
+        path: /ReadUsers
+        method: POST
+        body: "{}"
+        items: Users
+        as: user
+        paging: { style: offset-body, param: FirstItem, size_param: ResultsPerPage, size: 100, more_path: HasMoreItems }
+      path: /ReadAccessKeys
+      method: POST
+      body: '{"UserName":"{user.UserName}"}'
+      items: AccessKeys
+      id: access_key_id
+      const: { scope: eim }
+      map:
+        access_key_id: AccessKeyId
+        owner_user: _parent.UserName
         state: State
         expiration_date: ExpirationDate
   
@@ -109,6 +160,8 @@ collecte:
       map:
         api_access_rule_id: ApiAccessRuleId
         ip_ranges: IpRanges
+        ca_ids: CaIds
+        cns: Cns
   
     # Résumé : nombre de règles d'accès API (agrégat → "aucune règle définie").
     - type: api_access_summary
@@ -139,6 +192,7 @@ collecte:
       body: "{}"
       items: Volumes
       id: volume_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
       map:
         volume_id: VolumeId
         state: State
@@ -147,12 +201,23 @@ collecte:
         tags: kv
   
     # Snapshots (partage public via PermissionsToCreateVolume.GlobalPermission).
+    # Filtré sur le compte (for_each ReadAccounts) : ReadSnapshots renvoie sinon les
+    # snapshots « disponibles pour vous », y compris ceux PARTAGÉS PAR D'AUTRES comptes —
+    # or un snapshot public d'un tiers n'est pas un écart actionnable ici (faux positif).
+    # Même précaution que pour les images (F6).
     - type: blockstorage_snapshot
+      for_each:
+        path: /ReadAccounts
+        method: POST
+        body: "{}"
+        items: Accounts
+        as: acct
       path: /ReadSnapshots
       method: POST
-      body: "{}"
+      body: '{"Filters":{"AccountIds":["{acct.AccountId}"]}}'
       items: Snapshots
       id: snapshot_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
       map:
         snapshot_id: SnapshotId
         volume_id: VolumeId
@@ -167,6 +232,7 @@ collecte:
         body: '{"Filters":{"Scope":"LOCAL"}}'
         items: Policies
         as: p
+        paging: { style: offset-body, param: FirstItem, size_param: ResultsPerPage, size: 100, more_path: HasMoreItems }
       path: /ReadPolicyVersion
       method: POST
       body: '{"PolicyOrn":"{p.Orn}","VersionId":"{p.PolicyDefaultVersionId}"}'
@@ -187,6 +253,7 @@ collecte:
       body: "{}"
       items: Nets
       id: network_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
       map:
         network_id: NetId
         cidr: IpRange
@@ -204,11 +271,80 @@ collecte:
       body: "{}"
       items: NetPeerings
       id: peering_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
       map:
         peering_id: NetPeeringId
         source_account: SourceNet.AccountId
         accepter_account: AccepterNet.AccountId
         state: State.Name
+
+    # Sous-réseaux → subnet (exposition par défaut, CLD-NET-3). MapPublicIpOnLaunch=true
+    # ⇒ IP publique attribuée d'office à toute interface créée dans le subnet. Champ
+    # confirmé au contrat OAPI v1.41 (Subnet). Pas de filtre propriétaire nécessaire
+    # (les subnets appartiennent au compte, contrairement aux images/snapshots).
+    - type: subnet
+      path: /ReadSubnets
+      method: POST
+      body: "{}"
+      items: Subnets
+      id: subnet_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
+      map:
+        subnet_id: SubnetId
+        map_public_ip_on_launch: MapPublicIpOnLaunch
+        network_id: NetId
+        state: State
+        tags: Tags
+      transforms:
+        tags: kv
+
+    # Répartiteurs de charge → load_balancer (CHF-1 TLS en clair, LOG-1 journal).
+    # ReadLoadBalancers (pas de pagination). Les structures imbriquées (Listeners[],
+    # AccessLog) sont en PascalCase au wire ; snake_keys les projette en snake_case
+    # pour les règles agnostiques (qui lisent load_balancer_protocol, is_enabled).
+    # Les VALEURS sont intactes : LoadBalancerProtocol="HTTPS" reste "HTTPS".
+    - type: load_balancer
+      path: /ReadLoadBalancers
+      method: POST
+      body: "{}"
+      items: LoadBalancers
+      id: load_balancer_name
+      map:
+        load_balancer_name: LoadBalancerName
+        load_balancer_type: LoadBalancerType
+        listeners: Listeners
+        access_log: AccessLog
+        tags: Tags
+      transforms:
+        listeners: snake_keys
+        access_log: snake_keys
+        tags: kv
+
+    # Images machine → compute_image (STO-2, OMI partagée publiquement). CRUCIAL :
+    # ReadImages sans filtre renvoie TOUTES les OMIs publiques du catalogue (des milliers)
+    # → tempête de faux positifs. On filtre STRICTEMENT sur le compte via for_each
+    # ReadAccounts (self.AccountId injecté dans Filters.AccountIds). Seules les OMIs
+    # POSSÉDÉES par le compte sont auditées. public = PermissionsToLaunch.GlobalPermission.
+    - type: compute_image
+      for_each:
+        path: /ReadAccounts
+        method: POST
+        body: "{}"
+        items: Accounts
+        as: acct
+      path: /ReadImages
+      method: POST
+      body: '{"Filters":{"AccountIds":["{acct.AccountId}"]}}'
+      items: Images
+      id: image_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
+      map:
+        image_id: ImageId
+        public: PermissionsToLaunch.GlobalPermission
+        state: State
+        tags: Tags
+      transforms:
+        tags: kv
 
 mapping_terraform:
   # Mapping Terraform Outscale → modèle normalisé commun, DÉCLARATIF (moteur
@@ -229,7 +365,7 @@ mapping_terraform:
         port_to: to_port_range
       transforms:
         direction: { Inbound: inbound, Outbound: outbound }
-        protocol: [lower, { "-1": all, any: all, "": all }]
+        protocol: [lower, { "-1": all, any: all, "": all, "1": icmp, "6": tcp, "17": udp }]
         cidrs: list                      # idempotent : liste gardée, string -> [string]
         port_from: range_from
         port_to: range_to
@@ -250,7 +386,7 @@ mapping_terraform:
         port_to: to_port_range
       transforms:
         direction: { Inbound: inbound, Outbound: outbound }
-        protocol: [lower, { "-1": all, any: all, "": all }]
+        protocol: [lower, { "-1": all, any: all, "": all, "1": icmp, "6": tcp, "17": udp }]
         cidrs: list
         port_from: range_from
         port_to: range_to
@@ -362,7 +498,7 @@ contrat:
         access_key_id: AccessKeyId
         state: State
         expiration_date: ExpirationDate
-        root_owned: non exposé directement (notion root via EIM) — a_verifier
+        root_owned: DÉRIVÉ par différence d'ensembles — clé scope:account (ReadAccessKeys appelant) absente de l'ensemble scope:eim (ReadAccessKeys par user EIM). Auditer les clés root exige des identifiants account-owner/admin.
     iam_user:
       etat: absent
       source: osc-sdk-go User
@@ -377,13 +513,16 @@ contrat:
         policy_name: PolicyName
         statements: 'DÉRIVÉ : Body parsé → [{effect, actions[], resources[], not_action[], not_resource[]}]'
     load_balancer:
-      etat: a_verifier
-      source: LoadBalancer
+      etat: verifie
+      source: >
+        OAPI ReadLoadBalancers (live). Structures imbriquées PascalCase projetées en
+        snake_case via le transform snake_keys (Listeners[].LoadBalancerProtocol,
+        AccessLog.IsEnabled). Valeurs intactes (protocole "HTTPS" conservé).
       mapping:
         load_balancer_name: LoadBalancerName
         load_balancer_type: LoadBalancerType (internet-facing|internal)
-        listeners: Listeners[].{LoadBalancerProtocol, LoadBalancerPort}
-        access_log: AccessLog.IsEnabled
+        listeners: Listeners[].{LoadBalancerProtocol, LoadBalancerPort} (snake_keys)
+        access_log: AccessLog.IsEnabled (snake_keys)
     network:
       etat: verifie
       source: 'Net (ReadNets → Nets[]) : réseau virtuel Outscale. Doc locale about-nets.'
@@ -420,8 +559,12 @@ contrat:
         require_trusted_env: 'RequireTrustedEnv (*bool) ; true ⇒ MFA imposée à tous les EIM users (WebAuthn/OTP). Source :
           docs.outscale.com (About Your API Access Policy).'
     kubernetes_cluster:
-      etat: a_verifier
-      source: API REST OKS — champs admin_whitelist/control_plane_multi_az/auto_upgrade/deletion_protection/version à confirmer
+      etat: verifie
+      source: >
+        API OKS live (collecteur Go internal/oks, GET /api/v2/clusters/all, auth bi-en-têtes) :
+        admin_whitelist, cp_multi_az→control_plane_multi_az, disable_api_termination→deletion_protection,
+        auto_maintenances.minor_upgrade_maintenance.enabled→auto_upgrade, version. Champs confirmés
+        sur des clusters réels (eu-west-2).
       journalisation: 'CAPACITÉ CONFIRMÉE (doc OKS « Managing Cluster Logs ») : les logs d''audit ET d''infrastructure du
         cluster sont générés AUTOMATIQUEMENT et stockés dans des buckets OOS ; l''accès se gère via la ressource OOSAccess
         (comptes autorisés en lecture, emplacement de stockage). Sémantique DIFFÉRENTE d''Exoscale (audit opt-in via endpoint) :
@@ -440,9 +583,10 @@ contrat:
     compute_image:
       etat: verifie
       source: >
-        Terraform outscale_image_launch_permission (mapping validé par un plan réel :
-        permission_additions[].global_permission="true" ⇒ image publique, doc officielle).
-        API live ReadImages PermissionsToLaunch.GlobalPermission à câbler en collecte.
+        Terraform outscale_image_launch_permission (permission_additions[].global_permission).
+        API LIVE : ReadImages filtré sur le compte (for_each ReadAccounts → Filters.AccountIds=self,
+        IMPÉRATIF pour ne pas flaguer les OMIs publiques du catalogue) ;
+        public = PermissionsToLaunch.GlobalPermission.
       mapping:
         image_id: ImageId
         public: PermissionsToLaunch.GlobalPermission (bool ; "true"/"false" côté plan)
@@ -454,5 +598,14 @@ contrat:
     reason: "osc-sdk-go/v2 Volume n'expose aucun champ de chiffrement ; le chiffrement au repos est côté invité (EncFS/LUKS), responsabilité du client → non observable côté plateforme (CHF-2)."
   # CHF-4 : OOS ServerSideEncryption est TOUJOURS AES256 (clé fournisseur) ; aucun
   # service KMS ni clé client au niveau objet (doc OOS) → BYOK non applicable.
+  # CHF-4 : distinguer SSE et BYOK. Le SSE existe chez OOS et il est OPT-IN par bucket
+  # (donc observable, et un bucket peut l'avoir désactivé) — ce N/A ne porte QUE sur
+  # l'absence de clé gérée par le client.
   - control: objectstorage_bucket_kms_encryption
-    reason: "OOS ServerSideEncryption est toujours AES256 (clé fournisseur) ; aucun service KMS ni clé client au niveau objet (doc OOS) → BYOK non applicable (CHF-4)."
+    reason: "OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A."
+  # CHF-1 : `Listener` et `ListenerRule` EXISTENT bien au contrat — l'affirmation inverse
+  # était fausse et réfutable en une recherche. Le fait exact est que `ListenerRule.Action`
+  # est documenté « always forward » : la règle ne sait que transmettre, aucune action de
+  # redirection n'existe. Le mécanisme est donc absent, mais pour cette raison-là.
+  - control: loadbalancer_http_redirect_to_https
+    reason: "Le LBU Outscale ne peut pas rediriger : `ListenerRule.Action` est documenté « always forward » au contrat OAPI (aucune action de redirection), et aucun attribut de redirection n'existe sur `Listener`. Le mécanisme est inexistant → contrôle non applicable (CHF-1)."

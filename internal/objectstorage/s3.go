@@ -70,12 +70,20 @@ func collectBucket(ctx context.Context, client *s3.Client, provider, region, nam
 	if p, err := client.GetBucketPolicy(ctx, &s3.GetBucketPolicyInput{Bucket: &name}); err == nil && p.Policy != nil {
 		attrs["policy_public"] = policyAllowsPublic(*p.Policy)
 	}
-	if t, err := client.GetBucketTagging(ctx, &s3.GetBucketTaggingInput{Bucket: &name}); err == nil {
+	// Un bucket SANS AUCUN tag renvoie l'erreur NoSuchTagSet : la traiter comme un échec
+	// laissait l'attribut absent, donc la garde de capacité de governance_resource_required_tags
+	// rendait le bucket conforme. Résultat absurde : un bucket avec 1 tag sur 4 était flagué,
+	// un bucket avec ZÉRO tag ne l'était pas. « Aucun tag » est une valeur, pas une erreur.
+	t, tagErr := client.GetBucketTagging(ctx, &s3.GetBucketTaggingInput{Bucket: &name})
+	switch {
+	case tagErr == nil:
 		tags := make([]any, 0, len(t.TagSet))
 		for _, tag := range t.TagSet {
 			tags = append(tags, map[string]any{"key": deref(tag.Key), "value": deref(tag.Value)})
 		}
 		attrs["tags"] = tags
+	case isEmptyTagSet(tagErr):
+		attrs["tags"] = []any{}
 	}
 	// Object Lock (immutabilité/WORM, CLD-STO-8). On distingue TROIS cas pour ne pas produire
 	// un faux FAIL : verrou lu (valeur réelle), « jamais configuré » (NotFound ⇒ non activé),
@@ -87,24 +95,39 @@ func collectBucket(ctx context.Context, client *s3.Client, provider, region, nam
 		attrs["object_lock_enabled"] = false
 	} // sinon : attribut non renseigné → garde de capacité → not-evaluated.
 
-	// Clé de chiffrement gérée par le client (SSE-KMS / BYOK, CLD-CHF-4) : renseigné UNIQUEMENT
-	// pour les providers exposant cette capacité (sseKMS). Même discrimination d'erreur.
-	if sseKMS {
-		if enc, err := client.GetBucketEncryption(ctx, &s3.GetBucketEncryptionInput{Bucket: &name}); err == nil {
+	// Chiffrement par défaut du bucket. DEUX notions distinctes, à ne pas confondre :
+	//   - `default_encryption_enabled` : le bucket chiffre-t-il au repos, quel que soit
+	//     l'algorithme (CLD-CHF-2). Le SSE est OPT-IN par bucket chez plusieurs providers
+	//     souverains : un bucket peut donc parfaitement ne rien chiffrer.
+	//   - `sse_kms_enabled` : la clé est-elle gérée par le CLIENT (BYOK, CLD-CHF-4) —
+	//     capacité que tous les providers n'ont pas, d'où l'attribut posé seulement si
+	//     `sseKMS`. Les confondre revenait à déclarer le chiffrement « non applicable »
+	//     alors que son activation, elle, est bien observable.
+	enc, encErr := client.GetBucketEncryption(ctx, &s3.GetBucketEncryptionInput{Bucket: &name})
+	switch {
+	case encErr == nil:
+		rules := 0
+		if enc.ServerSideEncryptionConfiguration != nil {
+			rules = len(enc.ServerSideEncryptionConfiguration.Rules)
+		}
+		attrs["default_encryption_enabled"] = rules > 0
+		if sseKMS {
 			attrs["sse_kms_enabled"] = false
-			if enc.ServerSideEncryptionConfiguration != nil {
-				for _, rule := range enc.ServerSideEncryptionConfiguration.Rules {
-					d := rule.ApplyServerSideEncryptionByDefault
-					if d != nil && d.SSEAlgorithm == types.ServerSideEncryptionAwsKms {
-						attrs["sse_kms_enabled"] = true
-						attrs["kms_key_id"] = deref(d.KMSMasterKeyID)
-					}
+			for _, rule := range enc.ServerSideEncryptionConfiguration.Rules {
+				d := rule.ApplyServerSideEncryptionByDefault
+				if d != nil && d.SSEAlgorithm == types.ServerSideEncryptionAwsKms {
+					attrs["sse_kms_enabled"] = true
+					attrs["kms_key_id"] = deref(d.KMSMasterKeyID)
 				}
 			}
-		} else if isNotConfigured(err) {
+		}
+	case isNotConfigured(encErr):
+		// « Aucune configuration de chiffrement » est une VALEUR : le bucket ne chiffre pas.
+		attrs["default_encryption_enabled"] = false
+		if sseKMS {
 			attrs["sse_kms_enabled"] = false
-		} // sinon : attribut non renseigné → not-evaluated.
-	}
+		}
+	} // sinon (403, timeout) : attributs absents → not-evaluated, jamais un faux vert.
 
 	return model.Resource{Provider: provider, Type: "object_storage_bucket", ID: name, Name: name, Region: region, Attributes: attrs}
 }
@@ -227,12 +250,26 @@ func conditionRestrictsSource(raw json.RawMessage) bool {
 		"aws:principalarn", "aws:sourceaccount", "aws:sourcearn", "aws:sourceowner",
 	}
 	lower := strings.ToLower(string(raw))
+	// Un opérateur NÉGATIF inverse le sens : `NotIpAddress`/`StringNotEquals` autorise
+	// TOUT SAUF l'exception citée — donc la policy est PLUS ouverte, pas restreinte. La
+	// classer « restreinte » sur la seule présence de la clé rendait un bucket public
+	// invisible. En présence d'une négation, on refuse de conclure à une restriction.
+	for _, neg := range []string{"notipaddress", "stringnotequals", "stringnotlike", "arnnotequals", "arnnotlike", "notaction", "notresource", "notprincipal"} {
+		if strings.Contains(lower, neg) {
+			return false
+		}
+	}
 	for _, k := range restrictKeys {
 		if strings.Contains(lower, k) {
 			return true
 		}
 	}
 	return false
+}
+
+// isEmptyTagSet : « ce bucket n'a aucun tag » est une réponse, pas un échec de collecte.
+func isEmptyTagSet(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "NoSuchTagSet")
 }
 
 func deref(s *string) string {

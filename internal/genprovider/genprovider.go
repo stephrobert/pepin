@@ -11,15 +11,18 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/fs"
+	"net/http"
 	"os"
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	yaml "go.yaml.in/yaml/v3"
 
 	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/collectkit"
+	"github.com/stephrobert/pepin/internal/kubeauth"
 	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/internal/tfmap"
@@ -32,6 +35,7 @@ import (
 type Descriptor struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
+	Scope       string `yaml:"scope"`      // "cloud" (défaut) | "in-cluster" : une portée différente ne se compare pas en parité
 	RegionKey   string `yaml:"region_key"` // clé logique alimentée par --region (défaut "region" ; Exoscale: "zone")
 	Auth        struct {
 		Type    string `yaml:"type"`    // header | sigv4 | exoscale-hmac
@@ -50,6 +54,12 @@ type Descriptor struct {
 		Region   string `yaml:"region"`   // {region} ou {zone} (défaut {region})
 		SSEKMS   bool   `yaml:"sse_kms"`  // expose une clé client au niveau bucket (SSE-KMS, CLD-CHF-4)
 	} `yaml:"s3"`
+	EIM struct {
+		InlinePolicies bool `yaml:"inline_policies"` // collecter les politiques EIM inline (chaîne à 3 niveaux)
+	} `yaml:"eim"`
+	OKS struct {
+		Endpoint string `yaml:"endpoint"` // API Kubernetes managé (host distinct, {region} substitué) ; vide = pas de collecte OKS
+	} `yaml:"oks"`
 	Collecte         collect.Spec `yaml:"collecte"`          // source : API live
 	MappingTerraform tfmap.Spec   `yaml:"mapping_terraform"` // source : plan Terraform
 	Contrat          Contrat      `yaml:"contrat"`           // ancrage API + applicabilité SCSL
@@ -151,9 +161,39 @@ func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) ([]mo
 			SSEKMS:   g.desc.S3.SSEKMS,
 		}
 	}
+	// Auth par kubeconfig : le serveur d'API et le client mTLS viennent du fichier, pas
+	// du descripteur. Le kubeconfig porte les DROITS — utiliser un kubeconfig en lecture
+	// seule (groupe readonly, TTL court), jamais cluster-admin.
+	var hc *http.Client
+	if g.desc.Auth.Type == "kubeconfig" {
+		path := collectkit.FirstNonEmpty(cfg.Options["kubeconfig"], creds["kubeconfig"])
+		if path == "" {
+			return nil, fmt.Errorf("provider %s : chemin du kubeconfig requis (--kubeconfig ou KUBECONFIG)", g.desc.Name)
+		}
+		kc, err := kubeauth.Load(path, 30*time.Second)
+		if err != nil {
+			return nil, err
+		}
+		vars["server"] = kc.Server
+		hc = kc.Client
+	}
+
+	oksCfg := collectkit.OKS{}
+	if g.desc.OKS.Endpoint != "" {
+		oksCfg = collectkit.OKS{
+			Endpoint: subst(g.desc.OKS.Endpoint, vars),
+			Region:   subst("{region}", vars),
+			Key:      creds["access_key"],
+			Secret:   creds["secret_key"],
+		}
+	}
 	spec := g.desc.Collecte
 	spec.Provider = g.desc.Name
-	return collectkit.Run(ctx, g.desc.Name, spec, auth, vars, s3)
+	eimCfg := collectkit.EIM{}
+	if g.desc.EIM.InlinePolicies {
+		eimCfg.BaseURL = subst(g.desc.Collecte.BaseURL, vars)
+	}
+	return collectkit.Run(ctx, g.desc.Name, spec, auth, vars, s3, oksCfg, eimCfg, hc)
 }
 
 // MapTerraform projette un plan Terraform via la spec de mapping déclarative.
@@ -205,6 +245,10 @@ func (g GenericProvider) buildAuth(creds map[string]string) (collect.Auth, error
 		return collect.HeaderAuth{Header: a.Header, Value: subst(a.Value, creds)}, nil
 	case "sigv4":
 		return collect.SigV4Auth{Key: creds["access_key"], Secret: creds["secret_key"], Service: a.Service, Region: a.Region}, nil
+	case "kubeconfig":
+		// L'authentification est portée par le transport (mTLS/jeton du kubeconfig),
+		// pas par une signature de requête : aucun signer à construire ici.
+		return nil, nil
 	case "exoscale-hmac":
 		return collect.ExoscaleAuth{Key: creds["access_key"], Secret: creds["secret_key"]}, nil
 	}
@@ -246,7 +290,9 @@ func (g GenericProvider) resolveCreds(cfg provider.Config) (map[string]string, e
 	for k, v := range cr { // résout les références {region} (ex. zone = "{region}-1")
 		cr[k] = subst(v, cr)
 	}
-	if cr["access_key"] == "" || cr["secret_key"] == "" {
+	// L'auth par kubeconfig ne repose pas sur une paire de clés : les identifiants (et les
+	// droits) sont portés par le fichier lui-même, validé plus tard par kubeauth.Load.
+	if g.desc.Auth.Type != "kubeconfig" && (cr["access_key"] == "" || cr["secret_key"] == "") {
 		return nil, fmt.Errorf("identifiants %s absents : variables d'environnement ou fichier de configuration", g.desc.Name)
 	}
 	return cr, nil

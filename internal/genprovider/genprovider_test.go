@@ -85,6 +85,10 @@ func TestContractVerifiedTypesAreCollected(t *testing.T) {
 		if desc.S3.Endpoint != "" {
 			collected["object_storage_bucket"] = true
 		}
+		// Les clusters Kubernetes managés sont collectés par le collecteur Go OKS (desc.OKS).
+		if desc.OKS.Endpoint != "" {
+			collected["kubernetes_cluster"] = true
+		}
 		for typ, tc := range desc.Contrat.Types {
 			if tc.Etat == "verifie" && !collected[typ] {
 				t.Errorf("%s : type %q déclaré `verifie` au contrat mais NI collecté NI mappé (règle orpheline) — le collecter, ou passer à `a_verifier`/`absent`", name, typ)

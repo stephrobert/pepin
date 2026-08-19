@@ -1,0 +1,5 @@
+# Le contexte de build ne contient que ce que le Dockerfile copie : le binaire
+# déjà compilé. Tout le reste (sources, .git, exemples) n'a rien à faire dans
+# le contexte, et un contexte minimal est un COPY accidentel impossible.
+*
+!dist/pepin-linux-*

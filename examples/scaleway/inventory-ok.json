@@ -20,7 +20,7 @@
       "type": "access_key",
       "id": "SCWYYYYYYYYYYYYYYYYY",
       "name": "ci-deploy",
-      "attributes": { "access_key": "SCWYYYYYYYYYYYYYYYYY", "application_id": "22222222-2222-2222-2222-222222222222", "root_owned": false }
+      "attributes": { "access_key": "SCWYYYYYYYYYYYYYYYYY", "application_id": "22222222-2222-2222-2222-222222222222", "root_owned": false, "expiration_date": "2027-06-30T00:00:00Z" }
     },
     {
       "provider": "scaleway",

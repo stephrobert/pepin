@@ -21,7 +21,7 @@ _exposed_sg_ids contains sg_id if {
 
 deny contains f if {
 	some vm in resources_of_type("compute_instance")
-	object.get(vm.attributes, "public_ip", "") != ""
+	_vm_has_public_ip(vm)
 	some sg_id in object.get(vm.attributes, "security_group_ids", [])
 	sg_id in _exposed_sg_ids
 	id := object.get(vm.attributes, "vm_id", vm.id)
@@ -33,4 +33,14 @@ deny contains f if {
 		"remediation": "Retirer la règle entrante 0.0.0.0/0 du security group, ou détacher l'IP publique et passer par un LBU / NAT.",
 		"labels": {"provider": provider_of(vm), "category": "security"},
 	}
+}
+
+# Une VM est joignable si son IP primaire OU l'IP publique d'une NIC secondaire existe :
+# ne regarder que `public_ip` laissait passer les VMs multi-cartes (contrat NicLight.LinkPublicIp).
+_vm_has_public_ip(vm) if object.get(vm.attributes, "public_ip", "") != ""
+
+_vm_has_public_ip(vm) if {
+	some ip in object.get(vm.attributes, "nic_public_ips", [])
+	ip != null
+	ip != ""
 }

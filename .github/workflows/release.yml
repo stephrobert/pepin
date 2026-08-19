@@ -1,0 +1,444 @@
+name: release
+
+# Release déclenchée par tag (push d'un tag v*) : build multi-arch, empreintes
+# SHA-256, SBOM CycloneDX, provenance de build SLSA et signature Cosign keyless.
+# Rien ne se publie au merge ; seul un tag publie, et le tag n'arrive qu'après
+# `mise run release-check` (tools/release/preflight.sh). Actions épinglées par
+# SHA de commit.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  binaries:
+    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+          cache: false   # un build de release ne consomme pas un cache qu'une PR a pu empoisonner
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          OUT="pepin-${GOOS}-${GOARCH}"
+          go build -trimpath \
+            -ldflags="-s -w -X github.com/stephrobert/pepin/cmd.version=${VERSION}" \
+            -o "dist/${OUT}" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pepin-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/
+
+  # L'image du scanner (Dockerfile) : le binaire linux que ce workflow vient de
+  # construire et d'empreinter, posé sur une base distroless/static épinglée
+  # par digest. Rien n'est compilé ici : les octets de l'image sont les octets
+  # de la release, donc les checksums, le SBOM et la provenance des binaires
+  # décrivent aussi le contenu de l'image.
+  #
+  # Deux portes avant tout push, parce qu'un tag poussé ne se rejoue pas : le
+  # binaire dans l'image doit répondre le tag à `version`, et les trois codes
+  # de sortie du README doivent tenir À TRAVERS l'image (docker run), pas
+  # seulement à travers le binaire nu que le job release éprouve déjà. Une
+  # image qui perd un code de sortie casse la CI de chaque consommateur.
+  image:
+    name: Publish the container image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: binaries
+    permissions:
+      contents: read
+      packages: write      # pousser l'image sur ghcr.io
+      id-token: write      # signature keyless et provenance (OIDC)
+      attestations: write  # attestations de build et de SBOM
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Download the linux binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: pepin-linux-*
+          path: dist/
+          merge-multiple: true
+
+      # Le tag nomme cette release partout ailleurs ; une image qui répond
+      # autre chose à `pepin version` a découplé son contenu de son nom.
+      # Vérifié en LANÇANT l'image, pas en relisant le build-arg.
+      - name: The image must carry the tag and keep its exit codes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -u
+          chmod +x dist/pepin-linux-*
+          docker build -t pepin:gate --build-arg VERSION="$TAG" .
+          got="$(docker run --rm pepin:gate version)"
+          if [ "$got" != "pépin $TAG" ]; then
+            echo "l'image répond '$got', le tag est '$TAG'" >&2
+            exit 1
+          fi
+          # Les trois codes, à travers docker run : c'est le chemin qu'une CI
+          # consommatrice emprunte, volume monté compris.
+          rc=0
+          docker run --rm -v "$PWD/examples:/work/examples:ro" pepin:gate \
+            scan scaleway examples/scaleway/inventory.json --format json >/dev/null || rc=$?
+          if [ "$rc" -ne 1 ]; then
+            echo "scan non conforme à travers l'image : exit $rc, attendu 1" >&2
+            exit 1
+          fi
+          docker run --rm -v "$PWD/examples:/work/examples:ro" pepin:gate \
+            scan scaleway examples/scaleway/inventory-ok.json --format json >/dev/null || {
+            echo "scan conforme à travers l'image : exit non nul, attendu 0" >&2
+            exit 1
+          }
+          rc=0
+          docker run --rm pepin:gate scan scaleway /absent.json >/dev/null 2>&1 || rc=$?
+          if [ "$rc" -ne 2 ]; then
+            echo "erreur technique à travers l'image : exit $rc, attendu 2" >&2
+            exit 1
+          fi
+          # Et l'image scanne un plan Terraform, le mode sans identifiants :
+          # c'est l'usage que examples/ et docs/install.md publient.
+          rc=0
+          docker run --rm -v "$PWD/examples:/work/examples:ro" pepin:gate \
+            scan scaleway --terraform examples/scaleway/terraform/plan.json --format json >/dev/null || rc=$?
+          if [ "$rc" -ne 1 ]; then
+            echo "scan d'un plan Terraform à travers l'image : exit $rc, attendu 1" >&2
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Un tag par release, rien de mutable : pas de `latest`, pas de majeure
+      # flottante. Une référence mutable livre au puller ce qui est le plus
+      # récent, c'est-à-dire un binaire que personne ne sait nommer après coup.
+      #
+      # provenance/sbom de BuildKit désactivés : ce job atteste les deux
+      # lui-même, plus bas, avec l'identité du dépôt ; deux documents de
+      # provenance issus de deux mécanismes laisseraient un vérificateur
+      # deviner lequel la documentation désigne.
+      - name: Build and push the multi-arch image
+        id: push
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.ref_name }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+          provenance: false
+          sbom: false
+
+      - name: Attest the image's build provenance
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Generate the image SBOM (Syft, CycloneDX)
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.push.outputs.digest }}
+          format: cyclonedx-json
+          output-file: image-sbom.cdx.json
+          upload-release-assets: false
+
+      - name: Attest the image SBOM
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          sbom-path: image-sbom.cdx.json
+          push-to-registry: true
+
+      - name: Install Cosign
+        if: ${{ !github.event.repository.private }}
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # Par digest, jamais par tag : une signature sur un tag bénit ce que le
+      # tag pointera plus tard.
+      - name: Sign the image (keyless)
+        if: ${{ !github.event.repository.private }}
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+  release:
+    name: Create release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: binaries
+    permissions:
+      contents: write      # créer la release et ses assets
+      id-token: write      # provenance SLSA et signature keyless (OIDC)
+      attestations: write  # attestations de build et de SBOM
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Download binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist/
+          merge-multiple: true
+
+      # Le binaire publié doit porter le tag qui le nomme, et tenir la promesse
+      # que le README publie : les codes de sortie. Vérifié en EXÉCUTANT le
+      # binaire, pas en relisant les ldflags ; un tag poussé ne se rejoue pas,
+      # c'est donc la dernière porte avant l'irréversible.
+      - name: The binary must carry the tag and keep its exit codes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -u
+          chmod +x dist/pepin-linux-amd64
+          got="$(dist/pepin-linux-amd64 version)"
+          if [ "$got" != "pépin $TAG" ]; then
+            echo "le binaire répond '$got', le tag est '$TAG'" >&2
+            exit 1
+          fi
+          rc=0
+          dist/pepin-linux-amd64 scan scaleway examples/scaleway/inventory.json --format json >/dev/null || rc=$?
+          if [ "$rc" -ne 1 ]; then
+            echo "scan d'un inventaire non conforme : exit $rc, attendu 1 ; la surface publiée a bougé" >&2
+            exit 1
+          fi
+          dist/pepin-linux-amd64 scan scaleway examples/scaleway/inventory-ok.json --format json >/dev/null || {
+            echo "scan d'un inventaire conforme : exit non nul, attendu 0" >&2
+            exit 1
+          }
+
+      - name: Generate checksums
+        working-directory: dist
+        run: |
+          sha256sum pepin-* > checksums.txt
+          cat checksums.txt
+
+      - name: Generate SBOM (Syft, CycloneDX)
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: dist/sbom.cdx.json
+          upload-release-assets: false
+
+      - name: Attest build provenance
+        id: attest
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: dist/pepin-*
+
+      - name: Attest SBOM
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: dist/pepin-*
+          sbom-path: dist/sbom.cdx.json
+
+      - name: Install Cosign
+        if: ${{ !github.event.repository.private }}
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # Une signature sur checksums.txt couvre chaque artefact : leur empreinte y est.
+      - name: Sign checksums (keyless)
+        if: ${{ !github.event.repository.private }}
+        working-directory: dist
+        run: cosign sign-blob --yes --bundle checksums.txt.cosign.bundle checksums.txt
+
+      # provenance.intoto.jsonl attaché à la release est ce que le contrôle
+      # Signed-Releases d'OpenSSF Scorecard cherche ; l'attestation enregistrée
+      # via l'API GitHub est un artefact distinct, les deux se complètent.
+      - name: Copy provenance into dist
+        if: ${{ !github.event.repository.private && steps.attest.outputs.bundle-path != '' }}
+        env:
+          # Jamais d'interpolation directe d'une sortie de step dans run: ; le
+          # passage par env empêche une valeur inattendue de casser le shell.
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: cp "$BUNDLE_PATH" dist/provenance.intoto.jsonl
+
+      # La section de CHANGELOG.md correspondant au tag devient le corps de la
+      # release. generate_release_notes listerait les pull requests mergées :
+      # un journal, pas une description : un lecteur qui télécharge un binaire
+      # doit rencontrer une phrase écrite pour lui.
+      - name: Extract the changelog section
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > /tmp/notes.md
+          if [ ! -s /tmp/notes.md ]; then
+            echo "CHANGELOG.md n'a pas de section pour $version" >&2
+            exit 1
+          fi
+
+      - name: Create release with assets
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body_path: /tmp/notes.md
+          # true, pas false : chaque fichier listé est produit sans condition
+          # sur un dépôt public, et une release publiée sans sa signature ou sa
+          # provenance ne tiendrait la promesse de RELEASING.md qu'en apparence.
+          fail_on_unmatched_files: true
+          files: |
+            dist/pepin-*
+            dist/checksums.txt
+            dist/checksums.txt.cosign.bundle
+            dist/sbom.cdx.json
+            dist/provenance.intoto.jsonl
+
+  # L'action composite, éprouvée contre la release qui vient d'être publiée :
+  # le seul moment où ce test peut exister, puisque l'action télécharge un
+  # binaire publié. Elle installe (empreinte vérifiée), scanne, et surtout
+  # rend les codes que sa documentation promet : 0 et 1 à travers l'action,
+  # 1 rétrogradé en avertissement quand fail-on-nonconformity est false, et
+  # 2 qui échoue TOUJOURS, même en mode rapport. La CI de pré-release
+  # (entrypoints.yml) éprouve les mêmes chemins sans release, serveur local
+  # et binaire corrompu compris.
+  action-proof:
+    name: The published action answers its contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: release
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Version without the leading v
+        id: ver
+        env:
+          TAG: ${{ github.ref_name }}
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Compliant inventory passes (exit 0)
+        uses: ./.github/actions/pepin-scan
+        with:
+          version: ${{ steps.ver.outputs.version }}
+          provider: scaleway
+          inventory: examples/scaleway/inventory-ok.json
+          format: json
+
+      - name: Non-compliant inventory fails the job (exit 1)
+        id: gate
+        continue-on-error: true
+        uses: ./.github/actions/pepin-scan
+        with:
+          version: ${{ steps.ver.outputs.version }}
+          provider: scaleway
+          inventory: examples/scaleway/inventory.json
+          format: json
+
+      - name: Non-compliant inventory only reports when asked to
+        id: report
+        uses: ./.github/actions/pepin-scan
+        with:
+          version: ${{ steps.ver.outputs.version }}
+          provider: scaleway
+          inventory: examples/scaleway/inventory.json
+          format: json
+          fail-on-nonconformity: 'false'
+
+      - name: A technical error fails even in report-only mode (exit 2)
+        id: error
+        continue-on-error: true
+        uses: ./.github/actions/pepin-scan
+        with:
+          version: ${{ steps.ver.outputs.version }}
+          provider: scaleway
+          inventory: does-not-exist.json
+          fail-on-nonconformity: 'false'
+
+      # Les verdicts se lisent sur les outcomes et les outputs, pas dans les
+      # journaux : c'est le contrat qu'une CI consommatrice branche.
+      - name: The exit codes are the documented ones
+        env:
+          GATE_OUTCOME: ${{ steps.gate.outcome }}
+          GATE_CODE: ${{ steps.gate.outputs.exit-code }}
+          REPORT_CODE: ${{ steps.report.outputs.exit-code }}
+          REPORT_VERDICT: ${{ steps.report.outputs.verdict }}
+          ERROR_OUTCOME: ${{ steps.error.outcome }}
+          ERROR_CODE: ${{ steps.error.outputs.exit-code }}
+        run: |
+          set -u
+          fail=0
+          [ "$GATE_OUTCOME" = "failure" ] || { echo "la porte par défaut n'a pas échoué sur un tenant non conforme" >&2; fail=1; }
+          [ "$GATE_CODE" = "1" ] || { echo "code de la porte : $GATE_CODE, attendu 1" >&2; fail=1; }
+          [ "$REPORT_CODE" = "1" ] || { echo "code en mode rapport : $REPORT_CODE, attendu 1" >&2; fail=1; }
+          [ "$REPORT_VERDICT" = "non-compliant" ] || { echo "verdict en mode rapport : $REPORT_VERDICT, attendu non-compliant" >&2; fail=1; }
+          [ "$ERROR_OUTCOME" = "failure" ] || { echo "une erreur technique n'a pas fait échouer le mode rapport" >&2; fail=1; }
+          [ "$ERROR_CODE" = "2" ] || { echo "code de l'erreur technique : $ERROR_CODE, attendu 2" >&2; fail=1; }
+          exit "$fail"

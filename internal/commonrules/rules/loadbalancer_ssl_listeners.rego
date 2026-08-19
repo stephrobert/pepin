@@ -28,3 +28,12 @@ _has_secure_listener(attrs) if {
 	some l in object.get(attrs, "listeners", [])
 	object.get(l, "load_balancer_protocol", "") in {"HTTPS", "SSL"}
 }
+
+# TLS passthrough : un listener TCP sur un port TLS standard transporte du chiffré terminé
+# au backend (configuration légitime et chiffrée de bout en bout). Le LBU ne voit pas le
+# contenu : affirmer « trafic en clair » serait un faux positif — on ne conclut pas.
+_has_secure_listener(attrs) if {
+	some l in object.get(attrs, "listeners", [])
+	object.get(l, "load_balancer_protocol", "") == "TCP"
+	object.get(l, "load_balancer_port", 0) in {443, 8443}
+}

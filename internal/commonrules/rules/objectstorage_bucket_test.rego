@@ -51,3 +51,22 @@ test_versioning_enabled_ok if {
 test_versioning_absent_ok if {
 	count({f | some f in deny; f.code == _ver_code}) == 0 with input as _b({"name": "b1", "acl": "private"})
 }
+
+# ---- objectstorage_bucket_default_encryption (CLD-CHF-2) ----
+
+# ✗ Chiffrement par défaut désactivé → finding.
+test_bucket_default_encryption_off_denied if {
+	some f in deny with input as _b({"name": "b1", "default_encryption_enabled": false})
+	f.code == "objectstorage_bucket_default_encryption"
+}
+
+# ✓ Chiffrement activé → conforme (même sans BYOK : la clé fournisseur suffit à CHF-2).
+test_bucket_default_encryption_on_ok if {
+	count({f | some f in deny; f.code == "objectstorage_bucket_default_encryption"}) == 0 with input as _b({"name": "b1", "default_encryption_enabled": true})
+}
+
+# ✓ Attribut non collecté (403 / endpoint non supporté) → aucun finding : c'est
+# l'assessment qui rendra « non évalué », pas la règle qui invente un verdict.
+test_bucket_default_encryption_uncollected_silent if {
+	count({f | some f in deny; f.code == "objectstorage_bucket_default_encryption"}) == 0 with input as _b({"name": "b1"})
+}

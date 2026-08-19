@@ -13,8 +13,13 @@ import (
 	screport "github.com/stephrobert/scankit/report"
 )
 
-// bundleFormat identifies the tamper-evident evidence bundle schema.
-const bundleFormat = "pepin-assessment-bundle/v1"
+// BundleFormat identifie le schéma du bundle de preuve, version comprise (`/vN`).
+// C'est le signal qu'un consommateur lit dans manifest.json avant de parser le
+// reste : un vérificateur qui rencontre une version qu'il ne connaît pas doit
+// s'arrêter plutôt que deviner. La forme du bundle (fichiers, rôles, manifest)
+// est gelée par cmd/testdata/frozen/bundle.json : la changer sans incrémenter le
+// suffixe `/vN` fait échouer TestASurfaceChangeDemandsItsVersionBump.
+const BundleFormat = "pepin-assessment-bundle/v1"
 
 // ScopeDisclaimer : avertissement de PORTÉE, obligatoire pour l'opposabilité. pepin évalue la
 // configuration d'un TENANT (périmètre commanditaire) ; les référentiels cités (SecNumCloud,
@@ -118,7 +123,7 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string,
 	}
 
 	manifest := Manifest{
-		Format:     bundleFormat,
+		Format:     BundleFormat,
 		Disclaimer: ScopeDisclaimer,
 		Generated:  a.Run.Timestamp,
 		Tool:       a.Run.Tool,

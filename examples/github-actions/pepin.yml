@@ -1,0 +1,107 @@
+# Gate a pipeline on the posture of a sovereign cloud — Pépin in GitHub Actions.
+#
+# Copy this into `.github/workflows/` of a repository holding a Terraform
+# configuration for Exoscale, Outscale or Scaleway. The first job needs no
+# credential at all: it audits the *plan*, so nothing is provisioned and there
+# is no secret to create. The second job shows the live variant, disabled by
+# default, because it reads a real tenant with real credentials.
+#
+# The exit codes are the contract: 0 compliant, 1 non-compliance, 2 technical
+# error. The action fails the job on 1 unless you set
+# `fail-on-nonconformity: 'false'`, and it fails on 2 whatever you set:
+# a swallowed technical error would report a posture nobody measured.
+
+name: cloud posture
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  # No account, no secret, nothing billed: the plan is audited, not the cloud.
+  terraform-plan:
+    name: audit the Terraform plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      # `terraform plan` against these providers works offline once `init` has
+      # the provider binaries; no credential is needed to *render* a plan for
+      # most resources. Adjust to your own layout.
+      - name: Render the plan as JSON
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform show -json tfplan > plan.json
+
+      - name: Pépin — the posture gate
+        uses: stephrobert/pepin/.github/actions/pepin-scan@v0.1.0
+        with:
+          version: 0.1.0
+          provider: scaleway
+          terraform-plan: plan.json
+
+  # The live variant reads the real tenant. Credentials come from repository
+  # secrets, through `env:`, in the provider's own variable names — never as
+  # action inputs, never in the repository. Pépin does not print them, but the
+  # evidence bundle embeds the tenant's INVENTORY: keep `redact` at its
+  # default, keep the artifact retention short, and remember that artifacts of
+  # a public repository are downloadable by anyone with read access.
+  live-scan:
+    name: scan the live tenant
+    if: false   # remove this line once the secrets below exist
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+      SCW_DEFAULT_REGION: fr-par
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Pépin — live scan, report only, sealed evidence
+        id: scan
+        uses: stephrobert/pepin/.github/actions/pepin-scan@v0.1.0
+        with:
+          version: 0.1.0
+          provider: scaleway
+          live: 'true'
+          format: json
+          output-file: report.json
+          seal: bundle
+          fail-on-nonconformity: 'false'   # report the posture, gate elsewhere
+
+      # The bundle is the auditable proof; it names every resource of the
+      # tenant. Short retention, and redacted by default (the action passes
+      # --redact unless told otherwise). A bundle meant for a third party
+      # verifies with `pepin verify` against its cosign signature.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pepin-evidence
+          path: |
+            report.json
+            bundle/
+          retention-days: 7
+
+      - name: Read the verdict without failing the job
+        env:
+          VERDICT: ${{ steps.scan.outputs.verdict }}
+          CODE: ${{ steps.scan.outputs.exit-code }}
+        run: |
+          echo "posture: ${VERDICT} (exit ${CODE})"

@@ -216,12 +216,20 @@ var scslCmd = &cobra.Command{
 		// couvertes ailleurs mais pas chez lui (applicabilité : contrat de providers/<nom>.yaml).
 		fmt.Println()
 		fmt.Println(titre.Render("  Roadmap de parité par provider") + muted.Render("  (couvert ailleurs → à étendre)"))
+		// Les providers d'une AUTRE portée (ex. `kubernetes`, qui audite l'intérieur d'un
+		// cluster) sont exclus de la parité : leurs exigences ne sont pas atteignables par
+		// un plan de contrôle cloud, et réciproquement. Les comparer produirait une roadmap
+		// absurde (réclamer du RBAC in-cluster à un cloud, ou des buckets à Kubernetes).
+		nonCloud := genprovider.NonCloudProviders()
 		for _, p := range provs {
+			if nonCloud[p] {
+				continue
+			}
 			var extend, na []string
 			for _, id := range covIDs {
 				others := false
 				for _, q := range provs {
-					if q != p && covProv[q][id] {
+					if q != p && !nonCloud[q] && covProv[q][id] {
 						others = true
 					}
 				}

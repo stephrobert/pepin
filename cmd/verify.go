@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/stephrobert/pepin/referentiel"
 	"github.com/stephrobert/scankit/assessment"
 	"github.com/stephrobert/scankit/engine"
+	screport "github.com/stephrobert/scankit/report"
 )
 
 var (
@@ -61,6 +63,53 @@ var verifyCmd = &cobra.Command{
 	},
 }
 
+// reDeriveOSCAL re-rend l'OSCAL depuis l'assessment re-dérivé et le compare à celui du
+// bundle. Sans ce contrôle, l'artefact normatif restait falsifiable en silence.
+func reDeriveOSCAL(dir string, got assessment.Assessment) error {
+	sealedOSCAL, err := os.ReadFile(filepath.Join(dir, "assessment-oscal.json")) // #nosec G304 -- dossier de bundle de l'opérateur.
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil // bundle sans OSCAL : rien à comparer
+		}
+		return fmt.Errorf("lecture de assessment-oscal.json : %w", err)
+	}
+	var buf bytes.Buffer
+	if err := screport.OSCAL(&buf, got); err != nil {
+		return fmt.Errorf("re-rendu OSCAL : %w", err)
+	}
+	var a, b any
+	if err := json.Unmarshal(sealedOSCAL, &a); err != nil {
+		return fmt.Errorf("assessment-oscal.json invalide : %w", err)
+	}
+	if err := json.Unmarshal(buf.Bytes(), &b); err != nil {
+		return fmt.Errorf("OSCAL re-rendu invalide : %w", err)
+	}
+	ja, _ := json.Marshal(a)
+	jb, _ := json.Marshal(b)
+	if string(ja) != string(jb) {
+		return fmt.Errorf("re-dérivation DIVERGE sur l'OSCAL : assessment-oscal.json n'est pas le rendu de l'assessment (artefact normatif fabriqué)")
+	}
+	return nil
+}
+
+// checkProvenance vérifie l'invariant du scan : un seul instant d'évaluation, gravé à la
+// fois dans input.evaluated_at et dans Run.Timestamp. Les désaligner est le moyen le plus
+// simple d'antidater un rapport.
+func checkProvenance(input any, sealed assessment.Assessment) error {
+	m, ok := input.(map[string]any)
+	if !ok {
+		return nil
+	}
+	evaluatedAt, _ := m["evaluated_at"].(string)
+	if evaluatedAt == "" || sealed.Run.Timestamp == "" {
+		return nil
+	}
+	if evaluatedAt != sealed.Run.Timestamp {
+		return fmt.Errorf("provenance INCOHÉRENTE : input.evaluated_at (%s) ≠ Run.Timestamp (%s) — le scan grave un instant unique, cet écart trahit un antidatage", evaluatedAt, sealed.Run.Timestamp)
+	}
+	return nil
+}
+
 // reDerive relit input.json du bundle, réexécute les règles communes, reconstruit l'assessment
 // et le compare (base canonique) à l'assessment SCELLÉ. C'est la seule vérification réellement
 // opposable : sans elle, un bundle intègre/signé peut attester un résultat qui ne découle PAS de
@@ -99,6 +148,17 @@ func reDerive(ctx context.Context, dir string) error {
 	sealedJSON, _ := json.Marshal(assess.Canonical(sealed).Results)
 	if string(gotJSON) != string(sealedJSON) {
 		return fmt.Errorf("re-dérivation DIVERGE de l'assessment scellé : le bundle n'atteste PAS fidèlement input.json (résultat fabriqué ou config différente)")
+	}
+	// L'OSCAL est l'artefact qu'un AUDITEUR ingère : ne vérifier que assessment.json
+	// laissait falsifier l'OSCAL (tous les échecs passés en succès) sans que la
+	// re-dérivation ne bronche. On le RE-REND depuis l'assessment re-dérivé et on compare.
+	if err := reDeriveOSCAL(dir, got); err != nil {
+		return err
+	}
+	// La provenance doit rester cohérente : le scan grave UN SEUL instant, partagé entre
+	// input.evaluated_at et Run.Timestamp. Une divergence trahit un antidatage.
+	if err := checkProvenance(input, sealed); err != nil {
+		return err
 	}
 	if d := configDigest(); d != sealed.Run.Ruleset.Digest {
 		_, _ = fmt.Fprintf(os.Stdout, "  note : config actuelle (%s) ≠ config scellée (%s) — re-dérivation faite avec le référentiel/règles COURANTS\n", short(d), short(sealed.Run.Ruleset.Digest))

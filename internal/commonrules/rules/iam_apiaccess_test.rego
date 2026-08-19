@@ -40,3 +40,14 @@ test_apiaccesspolicy_expiration_ok if {
 test_apiaccesspolicy_expiration_absent_ok if {
 	count({f | some f in deny; f.code == "iam_apiaccesspolicy_max_key_expiration"}) == 0 with input as {"resources": [{"provider": "outscale", "type": "api_access_policy", "id": "ap-1", "attributes": {"name": "default"}}]}
 }
+
+# ✓ Règle 0.0.0.0/0 MAIS exigeant un certificat client (CaIds) → pas un accès ouvert.
+test_apiaccessrule_public_cidr_with_client_cert_ok if {
+	count({f | some f in deny; f.code == "iam_apiaccessrule_no_public_cidr"}) == 0 with input as {"resources": [{"provider": "outscale", "type": "api_access_rule", "id": "aar-1", "attributes": {"api_access_rule_id": "aar-1", "ip_ranges": ["0.0.0.0/0"], "ca_ids": ["ca-1"], "cns": []}}]}
+}
+
+# ✗ Règle 0.0.0.0/0 sans certificat client → finding (comportement inchangé).
+test_apiaccessrule_public_cidr_without_cert_denied if {
+	some f in deny with input as {"resources": [{"provider": "outscale", "type": "api_access_rule", "id": "aar-2", "attributes": {"api_access_rule_id": "aar-2", "ip_ranges": ["0.0.0.0/0"], "ca_ids": [], "cns": []}}]}
+	f.code == "iam_apiaccessrule_no_public_cidr"
+}

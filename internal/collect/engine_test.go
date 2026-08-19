@@ -2,6 +2,8 @@ package collect
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -212,6 +214,216 @@ resources:
 	}
 }
 
+// Protocole IP NUMÉRIQUE (Outscale) : dans un Net, IpProtocol peut être un numéro
+// (6=tcp, 17=udp, 1=icmp) au lieu du nom. Sans mapping, une règle "6" sur le port 22
+// n'est reconnue ni comme tcp ni comme all → SSH ouvert invisible (faux négatif CSPM,
+// contournement classique). La chaîne [lower, {"-1":all,…,"6":tcp}] doit normaliser.
+func TestCollectNumericProtocol(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"SecurityGroups":[
+			{"SecurityGroupId":"sg-1","InboundRules":[
+				{"IpProtocol":"6","IpRanges":["0.0.0.0/0"],"FromPortRange":22,"ToPortRange":22}
+			]}
+		]}`))
+	}))
+	defer srv.Close()
+
+	specYAML := `
+provider: outscale
+base_url: ` + srv.URL + `
+resources:
+  - type: security_group_rule
+    path: /ReadSecurityGroups
+    items: SecurityGroups[*].InboundRules[*]
+    id: security_group_id
+    map:
+      security_group_id: _parent.SecurityGroupId
+      protocol: IpProtocol
+      cidrs: IpRanges
+      port_from: FromPortRange
+      port_to: ToPortRange
+    transforms:
+      protocol: [lower, { "-1": all, any: all, "": all, "1": icmp, "6": tcp, "17": udp }]
+      cidrs: list
+`
+	var spec Spec
+	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
+		t.Fatalf("spec : %v", err)
+	}
+	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	if err != nil {
+		t.Fatalf("Collect : %v", err)
+	}
+	if len(res) != 1 {
+		t.Fatalf("attendu 1 règle, obtenu %d", len(res))
+	}
+	if p := res[0].Attributes["protocol"]; p != "tcp" {
+		t.Errorf("protocole numérique 6 non normalisé : %v (attendu tcp)", p)
+	}
+}
+
+// snake_keys : les structures imbriquées d'un LoadBalancer OAPI arrivent en PascalCase
+// (Listeners[].LoadBalancerProtocol, AccessLog.IsEnabled) ; les règles agnostiques les
+// lisent en snake_case. Le transform doit renommer les CLÉS (récursivement) sans toucher
+// aux VALEURS (le protocole "HTTPS" reste "HTTPS").
+func TestCollectSnakeKeysNested(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"LoadBalancers":[
+			{"LoadBalancerName":"lb-1","LoadBalancerType":"internet-facing",
+			 "Listeners":[{"LoadBalancerProtocol":"HTTPS","LoadBalancerPort":443}],
+			 "AccessLog":{"IsEnabled":true,"OsuBucketName":"logs"}}
+		]}`))
+	}))
+	defer srv.Close()
+
+	specYAML := `
+provider: outscale
+base_url: ` + srv.URL + `
+resources:
+  - type: load_balancer
+    path: /ReadLoadBalancers
+    items: LoadBalancers
+    id: load_balancer_name
+    map:
+      load_balancer_name: LoadBalancerName
+      load_balancer_type: LoadBalancerType
+      listeners: Listeners
+      access_log: AccessLog
+    transforms:
+      listeners: snake_keys
+      access_log: snake_keys
+`
+	var spec Spec
+	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
+		t.Fatalf("spec : %v", err)
+	}
+	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	if err != nil {
+		t.Fatalf("Collect : %v", err)
+	}
+	if len(res) != 1 {
+		t.Fatalf("attendu 1 LB, obtenu %d", len(res))
+	}
+	a := res[0].Attributes
+	// Clé imbriquée d'objet renommée ; valeur bool intacte.
+	al, _ := a["access_log"].(map[string]any)
+	if al == nil || al["is_enabled"] != true {
+		t.Errorf("access_log.is_enabled KO : %v", a["access_log"])
+	}
+	// Clé imbriquée d'une liste d'objets renommée ; valeur "HTTPS" intacte.
+	ls, _ := a["listeners"].([]any)
+	if len(ls) != 1 {
+		t.Fatalf("listeners KO : %v", a["listeners"])
+	}
+	l0, _ := ls[0].(map[string]any)
+	if l0["load_balancer_protocol"] != "HTTPS" {
+		t.Errorf("listeners[0].load_balancer_protocol KO : %v", l0)
+	}
+}
+
+// token-body : OAPI Outscale renvoie NextPageToken DANS LE BODY de réponse, et l'attend
+// DANS LE BODY du POST suivant. Une spec sans paging ne lirait que la 1re page (troncature
+// silencieuse, F1) ; avec paging token-body, le moteur doit suivre le jeton et tout collecter.
+func TestCollectTokenBodyPaging(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		var body map[string]any
+		_ = json.Unmarshal(raw, &body)
+		if body["NextPageToken"] == nil {
+			_, _ = w.Write([]byte(`{"Items":[{"id":"a"},{"id":"b"}],"NextPageToken":"tok2"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"Items":[{"id":"c"}]}`)) // dernière page : pas de token
+	}))
+	defer srv.Close()
+
+	specYAML := `
+provider: outscale
+base_url: ` + srv.URL + `
+resources:
+  - type: thing
+    path: /ReadThings
+    method: POST
+    body: "{}"
+    items: Items
+    id: id
+    paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 2 }
+    map:
+      id: id
+`
+	var spec Spec
+	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
+		t.Fatalf("spec : %v", err)
+	}
+	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	if err != nil {
+		t.Fatalf("Collect : %v", err)
+	}
+	if len(res) != 3 {
+		t.Fatalf("token-body : attendu 3 items (2 pages), obtenu %d — troncature ?", len(res))
+	}
+}
+
+// offset-body : FirstItem + ResultsPerPage dans le body ; une page incomplète est la dernière.
+func TestCollectOffsetBodyPaging(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		var body map[string]any
+		_ = json.Unmarshal(raw, &body)
+		first := 0.0
+		if v, ok := body["FirstItem"].(float64); ok {
+			first = v
+		}
+		if first == 0 {
+			_, _ = w.Write([]byte(`{"Policies":[{"id":"p1"},{"id":"p2"}]}`)) // page pleine (size=2)
+			return
+		}
+		_, _ = w.Write([]byte(`{"Policies":[{"id":"p3"}]}`)) // page incomplète → fin
+	}))
+	defer srv.Close()
+
+	specYAML := `
+provider: outscale
+base_url: ` + srv.URL + `
+resources:
+  - type: iam_policy
+    path: /ReadPolicies
+    method: POST
+    body: "{}"
+    items: Policies
+    id: id
+    paging: { style: offset-body, param: FirstItem, size_param: ResultsPerPage, size: 2 }
+    map:
+      id: id
+`
+	var spec Spec
+	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
+		t.Fatalf("spec : %v", err)
+	}
+	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	if err != nil {
+		t.Fatalf("Collect : %v", err)
+	}
+	if len(res) != 3 {
+		t.Fatalf("offset-body : attendu 3 policies (2 pages), obtenu %d", len(res))
+	}
+}
+
+// toSnakeCase : cas limites (acronyme, chiffres).
+func TestToSnakeCase(t *testing.T) {
+	cases := map[string]string{
+		"LoadBalancerProtocol": "load_balancer_protocol",
+		"IsEnabled":            "is_enabled",
+		"OsuBucketName":        "osu_bucket_name",
+		"NetId":                "net_id",
+	}
+	for in, want := range cases {
+		if got := toSnakeCase(in); got != want {
+			t.Errorf("toSnakeCase(%q) = %q, attendu %q", in, got, want)
+		}
+	}
+}
+
 // Démontre index de tableau (public_ips.0.address) + transform kv (tags).
 func TestCollectArrayIndexAndKV(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -372,5 +584,74 @@ func TestNilTransformSemantics(t *testing.T) {
 	}
 	if got := applyTransform(nil, "lower"); got != nil {
 		t.Errorf("lower(nil) doit rester nil, pas %v", got)
+	}
+}
+
+// RÉGRESSION : un serveur qui PLAFONNE la page sous la taille demandée (Outscale borne à
+// 100 même si l'on demande 1000) faisait s'arrêter la collecte après la 1re page, car
+// l'arrêt reposait sur `len(batch) < size`. On suit désormais `HasMoreItems` et l'offset
+// avance du nombre d'items RÉELLEMENT reçus. Sans le correctif, ce test ne voit que 2/5.
+func TestCollectOffsetBodyServerCapsPageSize(t *testing.T) {
+	const cap = 2 // le serveur ne rend jamais plus de 2 items, quoi qu'on demande
+	all := []string{"u1", "u2", "u3", "u4", "u5"}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		var body map[string]any
+		_ = json.Unmarshal(raw, &body)
+		first := 0
+		if v, ok := body["FirstItem"].(float64); ok {
+			first = int(v)
+		}
+		end := first + cap
+		if end > len(all) {
+			end = len(all)
+		}
+		var names []string
+		if first < len(all) {
+			names = all[first:end]
+		}
+		out := map[string]any{"Users": []map[string]string{}, "HasMoreItems": end < len(all)}
+		us := make([]map[string]string, 0, len(names))
+		for _, n := range names {
+			us = append(us, map[string]string{"UserName": n})
+		}
+		out["Users"] = us
+		b, _ := json.Marshal(out)
+		_, _ = w.Write(b)
+	}))
+	defer srv.Close()
+
+	specYAML := `
+provider: outscale
+base_url: ` + srv.URL + `
+resources:
+  - type: iam_user
+    path: /ReadUsers
+    method: POST
+    body: "{}"
+    items: Users
+    id: name
+    paging: { style: offset-body, param: FirstItem, size_param: ResultsPerPage, size: 100, more_path: HasMoreItems }
+    map:
+      name: UserName
+`
+	var spec Spec
+	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
+		t.Fatalf("spec : %v", err)
+	}
+	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	if err != nil {
+		t.Fatalf("Collect : %v", err)
+	}
+	if len(res) != len(all) {
+		t.Fatalf("troncature : attendu %d items malgré le plafond serveur, obtenu %d", len(all), len(res))
+	}
+	seen := map[string]bool{}
+	for _, r := range res {
+		n, _ := r.Attributes["name"].(string)
+		if seen[n] {
+			t.Errorf("item dupliqué : %s (offset mal avancé)", n)
+		}
+		seen[n] = true
 	}
 }

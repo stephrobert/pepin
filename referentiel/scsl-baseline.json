@@ -1,0 +1,479 @@
+{
+  "format": "pepin-scsl-baseline/v1",
+  "exigences": {
+    "CLD-CHF-1": {
+      "empreinte": "sha256:622b05e7e31f3c74cfecf7fe0d7948b5761c6c215c1b17a590f6c1916aba26a3",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CHF-2": {
+      "empreinte": "sha256:a3ca3e6939625810784b01650496ea804d4c033fa1dbfd4c44d5db323e22460d",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CHF-3": {
+      "empreinte": "sha256:c40d117fb4af5e2fc6fb2336f85bd71e69c287721b082158bf9d4f3a12476e2d",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CHF-4": {
+      "empreinte": "sha256:8a947de0f2fb69e46854b03787f8c73cae5aebeaafdb91f9d7023ee4eedc94dc",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CHF-5": {
+      "empreinte": "sha256:6ee27a068a6fc42f624839860f7f396b9c83a9f4dce2959ea741f8f234ec60e9",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-1": {
+      "empreinte": "sha256:8872166c99a53c234b44eefbb5570af6a86f3db7728913548d83a3d1397703cd",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-10": {
+      "empreinte": "sha256:c67d409388969ba7c134fc0a159415822f351996f2d469a569da1818b3b0fb59",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-2": {
+      "empreinte": "sha256:2ae73d8f7db9e15b87980f0472f0c3c435b78ec2a826ef1cf45bb313d9de4aa0",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-3": {
+      "empreinte": "sha256:1a229e491650f4aecb0e06b170a819ecafd7f15bd82b17643cf5edf588403c46",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-4": {
+      "empreinte": "sha256:ca9759584ed4a10c9d964412d71f69e23413095a0f5dbb4779e2c4d196744f77",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-5": {
+      "empreinte": "sha256:f70d8b56ad131c31b1a975424f4efd4710fcded2efd3702fc452d969a2d653e1",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-6": {
+      "empreinte": "sha256:1b4728c532a3449fa3d83e608b0cc537c2bcca17524ca4a5622e8bcc85afd7ba",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-7": {
+      "empreinte": "sha256:6b3c6e3d10a9ac3926cf341b9e280107934489107140eba6ad70e81e47350dad",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-8": {
+      "empreinte": "sha256:debe5d3539aebeb10ff65e71e59615356d10f686a5e54c9f591526c989a4e130",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-CMP-9": {
+      "empreinte": "sha256:4b3aaca84082b7051018cba950816be02e834353d17dbf32da17b7fab3c896ad",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GEN-1": {
+      "empreinte": "sha256:76d8bad294b3a2ed68eabac13cdd678b8cc83cb318eb5c7f3bd164f8d03bae04",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GEN-2": {
+      "empreinte": "sha256:6a2de4ef8ebfa67a02e66fdd9201e14d71adcc4d824945d038bcb699633ce962",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GEN-3": {
+      "empreinte": "sha256:6a85515c7cf0983cc539ded91a6ac6fc43d7b1159260a191df2a6496ff1e8a5e",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GEN-4": {
+      "empreinte": "sha256:2f0afb9b6a806da14593f4f79935303e1019743b4080609c265f3590d5f77414",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-1": {
+      "empreinte": "sha256:120f93b48744775ab73c8fd8dd0cdb45e8445e8c36b567af6afe98c62f286843",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-10": {
+      "empreinte": "sha256:901eb11f82a16b9f8d99b71ea5974a97b03f9e156f9a42dad570b69b212ad3c1",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-11": {
+      "empreinte": "sha256:7297ccb37c9f00e22b54e1f7887279e44a60c126bfbab0f4762e08cf98b4ca2f",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-12": {
+      "empreinte": "sha256:a8227515082a9c5d2997d331664fc16ed39cafc4f2b8376c0d96545ae9ea5e71",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-2": {
+      "empreinte": "sha256:fc66d6b042ab3acc6aadf94fca516b744cb0e5991176b1accee167ad0216b888",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-3": {
+      "empreinte": "sha256:3716843b26d5d2778b658cae93335dc99d78d454ee7acadfe56c98d6199ed7b6",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-4": {
+      "empreinte": "sha256:6bf67355701c248c66b7f6ae56cac726f356fc06e5563ede01184d92f74ba2e6",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-5": {
+      "empreinte": "sha256:f68764660320d5863288c612a2a9b66d9d2a4b234da7e8496f11e8052d10403e",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-6": {
+      "empreinte": "sha256:336e69bc5ee1e2b01c686f22e862f18a974fb8013c4e227b377f789b1cfebcc4",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-7": {
+      "empreinte": "sha256:f83bdf8a82188adeb2aa55ee06befa99b8768e30b46b3ffa74e3dec58e60c648",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-8": {
+      "empreinte": "sha256:7579f9583737afbf51347399131dd846be26a0ba26538e00623bc7964fb9fe5f",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-GVN-9": {
+      "empreinte": "sha256:ddb634cd4c3e402bd44a188581da470bd0297c2c96a46281cdf6c2f8b8ab1a3f",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-1": {
+      "empreinte": "sha256:8ee2c26b4ed340422b45568e69b302ed89da487ef3f5a0377a8cfc5d529b8b56",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-10": {
+      "empreinte": "sha256:941f4b27a9d2589504d7d20ae5c79f962a27b3b721df210dbf609a3d37b90133",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-11": {
+      "empreinte": "sha256:0543fd3afb76cfd61d0b25cf1fed8cab73d9e2337747480ab7b0d3b8dd23e7c1",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-12": {
+      "empreinte": "sha256:85a5a70c08b21d5424ce6a45203d81cadc73d7764d3ebfb2fad7720030e16794",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-13": {
+      "empreinte": "sha256:50c88702c1b879859c0ca2e7d53441827b38c6f6a947f7544b3810789d1c6fd6",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-14": {
+      "empreinte": "sha256:c1126785458a15be74e93a0abe581f30c03d2307ec155a1120a086ca5af4a771",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-15": {
+      "empreinte": "sha256:a6237c0177f97cef79d925b067f84b459077d385309f8706100fc75fe3a4e6ca",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-16": {
+      "empreinte": "sha256:201642ee04f9d13760d959cfc101b48f8e175e93f8411173b68bed7b77f0ee58",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-2": {
+      "empreinte": "sha256:142ecbf4bdb22ab78ec14ddcf42112cd02f6f5842ca8d7e1d759ae90e7381e8d",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-3": {
+      "empreinte": "sha256:2cac19eed41808b6ea983f7b6177e360fcc452196cd60c0b2007f2a472a6151c",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-4": {
+      "empreinte": "sha256:6e5586ad53e2e1054e442f51170dc044e31a6a7290694d180ed396aaa88718bc",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-5": {
+      "empreinte": "sha256:0db34705760f9f7d2414712415ed72e8ed08a6834d9723b520a7bbf23ef93b40",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-6": {
+      "empreinte": "sha256:6f2736b2183a8df86265c3941e1c6e7f75138ff13470cfb3f8da093763b50251",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-7": {
+      "empreinte": "sha256:9ce3643e5abb55f3ea0304c8d3c66f8fa692002324dd77a8ce23a744104984ac",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-8": {
+      "empreinte": "sha256:c9765ba63d23b56d9337b759c7e0295c6d21c2ec3e6a4123464f4739497a02cf",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-IAM-9": {
+      "empreinte": "sha256:02e68f77ecd7e3d62c931b50446bdcc6c1d934a09e82e5e71dc98c3f941e2612",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-K8S-1": {
+      "empreinte": "sha256:447bba054f33ddca5a2eb001df64806d72c74b2a1b2dd68b6c8254b9793299dd",
+      "pepin": []
+    },
+    "CLD-K8S-10": {
+      "empreinte": "sha256:178bd8bffde8386e3b6b5e96e03b0b82472880339cb3be2c204d3d42f8c90d6a",
+      "pepin": []
+    },
+    "CLD-K8S-11": {
+      "empreinte": "sha256:ddb6f46f4b65f6753c0c5943c9f5cd9dc4b1734a5cb074bbfba900de16ff887d",
+      "pepin": []
+    },
+    "CLD-K8S-12": {
+      "empreinte": "sha256:3ed016cb39ebb987833a01f31a55fac604ccb7f59419f6306fa485ec0d3cedf9",
+      "pepin": []
+    },
+    "CLD-K8S-2": {
+      "empreinte": "sha256:073a6156bc55317d0a86097de039a2aef1c594188a050b3663c55618f5443a82",
+      "pepin": []
+    },
+    "CLD-K8S-3": {
+      "empreinte": "sha256:d3d3f9f4df124562b26945bf941f7da2bfb3f4533007746cba8d08df077e268a",
+      "pepin": []
+    },
+    "CLD-K8S-4": {
+      "empreinte": "sha256:0bf6dc956a6b519efcc2a1d52ac5b4b95c9586a23d454f22e82e54bee714e423",
+      "pepin": []
+    },
+    "CLD-K8S-5": {
+      "empreinte": "sha256:52c16270b15d92802d3cb788c732618bf960fa604c9cc165ede06f18fbb2e1cb",
+      "pepin": []
+    },
+    "CLD-K8S-6": {
+      "empreinte": "sha256:451bf338ab95f1247a2225f2374a8e92931145adbfac3942861b041c7ea33005",
+      "pepin": []
+    },
+    "CLD-K8S-7": {
+      "empreinte": "sha256:6ce684b3d4b2cd2991a3b8ce073af0598a2e3ff81f6b4dae3f5c1f7b65efd03a",
+      "pepin": []
+    },
+    "CLD-K8S-8": {
+      "empreinte": "sha256:d6f0ebaec6426b79967e2ea227355544a6c0ba8db9f1d09b0a5a5564f8af1342",
+      "pepin": []
+    },
+    "CLD-K8S-9": {
+      "empreinte": "sha256:64f0446c996a4ed3cbda8c3168aa480627b535e80cf82fe435c0ee1c71b23063",
+      "pepin": []
+    },
+    "CLD-LOG-1": {
+      "empreinte": "sha256:a4ec109d76999d8287421e918d4d1e60e3e260d7a28422b9e2a778fa9479af50",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-LOG-2": {
+      "empreinte": "sha256:b8c231faa4714e4d06edc1ce2651e3e047695bfe114f3bcb43e4046a7597da2e",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-LOG-3": {
+      "empreinte": "sha256:a3532b097035d0a8f676dfd2ca503ebf24571eeb09e6a1932dbeb628c670f538",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-LOG-4": {
+      "empreinte": "sha256:8275c6b178f5a9a869cccb8a9e0b186a18cc574c60295d6080f8b4c1b110f8fc",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-LOG-5": {
+      "empreinte": "sha256:0f8f3f99f021be7323acf57e9aad6519c2902b9c3b2cb73ce229f8fe43424332",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-LOG-6": {
+      "empreinte": "sha256:fac55c970587817ecb3acde164d1adf2225f0c3898e6eb02d56bf928add12acf",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-LOG-7": {
+      "empreinte": "sha256:ed7b9baf5dfeab082da3b247ae0f8610193c467800eb5e2c3cc8c76680936e7c",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-1": {
+      "empreinte": "sha256:2cedb702eda6edb6b4cc3077dfaac7d99e59d349e4317c6f192c5dea3df26982",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-2": {
+      "empreinte": "sha256:b862ecf05383ef1d6c2cd6506c373df7198ff7c72280b75bd311dd20cd196760",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-3": {
+      "empreinte": "sha256:d3b8a1ab11842a2d627af24486c3f5433d513e7b0aef58712c865a33557bf28f",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-4": {
+      "empreinte": "sha256:770dfffa587047e0faee5176ca572f299b3c99f2c14ec673cfffcc080f4ae2df",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-5": {
+      "empreinte": "sha256:a6a1d89e38239e8a019d9e109da1d881ee3b7989a73cabc23f049b1a1be29bfe",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-6": {
+      "empreinte": "sha256:a759ab041556b1e6b83611e26526cec75c56dd61796dd65514d5ef0ee7ed53f4",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-7": {
+      "empreinte": "sha256:b0f95ac829c0ab8065eeba017d6fc5dea7fafc56232a71497cd82e7eaf90d32e",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-8": {
+      "empreinte": "sha256:4836a88deb81252a7369cd71405be21ab5d057c952c7dce658b066a421a9759a",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-NET-9": {
+      "empreinte": "sha256:1f5e4073bdffa99d0d7c4bd49ba983d9694aa17497740d221c49a8034e302d4b",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-STO-1": {
+      "empreinte": "sha256:407ff6e1801eb8eb3a701c614d6c1cea6a3be2c1e39230a0234de4086e0adce5",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-STO-2": {
+      "empreinte": "sha256:f0fa8dcc3c866d3f41e4c8b92bc769d1428d63a00809f9bddc5fe39f991ec6d9",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-STO-3": {
+      "empreinte": "sha256:1c12f5ae3fc1dc5768af806ddec0ee9cb6a6ff88e577b4186c902e210d6e9129",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-STO-4": {
+      "empreinte": "sha256:77d7b09f54a8b2a6a7b8cecb2509ff5dde4a78cb682800a04720abb9835da41b",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-STO-5": {
+      "empreinte": "sha256:c5400be46c3c28fde70bf2d569ccb78274e54605dbd45d1e6b4c500c46adddd4",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-STO-6": {
+      "empreinte": "sha256:baf80dac4e5fdaf2df79dc070c782e53b2996fa8c088b2fe2a7c7609b7c94b12",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-STO-7": {
+      "empreinte": "sha256:ac323fa964be02a6af0a5fb09f36722c9d3027b6cb2dbbe6429d7fd0284a6318",
+      "pepin": [
+        "Pépin"
+      ]
+    },
+    "CLD-STO-8": {
+      "empreinte": "sha256:478ff6d5ec6931e87cc6d7e931963d14e6c70355867b5c4e20e048e642b5b7e3",
+      "pepin": [
+        "Pépin"
+      ]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+# Gate a GitLab pipeline on cloud posture with Pépin — minimal usage.
+#
+# Copy into a repository holding a Terraform configuration for Exoscale,
+# Outscale or Scaleway. The `plan` job renders the plan; the included template
+# audits it with no credential and nothing provisioned. The pipeline fails on
+# a non-compliant posture (exit 1) and on a technical error (exit 2), and the
+# two are distinguishable in the job log and its exit code.
+
+include:
+  # Pinned to a tag: an unpinned include runs whatever the default branch
+  # says tomorrow.
+  - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.1.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
+
+stages: [plan, test]
+
+plan:
+  stage: plan
+  image:
+    name: hashicorp/terraform:1.15
+    entrypoint: [""]
+  script:
+    - terraform init
+    - terraform plan -out=tfplan
+    - terraform show -json tfplan > plan.json
+  artifacts:
+    paths: [plan.json]
+    expire_in: 1 day
+
+# The template's job as-is gates the pipeline. To report without gating,
+# override it — allowing only the verdict codes, never 2:
+#
+#   pepin-terraform-plan:
+#     allow_failure:
+#       exit_codes: [1, 3]

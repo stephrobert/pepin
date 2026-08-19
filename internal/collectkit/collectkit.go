@@ -6,12 +6,16 @@ package collectkit
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/eimpolicy"
 	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/internal/objectstorage"
+	"github.com/stephrobert/pepin/internal/oks"
 )
 
 // httpTimeout borne chaque requête de collecte live : sans borne, un endpoint provider qui
@@ -25,10 +29,26 @@ type S3 struct {
 	SSEKMS                        bool // le provider expose une clé client au niveau bucket (SSE-KMS, CLD-CHF-4)
 }
 
+// EIM décrit la collecte des politiques EIM *inline* (chaîne à 3 niveaux, hors moteur
+// YAML). BaseURL vide = pas de collecte.
+type EIM struct{ BaseURL string }
+
+// OKS décrit l'accès à l'API Kubernetes managé (host + auth distincts de l'OAPI ;
+// endpoint vide = pas de collecte de clusters).
+type OKS struct {
+	Endpoint, Region, Key, Secret string
+}
+
 // Run exécute la spec de collecte (auth + variables fournies par le provider),
-// puis collecte les buckets S3 si un endpoint est donné.
-func Run(ctx context.Context, name string, spec collect.Spec, auth collect.Auth, vars map[string]string, s3 S3) ([]model.Resource, error) {
-	out, err := collect.Collect(ctx, &http.Client{Timeout: httpTimeout}, spec, auth, vars)
+// puis complète avec le stockage objet S3 et les clusters OKS si leurs endpoints
+// sont donnés (APIs à part que le moteur YAML générique ne peut pas exprimer).
+// `hc` permet à un provider d'imposer son propre client (ex. mTLS d'un kubeconfig) ;
+// nil = client par défaut borné par httpTimeout.
+func Run(ctx context.Context, name string, spec collect.Spec, auth collect.Auth, vars map[string]string, s3 S3, oksCfg OKS, eimCfg EIM, hc *http.Client) ([]model.Resource, error) {
+	if hc == nil {
+		hc = &http.Client{Timeout: httpTimeout}
+	}
+	out, err := collect.Collect(ctx, hc, spec, auth, vars)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +58,25 @@ func Run(ctx context.Context, name string, spec collect.Spec, auth collect.Auth,
 			return nil, err
 		}
 		out = append(out, buckets...)
+	}
+	if eimCfg.BaseURL != "" {
+		inline, err := eimpolicy.CollectInlinePolicies(ctx, hc, name, eimCfg.BaseURL, auth)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, inline...)
+	}
+	if oksCfg.Endpoint != "" {
+		clusters, err := oks.CollectClusters(ctx, hc, name, oksCfg.Endpoint, oksCfg.Region, oksCfg.Key, oksCfg.Secret)
+		if err != nil {
+			// Le Kubernetes managé n'est pas disponible partout (région sans OKS, quota non
+			// activé, compte sans droit) : ce n'est PAS une erreur de scan, sinon un tenant
+			// sans OKS ne serait plus auditable du tout. On AVERTIT (jamais en silence) et les
+			// contrôles Kubernetes restent « non évalués » — jamais faussement conformes.
+			fmt.Fprintf(os.Stderr, "pepin: ⚠ collecte OKS ignorée (%v) — contrôles Kubernetes non évalués\n", err)
+		} else {
+			out = append(out, clusters...)
+		}
 	}
 	return out, nil
 }
