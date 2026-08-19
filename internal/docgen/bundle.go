@@ -23,17 +23,18 @@ import (
 // bundleCaptures rassemble les exécutions du cycle de preuve et ce qu'elles ont écrit sur
 // disque.
 type bundleCaptures struct {
-	seal      Capture // scan --seal
-	manifest  string  // manifest.json, champs volatils neutralisés
-	checksums string  // checksums.txt, empreintes neutralisées
-	files     []bundleFile
-	verify    Capture // verify (intégrité seule)
-	reDerive  Capture // verify --re-derive
-	tampered  Capture // verify sur un bundle altéré
-	redact    Capture // scan --seal --redact
-	redacted  string  // extrait de l'input.json caviardé
-	redactRD  Capture // verify --re-derive sur le bundle caviardé
-	crossLang []crossLangFile
+	seal        Capture // scan --seal
+	manifest    string  // manifest.json, champs volatils neutralisés
+	checksums   string  // checksums.txt, empreintes neutralisées
+	files       []bundleFile
+	verify      Capture // verify (intégrité seule)
+	reDerive    Capture // verify --re-derive
+	tampered    Capture // verify sur un bundle altéré
+	redact      Capture // scan --seal --redact
+	redacted    string  // extrait de l'input.json caviardé
+	redactRD    Capture // verify --re-derive sur le bundle caviardé
+	crossVerify Capture // verify --re-derive d'un bundle scellé dans l'AUTRE langue
+	crossLang   []crossLangFile
 }
 
 // bundleFile est un fichier du bundle et le rôle que le manifest lui donne.
@@ -85,7 +86,13 @@ func captureBundle(r Runner, tmp, version string) (bundleCaptures, error) {
 	dir := filepath.Join(tmp, "bundle")
 	tampered := filepath.Join(tmp, "bundle-tampered")
 	redacted := filepath.Join(tmp, "bundle-redacted")
-	other := filepath.Join(tmp, "bundle-other-language")
+	// Le bundle de l'autre langue porte cette langue dans son nom : la page anglaise montre
+	// donc une vérification de `bundle-fr`, et la française de `bundle-en`.
+	otherLang := "en"
+	if r.Lang != "fr" {
+		otherLang = "fr"
+	}
+	other := filepath.Join(tmp, "bundle-"+otherLang)
 
 	steps := []struct {
 		into    *Capture
@@ -151,22 +158,26 @@ func captureBundle(r Runner, tmp, version string) (bundleCaptures, error) {
 		return bundleCaptures{}, err
 	}
 
-	// Le MÊME scan, scellé dans l'autre langue : quels fichiers changent.
-	otherLang := "en"
-	if r.Lang != "fr" {
-		otherLang = "fr"
-	}
+	// Le MÊME scan, scellé dans l'AUTRE langue : quels fichiers changent, et surtout, est-ce
+	// que ce bundle se vérifie depuis un shell qui ne parle pas la langue de son auteur. Un
+	// faux positif de falsification serait ici le pire verdict possible, donc il se MONTRE.
 	ro := r
 	ro.Lang = otherLang
 	if _, err := ro.Run("scan", "scaleway", "--terraform", planVulnerable, "--seal", other); err != nil {
 		return bundleCaptures{}, err
 	}
+	bc.crossVerify, err = r.Run("verify", other, "--re-derive")
+	if err != nil {
+		return bundleCaptures{}, err
+	}
+	bc.crossVerify.Args = []string{"verify", "bundle-" + otherLang, "--re-derive"}
 	bc.crossLang, err = compareBundles(dir, other)
 	if err != nil {
 		return bundleCaptures{}, err
 	}
 
-	for _, c := range []*Capture{&bc.seal, &bc.verify, &bc.reDerive, &bc.tampered, &bc.redact, &bc.redactRD} {
+	for _, c := range []*Capture{&bc.seal, &bc.verify, &bc.reDerive, &bc.tampered, &bc.redact,
+		&bc.redactRD, &bc.crossVerify} {
 		c.Stdout = normalizeBundleText(c.Stdout, tmp, version)
 		c.Stderr = normalizeBundleText(c.Stderr, tmp, version)
 	}

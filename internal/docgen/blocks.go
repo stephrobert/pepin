@@ -93,7 +93,7 @@ func (c *captures) all() []*Capture {
 		&c.tagless, &c.taglessStr, &c.providers, &c.jsonReport, &c.sarif, &c.oscal,
 		&c.driftLive, &c.outscalePlanJSON,
 		&c.bundle.seal, &c.bundle.verify, &c.bundle.reDerive, &c.bundle.tampered,
-		&c.bundle.redact, &c.bundle.redactRD}
+		&c.bundle.redact, &c.bundle.redactRD, &c.bundle.crossVerify}
 	for _, m := range []map[string]*Capture{c.help, c.providerScans} {
 		names := make([]string, 0, len(m))
 		for k := range m {
@@ -387,16 +387,17 @@ func bundleBlocks(lang string, c captures) map[string]string {
 	t := bundleText(lang)
 	b := c.bundle
 	return map[string]string{
-		"bundle-seal":       consoleRun(b.seal, linesWithPrefix(b.seal.Stderr, "pepin:")),
-		"bundle-files":      bundleFilesTable(t, b.files),
-		"bundle-manifest":   Fence("json", b.manifest),
-		"bundle-checksums":  Fence("text", b.checksums),
-		"bundle-verify":     consoleRun(b.verify, b.verify.Stdout),
-		"bundle-rederive":   consoleRun(b.reDerive, b.reDerive.Stdout),
-		"bundle-tampered":   consoleRun(b.tampered, b.tampered.Stdout+b.tampered.Stderr),
-		"bundle-redact":     Fence("json", b.redacted),
-		"bundle-redact-rd":  consoleRun(b.redactRD, b.redactRD.Stdout+b.redactRD.Stderr),
-		"bundle-cross-lang": crossLangTable(t, b.crossLang),
+		"bundle-seal":         consoleRun(b.seal, linesWithPrefix(b.seal.Stderr, "pepin:")),
+		"bundle-files":        bundleFilesTable(t, b.files),
+		"bundle-manifest":     Fence("json", b.manifest),
+		"bundle-checksums":    Fence("text", b.checksums),
+		"bundle-verify":       consoleRun(b.verify, b.verify.Stdout),
+		"bundle-rederive":     consoleRun(b.reDerive, b.reDerive.Stdout),
+		"bundle-tampered":     consoleRun(b.tampered, b.tampered.Stdout+b.tampered.Stderr),
+		"bundle-redact":       Fence("json", b.redacted),
+		"bundle-redact-rd":    consoleRun(b.redactRD, b.redactRD.Stdout+b.redactRD.Stderr),
+		"bundle-cross-lang":   crossLangTable(t, b.crossLang),
+		"bundle-cross-verify": consoleRun(b.crossVerify, b.crossVerify.Stdout),
 	}
 }
 

@@ -31,6 +31,8 @@ var injectedPages = []string{
 	"docs/reference/output-formats.fr.md",
 	"docs/concepts/terraform-vs-live.md",
 	"docs/concepts/terraform-vs-live.fr.md",
+	"docs/guides/evidence-bundles.md",
+	"docs/guides/evidence-bundles.fr.md",
 }
 
 // generatedPages : les pages entièrement calculées, sans une ligne écrite à la main.
