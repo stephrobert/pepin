@@ -62,7 +62,28 @@ rapport anglais ne doit jamais basculer au français en milieu de phrase. Le
 français est la langue de référence du contenu normatif, l'anglais en est la
 traduction.
 
-## Commits
+## Documentation et commits
 
-Conventional Commits (`feat`/`fix`/`docs`/`refactor`/`test`/`chore`), sujet à
-l'impératif.
+Les docs du dépôt sont **bilingues** : l'anglais est primaire (`README.md`), le
+français en est la contrepartie (`README.fr.md`), reliés par un sélecteur de
+langue. Les commits suivent les Conventional Commits
+(`feat`/`fix`/`docs`/`refactor`/`test`/`chore`), sujet à l'impératif.
+
+**La documentation fait partie du changement, pas d'un suivi.** L'essentiel de
+`docs/` est généré depuis le binaire et le référentiel, et
+`TestGeneratedDocsAreUpToDate` casse la CI dès que cela dérive. Donc, avant
+d'ouvrir une pull request :
+
+- lancer `mise run gen-docs` et committer ce qu'il régénère ;
+- relire les pages que le changement rend **fausses**, pas seulement les pages
+  générées : `docs/known-limitations.md` quand un angle mort se comble, la page
+  du provider touché, `docs/coverage.md` ;
+- tenir les deux langues synchronisées ;
+- ajouter une ligne au CHANGELOG, dans les deux langues, dès que le changement
+  déplace un **verdict** sur un tenant inchangé, une surface analysable ou un
+  code de sortie.
+
+Une page qui décrit un produit disparu est pire qu'une page absente : elle
+inspire une confiance qu'elle ne peut pas tenir. La question qui tranche :
+*quelqu'un qui lit la documentation sans lire le code serait-il induit en erreur
+par ce changement ?*
