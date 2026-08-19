@@ -12,6 +12,12 @@
 
 **Pépin finds the pips in your sovereign cloud.**
 
+![Pépin scanning a deliberately misconfigured Terraform plan, then the same module fixed: the verdict and the exit code change](docs/assets/quickstart.gif)
+
+*Every command in that recording really runs. It is regenerated at each release
+from `tools/demo/quickstart.tape`, and the preflight refuses to tag a version the
+GIF does not show.*
+
 Pépin is a cloud posture scanner (CSPM) for **European sovereign clouds**
 (Exoscale, Outscale, Scaleway). It evaluates a tenant's effective configuration
 against a common reference anchored on **SCSL**, **SecNumCloud 3.2**, **CIS
