@@ -6,9 +6,15 @@ Pépin is a security tool: its reliability is a requirement, not an option.
 
 ## Reporting a vulnerability
 
-Please do **not** open a public issue for a vulnerability. Use GitHub's private
-vulnerability reporting (**Security → Report a vulnerability**), or contact the
-maintainer through a private channel.
+Please do **not** open a public issue for a vulnerability.
+
+Report it privately here:
+**https://github.com/stephrobert/pepin/security/advisories/new**
+(GitHub → **Security** → **Report a vulnerability**). The advisory stays private
+between you and the maintainer until a fix ships.
+
+If that form is unavailable to you, contact the maintainer through any private
+channel rather than a public issue.
 
 Please include:
 

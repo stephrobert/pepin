@@ -6,9 +6,15 @@ Pépin est un outil de sécurité : sa fiabilité est une exigence, pas une opti
 
 ## Signaler une vulnérabilité
 
-Merci de **ne pas** ouvrir d'issue publique pour une vulnérabilité. Utilisez le
-canal privé de signalement des vulnérabilités de GitHub (**Security → Report a
-vulnerability**), ou contactez le mainteneur par un canal privé.
+Merci de **ne pas** ouvrir d'issue publique pour une vulnérabilité.
+
+Signalez-la en privé ici :
+**https://github.com/stephrobert/pepin/security/advisories/new**
+(GitHub → **Security** → **Report a vulnerability**). L'avis reste privé entre
+vous et le mainteneur jusqu'à la publication d'un correctif.
+
+Si ce formulaire ne vous est pas accessible, contactez le mainteneur par un canal
+privé plutôt que par une issue publique.
 
 Merci d'inclure :
 
