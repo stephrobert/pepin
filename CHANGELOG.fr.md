@@ -24,6 +24,46 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **`exempted` : un cinquième statut d'assessment de premier rang, et des dérogations
+  datées.** `scan --exceptions <fichier.yaml>` lit une politique de dérogations
+  versionnée : `control`, `justification`, `expires_at`, `owner`, `approved_by`, les
+  cinq obligatoires et tous validés au chargement. Un `fail` couvert par une entrée
+  valide devient `exempted`, jamais `pass` : le finding reste dans `--format json`,
+  dans le SARIF et dans le décompte par sévérité, `summary.conforme` reste faux, et le
+  verdict annonce `NON CONFORME sous dérogation`. **Un nouveau code de sortie, `4`**,
+  signifie « tout écart critical/high restant est couvert par une dérogation datée et
+  attribuée » : non nul, donc rien ne passe en silence, et distinct, donc un pipeline
+  qui l'accepte doit écrire le chiffre. Une dérogation expirée cesse de s'appliquer et
+  le dit ; une dérogation qui nomme un contrôle ou un sujet inexistant est signalée
+  comme orpheline ; les deux font échouer une porte `--strict`. Le bundle scelle
+  `exemptions.json`, si bien que l'empreinte du dossier dépend de ce qu'il a écarté, et
+  `verify --re-derive` rejoue la politique scellée à l'instant scellé.
+  *Un statut et un code de sortie sont deux surfaces qu'un pipeline doit savoir lire.*
+
+- **Chaque attribut de l'inventaire normalisé porte sa provenance.** À côté
+  d'`attributes`, un index parallèle `provenance` dit, pour chaque attribut, d'où vient
+  la valeur : `api` avec la requête **réellement servie**, `terraform-plan` avec le type
+  de ressource du plan, ou `derived` pour un littéral de descripteur ou une valeur
+  calculée localement, et si la source portait vraiment le champ. C'est un index
+  parallèle et non une enveloppe autour de chaque valeur : les 59 règles Rego lisent
+  `attributes.<nom>` sans changer, donc aucun verdict ne peut bouger (mesuré sur neuf
+  fixtures × deux formats × deux langues : findings, statuts et codes de sortie
+  identiques). `--format assessment` expose désormais, pour chaque contrôle ayant un
+  attribut décisif, cet attribut et son attestation dans `evidence.attribute` /
+  `evidence.source`. Cela rend visible, sans la changer, la situation de deux contrôles
+  qui franchissent leur garde d'attribut grâce à une constante de descripteur plutôt
+  qu'à une mesure.
+
+- **L'inventaire normalisé est un contrat interne versionné.** `pepin-inventory/v1`,
+  gelé dans `cmd/testdata/frozen/inventory.json` avec son enveloppe, la forme de sa
+  ressource et le vocabulaire complet des types et attributs communs, dérivé des
+  descripteurs et des collecteurs. La version voyage avec chaque bundle de preuve
+  (`manifest.inventory_schema`), et une nouvelle page de référence dit ce qui est
+  garanti et ce qui ne l'est pas. **Format de bundle `/v2`** (le manifeste porte le
+  schéma d'inventaire et le résumé des dérogations), **surface CLI v3**
+  (`--exceptions`, code de sortie 4).
+
+
 - **Vague 3 de la documentation : le catalogue des contrôles est généré, et le
   projet s'explique.** Une page générée par contrôle sous `docs/controls/` (ce qu'il
   conclut, depuis quelle source, avec son motif quand il ne peut pas conclure), un

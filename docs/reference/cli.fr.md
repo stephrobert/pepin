@@ -22,7 +22,7 @@ de drapeaux viennent de la surface gelée ; chaque aide ci-dessous est la sortie
 | `pepin provider list` | _(aucun drapeau propre)_ |
 | `pepin provider new` | _(aucun drapeau propre)_ |
 | `pepin provider validate` | _(aucun drapeau propre)_ |
-| `pepin scan` | `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
+| `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
 | `pepin scsl` | `--index` |
 | `pepin verify` | `--bundle`, `--pubkey`, `--re-derive` |
 | `pepin version` | _(aucun drapeau propre)_ |
@@ -37,10 +37,11 @@ séparément :
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v2** |
+| `cli` | verbes, drapeaux et codes de sortie | **v3** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
-| `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v1** |
+| `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v2** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v1** |
 <!-- /pepin:gen surface-versions -->
 
 Un numéro monte à **tout** changement de forme, ajout compris : il signifie « la surface a
@@ -112,6 +113,7 @@ Usage:
   pepin scan <provider> [export.json] [flags]
 
 Flags:
+      --exceptions fichier               fichier YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme
   -f, --format string                    format de sortie : table | json | assessment | oscal | sarif (default "table")
   -h, --help                             help for scan
       --kubeconfig string                chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)
@@ -353,6 +355,7 @@ cette sortie doit épingler `PEPIN_LANG`, ou couper sur l'espace.
 | **1** | `non_conformite` | au moins un écart critical ou high |
 | **2** | `erreur` | erreur technique : le scan n'a pas pu conclure |
 | **3** | `strict` | rien n'a été mesuré (sans `--strict`), ou écarts medium/low restants avec `--strict` |
+| **4** | `derogation` | tout écart critical/high restant est couvert par une dérogation datée et attribuée (`--exceptions`) |
 <!-- /pepin:gen cli-exit-codes -->
 
 La sémantique complète, situation par situation, avec les commandes qui produisent chaque

@@ -116,6 +116,7 @@
       "content": {
         "exit_codes": {
           "conforme": 0,
+          "derogation": 4,
           "erreur": 2,
           "non_conformite": 1,
           "strict": 3

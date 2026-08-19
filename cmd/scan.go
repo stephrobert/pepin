@@ -452,7 +452,7 @@ func renderExemptions(w io.Writer, rep exempt.Report) {
 		return
 	}
 	_, _ = fmt.Fprintf(w, "\n%s\n", exemptStyle.Render(tr(
-		"DÉROGATIONS APPLIQUÉES — écarts assumés, NON conformes",
+		"DÉROGATIONS APPLIQUÉES : écarts assumés, NON conformes",
 		"EXEMPTIONS APPLIED — accepted deviations, NOT compliant")))
 	for _, rec := range rep.Records {
 		if rec.Effect != exempt.EffectApplied {
@@ -501,7 +501,7 @@ func init() {
 	scanCmd.Flags().StringVar(&scanProfile, "profile", "", "profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)")
 	scanCmd.Flags().StringVar(&scanS3Endpoint, "s3-endpoint", "", "endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)")
 	scanCmd.Flags().StringVar(&scanSeal, "seal", "", "écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier")
-	scanCmd.Flags().StringVar(&scanExceptions, "exceptions", "", "`fichier` YAML de dérogations (control, justification, expires_at, owner, approved_by) — un écart couvert passe au statut exempted, jamais conforme")
+	scanCmd.Flags().StringVar(&scanExceptions, "exceptions", "", "`fichier` YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme")
 	scanCmd.Flags().BoolVar(&scanStrict, "strict", false, "porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance) ou s'il subsiste un écart medium/low")
 	scanCmd.Flags().BoolVar(&scanRedact, "redact", false, "caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive")
 	// --live et --terraform sont exclusifs : sinon loadInput privilégie le live et ignore le plan en silence.
@@ -986,12 +986,12 @@ func verdictHeadline(res scoring.Result, gate scoring.Result, asmt assessment.As
 			"Verdict: UNDETERMINED — no control measured on any resource (the "+scope+" is empty or was not collected)")
 	case !res.Conforme && gate.Conforme && exempted > 0:
 		return fmt.Sprintf(tr(
-			"Verdict : NON CONFORME sous dérogation — %d écart(s) critique/haut, tous couverts par une dérogation datée et attribuée",
+			"Verdict : NON CONFORME sous dérogation, %d écart(s) critique/haut tous couverts par une dérogation datée et attribuée",
 			"Verdict: NON-COMPLIANT under waiver — %d critical/high deviation(s), all covered by a dated, attributed exemption"),
 			res.Critical+res.High)
 	case !res.Conforme && exempted > 0:
 		return fmt.Sprintf(tr(
-			"Verdict : NON CONFORME — %d écart(s) critique/haut restant(s) hors dérogation, %d contrôle(s) exempté(s)",
+			"Verdict : NON CONFORME, %d écart(s) critique/haut restant(s) hors dérogation, %d contrôle(s) exempté(s)",
 			"Verdict: NON-COMPLIANT — %d critical/high deviation(s) left outside any exemption, %d exempted control(s)"),
 			gate.Critical+gate.High, exempted)
 	case !res.Conforme:

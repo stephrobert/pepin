@@ -26,10 +26,11 @@ See [Exit codes](exit-codes.md).
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v2** |
+| `cli` | verbs, flags and exit codes | **v3** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
-| `bundle` | shape of the evidence bundle (files, roles, manifest) | **v1** |
+| `bundle` | shape of the evidence bundle (files, roles, manifest) | **v2** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v1** |
 <!-- /pepin:gen surface-versions -->
 
 "Frozen" means a test fails when the shape moves and its version has not: field paths and JSON
@@ -117,6 +118,25 @@ identifier, common to every provider. Both are stable across languages; `title`,
 and for a compliance gate it does — read the exit code (3 means nothing was measured) or use
 the assessment format.
 
+### `exemptions` — present only under `--exceptions`
+
+When a scan is given an exemptions file, the document carries a third top-level key next to
+`findings` and `summary`:
+
+```json
+{
+  "exemptions": {
+    "policy_digest": "sha256:…",
+    "exceptions": [ { "control": "…", "justification": "…", "expires_at": "…", "owner": "…", "approved_by": "…" } ],
+    "records": [ { "control": "…", "effect": "applied", "subjects": ["…"] } ]
+  }
+}
+```
+
+`effect` is `applied`, `expired` or `orphan`. Nothing is removed from `findings` or from
+`summary` for being exempted: an exemption moves the **exit code**, never the record. A
+pipeline that wants to refuse exemptions altogether checks that `exemptions` is absent.
+
 ## `assessment` — the typed, defensible document
 
 This is the format built for a compliance chain: one entry per control, with a typed status, a
@@ -131,10 +151,17 @@ piece of evidence, the normative references, and the provenance of the run.
 | `not-evaluated` | 9 |
 <!-- /pepin:gen assessment-counts -->
 
-Four statuses, and the two that the other formats cannot express are `not-applicable` (the
-provider contract declares the control untestable, with its justification) and `not-evaluated`
-(Pépin could not decide, and says on what it stumbled). Their exact meaning is in
-[The assessment model](../concepts/assessment-model.md).
+Four measured statuses, and the two that the other formats cannot express are
+`not-applicable` (the provider contract declares the control untestable, with its
+justification) and `not-evaluated` (Pépin could not decide, and says on what it stumbled). A
+fifth, `exempted`, appears when `--exceptions` supplies a waiver; it is never a compliance.
+Their exact meaning is in [The assessment model](../concepts/assessment-model.md).
+
+`evidence.attribute` and `evidence.source` carry the **provenance of the deciding attribute**
+when Pépin has one: which attribute the control reads, where its value came from (`api:` plus
+the request actually served, `terraform-plan:` plus the plan resource type, or `derived:` plus
+the descriptor element), and on how many resources the source really carried it
+(`observed=n/m`). A `derived:` source is the honest name for a value no API call produced.
 
 One result:
 
@@ -360,6 +387,9 @@ Two consequences for a pipeline:
 2. **Keying on `code`, `labels.check`, `status` and `severity` requires pinning nothing.**
 
 ## Where to go next
+
+- [The normalized inventory](inventory.md) — the shape every one of these documents derives
+  from, and its frozen version.
 
 - [Exit codes](exit-codes.md) — what to gate on.
 - [The assessment model](../concepts/assessment-model.md) — what each status asserts.

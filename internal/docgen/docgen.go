@@ -35,6 +35,8 @@ var injectedPages = []string{
 	"docs/reference/exit-codes.fr.md",
 	"docs/reference/output-formats.md",
 	"docs/reference/output-formats.fr.md",
+	"docs/reference/inventory.md",
+	"docs/reference/inventory.fr.md",
 	"docs/concepts/terraform-vs-live.md",
 	"docs/concepts/terraform-vs-live.fr.md",
 	"docs/contributing/adding-a-provider.md",

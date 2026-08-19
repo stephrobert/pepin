@@ -55,7 +55,8 @@ raises a version number and gets a CHANGELOG line.
 <!-- pepin:gen bundle-manifest -->
 ```json
 {
-  "format": "pepin-assessment-bundle/v1",
+  "format": "pepin-assessment-bundle/v2",
+  "inventory_schema": "pepin-inventory/v1",
   "disclaimer": "This report assesses the configuration of a tenant (customer-side scope). The normative mappings (SecNumCloud, ISO, CIS) are indicative: they are not a proof of qualification or certification, which applies to the cloud service provider.",
   "generated": "<timestamp>",
   "tool": {
@@ -130,6 +131,23 @@ attention:
 Standard `sha256sum` format, so it can be checked without Pépin at all
 (`sha256sum -c checksums.txt`). This is the file a cosign signature covers: signing one file
 that names the digests of the others is what makes a single signature cover the whole bundle.
+
+### `exemptions.json` — only when a waiver was applied
+
+A dossier that does not say what it set aside is not defensible. When a scan is given
+`--exceptions`, the bundle carries a sixth artifact recording the policy as loaded and what
+each entry actually produced (`applied`, `expired`, `orphan`).
+
+It is an artifact like any other: its digest is in `checksums.txt`, so it is covered by the
+signature, and the bundle digest therefore **depends on the exemptions**. A dossier cannot
+drop them without failing its own verification. The manifest carries the summary — how many
+applied, expired, orphan, and the digest of the policy itself — so a verifier sees it before
+opening anything else.
+
+`verify --re-derive` replays the sealed policy at the sealed instant of evaluation. Without
+that, a perfectly faithful bundle would be declared falsified for the sole reason that the
+verifier does not hold the operator's exemptions file, and a valid waiver would appear to
+"expire" between the scan and the verification.
 
 ## Verifying a bundle
 

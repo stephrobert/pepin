@@ -12,6 +12,7 @@ import (
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
+	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/referentiel"
 )
 
@@ -40,6 +41,41 @@ const (
     }
   ]
 }`
+	// L'inventaire du code de sortie 4 : UN écart high, et un seul, pour que la page
+	// montre une dérogation entière plutôt qu'une liste. La règle SSH ouvert à
+	// l'Internet est le cas d'école de l'exception légitime, le bastion.
+	bastionInventory = `{
+  "provider": "scaleway",
+  "resources": [
+    {
+      "provider": "scaleway",
+      "type": "security_group_rule",
+      "id": "vm-bastion",
+      "name": "vm-bastion",
+      "region": "fr-par",
+      "attributes": {
+        "security_group_id": "sg-bastion",
+        "direction": "inbound",
+        "action": "accept",
+        "protocol": "tcp",
+        "port_from": 22,
+        "port_to": 22,
+        "cidrs": ["0.0.0.0/0"],
+        "description": "Acces d administration du bastion"
+      }
+    }
+  ]
+}`
+	// La dérogation qui couvre cet écart : datée, justifiée, attribuée. C'est le
+	// fichier exact que la page fait écrire au lecteur.
+	exceptionsFile = `exceptions:
+  - control: network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
+    resource: sg-bastion
+    justification: "Bastion administre, acces restreint par IP source en amont"
+    expires_at: 2099-12-31
+    owner: platform-security
+    approved_by: security@example.org
+`
 )
 
 // remediationWitness : le contrôle que le guide de remédiation suit d'un scan à l'autre. Il
@@ -69,6 +105,11 @@ type captures struct {
 	empty           Capture
 	tagless         Capture
 	taglessStr      Capture
+	// Dérogations : le même inventaire, avec une exemption valide puis échue, et
+	// l'assessment qui montre le statut `exempted`.
+	exempted        Capture
+	exemptedExpired Capture
+	exemptedAsmt    Capture
 	providers       Capture
 
 	// Référence CLI : une aide par verbe, dans la langue de la page. Les captures y sont
@@ -102,7 +143,8 @@ type captures struct {
 // divergerait à chaque build sans qu'aucun comportement n'ait bougé.
 func (c *captures) all() []*Capture {
 	out := []*Capture{&c.vulnerable, &c.fixed, &c.assessment, &c.assessmentFixed, &c.missingFile, &c.empty,
-		&c.tagless, &c.taglessStr, &c.providers, &c.jsonReport, &c.sarif, &c.oscal,
+		&c.tagless, &c.taglessStr, &c.exempted, &c.exemptedExpired, &c.exemptedAsmt,
+		&c.providers, &c.jsonReport, &c.sarif, &c.oscal,
 		&c.driftLive, &c.outscalePlanJSON,
 		&c.bundle.seal, &c.bundle.verify, &c.bundle.reDerive, &c.bundle.tampered,
 		&c.bundle.redact, &c.bundle.redactRD, &c.bundle.crossVerify}
@@ -131,11 +173,19 @@ func captureAll(root, bin, lang string) (captures, error) {
 	defer func() { _ = os.RemoveAll(tmp) }()
 	emptyPath := filepath.Join(tmp, "empty-inventory.json")
 	taglessPath := filepath.Join(tmp, "tagless-inventory.json")
-	if werr := os.WriteFile(emptyPath, []byte(emptyInventory+"\n"), 0o600); werr != nil {
-		return captures{}, werr
-	}
-	if werr := os.WriteFile(taglessPath, []byte(taglessInventory+"\n"), 0o600); werr != nil {
-		return captures{}, werr
+	bastionPath := filepath.Join(tmp, "bastion-inventory.json")
+	exceptionsPath := filepath.Join(tmp, "exceptions.yaml")
+	expiredPath := filepath.Join(tmp, "exceptions-expired.yaml")
+	for path, body := range map[string]string{
+		emptyPath:      emptyInventory + "\n",
+		taglessPath:    taglessInventory + "\n",
+		bastionPath:    bastionInventory + "\n",
+		exceptionsPath: exceptionsFile,
+		expiredPath:    strings.ReplaceAll(exceptionsFile, "2099-12-31", "2020-01-01"),
+	} {
+		if werr := os.WriteFile(path, []byte(body), 0o600); werr != nil {
+			return captures{}, werr
+		}
 	}
 
 	var c captures
@@ -152,6 +202,12 @@ func captureAll(root, bin, lang string) (captures, error) {
 		{&c.empty, []string{"scan", "scaleway", emptyPath}, []string{"scan", "scaleway", "empty-inventory.json"}},
 		{&c.tagless, []string{"scan", "scaleway", taglessPath}, []string{"scan", "scaleway", "tagless-inventory.json"}},
 		{&c.taglessStr, []string{"scan", "scaleway", taglessPath, "--strict"}, []string{"scan", "scaleway", "tagless-inventory.json", "--strict"}},
+		{&c.exempted, []string{"scan", "scaleway", bastionPath, "--exceptions", exceptionsPath},
+			[]string{"scan", "scaleway", "bastion-inventory.json", "--exceptions", "exceptions.yaml"}},
+		{&c.exemptedExpired, []string{"scan", "scaleway", bastionPath, "--exceptions", expiredPath},
+			[]string{"scan", "scaleway", "bastion-inventory.json", "--exceptions", "exceptions-expired.yaml"}},
+		{&c.exemptedAsmt, []string{"scan", "scaleway", bastionPath, "--exceptions", exceptionsPath, "--format", "assessment"},
+			[]string{"scan", "scaleway", "bastion-inventory.json", "--exceptions", "exceptions.yaml", "--format", "assessment"}},
 		{&c.providers, []string{"provider", "list"}, nil},
 	}
 	for _, s := range steps {
@@ -228,7 +284,7 @@ func (c *captures) captureReference(r Runner, root, tmp string) error {
 	}
 	c.cliSurface = surface
 	c.frozenVersions = map[string]int{}
-	for _, name := range []string{"cli", "findings", "assessment", "bundle"} {
+	for _, name := range []string{"cli", "findings", "assessment", "bundle", "inventory"} {
 		v, _, ferr := loadFrozen(root, name)
 		if ferr != nil {
 			return ferr
@@ -360,6 +416,11 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"exit-run-nothing":          consoleRun(c.empty, Tail(c.empty.Stdout, 6)),
 		"exit-run-strict":           consoleRun(c.taglessStr, Tail(c.taglessStr.Stdout, 6)),
 		"exit-run-medium-plain":     consoleRun(c.tagless, Tail(c.tagless.Stdout, 6)),
+		"fixture-bastion-inventory": Fence("json", bastionInventory),
+		"fixture-exceptions":        Fence("yaml", strings.TrimRight(exceptionsFile, "\n")),
+		"exit-run-exempted":         consoleRun(c.exempted, Tail(c.exempted.Stdout, 14)),
+		"exit-run-expired":          consoleRun(c.exemptedExpired, c.exemptedExpired.Stderr),
+		"assessment-exempted":       assessmentExtract(t, c.withAssessment(c.exemptedAsmt), "exempted", "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22"),
 		"assessment-run":            assessmentRunBlock(c),
 		"assessment-counts":         assessmentCountsTable(t, c),
 		"assessment-fail":           assessmentExtract(t, c, "fail", "objectstorage_bucket_public_access"),
@@ -376,6 +437,8 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"remediation-after":         assessmentControl(driftText(lang), c.assessmentFixed, remediationWitness),
 		"coverage-totals":           m.countsTable(coverageText(lang)),
 		"control-counts":            controlCountsTable(t, m),
+		"inventory-format":          inventoryFormatBlock(t),
+		"inventory-types":           inventoryTypesTable(t),
 	}
 	// Les régions des pages de la vague 2. Elles vivent dans leurs propres fichiers (la
 	// référence CLI, les formats, la comparaison plan/live, le bundle, les fournisseurs)
@@ -508,6 +571,8 @@ func exitCodeTable(t blockStrings, c captures) string {
 		{t.exitNothing, c.empty},
 		{t.exitMediumPlain, c.tagless},
 		{t.exitMediumStrict, c.taglessStr},
+		{t.exitExempted, c.exempted},
+		{t.exitExpired, c.exemptedExpired},
 	}
 	var b strings.Builder
 	b.WriteString("| " + t.colSituation + " | " + t.colCommand + " | " + t.colExit + " |\n|---|---|:-:|\n")
@@ -666,6 +731,34 @@ func generalizeReason(s, placeholder string) string {
 
 // requiredAttrTable rend la table des attributs décisifs telle qu'elle est APPLIQUÉE
 // (assess.RequiredAttrs), pas une paraphrase.
+// inventoryFormatBlock rend la chaîne de format du schéma d'inventaire, telle que le
+// code la publie. Recopiée dans la page, elle vieillirait au premier incrément.
+func inventoryFormatBlock(t blockStrings) string {
+	return Fence("text", model.InventoryFormat)
+}
+
+// inventoryTypesTable énumère le vocabulaire de l'inventaire : chaque type et ses
+// attributs communs. DÉRIVÉ des descripteurs chargés et des collecteurs, donc
+// impossible à laisser diverger — une énumération fausse est pire qu'absente.
+func inventoryTypesTable(t blockStrings) string {
+	cat := genprovider.InventoryCatalogue()
+	types := make([]string, 0, len(cat))
+	for typ := range cat {
+		types = append(types, typ)
+	}
+	sort.Strings(types)
+	var b strings.Builder
+	b.WriteString("| " + t.colType + " | " + t.colAttributes + " |\n|---|---|\n")
+	for _, typ := range types {
+		quoted := make([]string, 0, len(cat[typ]))
+		for _, a := range cat[typ] {
+			quoted = append(quoted, "`"+a+"`")
+		}
+		_, _ = fmt.Fprintf(&b, "| `%s` | %s |\n", typ, strings.Join(quoted, " "))
+	}
+	return b.String()
+}
+
 func requiredAttrTable(t blockStrings) string {
 	req := assess.RequiredAttrs()
 	codes := make([]string, 0, len(req))
@@ -826,6 +919,15 @@ func controlCountsTable(t blockStrings, m Matrix) string {
 		_, _ = fmt.Fprintf(&b, "| `%s` | %d |\n", s, bySeverity[s])
 	}
 	return b.String()
+}
+
+// withAssessment rend une COPIE du jeu de captures dont l'assessment est celui
+// passé en argument. Les extracteurs lisent `c.assessment` ; plusieurs pages ont
+// besoin d'un autre scan (ici celui qui porte une dérogation) sans qu'il faille
+// dupliquer l'extracteur.
+func (c captures) withAssessment(a Capture) captures {
+	c.assessment = a
+	return c
 }
 
 func parseAssessment(c captures) map[string]any {

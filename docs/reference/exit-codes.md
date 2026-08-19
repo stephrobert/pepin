@@ -13,6 +13,7 @@ meaning is a breaking change with its own CHANGELOG line.
 | **1** | `non_conformite` | at least one critical or high deviation |
 | **2** | `erreur` | technical error: the scan could not conclude |
 | **3** | `strict` | nothing was measured (without `--strict`), or medium/low deviations remain with `--strict` |
+| **4** | `derogation` | every remaining critical/high deviation is covered by a dated, attributed exemption (`--exceptions`) |
 <!-- /pepin:gen cli-exit-codes -->
 
 The distinction the whole page turns on: **1 and 3 are verdicts about a tenant, 2 is a failure
@@ -20,7 +21,7 @@ of the measurement itself.** A pipeline may legitimately decide to report a verd
 blocking on it. It may never do that with 2 — a swallowed technical error reports a posture
 nobody measured.
 
-## One table, six situations, six real runs
+## One table, eight situations, eight real runs
 
 Every command in this table was executed by the documentation generator, and the code in the
 last column is the one the process returned.
@@ -34,10 +35,13 @@ last column is the one the process returned.
 | Nothing was measured (empty inventory): **without having to ask for `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Medium/low deviations only, without `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Medium/low deviations only, with `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| Every critical/high deviation is covered by a valid exemption | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
+| The same exemption, lapsed: it no longer applies | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->
 
-The last two rows are the same inventory, with and without `--strict`. The two before them are
-the distinction that matters most, and the next section is about it.
+Rows five and six are the same inventory, with and without `--strict`; the last two are the
+same inventory and the same exemption, valid then lapsed. The two rows that matter most are
+the third and the fourth, and the next section is about them.
 
 ## `0` — compliant
 
@@ -191,6 +195,130 @@ $ echo $?
 `--strict` therefore adds one behaviour only: medium/low deviations become blocking. It does
 not create the "nothing measured" gate, which exists without it.
 
+## `4` — every remaining deviation is under a waiver
+
+A CSPM used in production must allow exceptions. Without them a team disables the control, or
+stops reading the tool — two outcomes worse than the deviation itself. But an exemption must
+never turn a gate green in silence, which is why it has a code of its own.
+
+Give the scan a versioned exemptions file with `--exceptions`:
+
+<!-- pepin:gen fixture-exceptions -->
+```yaml
+exceptions:
+  - control: network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
+    resource: sg-bastion
+    justification: "Bastion administre, acces restreint par IP source en amont"
+    expires_at: 2099-12-31
+    owner: platform-security
+    approved_by: security@example.org
+```
+<!-- /pepin:gen fixture-exceptions -->
+
+Applied to an inventory whose only high deviation is the one it covers:
+
+<!-- pepin:gen fixture-bastion-inventory -->
+```json
+{
+  "provider": "scaleway",
+  "resources": [
+    {
+      "provider": "scaleway",
+      "type": "security_group_rule",
+      "id": "vm-bastion",
+      "name": "vm-bastion",
+      "region": "fr-par",
+      "attributes": {
+        "security_group_id": "sg-bastion",
+        "direction": "inbound",
+        "action": "accept",
+        "protocol": "tcp",
+        "port_from": 22,
+        "port_to": 22,
+        "cidrs": ["0.0.0.0/0"],
+        "description": "Acces d administration du bastion"
+      }
+    }
+  ]
+}
+```
+<!-- /pepin:gen fixture-bastion-inventory -->
+
+<!-- pepin:gen exit-run-exempted -->
+```console
+$ ./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml
+[…]
+  │ CLD-NET-1 │ SSH (port 22) open to the internet │ HIGH │ scaleway │ 1 │
+  ╰───────────┴────────────────────────────────────┴──────┴──────────┴───╯
+──────────────────────────────────────────────────────────────────────────────
+ Summary
+
+ Verdict: NON-COMPLIANT under waiver — 1 critical/high deviation(s), all covered by a dated, attributed exemption
+
+ 🔴 CRITICAL 0   🟠 HIGH 1   🟡 MEDIUM 0   🔵 LOW 0
+──────────────────────────────────────────────────────────────────────────────
+
+EXEMPTIONS APPLIED — accepted deviations, NOT compliant
+  · network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 (sg-bastion)
+    Bastion administre, acces restreint par IP source en amont
+    until 2099-12-31 · owner platform-security · approved by security@example.org
+$ echo $?
+4
+```
+<!-- /pepin:gen exit-run-exempted -->
+
+Read the verdict line: **NON-COMPLIANT under waiver**. The deviation did not disappear, it was
+set aside. The control's status in `--format assessment` is `exempted`, never `pass`; the
+finding stays in `--format json`, in the SARIF and in the severity counts; only the gate moves.
+
+Why 4 rather than 0 or 1. Returning **0** would make an exemption a silent false green, which
+is precisely what the `exempted` status exists to prevent. Returning **1** would make the
+exemption useless, and a team that cannot waive a control deletes it instead. **4** is non-zero
+— nothing passes in silence — and distinct, so a pipeline that chooses to accept it has to
+write the number down, therefore to know it exists.
+
+### An expired exemption does not open the gate
+
+The same file with a date in the past. The exemption stops applying, the deviation is a
+deviation again, and the expiry is reported on standard error:
+
+<!-- pepin:gen exit-run-expired -->
+```console
+$ ./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml
+
+ ██████╗ ███████╗██████╗ ██╗ ███╗   ██╗
+ ██╔══██╗██╔════╝██╔══██╗██║ ████╗  ██║
+ ██████╔╝█████╗  ██████╔╝██║ ██╔██╗ ██║
+ ██╔═══╝ ██╔══╝  ██╔═══╝ ██║ ██║╚██╗██║
+ ██║     ███████╗██║     ██║ ██║ ╚████║
+ ╚═╝     ╚══════╝╚═╝     ╚═╝ ╚═╝  ╚═══╝
+
+ v<version>  · cloud posture scanner (security · compliance)
+
+pepin: ⚠ exemption EXPIRED on 2020-01-01 for network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 / sg-bastion: it no longer applies, the deviation is a deviation again (platform-security)
+
+ⓘ This report assesses the configuration of a tenant (customer-side scope). The normative mappings (SecNumCloud, ISO, CIS) are indicative: they are not a proof of qualification or certification, which applies to the cloud service provider.
+$ echo $?
+1
+```
+<!-- /pepin:gen exit-run-expired -->
+
+An exemption that names a control or a resource which does not exist is reported the same way,
+as an `ORPHAN` — it is the symptom of an exception forgotten after a rename or a removal.
+Under `--strict`, an expired or orphan exemption is enough to fail the gate (code 3): a
+pipeline that asks for strictness is asking for its exemption file to be reviewed.
+
+### Order of precedence
+
+When several situations apply at once, the codes are decided in this order:
+
+1. **2** — a technical error: nothing else is a verdict.
+2. **1** — at least one critical/high deviation **not** covered by a valid exemption.
+3. **3** — nothing was measured (governance aside).
+4. **4** — at least one exemption was applied.
+5. **3** — `--strict` and medium/low deviations remain, or the exemption file is stale.
+6. **0** — none of the above.
+
 ## What does not change the exit code
 
 - **The output format.** `--format json`, `sarif`, `oscal` or `assessment` change what is
@@ -211,6 +339,7 @@ case "$code" in
   0) echo "compliant" ;;
   1) echo "non-compliance: at least one critical/high deviation" ; exit 1 ;;
   3) echo "nothing measured, or medium/low deviations under --strict" ; exit 1 ;;
+  4) echo "deviations remain, all under a dated exemption" ; exit 1 ;;
   2) echo "technical error: the scan could not conclude" ; exit 2 ;;
   *) echo "unexpected code $code" ; exit 2 ;;
 esac

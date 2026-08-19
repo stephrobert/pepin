@@ -1,6 +1,6 @@
 > 🇬🇧 English · [🇫🇷 Français](assessment-model.fr.md)
 
-# The assessment model — `pass`, `fail`, `not-applicable`, `not-evaluated`
+# The assessment model — `pass`, `fail`, `not-applicable`, `not-evaluated`, `exempted`
 
 A posture scanner is only worth its weakest claim. Pépin's weakest claim is `pass`, so this
 page is mostly about what has to be true before Pépin is allowed to say it.
@@ -13,7 +13,7 @@ The captured output on this page is in French: the CLI, the reference and the ru
 by repository convention, and quoting them verbatim is the only way this page can be checked
 against what the tool prints.
 
-## The four statuses in one sentence each
+## The five statuses in one sentence each
 
 | Status | Pépin asserts |
 |---|---|
@@ -21,9 +21,11 @@ against what the tool prints.
 | `fail` | *I looked at this and found a deviation, on this subject, with this evidence.* |
 | `not-applicable` | *This control cannot exist here, and here is the recorded justification.* |
 | `not-evaluated` | *I could not decide, and here is exactly what I was missing.* |
+| `exempted` | *I found a deviation, and someone accepted it — here is who, why and until when.* |
 
-There is no fifth status, and in particular **no silent one**. A control that is implemented
-for the scanned provider always comes back with one of these four.
+The first four are what Pépin **measures**; the fifth is what an organization **decides**, and
+it is never a compliance. There is no sixth status, and in particular **no silent one**: a
+control implemented for the scanned provider always comes back with one of these five.
 
 ## The decision, exactly as the code takes it
 
@@ -387,6 +389,117 @@ wrong: nothing was observed to be broken either.
 
 If you need a gate that refuses uncertainty, use `--strict`, and read the exit codes below.
 
+## `exempted` — set aside, never compliant
+
+The four statuses above are what Pépin *measures*. `exempted` is what an organization
+*decides*: this control fails, someone accepts the risk, here is who, why and until when.
+
+A CSPM used in production has to allow exceptions. Without them, a team disables the control,
+or stops reading the tool — both worse than the deviation. What a CSPM must never allow is the
+silent form of it (`ignore: true`), which is a false green under another name.
+
+### Precondition
+
+A `fail` result whose `(control, subject)` is covered by a **valid** entry of the exemptions
+file passed to `scan --exceptions`. Valid means all five mandatory fields are present and the
+expiry date has not passed at the instant of evaluation.
+
+Only a `fail` can become `exempted`. A `not-evaluated` cannot: waiving a control nobody managed
+to measure would hide a missing measurement behind an exception, which is the same false green
+with one more step.
+
+### What it looks like
+
+<!-- pepin:gen assessment-exempted -->
+```json
+{
+  "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
+  "evidence": {
+    "observed": "Security group \"sg-bastion\": SSH (port 22) accepted from/to the internet.",
+    "proves": [
+      "",
+      "",
+      ""
+    ],
+    "source": "export"
+  },
+  "labels": {
+    "category": "security",
+    "exemption_approved_by": "security@example.org",
+    "exemption_expires_at": "2099-12-31",
+    "exemption_owner": "platform-security",
+    "provider": "scaleway"
+  },
+  "references": [
+    {
+      "framework": "scsl",
+      "id": "CLD-NET-1"
+    },
+    {
+      "framework": "scsl",
+      "id": "CLD-IAM-6"
+    },
+    {
+      "framework": "scsl",
+      "id": "CLD-NET-6"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "4.4"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "12.2"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.20"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.22"
+    },
+    {
+      "framework": "secnumcloud-3.2",
+      "id": "13.2"
+    }
+  ],
+  "remediation": "Restrict the rule to legitimate sources/destinations and ports (administration CIDR, bastion, VPN); never expose a sensitive service to 0.0.0.0/0.",
+  "severity": "high",
+  "status": "exempted",
+  "subject": "sg-bastion",
+  "title": "SSH (port 22) open to the internet",
+  "waiver": {
+    "justification": "Bastion administre, acces restreint par IP source en amont",
+    "until": "2099-12-31"
+  }
+}
+```
+<!-- /pepin:gen assessment-exempted -->
+
+The waiver travels with the result — justification, expiry, owner and approver — because a
+dossier that does not say what it set aside, and on whose authority, is not defensible.
+
+### Consequence
+
+`exempted` is a first-class status, and distinct from `pass` everywhere:
+
+- **In the assessment**, the status string is `exempted`; the OSCAL rendering treats it, like
+  every non-`pass` status, as `not-satisfied`.
+- **In the report**, nothing disappears. The finding stays in `--format json`, in the SARIF and
+  in the severity counts; `summary.conforme` stays false. An exemption removes a deviation from
+  the **gate**, never from the record.
+- **In the terminal**, an `EXEMPTIONS APPLIED — accepted deviations, NOT compliant` block lists
+  each one with its owner, its approver and its date. A discreet exemption is an exemption
+  nobody reviews.
+- **In the verdict**, the headline reads `NON-COMPLIANT under waiver`. It never reads
+  compliant.
+- **In the exit code**, a dedicated **4** — see [exit codes](../reference/exit-codes.md).
+
+An expired exemption stops applying and says so; one naming a control or a subject that does
+not exist is reported as an orphan. Both are printed on standard error, and both fail a
+`--strict` gate.
+
 ## The scenarios, mapped
 
 | Scenario | Status | Where the reason comes from |
@@ -405,7 +518,8 @@ never globally "trustworthy" or not — each control carries its own answer.
 ## Status counts on a real scan
 
 Scanning the deliberately misconfigured plan of the
-[quickstart](../getting-started/quickstart.md) yields all four statuses at once:
+[quickstart](../getting-started/quickstart.md) yields the four measured statuses at once
+(`exempted` appears only when an exemptions file is supplied):
 
 <!-- pepin:gen assessment-counts -->
 | Status | Count |
@@ -430,6 +544,8 @@ measured nothing. Pépin returns **3** for it, and does so **without requiring `
 | Nothing was measured (empty inventory): **without having to ask for `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Medium/low deviations only, without `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Medium/low deviations only, with `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| Every critical/high deviation is covered by a valid exemption | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
+| The same exemption, lapsed: it no longer applies | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->
 
 Governance controls are excluded from that count on purpose. `governance_provider_sovereignty`

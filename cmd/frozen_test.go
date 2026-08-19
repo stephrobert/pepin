@@ -203,6 +203,7 @@ func cliSurface() map[string]any {
 			"non_conformite": exitNonConformite,
 			"erreur":         exitErreur,
 			"strict":         exitStrict,
+			"derogation":     exitDerogation,
 		},
 	}
 }

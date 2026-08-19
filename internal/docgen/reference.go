@@ -175,6 +175,7 @@ func surfaceVersionsTable(t refStrings, versions map[string]int) string {
 		{"findings", t.surfFindings},
 		{"assessment", t.surfAssessment},
 		{"bundle", t.surfBundle},
+		{"inventory", t.surfInventory},
 	}
 	var b strings.Builder
 	b.WriteString("| " + t.colSurface + " | " + t.colWhat + " | " + t.colVersion + " |\n|---|---|:-:|\n")
@@ -218,6 +219,7 @@ type refStrings struct {
 	colSurface, colWhat, colVersion                        string
 	noFlag                                                 string
 	surfCLI, surfFindings, surfAssessment, surfBundle      string
+	surfInventory                                          string
 	exitMeaning                                            map[string]string
 }
 
@@ -232,11 +234,13 @@ func refText(lang string) refStrings {
 			surfFindings:   "forme de `--format json` (`findings` + `summary`)",
 			surfAssessment: "forme du document `--format assessment`",
 			surfBundle:     "forme du bundle de preuve (fichiers, rôles, manifest)",
+			surfInventory:  "forme de l'inventaire normalisé (enveloppe, ressource, types et attributs)",
 			exitMeaning: map[string]string{
 				"conforme":       "aucun écart critical/high, et au moins un contrôle réellement mesuré",
 				"non_conformite": "au moins un écart critical ou high",
 				"erreur":         "erreur technique : le scan n'a pas pu conclure",
 				"strict":         "rien n'a été mesuré (sans `--strict`), ou écarts medium/low restants avec `--strict`",
+				"derogation":     "tout écart critical/high restant est couvert par une dérogation datée et attribuée (`--exceptions`)",
 			},
 		}
 	}
@@ -249,11 +253,13 @@ func refText(lang string) refStrings {
 		surfFindings:   "shape of `--format json` (`findings` + `summary`)",
 		surfAssessment: "shape of the `--format assessment` document",
 		surfBundle:     "shape of the evidence bundle (files, roles, manifest)",
+		surfInventory:  "shape of the normalized inventory (envelope, resource, types and attributes)",
 		exitMeaning: map[string]string{
 			"conforme":       "no critical/high deviation, and at least one control actually measured",
 			"non_conformite": "at least one critical or high deviation",
 			"erreur":         "technical error: the scan could not conclude",
 			"strict":         "nothing was measured (without `--strict`), or medium/low deviations remain with `--strict`",
+			"derogation":     "every remaining critical/high deviation is covered by a dated, attributed exemption (`--exceptions`)",
 		},
 	}
 }

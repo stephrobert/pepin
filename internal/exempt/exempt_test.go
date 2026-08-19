@@ -143,7 +143,10 @@ func TestAnOrphanExemptionIsReported(t *testing.T) {
 			subjects: subjectBastion, controls: knownSSH,
 		},
 		"ressource inconnue": {
-			body: validFile, subjects: map[string]bool{"vm-autre": true}, controls: knownSSH,
+			// Ni dans l'inventaire, ni dans les sujets du rapport : la dérogation ne
+			// désigne rien de ce scan.
+			body:     strings.Replace(validFile, "resource: vm-bastion", "resource: vm-supprimee-en-2024", 1),
+			subjects: map[string]bool{"vm-autre": true}, controls: knownSSH,
 		},
 	}
 	for name, c := range cases {
@@ -183,6 +186,25 @@ func TestOnlyAFailCanBeExempted(t *testing.T) {
 	}
 	if rep.Applied() {
 		t.Error("une dérogation sans écart à écarter se dit appliquée")
+	}
+}
+
+// TestAnExemptionMatchesTheSubjectTheReportPrints : une règle choisit son sujet, et
+// ce n'est pas toujours l'identifiant de la ressource — la règle « SSH ouvert »
+// désigne le GROUPE de sécurité, pas la règle qui le compose. L'humain qui écrit la
+// dérogation recopie ce que le rapport lui montre : c'est donc ce sujet-là qui doit
+// être reconnu, sans quoi une dérogation légitime serait déclarée orpheline.
+func TestAnExemptionMatchesTheSubjectTheReportPrints(t *testing.T) {
+	body := strings.Replace(validFile, "resource: vm-bastion", "resource: sg-bastion", 1)
+	// L'inventaire ne connaît que la ressource `vm-bastion` ; le rapport, lui, nomme
+	// `sg-bastion`.
+	got, rep := Apply(failing(sshControl, "sg-bastion"), policyOf(t, body),
+		at(t, "2026-08-19"), subjectBastion, knownSSH)
+	if got.Results[0].Status != StatusExempted {
+		t.Errorf("statut %q, attendu `exempted` — le sujet du rapport doit faire foi", got.Results[0].Status)
+	}
+	if rep.Count(EffectOrphan) != 0 {
+		t.Error("une dérogation qui nomme le sujet du rapport est déclarée orpheline")
 	}
 }
 

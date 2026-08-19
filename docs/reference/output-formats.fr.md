@@ -26,10 +26,11 @@ verdict. Voir [Codes de sortie](exit-codes.fr.md).
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v2** |
+| `cli` | verbes, drapeaux et codes de sortie | **v3** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
-| `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v1** |
+| `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v2** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v1** |
 <!-- /pepin:gen surface-versions -->
 
 « Gelé » signifie qu'un test échoue quand la forme bouge sans que sa version ait suivi : les
@@ -117,6 +118,25 @@ n'a été collecté ». Le booléen `summary.conforme` ne dit rien non plus de l
 cette distinction compte, et pour une porte de conformité elle compte, lire le code de sortie
 (3 signifie que rien n'a été mesuré) ou utiliser le format assessment.
 
+### `exemptions` : présent seulement avec `--exceptions`
+
+Quand un scan reçoit un fichier de dérogations, le document porte une troisième clé de premier
+niveau, à côté de `findings` et `summary` :
+
+```json
+{
+  "exemptions": {
+    "policy_digest": "sha256:…",
+    "exceptions": [ { "control": "…", "justification": "…", "expires_at": "…", "owner": "…", "approved_by": "…" } ],
+    "records": [ { "control": "…", "effect": "applied", "subjects": ["…"] } ]
+  }
+}
+```
+
+`effect` vaut `applied`, `expired` ou `orphan`. Rien n'est retiré de `findings` ni de `summary`
+au motif d'une dérogation : une exemption déplace le **code de sortie**, jamais le dossier. Un
+pipeline qui veut refuser toute dérogation vérifie que `exemptions` est absent.
+
 ## `assessment` : le document typé et opposable
 
 C'est le format bâti pour une chaîne de conformité : une entrée par contrôle, avec un statut
@@ -131,10 +151,19 @@ typé, une preuve, les références normatives et la provenance de l'exécution.
 | `not-evaluated` | 9 |
 <!-- /pepin:gen assessment-counts -->
 
-Quatre statuts, et les deux que les autres formats ne savent pas exprimer sont
+Quatre statuts mesurés, et les deux que les autres formats ne savent pas exprimer sont
 `not-applicable` (le contrat du fournisseur déclare le contrôle non testable, avec sa
-justification) et `not-evaluated` (Pépin n'a pas pu décider, et dit sur quoi il a buté). Leur
-sens exact est dans [Le modèle d'assessment](../concepts/assessment-model.fr.md).
+justification) et `not-evaluated` (Pépin n'a pas pu décider, et dit sur quoi il a buté). Un
+cinquième, `exempted`, apparaît quand `--exceptions` fournit une dérogation ; il n'est jamais
+une conformité. Leur sens exact est dans
+[Le modèle d'assessment](../concepts/assessment-model.fr.md).
+
+`evidence.attribute` et `evidence.source` portent la **provenance de l'attribut décisif**
+quand Pépin en a une : quel attribut le contrôle lit, d'où sa valeur vient (`api:` suivi de la
+requête réellement servie, `terraform-plan:` suivi du type de ressource du plan, ou `derived:`
+suivi de l'élément de descripteur), et sur combien de ressources la source la portait vraiment
+(`observed=n/m`). Une source `derived:` est le nom honnête d'une valeur qu'aucun appel d'API
+n'a produite.
 
 Un résultat :
 
@@ -362,6 +391,9 @@ Deux conséquences pour un pipeline :
    tout.**
 
 ## Pour aller plus loin
+
+- [L'inventaire normalisé](inventory.fr.md) : la forme dont tous ces documents dérivent, et sa
+  version gelée.
 
 - [Codes de sortie](exit-codes.fr.md) : sur quoi bloquer.
 - [Le modèle d'assessment](../concepts/assessment-model.fr.md) : ce que chaque statut affirme.

@@ -57,7 +57,8 @@ et un changement de cette forme incrémente un numéro de version et reçoit sa 
 <!-- pepin:gen bundle-manifest -->
 ```json
 {
-  "format": "pepin-assessment-bundle/v1",
+  "format": "pepin-assessment-bundle/v2",
+  "inventory_schema": "pepin-inventory/v1",
   "disclaimer": "Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud.",
   "generated": "<timestamp>",
   "tool": {
@@ -133,6 +134,23 @@ Format `sha256sum` standard, donc vérifiable sans Pépin du tout
 (`sha256sum -c checksums.txt`). C'est ce fichier que couvre une signature cosign : signer un
 seul fichier qui nomme les empreintes des autres est ce qui fait qu'une signature couvre tout le
 bundle.
+
+### `exemptions.json` : seulement si une dérogation a été appliquée
+
+Un dossier qui tait ce qu'il a écarté n'est pas opposable. Quand un scan reçoit
+`--exceptions`, le bundle porte un sixième artefact, qui consigne la politique telle qu'elle a
+été chargée et ce que chaque entrée a réellement produit (`applied`, `expired`, `orphan`).
+
+C'est un artefact comme les autres : son empreinte figure dans `checksums.txt`, donc il est
+couvert par la signature, et l'empreinte du bundle **dépend des dérogations**. Un dossier ne
+peut pas les retirer sans échouer à sa propre vérification. Le manifeste en porte le résumé
+(combien appliquées, échues, orphelines, et l'empreinte de la politique elle-même), pour qu'un
+vérificateur le voie avant d'ouvrir quoi que ce soit d'autre.
+
+`verify --re-derive` rejoue la politique scellée à l'instant d'évaluation scellé. Sans cela, un
+bundle parfaitement fidèle serait déclaré falsifié pour la seule raison que le vérificateur ne
+détient pas le fichier de l'opérateur, et une dérogation valide semblerait « expirer » entre le
+scan et la vérification.
 
 ## Vérifier un bundle
 

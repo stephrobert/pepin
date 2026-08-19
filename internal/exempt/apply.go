@@ -93,7 +93,7 @@ func (r Report) Notices() []string {
 				rec.ExpiresAt, rec.Control, subjectSuffix(rec.Resource), rec.Owner))
 		case EffectOrphan:
 			out = append(out, fmt.Sprintf(i18n.T(
-				"dérogation ORPHELINE sur %s%s : %s — exception probablement oubliée, à retirer du fichier",
+				"dérogation ORPHELINE sur %s%s : %s. Exception probablement oubliée, à retirer du fichier",
 				"ORPHAN exemption for %s%s: %s — likely a forgotten exception, remove it from the file"),
 				rec.Control, subjectSuffix(rec.Resource), rec.Reason))
 		case EffectApplied:
@@ -120,11 +120,28 @@ func subjectSuffix(resource string) string {
 //  3. Une dérogation expirée ou orpheline ne change AUCUN statut.
 //
 // `now` est l'instant d'évaluation du scan (pas l'horloge), pour qu'un bundle
-// rejoué rende exactement le même verdict.
+// rejoué rende exactement le même verdict. `subjects` porte les sujets nommables de
+// l'inventaire ; les sujets des résultats s'y ajoutent (voir plus bas).
 func Apply(a assessment.Assessment, pol Policy, now time.Time, subjects, controls map[string]bool) (assessment.Assessment, Report) {
 	rep := Report{PolicyDigest: pol.Digest(), Exemptions: pol.Exemptions}
 	if len(pol.Exemptions) == 0 {
 		return a, Report{}
+	}
+
+	// Les sujets connus : ceux de l'inventaire ET ceux que les résultats portent
+	// réellement. La distinction compte. Une règle choisit son sujet, et ce n'est pas
+	// toujours l'identifiant de la ressource : la règle SSH ouvert désigne le GROUPE de
+	// sécurité, pas la règle qui le compose. Or `resource:` est écrit par un humain qui
+	// recopie ce que le rapport lui montre — c'est donc le sujet du rapport qui fait foi,
+	// sans quoi une dérogation parfaitement légitime serait déclarée orpheline.
+	known := make(map[string]bool, len(subjects)+len(a.Results))
+	for s := range subjects {
+		known[s] = true
+	}
+	for _, r := range a.Results {
+		if r.Subject != "" {
+			known[r.Subject] = true
+		}
 	}
 
 	// Tri des dérogations en trois tas, AVANT de toucher au moindre résultat.
@@ -135,7 +152,7 @@ func Apply(a assessment.Assessment, pol Policy, now time.Time, subjects, control
 			rep.Records = append(rep.Records, Record{Exemption: e, Effect: EffectOrphan,
 				Reason: fmt.Sprintf(i18n.T(
 					"aucun contrôle « %s » au référentiel", "no control %q in the reference"), e.Control)})
-		case e.Resource != "" && !subjects[e.Resource]:
+		case e.Resource != "" && !known[e.Resource]:
 			rep.Records = append(rep.Records, Record{Exemption: e, Effect: EffectOrphan,
 				Reason: fmt.Sprintf(i18n.T(
 					"aucune ressource « %s » dans l'inventaire évalué", "no resource %q in the assessed inventory"), e.Resource)})

@@ -78,7 +78,8 @@ func (d Date) Time() (time.Time, error) {
 type Exemption struct {
 	// Control : le code de contrôle agnostique (celui du référentiel commun).
 	Control string `yaml:"control" json:"control"`
-	// Resource : l'identifiant ou le nom de la ressource visée. Vide = tous les
+	// Resource : le SUJET tel que le rapport le nomme (c'est ce qu'un humain y
+	// recopie), ou l'identifiant/nom d'une ressource de l'inventaire. Vide = tous les
 	// sujets de ce contrôle sur cette cible — une portée large, donc à justifier.
 	Resource string `yaml:"resource" json:"resource,omitempty"`
 	// Justification : ce que lira l'auditeur.
@@ -142,7 +143,7 @@ func Load(path string) (Policy, error) {
 	}
 	if len(problems) > 0 {
 		return Policy{}, fmt.Errorf(i18n.T(
-			"dérogations %s : %d champ(s) obligatoire(s) manquant ou invalide —\n%s",
+			"dérogations %s : %d champ(s) obligatoire(s) manquant ou invalide :\n%s",
 			"exemptions %s: %d mandatory field(s) missing or invalid —\n%s"),
 			path, len(problems), strings.Join(problems, "\n"))
 	}

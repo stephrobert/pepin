@@ -108,7 +108,7 @@ d'un contrôle qui fait foi.
 - [Lire un scan](docs/getting-started/understanding-a-scan.fr.md) : un run réel, commenté
   ligne à ligne, jusqu'au code de sortie.
 - [Le modèle d'assessment](docs/concepts/assessment-model.fr.md) : ce que `pass`, `fail`,
-  `not-applicable` et `not-evaluated` affirment réellement.
+  `not-applicable`, `not-evaluated` et `exempted` affirment réellement.
 - [Matrice de couverture](docs/coverage.fr.md) : ce qui est mesurable, par fournisseur et par
   source. **Générée** depuis le référentiel et les descripteurs, vérifiée en CI.
 - [Catalogue des contrôles](docs/controls/index.fr.md) : une page générée par contrôle,
@@ -122,7 +122,8 @@ d'un contrôle qui fait foi.
   authentification, appels d'API, permissions minimales en lecture seule, couverture.
 - Référence : [CLI](docs/reference/cli.fr.md) ·
   [Codes de sortie](docs/reference/exit-codes.fr.md) ·
-  [Formats de sortie](docs/reference/output-formats.fr.md).
+  [Formats de sortie](docs/reference/output-formats.fr.md) ·
+  [Inventaire normalisé](docs/reference/inventory.fr.md).
 - Guides : [Remédiation](docs/guides/remediation.fr.md) ·
   [Le bundle de preuve](docs/guides/evidence-bundles.fr.md) ·
   [GitHub Actions](docs/guides/github-actions.fr.md) ·
