@@ -62,6 +62,45 @@ func RemediationCoverages(root string) ([]RemediationCoverage, error) {
 	return out, nil
 }
 
+// RemediationProofs rend, par fournisseur puis par code, le chemin RELATIF À LA RACINE de la
+// preuve de remédiation déposée : le dossier du module Terraform, ou la note Markdown. Sert au
+// catalogue des contrôles, qui lie la preuve plutôt que d'affirmer qu'elle existe.
+func RemediationProofs(root string) (map[string]map[string]string, error) {
+	base := filepath.Join(root, "references", "remediation")
+	out := map[string]map[string]string{}
+	for code, ctl := range referentiel.All() {
+		for _, p := range ctl.Fournisseurs {
+			path, err := proofPath(base, p, code)
+			if err != nil {
+				return nil, err
+			}
+			if path == "" {
+				continue
+			}
+			if out[p] == nil {
+				out[p] = map[string]string{}
+			}
+			out[p][code] = path
+		}
+	}
+	return out, nil
+}
+
+// proofPath rend le chemin de la preuve, ou "" s'il n'y en a pas. Même règle d'existence que
+// hasProof : les deux s'appuient sur la MÊME lecture, sans quoi la page pourrait lier une
+// preuve que le compteur ignore.
+func proofPath(base, provider, code string) (string, error) {
+	rel := "references/remediation/" + provider + "/" + code
+	if _, err := os.Stat(filepath.Join(base, provider, code+".md")); err == nil {
+		return rel + ".md", nil
+	}
+	ok, err := hasProof(base, provider, code)
+	if err != nil || !ok {
+		return "", err
+	}
+	return rel, nil
+}
+
 // hasProof applique la règle de `check-remediation` : une note Markdown, ou un dossier
 // contenant au moins un `.tf`.
 func hasProof(base, provider, code string) (bool, error) {

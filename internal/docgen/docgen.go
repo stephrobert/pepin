@@ -13,6 +13,12 @@ import (
 // de la prose (elle explique, elle argumente) ; ce qui s'y périme — sorties de commande,
 // tableaux dérivés du référentiel — est injecté.
 var injectedPages = []string{
+	// La feuille de route publique vit à la racine, à côté du README : c'est une page
+	// produit, pas une page de docs/. Elle ne porte que des chiffres GÉNÉRÉS (référentiel,
+	// descripteurs, binaire), pour qu'une roadmap ne puisse pas annoncer une couverture
+	// que le dépôt n'a pas.
+	"ROADMAP.md",
+	"ROADMAP.fr.md",
 	"docs/getting-started/quickstart.md",
 	"docs/getting-started/quickstart.fr.md",
 	"docs/getting-started/understanding-a-scan.md",
@@ -31,6 +37,10 @@ var injectedPages = []string{
 	"docs/reference/output-formats.fr.md",
 	"docs/concepts/terraform-vs-live.md",
 	"docs/concepts/terraform-vs-live.fr.md",
+	"docs/contributing/adding-a-provider.md",
+	"docs/contributing/adding-a-provider.fr.md",
+	"docs/guides/remediation.md",
+	"docs/guides/remediation.fr.md",
 	"docs/guides/evidence-bundles.md",
 	"docs/guides/evidence-bundles.fr.md",
 	"docs/guides/github-actions.md",
@@ -51,6 +61,10 @@ var generatedPages = []string{
 	"docs/coverage.fr.md",
 }
 
+// fullyGeneratedDirs : les dossiers dont TOUT le contenu Markdown est produit par le
+// générateur. Ce qui s'y trouve sans y être produit est une orpheline, et se supprime.
+var fullyGeneratedDirs = []string{controlsDir}
+
 // blockRe repère une région générée :
 //
 //	<!-- pepin:gen id -->
@@ -67,6 +81,14 @@ var blockRe = regexp.MustCompile(`(?s)<!-- pepin:gen ([a-z0-9-]+) -->\n.*?<!-- /
 // pas de version « de vérification » qui pourrait diverger de la version « de production ».
 func Generate(root, bin string) (map[string]string, error) {
 	rem, err := RemediationCoverages(root)
+	if err != nil {
+		return nil, err
+	}
+	proofs, err := RemediationProofs(root)
+	if err != nil {
+		return nil, err
+	}
+	families, err := familyOrder()
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +117,14 @@ func Generate(root, bin string) (map[string]string, error) {
 	for _, page := range generatedPages {
 		lang := langOf(page)
 		out[page] = matrixByLang[lang].coveragePage(lang)
+	}
+	// Le catalogue des contrôles : une page par contrôle et par langue, plus son index.
+	// La liste des pages n'est pas énumérée ici — elle EST le référentiel, donc un contrôle
+	// ajouté produit sa page sans qu'on pense à l'inscrire quelque part.
+	for _, lang := range []string{"fr", "en"} {
+		for page, body := range controlPages(lang, matrixByLang[lang], proofs, families) {
+			out[page] = body
+		}
 	}
 	for _, page := range injectedPages {
 		lang := langOf(page)
@@ -139,7 +169,57 @@ func Write(root, bin string) ([]string, error) {
 		}
 		changed = append(changed, p)
 	}
-	return changed, nil
+	removed, err := prune(root, want)
+	if err != nil {
+		return nil, err
+	}
+	return append(changed, removed...), nil
+}
+
+// prune supprime, dans les dossiers ENTIÈREMENT générés, les pages que le générateur ne
+// produit plus. Sans cela, retirer un contrôle du référentiel laisserait sa page en place :
+// le test de fraîcheur compare le contenu de ce qu'il génère et ne verrait jamais l'orpheline,
+// c'est-à-dire une page qui décrit un contrôle que le produit n'a plus.
+func prune(root string, want map[string]string) ([]string, error) {
+	var removed []string
+	for _, dir := range fullyGeneratedDirs {
+		stale, err := stalePages(root, dir, want)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range stale {
+			if rerr := os.Remove(filepath.Join(root, p)); rerr != nil {
+				return nil, fmt.Errorf("suppression de %s : %w", p, rerr)
+			}
+			removed = append(removed, "(supprimé) "+p)
+		}
+	}
+	return removed, nil
+}
+
+// stalePages rend les pages présentes sur le disque dans un dossier entièrement généré que le
+// générateur ne produit pas. Exposé au test de fraîcheur, qui doit signaler l'orpheline plutôt
+// que de la corriger en silence.
+func stalePages(root, dir string, want map[string]string) ([]string, error) {
+	entries, err := os.ReadDir(filepath.Join(root, dir))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("lecture de %s : %w", dir, err)
+	}
+	var stale []string
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
+			continue
+		}
+		page := dir + "/" + e.Name()
+		if _, ok := want[page]; !ok {
+			stale = append(stale, page)
+		}
+	}
+	sort.Strings(stale)
+	return stale, nil
 }
 
 // inject remplace chaque région générée d'une page par son bloc. Un identifiant inconnu, ou

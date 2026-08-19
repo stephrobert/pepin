@@ -5,7 +5,7 @@
 For a posture scanner, a known limitation is part of the trust contract. An unstated one gets
 discovered at the worst possible moment: during an audit.
 
-This page states what Pépin **cannot** measure, and why. It applies to **v0.1.0** and is
+This page states what Pépin **cannot** measure, and why. It applies to **v0.2.0** and is
 regenerated with the code: the tables below are computed from the reference, the provider
 descriptors and the `pass` lock — see [How this page stays true](#how-this-page-stays-true).
 
@@ -167,16 +167,19 @@ documented note. Today:
 <!-- pepin:gen remediation-coverage -->
 | Provider | Remediation proofs |
 |---|---:|
-| exoscale | 4 / 26 |
+| exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 40 |
 | scaleway | 0 / 25 |
-| **Total** | **4 / 95** |
+| **Total** | **26 / 95** |
 <!-- /pepin:gen remediation-coverage -->
 
-This is deliberately **not** wired into `mise run validate`. A gate that is permanently red is
-a gate people learn to ignore; it will be reconnected one provider at a time, starting with the
-first to reach 100 %. Run `mise run check-remediation` for the per-control list.
+This is deliberately **not** wired into `mise run validate`: over all providers the count is
+still partial, and a gate that is permanently red is a gate people learn to ignore. Exoscale is
+the first provider at 100 %, and a test holds that ground —
+`TestExoscaleRemediationCoverageStaysComplete` fails when an exoscale control lands without its
+proof. The other providers join that guard as they reach 100 %. Run
+`mise run check-remediation` for the per-control list.
 
 **Consequence for you:** every finding tells you what to do, in prose. Not every finding comes
 with a tested Terraform module proving it.
@@ -223,6 +226,19 @@ the shared `scankit` module (`[running, persistent, reboot-survivable]`). That n
 to host hardening, not to cloud posture: Pépin never fills it, and it serialises as
 `["", "", ""]`. Consumers should ignore it; it is not a Pépin signal.
 
+### The `live` column of the coverage matrix is derived, not observed
+
+The coverage matrix is **computed from the descriptors**: it states what a provider's live
+collection spec and Terraform mapping are declared to project, and what the API contract marks
+as verified. It is not the record of an observed run: no live scan produces that column, and
+nothing in this repository's automated checks calls a provider API.
+
+That distinction matters when reading a green cell in the `live` column. It means "this
+descriptor projects the deciding attribute, and the contract is verified", not "an API returned
+this field during a measured run". Should the two diverge on your tenant, the scan says so with
+a `not-evaluated` and its reason, never with a silent green — but the matrix itself is a
+statement of intent by the descriptor, not evidence.
+
 ### Nothing is measured between two runs
 
 A result describes an instant. Pépin has no agent, no watch mode and no history. Continuous
@@ -238,7 +254,7 @@ are not silently reported as passing. `referentiel/gaps.md` tracks what is triag
 
 ## Resolved limitations
 
-None yet: this page is published with v0.1.0. When a limitation is lifted, it is removed from
+None yet: this page is published with v0.2.0. When a limitation is lifted, it is removed from
 the sections above and recorded here with the version that lifted it, so that a reader of an
 older report can tell what was true at the time.
 

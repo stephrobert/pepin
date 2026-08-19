@@ -5,7 +5,7 @@
 Pour un scanner de posture, une limite connue fait partie du contrat de confiance. Une limite
 tue se découvre au pire moment : pendant un audit.
 
-Cette page dit ce que Pépin **ne sait pas** mesurer, et pourquoi. Elle porte sur la **v0.1.0**
+Cette page dit ce que Pépin **ne sait pas** mesurer, et pourquoi. Elle porte sur la **v0.2.0**
 et se régénère avec le code : les tableaux ci-dessous sont calculés depuis le référentiel, les
 descripteurs de fournisseurs et le verrou du `pass` (voir
 [Comment cette page reste vraie](#comment-cette-page-reste-vraie)).
@@ -167,17 +167,19 @@ note documentée. À ce jour :
 <!-- pepin:gen remediation-coverage -->
 | Fournisseur | Preuves de remédiation |
 |---|---:|
-| exoscale | 4 / 26 |
+| exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 40 |
 | scaleway | 0 / 25 |
-| **Total** | **4 / 95** |
+| **Total** | **26 / 95** |
 <!-- /pepin:gen remediation-coverage -->
 
-Ce contrôle n'est **délibérément pas** branché sur `mise run validate`. Une porte
-perpétuellement rouge est une porte qu'on apprend à ignorer ; elle sera rebranchée fournisseur
-par fournisseur, en commençant par le premier à atteindre 100 %. `mise run check-remediation`
-donne la liste par contrôle.
+Ce contrôle n'est **délibérément pas** branché sur `mise run validate` : tous fournisseurs
+confondus le compte reste partiel, et une porte perpétuellement rouge est une porte qu'on
+apprend à ignorer. Exoscale est le premier fournisseur à 100 %, et un test tient cet acquis :
+`TestExoscaleRemediationCoverageStaysComplete` échoue dès qu'un contrôle exoscale arrive sans
+sa preuve. Les autres fournisseurs rejoindront cette garde en atteignant 100 %.
+`mise run check-remediation` donne la liste par contrôle.
 
 **Conséquence pour vous :** chaque finding vous dit quoi faire, en prose. Tous les findings ne
 sont pas accompagnés d'un module Terraform testé qui le prouve.
@@ -225,6 +227,20 @@ module partagé `scankit` (`[running, persistent, reboot-survivable]`). Cette no
 au durcissement d'hôte, pas à la posture cloud : Pépin ne la renseigne jamais, et elle se
 sérialise en `["", "", ""]`. Les consommateurs doivent l'ignorer, ce n'est pas un signal Pépin.
 
+### La colonne « live » de la matrice de couverture est dérivée, jamais observée
+
+La matrice de couverture est **calculée depuis les descripteurs** : elle dit ce que la spec de
+collecte live et le mapping Terraform d'un fournisseur sont déclarés projeter, et ce que le
+contrat d'API marque comme vérifié. Elle n'est pas le compte rendu d'une exécution observée :
+aucun scan live ne produit cette colonne, et aucun contrôle automatisé de ce dépôt n'appelle
+l'API d'un fournisseur.
+
+La nuance compte à la lecture d'une case verte dans la colonne « live ». Elle signifie « ce
+descripteur projette l'attribut décisif, et le contrat est vérifié », pas « une API a rendu ce
+champ lors d'une exécution mesurée ». Si les deux divergeaient sur votre tenant, le scan le
+dirait par un `not-evaluated` accompagné de son motif, jamais par un vert silencieux ; mais la
+matrice, elle, est une déclaration du descripteur, pas une preuve.
+
 ### Rien n'est mesuré entre deux runs
 
 Un résultat décrit un instant. Pépin n'a ni agent, ni mode veille, ni historique. La posture
@@ -242,7 +258,7 @@ cohérence avec l'index SCSL gelé.
 
 ## Limites levées
 
-Aucune à ce jour : cette page paraît avec la v0.1.0. Quand une limite est levée, elle sort des
+Aucune à ce jour : cette page paraît avec la v0.2.0. Quand une limite est levée, elle sort des
 sections ci-dessus et vient ici avec la version qui l'a levée, pour qu'un lecteur d'un rapport
 plus ancien sache ce qui était vrai à l'époque.
 

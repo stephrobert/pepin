@@ -33,11 +33,13 @@ description = "Cohérence des référentiels (codes ↔ règles ↔ index SCSL g
 run = "go test ./referentiel/ -run 'Control|Rule|SCSL|Catalogue|Lookup|Coherent|Finding' -v"
 
 # check-remediation est volontairement DÉCOUPLÉ de `validate` : la couverture est
-# aujourd'hui de 4/95 (exoscale 4/26, outscale 0/40, scaleway 0/25, kubernetes 0/4),
+# aujourd'hui de 26/95 (exoscale 26/26, outscale 0/40, scaleway 0/25, kubernetes 0/4),
 # et une porte rouge en permanence est une porte qu'on apprend à ignorer.
-# CONDITION DE REBRANCHEMENT (`depends = [..., "check-remediation"]`) : un provider
-# à 100 %, puis les suivants au fil de l'eau. À NE PAS confondre avec la remédiation
-# TEXTUELLE portée par chaque finding, elle garantie par
+# La condition « un provider à 100 % » est TENUE par exoscale, et l'acquis est gardé par
+# TestExoscaleRemediationCoverageStaysComplete (internal/docgen), qui tourne dans
+# `mise run test` : un contrôle exoscale sans preuve casse la CI. Les fournisseurs
+# suivants rejoindront cette garde en atteignant 100 %. À NE PAS confondre avec la
+# remédiation TEXTUELLE portée par chaque finding, elle garantie par
 # TestEveryFindingCarriesRemediation (referentiel/validate_test.go).
 [tasks.check-remediation]
 description = "Présence d'une preuve de remédiation par (contrôle, fournisseur) sous references/remediation/"

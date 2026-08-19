@@ -1,12 +1,16 @@
 # Roadmap pepin — vers la parité pavois + un fond opposable
 
-> Document de travail interne (FR). La version publique `ROADMAP.md` (EN, directionnelle)
-> sera dérivée de celui-ci au jalon **P0**. Ici on garde les verdicts d'audit bruts
-> (notes, faux verts, bugs) qui n'ont pas vocation à finir dans un README public.
+> **Document de travail interne, en français, hors documentation produit.** La feuille
+> de route publique est [`ROADMAP.md`](../ROADMAP.md) (anglais primaire, directionnelle,
+> sans verdict d'audit) ; les limites qui concernent un utilisateur vivent dans
+> [`docs/known-limitations.md`](../docs/known-limitations.md). Ce fichier garde ce qui
+> n'a pas sa place dans l'une ni dans l'autre : verdicts d'audit bruts, faux verts
+> constatés, bugs moteur, notes de séquencement. Rien ici n'est un engagement, et rien
+> ici n'est vérifié par la CI.
 >
-> Consolide : le plan de parité produit (`~/.claude/plans/flickering-rolling-heron.md`)
-> + les **5 audits** de juillet 2026 (complétude du corpus + Exoscale + Outscale +
-> Scaleway, relus champ par champ contre les SDK/OAPI officiels).
+> Consolide les **5 audits** de juillet 2026 (complétude du corpus + Exoscale + Outscale
+> + Scaleway, relus champ par champ contre les SDK/OAPI officiels) et le plan de parité
+> produit.
 
 ## Avancement (journal)
 

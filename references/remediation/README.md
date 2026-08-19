@@ -1,11 +1,12 @@
 # Preuves de remédiation
 
-> **État : chantier en cours, couverture partielle.** 4 preuves sur 95 attendues
-> (exoscale 4/26 · outscale 0/40 · scaleway 0/25 · kubernetes 0/4). Le chiffre à
-> jour vient de `mise run check-remediation`. Ce qui suit décrit la **cible** et la
-> forme attendue d'une preuve — pas l'état du répertoire. La remédiation *textuelle*,
-> elle, est garantie : chaque finding émis en porte une, et un test du référentiel
-> le vérifie.
+> **État : un fournisseur complet, les autres à faire.** 26 preuves sur 95 attendues
+> (exoscale **26/26** · outscale 0/40 · scaleway 0/25 · kubernetes 0/4). Le chiffre à
+> jour vient de `mise run check-remediation`. Exoscale ne peut plus régresser :
+> `TestExoscaleRemediationCoverageStaysComplete` (`internal/docgen`) échoue si un
+> contrôle exoscale arrive sans sa preuve. Ce qui suit décrit la forme attendue d'une
+> preuve. La remédiation *textuelle*, elle, est garantie pour tous : chaque finding
+> émis en porte une, et un test du référentiel le vérifie.
 
 Cible : pour **chaque règle** (`code` agnostique) et **chaque provider** qui
 l'implémente, un artefact qui montre **comment être conforme** : de préférence du **Terraform
@@ -54,8 +55,9 @@ Chaque fichier rappelle, en commentaire de tête : le `code`, l'exigence SCSL
 `mise run check-remediation` liste, par provider, les règles **sans** preuve de
 remédiation, et rend 1 s'il en manque.
 
-Ce contrôle est **volontairement découplé** de `mise run validate` : le rebrancher
-aujourd'hui rendrait la porte de qualité rouge en permanence, ce qui la ferait
-ignorer. Condition de rebranchement (`depends` dans `mise.toml`) : couverture à
-100 % pour au moins un provider complet, puis pour les autres au fil de l'eau. Le miroir non conforme de ces
-montages vit dans `examples/<provider>/terraform/` (fixtures de test).
+Ce contrôle est **volontairement découplé** de `mise run validate` : tous fournisseurs
+confondus il est encore rouge, et le rebrancher rendrait la porte de qualité rouge en
+permanence, ce qui la ferait ignorer. La garde existe donc là où elle peut rester
+verte : `TestExoscaleRemediationCoverageStaysComplete` tient l'acquis d'exoscale, et
+chaque fournisseur rejoindra cette garde le jour où il atteindra 100 %. Le miroir non
+conforme de ces montages vit dans `examples/<provider>/terraform/` (fixtures de test).

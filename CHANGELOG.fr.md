@@ -24,6 +24,25 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Vague 3 de la documentation : le catalogue des contrôles est généré, et le
+  projet s'explique.** Une page générée par contrôle sous `docs/controls/` (ce qu'il
+  conclut, depuis quelle source, avec son motif quand il ne peut pas conclure), un
+  guide de remédiation qui montre le même contrôle passer de `fail` à `pass` sur les
+  plans d'exemple du dépôt, une page d'architecture qui argumente le choix central
+  (un seul jeu de règles commun, la source est ce qui change d'un cloud à l'autre) et
+  deux guides de contribution, ajouter un contrôle et ajouter un fournisseur, chacun
+  terminé par une checklist utilisable telle quelle. Une `ROADMAP.md` publique
+  remplace le document de travail interne qui vivait dans la documentation produit.
+
+- **Exoscale est le premier fournisseur dont les preuves de remédiation déployables
+  sont complètes** : 26 sur 26, ce qui porte le dépôt de 4 à 26 sur 95. Vingt modules
+  Terraform autonomes, vérifiés par `terraform init -backend=false` et
+  `terraform validate` contre le schéma réel du provider, plus deux notes documentées
+  là où Terraform ne peut pas exprimer la correction (souveraineté du fournisseur,
+  MFA d'un compte). `TestExoscaleRemediationCoverageStaysComplete` casse désormais la
+  CI quand un contrôle exoscale arrive sans sa preuve ; les autres fournisseurs
+  restent hors de cette garde jusqu'à ce qu'ils atteignent 100 %.
+
 - **Vague 2 de la documentation produit : dix pages, générées partout où elles
   peuvent l'être.** Une référence CLI bâtie depuis la surface gelée et depuis de
   vraies exécutions de `--help`, le contrat des codes de sortie montré comme six
