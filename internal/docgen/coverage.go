@@ -70,6 +70,11 @@ type Row struct {
 	Severity string
 	Family   string
 	SCSL     []string
+	// Declared est la liste `fournisseurs:` du référentiel, telle quelle. Elle ne se déduit
+	// PAS des cases : une non-applicabilité justifiée est rendue avant la porte de
+	// déclaration, donc une case ∅ peut porter sur un fournisseur qui n'a jamais déclaré le
+	// contrôle. Compter les couples depuis les cases surestimait le périmètre.
+	Declared []string
 	// Cells est indexé par fournisseur puis par source.
 	Cells map[string]map[Source]Cell
 	// RequiredAttrs liste les attributs dont la présence conditionne un « pass » (table
@@ -168,6 +173,7 @@ func BuildMatrix(root, lang string) (Matrix, error) {
 			Severity:      ctl.Severite,
 			Family:        ctl.Famille,
 			SCSL:          ctl.Scsl,
+			Declared:      ctl.Fournisseurs,
 			Type:          genprovider.ControlType(code),
 			RequiredAttrs: required[code],
 			Cells:         map[string]map[Source]Cell{},
