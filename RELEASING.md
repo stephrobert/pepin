@@ -82,9 +82,17 @@ downloaded.
 > **The preflight is a local check, not a gate.** Nothing ties the tag to having
 > run it: `git tag && git push` publishes a full signed, attested release on its
 > own. `release.yml` therefore replays the offline-verifiable gates in a `gate`
-> job that every publishing job depends on. Closing the remaining gap is a
-> **GitHub tag ruleset** on `v*` restricting tag creation to maintainers — repo
-> configuration, so it lives outside this repository and has to be set there.
+> job that every publishing job depends on. The other half — who may create a
+> tag — is repository configuration and cannot live in the repository, so it is
+> applied once, from here:
+>
+> ```bash
+> mise run tag-ruleset            # or: tools/release/apply-tag-ruleset.sh owner/repo
+> ```
+>
+> It restricts creating, deleting and moving `v*` tags to administrators, so a
+> tag pushed by anyone else is refused *before* release.yml starts. Run it once
+> the remote exists; it is idempotent.
 
 ## What the tag triggers
 

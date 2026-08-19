@@ -63,6 +63,10 @@ run = "python3 scripts/scsl-drift.py --update"
 description = "Régénère les fixtures de surface gelée (cmd/testdata/frozen/) après un changement délibéré ; incrémenter ensuite la constante de version de la surface"
 run = "PEPIN_UPDATE_FROZEN=1 go test ./cmd/ -run 'Frozen|Fixture|VersionBump' -count=1"
 
+[tasks.tag-ruleset]
+description = "Pose le ruleset GitHub qui restreint la création des tags v* aux admins"
+run = "tools/release/apply-tag-ruleset.sh"
+
 [tasks.release-check]
 description = "Tout ce qui doit être vrai avant qu'un tag existe : mise run release-check -- vX.Y.Z"
 run = "tools/release/preflight.sh"

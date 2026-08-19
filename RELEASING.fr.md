@@ -83,9 +83,17 @@ téléchargée.
 > **Le preflight est un contrôle local, pas une porte.** Rien ne relie le tag à
 > son exécution : `git tag && git push` publie à lui seul une release complète,
 > signée et attestée. `release.yml` rejoue donc les portes vérifiables hors ligne
-> dans un job `gate` dont dépend tout ce qui publie. Il reste à fermer l'écart
-> par un **ruleset GitHub** sur les tags `v*`, restreignant leur création aux
-> mainteneurs : c'est de la configuration de dépôt, donc hors de ce dépôt.
+> dans un job `gate` dont dépend tout ce qui publie. L'autre moitié — QUI a le
+> droit de poser un tag — est de la configuration de dépôt et ne peut pas vivre
+> dans le dépôt : elle s'applique une fois, depuis ici :
+>
+> ```bash
+> mise run tag-ruleset            # ou : tools/release/apply-tag-ruleset.sh owner/repo
+> ```
+>
+> Le ruleset restreint la création, la suppression et le déplacement des tags
+> `v*` aux administrateurs : un tag posé par quelqu'un d'autre est refusé *avant*
+> que release.yml ne démarre. À lancer dès que le remote existe ; idempotent.
 
 ## Ce que le tag déclenche
 

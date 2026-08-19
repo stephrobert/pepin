@@ -4,6 +4,13 @@
 #   2. cooldown d'âge : refuse toute version publiée il y a moins de OSV_MIN_AGE_DAYS
 #      jours (par défaut 14) — la plupart des paquets malveillants sont classés MAL-
 #      par OSV.dev dans les 24–72 h ; le cooldown laisse passer la fenêtre la plus risquée.
+#      EXEMPTÉS : les modules de INTERNAL_MODULE_PREFIXES. Le cooldown couvre le cas
+#      d'un dépôt TIERS compromis, dont on apprend la compromission par OSV. Pour nos
+#      propres modules, la version vient d'un commit relu, dont la CI est verte et
+#      qu'on vient de taguer soi-même : attendre 14 jours n'ajoute aucune information,
+#      et bloquerait la propagation d'un correctif de sécurité (cas réel : scankit
+#      v0.2.2, qui fermait une exfiltration via les politiques). Le scan OSV, lui,
+#      reste appliqué à TOUS les modules, sans exception.
 #
 # Go n'a pas d'équivalent natif à npm `min-release-age` / uv `--exclude-newer` :
 # l'âge est vérifié via le module proxy (proxy.golang.org .../@v/<ver>.info → champ Time).
@@ -14,6 +21,8 @@
 set -uo pipefail
 
 MIN_AGE_DAYS="${OSV_MIN_AGE_DAYS:-14}"
+# Modules publiés par le projet lui-même (préfixes, un par ligne).
+INTERNAL_MODULE_PREFIXES="${INTERNAL_MODULE_PREFIXES:-github.com/stephrobert/}"
 fail=0
 msg=""
 
@@ -29,6 +38,16 @@ fi
 # 2) Cooldown d'âge pour chaque module ajouté (module@version).
 for spec in "$@"; do
   case "$spec" in *@*) ;; *) continue ;; esac
+  # Module interne : cooldown non applicable (cf. en-tête). Le scan OSV ci-dessus
+  # l'a déjà couvert, lui.
+  skip=0
+  for pfx in $INTERNAL_MODULE_PREFIXES; do
+    case "$spec" in "$pfx"*) skip=1 ;; esac
+  done
+  if [ "$skip" -eq 1 ]; then
+    printf '  · cooldown non applicable à %s (module interne)\n' "${spec%%@*}" >&2
+    continue
+  fi
   age="$(python3 - "$spec" <<'PY'
 import sys, json, datetime, urllib.request
 spec = sys.argv[1]
