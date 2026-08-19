@@ -152,7 +152,9 @@ control, not a default to inherit.
 A rule that does not fire for lack of data must produce **`not-evaluated`**, never
 `pass`. This is not a nuance; it is the difference between an audit and a reassurance.
 An internal audit of this repository found **fourteen** controls concluding "compliant"
-without ever having read the deciding attribute. A false green is invisible by
+without ever having read the deciding attribute. Thirteen were fixed by adding an
+entry to `requiredAttr` — count them under its post-audit comment; the fourteenth
+already had its entry and was fixed in the rule itself. A false green is invisible by
 construction, which makes it the worst possible defect for a posture tool.
 
 Two mechanisms work together, and both are needed:

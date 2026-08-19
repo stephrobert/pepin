@@ -158,7 +158,9 @@ contrôle par contrôle, pas un défaut dont on hérite.
 Une règle qui ne se déclenche pas faute de donnée doit produire **`not-evaluated`**,
 jamais `pass`. Ce n'est pas une nuance, c'est la différence entre un audit et une
 réassurance. Un audit interne de ce dépôt a trouvé **quatorze** contrôles qui
-concluaient « conforme » sans avoir jamais lu l'attribut décisif. Un faux vert est
+concluaient « conforme » sans avoir jamais lu l'attribut décisif. Treize ont été corrigés en ajoutant une entrée à
+`requiredAttr` : on les compte sous son commentaire d'après-audit ; le quatorzième
+avait déjà la sienne et a été corrigé dans la règle elle-même. Un faux vert est
 invisible par construction, ce qui en fait le pire défaut possible pour un outil de
 posture.
 
