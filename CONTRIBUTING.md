@@ -67,3 +67,19 @@ Repository docs are **bilingual**: English is primary (`README.md`), French is t
 counterpart (`README.fr.md`), linked by a language switcher. Commits follow
 Conventional Commits (`feat`/`fix`/`docs`/`refactor`/`test`/`chore`), imperative
 subject.
+
+**Documentation is part of the change, not a follow-up.** Most of `docs/` is
+generated from the binary and the reference, and `TestGeneratedDocsAreUpToDate`
+fails the build when it drifts. So, before opening a pull request:
+
+- run `mise run gen-docs` and commit what it regenerates;
+- re-read the pages your change makes **wrong**, not only the generated ones:
+  `docs/known-limitations.md` when a blind spot closes, the provider page you
+  touched, `docs/coverage.md`;
+- keep both languages in step;
+- add a CHANGELOG line, in both languages, whenever the change moves a **verdict**
+  on an unchanged tenant, a parsable surface, or an exit code.
+
+A page describing a product that no longer exists is worse than a missing page:
+it earns trust it cannot honour. The question that settles it: *would someone
+reading the documentation without reading the code be misled by this change?*
