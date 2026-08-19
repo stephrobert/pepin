@@ -224,3 +224,40 @@ jobs:
           run_case 2 env PROVIDER=scaleway INVENTORY=/absent.json FAIL_ON_NONCONFORMITY=false
           run_case 2 env PROVIDER=scaleway
           echo "les quatre chemins répondent le code documenté"
+
+  # Le chemin PUBLIC de l'action, celui qu'un consommateur emprunte : pas d'URL
+  # de base, pas de saut d'attestation, l'action appelée comme on l'appelle
+  # dehors. Les tests ci-dessus servent install.sh en boucle locale avec
+  # PEPIN_SKIP_ATTESTATION=1, donc ils n'exercent JAMAIS `gh attestation verify`
+  # ni ce dont il a besoin pour tourner.
+  #
+  # Cet angle mort a coûté deux releases : l'installateur refusait toute
+  # installation faute de GH_TOKEN, et seul le job d'après-publication l'a vu.
+  # Ici, le défaut apparaît sur la pull request qui l'introduit.
+  #
+  # Le job épingle une version DÉJÀ PUBLIÉE : il éprouve l'action du dépôt telle
+  # qu'elle est écrite maintenant, contre des artefacts qui existent réellement.
+  published-action:
+    name: The action's public path works as a consumer calls it
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: A compliant inventory passes through the action itself
+        uses: ./.github/actions/pepin-scan
+        with:
+          version: '0.1.0'
+          provider: scaleway
+          inventory: examples/scaleway/inventory-ok.json
+          format: json
+

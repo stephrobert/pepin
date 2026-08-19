@@ -122,6 +122,14 @@ runs:
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+        # `gh attestation verify` calls the GitHub API and refuses to run in a
+        # workflow without a token. Without this line the installer failed on
+        # EVERY consumer -- provenance unverified, installation refused -- which
+        # is the release job's own action-proof catching it. The action supplies
+        # the token itself rather than making it an input: the caller should not
+        # have to wire one up to install a binary, and `github.token` already
+        # carries the read access the attestation API needs on a public repo.
+        GH_TOKEN: ${{ github.token }}
       # The PATH line lets later steps of the calling job run `pepin` (verify a
       # bundle, re-scan). What lands on the PATH is RUNNER_TEMP, a value the
       # runner owns, holding a binary whose checksum was verified one line
