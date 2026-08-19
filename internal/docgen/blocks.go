@@ -42,6 +42,12 @@ const (
 }`
 )
 
+// remediationWitness : le contrôle que le guide de remédiation suit d'un scan à l'autre. Il
+// est CRITIQUE, actif chez les trois fournisseurs, et l'exemple corrigé du dépôt le fait
+// passer de `fail` à `pass` — c'est-à-dire qu'il démontre la boucle complète plutôt que la
+// simple disparition d'un écart.
+const remediationWitness = "objectstorage_bucket_public_access"
+
 // Chemins des fixtures du dépôt utilisées par les captures.
 const (
 	planVulnerable = "examples/scaleway/terraform/plan.json"
@@ -53,14 +59,17 @@ const (
 // captures rassemble toutes les exécutions réelles de `pepin` dont la documentation montre la
 // sortie. Aucune autre source n'est admise dans une page.
 type captures struct {
-	vulnerable  Capture
-	fixed       Capture
-	assessment  Capture // --format assessment sur le plan non conforme
-	missingFile Capture
-	empty       Capture
-	tagless     Capture
-	taglessStr  Capture
-	providers   Capture
+	vulnerable Capture
+	fixed      Capture
+	assessment Capture // --format assessment sur le plan non conforme
+	// assessmentFixed : le MÊME scan sur le plan corrigé. C'est l'avant/après d'une
+	// remédiation, mesuré et non raconté : le même contrôle y passe de `fail` à `pass`.
+	assessmentFixed Capture
+	missingFile     Capture
+	empty           Capture
+	tagless         Capture
+	taglessStr      Capture
+	providers       Capture
 
 	// Référence CLI : une aide par verbe, dans la langue de la page. Les captures y sont
 	// tenues par POINTEUR : une valeur de carte n'est pas adressable, et la neutralisation
@@ -92,7 +101,7 @@ type captures struct {
 // liste énumérée à la main y oublierait une capture au premier ajout, et la page concernée
 // divergerait à chaque build sans qu'aucun comportement n'ait bougé.
 func (c *captures) all() []*Capture {
-	out := []*Capture{&c.vulnerable, &c.fixed, &c.assessment, &c.missingFile, &c.empty,
+	out := []*Capture{&c.vulnerable, &c.fixed, &c.assessment, &c.assessmentFixed, &c.missingFile, &c.empty,
 		&c.tagless, &c.taglessStr, &c.providers, &c.jsonReport, &c.sarif, &c.oscal,
 		&c.driftLive, &c.outscalePlanJSON,
 		&c.bundle.seal, &c.bundle.verify, &c.bundle.reDerive, &c.bundle.tampered,
@@ -138,6 +147,7 @@ func captureAll(root, bin, lang string) (captures, error) {
 		{&c.vulnerable, []string{"scan", "scaleway", "--terraform", planVulnerable}, nil},
 		{&c.fixed, []string{"scan", "scaleway", "--terraform", planFixed}, nil},
 		{&c.assessment, []string{"scan", "scaleway", "--terraform", planVulnerable, "--format", "assessment"}, nil},
+		{&c.assessmentFixed, []string{"scan", "scaleway", "--terraform", planFixed, "--format", "assessment"}, nil},
 		{&c.missingFile, []string{"scan", "scaleway", planMissing}, nil},
 		{&c.empty, []string{"scan", "scaleway", emptyPath}, []string{"scan", "scaleway", "empty-inventory.json"}},
 		{&c.tagless, []string{"scan", "scaleway", taglessPath}, []string{"scan", "scaleway", "tagless-inventory.json"}},
@@ -362,6 +372,8 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"single-source":             singleSourceTable(t, m),
 		"not-applicable-list":       notApplicableTable(t, m),
 		"remediation-coverage":      remediationTable(t, rem),
+		"remediation-before":        assessmentControl(driftText(lang), c.assessment, remediationWitness),
+		"remediation-after":         assessmentControl(driftText(lang), c.assessmentFixed, remediationWitness),
 		"coverage-totals":           m.countsTable(coverageText(lang)),
 		"control-counts":            controlCountsTable(t, m),
 	}

@@ -50,7 +50,7 @@ func controlText(lang string) controlStrings {
 				"Aucune métadonnée n'est recopiée ici : ajouter un contrôle, changer une sévérité ou\n" +
 				"retirer un fournisseur réécrit ces pages, et la CI refuse une documentation en retard.\n\n" +
 				"Ce catalogue dit ce que Pépin **peut conclure**, pas le résultat d'un scan. Pour la\n" +
-				"vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](../coverage.md).",
+				"vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](../coverage.fr.md).",
 			figuresTitle: "Chiffres",
 			readingTitle: "Comment lire ce catalogue",
 			readingBody: "- **Contrôle actif** : déclaré pour au moins un fournisseur (`fournisseurs:` non vide).\n" +
@@ -128,7 +128,7 @@ func controlText(lang string) controlStrings {
 			proofDormant:   "_Contrôle dormant : aucun fournisseur déclaré, donc aucune preuve attendue._",
 			proofNote: "Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie\n" +
 				"tel quel, ou une note ancrée sur la documentation officielle. Voir\n" +
-				"[le guide de remédiation](../guides/remediation.md).",
+				"[le guide de remédiation](../guides/remediation.fr.md).",
 			verifyTitle: "Comment vérifier la correction",
 			verifyTF:    "depuis un plan Terraform : aucune ressource n'est créée",
 			verifyLive:  "depuis l'API du fournisseur : configuration effective",
@@ -143,10 +143,10 @@ func controlText(lang string) controlStrings {
 				"Le tableau des motifs dit laquelle, et pourquoi.",
 			noSource:     "sans objet",
 			seeAlsoTitle: "Voir aussi",
-			seeAlso: "- [Le modèle d'assessment](../concepts/assessment-model.md) : ce que chaque statut affirme.\n" +
-				"- [Matrice de couverture](../coverage.md) : la même information, tous contrôles confondus.\n" +
-				"- [Plan Terraform ou scan live](../concepts/terraform-vs-live.md) : choisir la source.\n" +
-				"- [Ajouter un contrôle](../contributing/adding-a-control.md) : la procédure de bout en bout.",
+			seeAlso: "- [Le modèle d'assessment](../concepts/assessment-model.fr.md) : ce que chaque statut affirme.\n" +
+				"- [Matrice de couverture](../coverage.fr.md) : la même information, tous contrôles confondus.\n" +
+				"- [Plan Terraform ou scan live](../concepts/terraform-vs-live.fr.md) : choisir la source.\n" +
+				"- [Ajouter un contrôle](../contributing/adding-a-control.fr.md) : la procédure de bout en bout.",
 		}
 	}
 	return controlStrings{
