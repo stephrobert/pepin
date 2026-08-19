@@ -188,6 +188,10 @@ jobs:
         env:
           CGO_ENABLED: '0'
         run: |
+          # Le test précédent a écrasé l'artefact par du texte : `go build -o` refuse
+          # d'écrire sur un fichier existant qui n'est pas un objet, d'où le retrait
+          # explicite avant reconstruction.
+          rm -f serve/pepin-linux-amd64
           go build -trimpath \
             -ldflags="-s -w -X github.com/stephrobert/pepin/cmd.version=v0.0.0-ci" \
             -o serve/pepin-linux-amd64 .

@@ -1,0 +1,16 @@
+# OSV-Scanner ignore list. Chaque entrée est un avis INATTEIGNABLE depuis le code de
+# pepin ET sans version corrigée disponible : aucune montée de version ne le résout.
+# Revu à la main ; à réexaminer dès qu'un correctif amont paraît.
+#
+# Pourquoi une liste est nécessaire ici alors que `mise run vuln` (govulncheck) est
+# vert : l'image `osv-scanner-action` embarque son propre toolchain Go (1.26.2 en
+# v2.3.8), plus ancien que la directive `go 1.26.6` de ce module. Son analyse
+# d'atteignabilité échoue donc en CI —
+#   « Failed to run code analysis (govulncheck) … requires go >= 1.26.6 (running 1.26.2) »
+# — et faute de filtre, tout avis présent dans l'arbre de dépendances remonte, même
+# non appelé. L'exception ci-dessous rétablit le résultat que govulncheck établit
+# localement, sans redescendre le toolchain (1.26.5 porte 5 avis ATTEIGNABLES).
+
+[[IgnoredVulns]]
+id = "GO-2026-5932"
+reason = "golang.org/x/crypto/openpgp est non maintenu et signalé sans correctif (Fixed in: N/A). pepin ne l'importe jamais : il est tiré transitivement par open-policy-agent/opa via scankit. `govulncheck ./...` sous Go 1.26.6 confirme 0 vulnérabilité appelée, cet avis compris. Même exception, pour la même raison, que scankit/osv-scanner.toml."
