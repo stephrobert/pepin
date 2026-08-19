@@ -48,10 +48,13 @@ var current atomic.Value // Lang
 
 func init() { current.Store(EN) }
 
-// frenchTags : les sous-tags primaires qui désignent le français. Un ENSEMBLE
-// EXACT, pas un préfixe : `strings.HasPrefix(tag, "fr")` ferait passer « frisian »
-// (`fy` en BCP 47, mais `fri`/`frr` existent en ISO 639-2) et n'importe quelle
-// valeur fantaisiste commençant par « fr » pour du français.
+// frenchTags : les sous-tags primaires qui désignent le français. `fr` est le code
+// ISO 639-1, `fra` et `fre` sont ses deux formes ISO 639-2 (terminologique et
+// bibliographique), que certains systèmes posent dans LANG.
+//
+// Un ENSEMBLE EXACT, pas un préfixe : `strings.HasPrefix(tag, "fr")` prendrait
+// pour du français n'importe quelle valeur commençant par « fr », y compris les
+// codes des langues frisonnes (`frr`, `fry`) et une saisie fantaisiste.
 var frenchTags = map[string]bool{"fr": true, "fra": true, "fre": true}
 
 // Parse normalise une valeur de locale en langue d'interface. Elle reconnaît la
