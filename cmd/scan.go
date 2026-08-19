@@ -101,7 +101,13 @@ var scanCmd = &cobra.Command{
 			sources = append(sources, os.DirFS(dir))
 		}
 
-		findings, err := engine.Evaluate(cmd.Context(), input, sources...)
+		// Borne de temps sur l'évaluation. Les règles de --policy-dir sont du code tiers :
+		// une règle coûteuse (ou simplement fautive) figerait un job de CI indéfiniment,
+		// sans qu'aucune deadline ne traverse le moteur. scankit refuse déjà les builtins
+		// réseau ; le temps est l'autre ressource qu'une politique peut consommer.
+		evalCtx, cancel := context.WithTimeout(cmd.Context(), evalTimeout)
+		defer cancel()
+		findings, err := engine.Evaluate(evalCtx, input, sources...)
 		if err != nil {
 			return err
 		}
@@ -167,14 +173,27 @@ var scanCmd = &cobra.Command{
 		if !res.Conforme {
 			os.Exit(exitNonConformite)
 		}
-		// --strict : porte CI honnête. Sort ≠ 0 si un scan n'a RIEN mesuré (couverture nulle hors
-		// gouvernance) ou s'il subsiste des écarts medium/low (que le code de sortie normal ignore).
-		if scanStrict && (evaluatedNonGov(asmt) == 0 || res.Medium+res.Low > 0) {
+		// Couverture nulle : JAMAIS 0, et sans avoir à demander --strict. « Aucun finding »
+		// et « rien n'a été mesuré » produisent le même résultat vide, mais le second ne dit
+		// rien de la posture : identifiants expirés, droits insuffisants, région vide ou
+		// inventaire tronqué rendraient une porte de CI verte sur un périmètre jamais regardé.
+		// Le bandeau annonce déjà « INDÉTERMINÉ » dans ce cas — le code de sortie doit le suivre.
+		if evaluatedNonGov(asmt) == 0 {
+			os.Exit(exitStrict)
+		}
+		// --strict : porte CI plus exigeante, qui refuse aussi les écarts medium/low
+		// (que le code de sortie normal ignore).
+		if scanStrict && res.Medium+res.Low > 0 {
 			os.Exit(exitStrict)
 		}
 		return nil
 	},
 }
+
+// evalTimeout borne l'évaluation des politiques. Généreux à dessein : un inventaire de
+// dizaines de milliers de ressources reste sous cette borne, qui ne vise que la règle
+// externe partie en boucle, pas le gros scan légitime.
+const evalTimeout = 5 * time.Minute
 
 // sensitiveAttrs : attributs dont la VALEUR peut porter un secret et qu'on caviarde dans le
 // bundle partageable (l'outil détecte les secrets ; il ne doit pas les ré-exfiltrer).

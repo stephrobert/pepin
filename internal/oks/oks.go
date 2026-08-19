@@ -17,6 +17,11 @@ import (
 	"github.com/stephrobert/pepin/internal/model"
 )
 
+// maxRespBytes borne le corps d'une reponse : le timeout borne la DUREE, pas la
+// taille. Un endpoint hostile ou detourne repond sinon un flux sans fin, que le
+// scanner charge entierement en memoire (deni de service du job de CI).
+const maxRespBytes = 64 << 20 // 64 Mio
+
 // CollectClusters interroge GET {endpoint}/api/v2/clusters/all (auth bi-en-têtes) et
 // projette chaque cluster. `endpoint` peut contenir {region} (substitué). `endpoint` vide
 // = pas de collecte OKS.
@@ -35,7 +40,10 @@ func CollectClusters(ctx context.Context, hc *http.Client, provider, endpoint, r
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	body, _ := io.ReadAll(resp.Body)
+	body, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
+	if rerr != nil {
+		return nil, fmt.Errorf("lecture de la reponse OKS : %w", rerr)
+	}
 	if resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("OKS HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}

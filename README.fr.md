@@ -56,7 +56,9 @@ terraform plan -out tfplan && terraform show -json tfplan > plan.json
 ```
 
 Formats de sortie : `--format table|json|assessment|oscal|sarif`.
-Codes de sortie : `0` conforme · `1` non-conformité · `2` erreur (exploitables en CI).
+Codes de sortie : `0` conforme · `1` non-conformité · `2` erreur · `3` rien de mesuré
+ou, avec `--strict`, écarts medium/low restants (exploitables en CI). Un scan qui n'a
+collecté aucune ressource ne rend jamais `0` : un résultat vide n'est pas un résultat conforme.
 
 ## Architecture (en bref)
 

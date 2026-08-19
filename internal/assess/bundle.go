@@ -202,7 +202,15 @@ func VerifyBundle(dir string) error {
 	}
 	// Re-calcul des empreintes.
 	for name, want := range summed {
-		data, rerr := os.ReadFile(filepath.Join(dir, name)) // #nosec G304 -- nom issu du manifeste du bundle.
+		// Le nom vient du manifeste, donc du bundle FOURNI par le tiers audité : c'est
+		// une entrée non fiable, et le recoupement manifeste ↔ checksums ne protège pas
+		// (l'auteur du bundle contrôle les deux). Sans cette garde, « ../secret » fait
+		// de `verify` un oracle d'existence et de contenu sur tout fichier lisible,
+		// et « ../../dev/zero » une lecture non bornée. Un artefact est un nom simple.
+		if name != filepath.Base(name) || name == "." || name == ".." {
+			return fmt.Errorf("nom d'artefact invalide dans le bundle : %q", name)
+		}
+		data, rerr := os.ReadFile(filepath.Join(dir, name)) // #nosec G304 -- nom contraint à un basename juste au-dessus.
 		if rerr != nil {
 			return fmt.Errorf("%s : %w", name, rerr)
 		}

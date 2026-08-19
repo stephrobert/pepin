@@ -29,6 +29,16 @@ import (
 // pageSize borne chaque page : l'OAPI plafonne de toute façon à 100 (MaxResultsLimit).
 const pageSize = 100
 
+// maxPages borne les boucles de pagination. Sans elle, un endpoint qui renvoie
+// des entrees sans nom avec HasMoreItems=true fait tourner la boucle sans fin :
+// l'offset n'avancait que sur les entrees RETENUES, jamais sur celles recues.
+const maxPages = 1000
+
+// maxRespBytes borne le corps d'une reponse : le timeout borne la DUREE, pas la
+// taille. Un endpoint hostile ou detourne repond sinon un flux sans fin, que le
+// scanner charge entierement en memoire (deni de service du job de CI).
+const maxRespBytes = 64 << 20 // 64 Mio
+
 // CollectInlinePolicies parcourt les utilisateurs EIM et projette chaque politique inline
 // en ressource `iam_policy` (scope: inline). `baseURL` est l'URL de l'OAPI déjà substituée.
 func CollectInlinePolicies(ctx context.Context, hc *http.Client, provider, baseURL string, auth collect.Auth) ([]model.Resource, error) {
@@ -122,14 +132,15 @@ type inlinePolicy struct {
 // readAllUserGroups pagine ReadUserGroups.
 func readAllUserGroups(ctx context.Context, hc *http.Client, auth collect.Auth, baseURL string) ([]string, error) {
 	var out []string
-	for {
+	seen := 0 // items REÇUS : c'est l'offset de l'API, pas le nombre de noms retenus.
+	for p := 0; p < maxPages; p++ {
 		var page struct {
 			UserGroups []struct {
 				Name string `json:"Name"`
 			} `json:"UserGroups"`
 			HasMoreItems bool `json:"HasMoreItems"`
 		}
-		body := mustJSON(map[string]any{"FirstItem": len(out), "ResultsPerPage": pageSize})
+		body := mustJSON(map[string]any{"FirstItem": seen, "ResultsPerPage": pageSize})
 		if err := post(ctx, hc, auth, baseURL+"/ReadUserGroups", body, &page); err != nil {
 			return nil, fmt.Errorf("ReadUserGroups : %w", err)
 		}
@@ -138,10 +149,12 @@ func readAllUserGroups(ctx context.Context, hc *http.Client, auth collect.Auth, 
 				out = append(out, g.Name)
 			}
 		}
+		seen += len(page.UserGroups)
 		if !page.HasMoreItems || len(page.UserGroups) == 0 {
 			return out, nil
 		}
 	}
+	return nil, fmt.Errorf("ReadUserGroups : borne de %d pages atteinte", maxPages)
 }
 
 // readAllGroupPolicies pagine ReadUserGroupPolicies pour un groupe.
@@ -166,14 +179,15 @@ func readAllGroupPolicies(ctx context.Context, hc *http.Client, auth collect.Aut
 // readAllUsers pagine ReadUsers (offset FirstItem 0-basé, arrêt sur HasMoreItems).
 func readAllUsers(ctx context.Context, hc *http.Client, auth collect.Auth, baseURL string) ([]string, error) {
 	var out []string
-	for {
+	seen := 0 // items REÇUS : c'est l'offset de l'API, pas le nombre de noms retenus.
+	for p := 0; p < maxPages; p++ {
 		var page struct {
 			Users []struct {
 				UserName string `json:"UserName"`
 			} `json:"Users"`
 			HasMoreItems bool `json:"HasMoreItems"`
 		}
-		body := mustJSON(map[string]any{"FirstItem": len(out), "ResultsPerPage": pageSize})
+		body := mustJSON(map[string]any{"FirstItem": seen, "ResultsPerPage": pageSize})
 		if err := post(ctx, hc, auth, baseURL+"/ReadUsers", body, &page); err != nil {
 			return nil, fmt.Errorf("ReadUsers : %w", err)
 		}
@@ -182,10 +196,12 @@ func readAllUsers(ctx context.Context, hc *http.Client, auth collect.Auth, baseU
 				out = append(out, u.UserName)
 			}
 		}
+		seen += len(page.Users)
 		if !page.HasMoreItems || len(page.Users) == 0 {
 			return out, nil
 		}
 	}
+	return nil, fmt.Errorf("ReadUsers : borne de %d pages atteinte", maxPages)
 }
 
 // readAllUserPolicies pagine ReadUserPolicies pour un utilisateur.
@@ -235,7 +251,10 @@ func post(ctx context.Context, hc *http.Client, auth collect.Auth, url, body str
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	raw, _ := io.ReadAll(resp.Body)
+	raw, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
+	if rerr != nil {
+		return fmt.Errorf("lecture de la reponse EIM : %w", rerr)
+	}
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(raw)))
 	}

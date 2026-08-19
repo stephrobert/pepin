@@ -46,7 +46,17 @@ type OKS struct {
 // nil = client par défaut borné par httpTimeout.
 func Run(ctx context.Context, name string, spec collect.Spec, auth collect.Auth, vars map[string]string, s3 S3, oksCfg OKS, eimCfg EIM, hc *http.Client) ([]model.Resource, error) {
 	if hc == nil {
-		hc = &http.Client{Timeout: httpTimeout}
+		hc = &http.Client{
+			Timeout: httpTimeout,
+			// Go ne retire, sur redirection cross-domain, que Authorization, Cookie et
+			// WWW-Authenticate. Les en-têtes d'auth des providers souverains n'en font pas
+			// partie : X-Auth-Token porte la clé secrète Scaleway, AccessKey/SecretKey les
+			// clés Outscale EN CLAIR. Une seule 302 vers un hôte contrôlé suffirait donc à
+			// les lui livrer. Aucune API de collecte ne redirige : on ne suit pas.
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
 	}
 	out, err := collect.Collect(ctx, hc, spec, auth, vars)
 	if err != nil {

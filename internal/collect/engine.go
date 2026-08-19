@@ -48,6 +48,11 @@ type Paging struct {
 // (renvoie toujours un lot plein) ne doit pas faire boucler la collecte à l'infini.
 const defaultMaxPages = 1000
 
+// maxRespBytes borne le corps d'une reponse : le timeout borne la DUREE, pas la
+// taille. Un endpoint hostile ou detourne repond sinon un flux sans fin, que le
+// scanner charge entierement en memoire (deni de service du job de CI).
+const maxRespBytes = 64 << 20 // 64 Mio
+
 // ForEach déclare une JOINTURE parent→enfant par endpoint : on liste d'abord les
 // parents, puis on appelle le chemin de la ressource une fois PAR parent (variable
 // {<as>.<champ>} substituée, ex. {sg.id}). Chaque item enfant reçoit `_parent` =
@@ -391,7 +396,10 @@ func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Pa
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	respBody, _ := io.ReadAll(resp.Body)
+	respBody, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
+	if rerr != nil {
+		return nil, fmt.Errorf("lecture de la reponse de %s : %w", u.Host, rerr)
+	}
 	if resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
 	}
