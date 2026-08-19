@@ -20,8 +20,8 @@
 ![Pépin scanning a deliberately misconfigured Terraform plan, then the same module fixed: the verdict and the exit code change](docs/assets/quickstart.gif)
 
 *Every command in that recording really runs. It is regenerated at each release
-from `tools/demo/quickstart.tape`, and the preflight refuses to tag a version the
-GIF does not show.*
+from `tools/demo/quickstart.en.tape`, and the preflight refuses to tag a version
+the GIF does not show. Its French twin is on [README.fr.md](README.fr.md).*
 
 Pépin is a cloud posture scanner (CSPM) for **European sovereign clouds**
 (Exoscale, Outscale, Scaleway). It evaluates a tenant's effective configuration
@@ -35,6 +35,9 @@ evidence bundle.
 - **Sovereign first**: each provider is described in its native vocabulary
   (Net/Subnet/EIM, BSU/OOS, Kapsule…), never by comparison to a non-sovereign
   hyperscaler.
+- **Bilingual, language detected**: reports, help and errors come out in French
+  or in English, from the whole tool and not half of it. See
+  [Language](#language).
 - **An opposable result, not just findings**: every control is
   `pass` / `fail` / `not-applicable` (justified) / `not-evaluated` (with the
   reason). A `pass` is asserted only when the data it needs was actually
@@ -71,6 +74,32 @@ Output formats: `--format table|json|assessment|oscal|sarif`.
 Exit codes: `0` compliant · `1` non-compliance · `2` error · `3` nothing measured
 or, with `--strict`, remaining medium/low gaps (CI-friendly). A scan that collected
 no resource never returns `0`: an empty result is not a compliant one.
+
+## Language
+
+Pépin speaks French and English, and picks one on its own:
+
+```
+--lang=fr|en  →  PEPIN_LANG  →  LC_ALL  →  LANG  →  fallback: en
+```
+
+The first non-empty source decides, and any locale Pépin does not speak falls
+back to English without an error. The choice applies to everything a human
+reads — report, verdict, help, errors — **and** to the parsable formats: `json`,
+`sarif`, `oscal` and `assessment` carry their prose in the resolved language.
+
+**What is stable across languages, and what is not.** Codes (`CLD-NET-1`), check
+identifiers, severities (`critical`…), statuses (`pass`, `fail`,
+`not-applicable`, `not-evaluated`), subjects and exit codes never change with
+the language: a pipeline keys on those. Titles, messages, remediations and
+evidence are prose and do change. Pin `PEPIN_LANG` in CI if you diff report
+text between runs.
+
+**Which one is authoritative.** French is the reference language of the
+normative content: the reference (`referentiel/controles.yaml`) and the rules
+are written in French first, and the English is their maintained translation.
+Where a legal or contractual reading is at stake, the French wording of a
+control is the one that governs.
 
 ## Documentation
 

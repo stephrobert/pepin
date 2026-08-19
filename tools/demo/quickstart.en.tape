@@ -1,5 +1,10 @@
-# La démo du README, sous forme de SCRIPT et non d'un enregistrement que
-# personne ne peut refaire.
+# La démo du README ANGLAIS (README.md), sous forme de SCRIPT et non d'un
+# enregistrement que personne ne peut refaire.
+#
+# Sa jumelle française est tools/demo/quickstart.fr.tape. Les deux tapes exécutent
+# EXACTEMENT les mêmes commandes ; seules la langue imposée (PEPIN_LANG) et les
+# commentaires tapés à l'écran diffèrent. Le README anglais est la page d'accueil
+# du projet : c'est celle dont la démo doit être lisible par tout le monde.
 #
 # Régénérer avec `mise run demo`. Tout ce qui s'affiche est réellement exécuté :
 # le binaire est construit, il scanne un plan Terraform volontairement non
@@ -26,24 +31,24 @@ Set Theme "Catppuccin Mocha"
 Hide
 # Le répertoire est capturé, jamais écrit en dur : un chemin figé publierait la
 # disposition d'une machine et casserait sur toutes les autres.
-Type "export REPO=$PWD && export PS1='$ ' && clear" Enter
+Type "export REPO=$PWD && export PS1='$ ' && export PEPIN_LANG=en && clear" Enter
 Sleep 1s
 Show
 
 Type "pepin version" Enter
 Sleep 2s
 
-Type "# Un plan Terraform, aucun compte cloud, rien de provisionné." Enter
+Type "# A Terraform plan, no cloud account, nothing provisioned." Enter
 Sleep 1500ms
 Type "pepin scan scaleway --terraform examples/scaleway/terraform/plan.json" Enter
 Sleep 6s
 
-Type "# 1 = des écarts critical/high. La porte de CI est honnête." Enter
+Type "# 1 = critical/high deviations. The CI gate is honest." Enter
 Sleep 1500ms
 Type "echo $?" Enter
 Sleep 2s
 
-Type "# Le même montage, corrigé :" Enter
+Type "# The same setup, fixed:" Enter
 Sleep 1500ms
 Type "pepin scan scaleway --terraform examples/scaleway/terraform-fixed/plan.json" Enter
 Sleep 6s

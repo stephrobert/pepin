@@ -65,14 +65,42 @@ CE plan — aucune ressource cloud créée. Le scan live ne sert qu'à confirmer
 **contrat d'API** (champs réels) quand le plan ne suffit pas ; il est alors suivi
 d'un `destroy` immédiat.
 
-### 1.2 Docs du dépôt : bilingues, anglais en premier
+### 1.2 Bilinguisme : docs, CLI et référentiel
 
 Comme pavois, les docs du dépôt sont **bilingues FR/EN**. **L'anglais est la langue
 PRIMAIRE** : `README.md`, `SECURITY.md`, `CONTRIBUTING.md` sont en anglais ; leur
 contrepartie française est `*.fr.md`, reliée par un sélecteur de langue en tête
 (`🇬🇧 English · [🇫🇷 Français](*.fr.md)`). Tenir les deux versions synchronisées à
-chaque changement. Le CODE, les COMMENTAIRES, la CLI et le RÉFÉRENTIEL restent en
-français (produit souverain) ; les COMMITS restent en anglais (Conventional Commits).
+chaque changement.
+
+**La CLI et le RÉFÉRENTIEL sont eux aussi bilingues** (issue #37) : la langue est
+DÉTECTÉE (`--lang` → `PEPIN_LANG` → `LC_ALL` → `LANG` → repli `en`, cf.
+`internal/i18n`), et elle vaut pour tout ce que l'outil imprime — rapport, verdict,
+aide, erreurs — comme pour les formats parsables (`json`, `sarif`, `oscal`,
+`assessment`). Le **français reste la langue de RÉFÉRENCE du contenu normatif** :
+c'est lui qui fait foi, l'anglais en est la traduction maintenue en parallèle.
+
+Concrètement, tout texte destiné à l'utilisateur s'écrit DEUX fois, côte à côte :
+
+- **Go** : `i18n.T(fr, en)` au point de rendu ; les chaînes d'aide de cobra, figées
+  à l'init, sont réécrites par `cmd.localize()` après résolution de la langue.
+- **Rego** : `message`/`remediation` en français, `labels.message_en` et
+  `labels.remediation_en` en anglais (`finding.Finding.Labels` est extensible —
+  **on ne modifie pas scankit**). Le scan consomme ces labels puis les RETIRE : ce
+  sont un transport, pas une donnée du rapport.
+- **Référentiel** : `titre_en`, `description_en`, `remediation_en` à côté de leurs
+  homologues français dans `referentiel/controles.yaml`.
+- **Contrats providers** : `reason_en` à côté de `reason` (justifications de
+  non-applicabilité, lues par un auditeur dans l'OSCAL).
+
+Trois portes refusent une traduction manquante, et elles sont dans `mise run validate`
+et `mise run test` : `TestEveryControlIsBilingual`, `TestEveryFindingCarriesRemediation`
+et `TestEveryContractJustificationIsBilingual`. Une quatrième, `cmd/lang_test.go`,
+exige qu'une sortie `LANG=en` ne porte aucun mot accenté qui ne vienne pas de
+l'inventaire scanné, et que la sortie française n'ait pas bougé d'un octet.
+
+Le CODE et les COMMENTAIRES restent en français ; les COMMITS restent en anglais
+(Conventional Commits).
 
 ## 2. Ancrage sur le contrat de l'API — règle d'or (skill `ancrage-contrat`)
 

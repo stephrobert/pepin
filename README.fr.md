@@ -17,11 +17,12 @@
 
 **Pépin trouve les pépins de votre cloud souverain.**
 
-![Pépin scannant un plan Terraform volontairement non conforme, puis le même module corrigé : le verdict et le code de sortie changent](docs/assets/quickstart.gif)
+![Pépin scannant un plan Terraform volontairement non conforme, puis le même module corrigé : le verdict et le code de sortie changent](docs/assets/quickstart.fr.gif)
 
 *Chaque commande de cet enregistrement s'exécute réellement. Il est régénéré à
-chaque release depuis `tools/demo/quickstart.tape`, et le preflight refuse de
-taguer une version que le GIF ne montre pas.*
+chaque release depuis `tools/demo/quickstart.fr.tape`, et le preflight refuse de
+taguer une version que le GIF ne montre pas. Sa jumelle anglaise est sur
+[README.md](README.md).*
 
 Pépin est un scanner de posture (CSPM) pour les clouds **souverains européens**
 (Exoscale, Outscale, Scaleway). Il évalue la configuration effective d'un tenant
@@ -34,6 +35,8 @@ et un dossier de preuve scellé.
 
 - **Souverain d'abord** : vocabulaire natif de chaque provider (Net/Subnet/EIM,
   BSU/OOS, Kapsule…), jamais par comparaison à un hyperscaler non souverain.
+- **Bilingue, langue détectée** : rapports, aide et erreurs sortent en français
+  ou en anglais, de tout l'outil et pas de la moitié. Voir [Langue](#langue).
 - **Résultat opposable, pas juste des findings** : chaque contrôle est
   `pass` / `fail` / `not-applicable` (justifié) / `not-evaluated` (avec la raison).
   Un « pass » n'est affirmé que si la donnée nécessaire a réellement été
@@ -70,6 +73,33 @@ Formats de sortie : `--format table|json|assessment|oscal|sarif`.
 Codes de sortie : `0` conforme · `1` non-conformité · `2` erreur · `3` rien de mesuré
 ou, avec `--strict`, écarts medium/low restants (exploitables en CI). Un scan qui n'a
 collecté aucune ressource ne rend jamais `0` : un résultat vide n'est pas un résultat conforme.
+
+## Langue
+
+Pépin parle français et anglais, et choisit tout seul :
+
+```
+--lang=fr|en  →  PEPIN_LANG  →  LC_ALL  →  LANG  →  repli : en
+```
+
+La première source non vide décide, et toute locale que Pépin ne parle pas
+retombe sur l'anglais, sans erreur. Le choix vaut pour tout ce qu'un humain lit
+(rapport, verdict, aide, erreurs) **et** pour les formats parsables : `json`,
+`sarif`, `oscal` et `assessment` portent leur prose dans la langue résolue.
+
+**Ce qui est stable d'une langue à l'autre, et ce qui ne l'est pas.** Les codes
+(`CLD-NET-1`), les identifiants de check, les sévérités (`critical`…), les
+statuts (`pass`, `fail`, `not-applicable`, `not-evaluated`), les sujets et les
+codes de sortie ne changent jamais avec la langue : c'est sur eux qu'un pipeline
+s'appuie. Les titres, messages, remédiations et preuves sont de la prose, et
+changent. Figer `PEPIN_LANG` en CI si vous comparez le texte d'un rapport d'une
+exécution à l'autre.
+
+**Laquelle fait foi.** Le français est la langue de référence du contenu
+normatif : le référentiel (`referentiel/controles.yaml`) et les règles sont
+écrits en français d'abord, l'anglais en est la traduction maintenue. Là où une
+lecture juridique ou contractuelle est en jeu, c'est la formulation française
+d'un contrôle qui fait foi.
 
 ## Documentation
 
