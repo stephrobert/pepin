@@ -50,6 +50,10 @@ l'outillage Python doit pouvoir couper une release.
    exactement les mêmes commandes et ne diffèrent que par la langue imposée. Le
    preflight exige les deux.
 
+   Un GIF et un MP4 sortent de la même exécution : le GIF est ce que les README
+   affichent (il s'anime sans lecteur), le MP4 sert là où un GIF est refusé ou
+   trop lourd.
+
    La version est injectée au build, jamais écrite dans le tape, et
    `docs/assets/quickstart.version` la consigne. Le preflight compare ce fichier
    au tag et refuse d'avancer s'ils diffèrent.
