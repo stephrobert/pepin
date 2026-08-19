@@ -111,16 +111,21 @@ func captureAll(root, bin string) (captures, error) {
 	// La VERSION est injectée au build (`git describe`) : elle diffère d'une machine et d'un
 	// commit à l'autre, et le bandeau la porte. Sans neutralisation, la page divergerait à
 	// chaque build sans qu'aucun comportement n'ait bougé — un contrôle qui crie pour rien
-	// finit désarmé. On la remplace partout, et la page le dit.
+	// finit désarmé.
+	//
+	// La substitution est ANCRÉE sur la forme que le bandeau imprime (« v<version> ») et non
+	// sur le jeton nu. Sans ancrage, un binaire construit hors dépôt (version de repli
+	// « dev ») ferait remplacer « dev » à l'intérieur de « Total deviations », ce qui
+	// corromprait la sortie montrée au lecteur.
 	ver, verr := r.Run("version")
 	if verr != nil {
 		return captures{}, verr
 	}
-	if v := strings.TrimPrefix(strings.TrimSpace(ver.Stdout), "pépin "); len(v) >= 3 {
+	if v := strings.TrimPrefix(strings.TrimSpace(ver.Stdout), "pépin "); v != "" {
 		for _, capt := range []*Capture{&c.vulnerable, &c.fixed, &c.assessment, &c.missingFile,
 			&c.empty, &c.tagless, &c.taglessStr, &c.providers} {
-			capt.Stdout = strings.ReplaceAll(capt.Stdout, v, versionPlaceholder)
-			capt.Stderr = strings.ReplaceAll(capt.Stderr, v, versionPlaceholder)
+			capt.Stdout = strings.ReplaceAll(capt.Stdout, "v"+v, "v"+versionPlaceholder)
+			capt.Stderr = strings.ReplaceAll(capt.Stderr, "v"+v, "v"+versionPlaceholder)
 		}
 	}
 	return c, nil

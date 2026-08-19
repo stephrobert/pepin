@@ -80,6 +80,36 @@ func TestTheGeneratorActuallyRunsTheBinary(t *testing.T) {
 	}
 }
 
+// TestTheCapturedBannerCarriesNoBuildVersion : la version est injectée au build, donc une page
+// qui la figerait divergerait à chaque construction. La substitution est ancrée sur « v<version> » ;
+// ce test vérifie qu'elle a bien opéré ET qu'elle n'a pas mangé la sortie au passage (le repli
+// « dev » d'un build hors dépôt est un sous-mot de « deviations »).
+func TestTheCapturedBannerCarriesNoBuildVersion(t *testing.T) {
+	bin, err := ResolveBinary(repoRoot, t.TempDir())
+	if err != nil {
+		t.Fatalf("binaire de capture indisponible : %v", err)
+	}
+	r := Runner{Bin: bin, Root: repoRoot}
+	ver, err := r.Run("version")
+	if err != nil {
+		t.Fatalf("version : %v", err)
+	}
+	raw := strings.TrimPrefix(strings.TrimSpace(ver.Stdout), "pépin ")
+	c, err := captureAll(repoRoot, bin)
+	if err != nil {
+		t.Fatalf("capture : %v", err)
+	}
+	if strings.Contains(c.vulnerable.Stderr, "v"+raw) {
+		t.Errorf("le bandeau capturé porte encore la version de build %q", raw)
+	}
+	if !strings.Contains(c.vulnerable.Stderr, "v"+versionPlaceholder) {
+		t.Errorf("le bandeau capturé ne porte pas le marqueur de version : substitution muette")
+	}
+	if !strings.Contains(c.vulnerable.Stdout, "Total deviations") {
+		t.Error("la substitution de version a altéré le corps du rapport (« Total deviations » perdu)")
+	}
+}
+
 // TestTheMatrixCoversEveryControlAndProvider : la matrice n'a pas de trou. Une ligne manquante
 // serait invisible dans une page de 57 lignes, et c'est exactement le genre d'absence qui fait
 // mentir une documentation de couverture.
