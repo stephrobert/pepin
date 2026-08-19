@@ -153,7 +153,7 @@ Four decisions, all deliberate:
 
 - **`--redact`** in the script: user data and policy documents are replaced by their digest. The
   cost is that a redacted bundle cannot be re-derived
-  ([Evidence bundles](evidence-bundles.md#redact-a-bundle-you-hand-to-a-third-party)).
+  ([Evidence bundles](evidence-bundles.md#--redact-a-bundle-you-hand-to-a-third-party)).
 - **`when: always`**: the report is archived even when the job fails, which is precisely the run
   you will want to read.
 - **`expire_in: 1 week`**: a bundle names every resource of the tenant. It is not a permanent

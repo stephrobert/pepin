@@ -157,7 +157,7 @@ Quatre décisions, toutes délibérées :
 
 - **`--redact`** dans le script : les données utilisateur et les documents de politique sont
   remplacés par leur empreinte. Le coût est qu'un bundle caviardé ne peut pas être re-dérivé
-  ([Le bundle de preuve](evidence-bundles.fr.md#redact--un-bundle-quon-remet-à-un-tiers)).
+  ([Le bundle de preuve](evidence-bundles.fr.md#--redact--un-bundle-quon-remet-à-un-tiers)).
 - **`when: always`** : le rapport est archivé même quand le job échoue, ce qui est précisément
   l'exécution qu'on voudra lire.
 - **`expire_in: 1 week`** : un bundle nomme chaque ressource du tenant. Ce n'est pas un artefact

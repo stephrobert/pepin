@@ -33,7 +33,7 @@ scellement a échoué : `--seal` ne change jamais le verdict. Voir
 
 Traiter un bundle non caviardé comme **le secret du tenant qu'il décrit** : stockage d'artefacts
 privé, rétention courte, aucune page de CI publique, aucune pièce jointe à un ticket qu'un
-prestataire peut lire. [`--redact`](#redact--un-bundle-quon-remet-à-un-tiers) existe pour les
+prestataire peut lire. [`--redact`](#--redact--un-bundle-quon-remet-à-un-tiers) existe pour les
 bundles qui quittent le périmètre, et il a un coût que cette page énonce sans détour.
 
 ## Ce que contient un bundle

@@ -332,11 +332,20 @@ func copyDir(src, dst string) error {
 		if e.IsDir() {
 			continue
 		}
-		raw, err := os.ReadFile(filepath.Join(src, e.Name())) // #nosec G304 -- dossier jetable du générateur.
+		// Le nom est réduit à son dernier segment avant d'être rejoint : un nom d'entrée
+		// ne doit jamais pouvoir sortir du dossier de destination, même si la source
+		// cesse un jour d'être un dossier que ce paquet a créé lui-même.
+		name := filepath.Base(e.Name())
+		if name == "." || name == ".." || strings.ContainsRune(name, os.PathSeparator) {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(src, name)) // #nosec G304 -- dossier jetable du générateur.
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(filepath.Join(dst, e.Name()), raw, 0o600); err != nil {
+		// #nosec G703 -- `name` est réduit à un segment simple ci-dessus, et la source est
+		// un dossier de bundle que ce paquet vient d'écrire dans un répertoire jetable.
+		if err := os.WriteFile(filepath.Join(dst, name), raw, 0o600); err != nil {
 			return err
 		}
 	}

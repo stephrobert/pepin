@@ -31,7 +31,7 @@ $ echo $?
 
 Treat an unredacted bundle as **the same secret as the tenant it describes**: private artifact
 storage, short retention, no public CI page, no attachment to a ticket a supplier can read.
-[`--redact`](#redact-a-bundle-you-hand-to-a-third-party) exists for the bundles that leave the
+[`--redact`](#--redact-a-bundle-you-hand-to-a-third-party) exists for the bundles that leave the
 perimeter, and it has a cost this page states plainly.
 
 ## What a bundle contains

@@ -94,7 +94,7 @@ func providerCredentialsTable(t providerStrings, d genprovider.Descriptor) strin
 	}
 	if d.Credentials.File.Path != "" {
 		_, _ = fmt.Fprintf(&b, "| %s | `%s` | `%s` |\n",
-			t.rowCredFile, d.Credentials.File.Path, d.Credentials.File.Format)
+			t.rowConfigFile, d.Credentials.File.Path, d.Credentials.File.Format)
 	}
 	return b.String()
 }
@@ -267,15 +267,15 @@ func boolLabel(t providerStrings, v *bool) string {
 
 // providerStrings porte les libellés des régions des pages de fournisseurs.
 type providerStrings struct {
-	colField, colValue, colLogicalKey, colEnvVar, colDefault string
-	colNormalizedType, colCall, colNote, colTFResource       string
-	colExploded, colSource, colControl, colJustification     string
-	colOnlyVia, colReason                                    string
-	fieldDescription, fieldScope, fieldRegionKey, fieldAuth  string
-	fieldJurisdiction, fieldEUEstablished, fieldCapital      string
-	fieldSecNumCloud, fieldExtraterritorial, fieldSources    string
-	rowCredFile, noteParent, noteS3, noteManagedK8s, baseURL string
-	unset, yes, no, none, noDescriptor                       string
+	colField, colValue, colLogicalKey, colEnvVar, colDefault   string
+	colNormalizedType, colCall, colNote, colTFResource         string
+	colExploded, colSource, colControl, colJustification       string
+	colOnlyVia, colReason                                      string
+	fieldDescription, fieldScope, fieldRegionKey, fieldAuth    string
+	fieldJurisdiction, fieldEUEstablished, fieldCapital        string
+	fieldSecNumCloud, fieldExtraterritorial, fieldSources      string
+	rowConfigFile, noteParent, noteS3, noteManagedK8s, baseURL string
+	unset, yes, no, none, noDescriptor                         string
 }
 
 func providerText(lang string) providerStrings {
@@ -292,7 +292,7 @@ func providerText(lang string) providerStrings {
 			fieldEUEstablished: "Établi dans l'UE", fieldCapital: "Contrôle capitalistique",
 			fieldSecNumCloud: "SecNumCloud", fieldExtraterritorial: "Exposition extraterritoriale",
 			fieldSources:   "Sources de l'ancrage",
-			rowCredFile:    "fichier de configuration natif",
+			rowConfigFile:  "fichier de configuration natif",
 			noteParent:     "liste parente d'une jointure (appelée en premier)",
 			noteS3:         "API S3 du stockage objet (collecteur Go)",
 			noteManagedK8s: "API du Kubernetes managé (collecteur Go)",
@@ -313,7 +313,7 @@ func providerText(lang string) providerStrings {
 		fieldEUEstablished: "Established in the EU", fieldCapital: "Capital control",
 		fieldSecNumCloud: "SecNumCloud", fieldExtraterritorial: "Extraterritorial exposure",
 		fieldSources:   "Anchoring sources",
-		rowCredFile:    "native configuration file",
+		rowConfigFile:  "native configuration file",
 		noteParent:     "parent listing of a join (called first)",
 		noteS3:         "object storage S3 API (Go collector)",
 		noteManagedK8s: "managed Kubernetes API (Go collector)",
