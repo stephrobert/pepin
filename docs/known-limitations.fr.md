@@ -158,7 +158,7 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 Le détail par contrôle, avec le motif de chaque case qui n'est pas pleinement supportée, est la
 [matrice de couverture](coverage.fr.md).
 
-## Preuves de remédiation : 4 sur 95
+## Preuves de remédiation
 
 Au-delà de la remédiation **textuelle** portée par chaque finding (garantie, elle, par
 `TestEveryFindingCarriesRemediation`), le dépôt vise une **preuve** de remédiation par couple

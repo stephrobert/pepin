@@ -34,7 +34,13 @@ type Runner struct {
 // processus n'a pas pu être lancé : un code de sortie non nul est un RÉSULTAT attendu ici
 // (c'est même ce que la documentation explique).
 func (r Runner) Run(args ...string) (Capture, error) {
-	cmd := exec.Command(r.Bin, args...) // #nosec G204 -- binaire et arguments fixés par le paquet, jamais par une entrée externe.
+	// Le binaire est résolu en ABSOLU : `cmd.Dir` déplace le processus fils, donc un chemin
+	// relatif au répertoire courant du générateur ne désignerait plus le même fichier.
+	bin, err := filepath.Abs(r.Bin)
+	if err != nil {
+		return Capture{}, fmt.Errorf("résolution du binaire %s : %w", r.Bin, err)
+	}
+	cmd := exec.Command(bin, args...) // #nosec G204 -- binaire et arguments fixés par le paquet, jamais par une entrée externe.
 	cmd.Dir = r.Root
 	// Environnement minimal et explicite : NO_COLOR retire les séquences ANSI, TERM=dumb
 	// évite toute adaptation au terminal, LC_ALL fige le tri et le formatage.
@@ -42,12 +48,11 @@ func (r Runner) Run(args ...string) (Capture, error) {
 	var stdout, stderr strings.Builder
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	err := cmd.Run()
 	code := 0
-	if err != nil {
+	if rerr := cmd.Run(); rerr != nil {
 		var ee *exec.ExitError
-		if !errors.As(err, &ee) {
-			return Capture{}, fmt.Errorf("exécution de %s %s : %w", r.Bin, strings.Join(args, " "), err)
+		if !errors.As(rerr, &ee) {
+			return Capture{}, fmt.Errorf("exécution de %s %s : %w", bin, strings.Join(args, " "), rerr)
 		}
 		code = ee.ExitCode()
 	}
@@ -64,9 +69,12 @@ func ResolveBinary(root, tmpDir string) (string, error) {
 	}
 	built := filepath.Join(root, "pepin")
 	if st, err := os.Stat(built); err == nil && !st.IsDir() && st.Mode()&0o111 != 0 {
-		return built, nil
+		return filepath.Abs(built)
 	}
-	out := filepath.Join(tmpDir, "pepin")
+	out, err := filepath.Abs(filepath.Join(tmpDir, "pepin"))
+	if err != nil {
+		return "", err
+	}
 	cmd := exec.Command("go", "build", "-o", out, ".") // #nosec G204 -- arguments constants.
 	cmd.Dir = root
 	if b, err := cmd.CombinedOutput(); err != nil {

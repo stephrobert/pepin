@@ -37,7 +37,7 @@ func (m Matrix) coveragePage(lang string) string {
 	b.WriteString("## " + t.legendTitle + "\n\n")
 	b.WriteString("| " + t.colMark + " | " + t.colStatus + " | " + t.colMeans + " |\n|---|---|---|\n")
 	for _, s := range []Status{Supported, Partial, NotApplicable, Unsupported} {
-		b.WriteString(fmt.Sprintf("| %s | `%s` | %s |\n", mark(s), s, t.legend[s]))
+		_, _ = fmt.Fprintf(&b, "| %s | `%s` | %s |\n", mark(s), s, t.legend[s])
 	}
 	b.WriteString("\n" + t.legendNote + "\n\n")
 
@@ -96,12 +96,12 @@ func (m Matrix) summaryTable(t coverageStrings) string {
 				per[p][bestStatus(r, p)]++
 			}
 		}
-		b.WriteString(fmt.Sprintf("| `%s` | %d |", f, total))
+		_, _ = fmt.Fprintf(&b, "| `%s` | %d |", f, total)
 		for _, p := range m.CloudProviders {
 			c := per[p]
-			b.WriteString(fmt.Sprintf(" %s %d · %s %d · %s %d · %s %d |",
+			_, _ = fmt.Fprintf(&b, " %s %d · %s %d · %s %d · %s %d |",
 				mark(Supported), c[Supported], mark(Partial), c[Partial],
-				mark(NotApplicable), c[NotApplicable], mark(Unsupported), c[Unsupported]))
+				mark(NotApplicable), c[NotApplicable], mark(Unsupported), c[Unsupported])
 		}
 		b.WriteString("\n")
 	}
@@ -126,7 +126,7 @@ func (m Matrix) matrixTable(t coverageStrings) string {
 	var b strings.Builder
 	b.WriteString("| " + t.colControl + " | " + t.colSeverity + " | SCSL |")
 	for _, p := range m.CloudProviders {
-		b.WriteString(fmt.Sprintf(" %s TF | %s live |", p, p))
+		_, _ = fmt.Fprintf(&b, " %s TF | %s live |", p, p)
 	}
 	b.WriteString("\n|---|---|---|")
 	for range m.CloudProviders {
@@ -134,7 +134,7 @@ func (m Matrix) matrixTable(t coverageStrings) string {
 	}
 	b.WriteString("\n")
 	for _, r := range m.Rows {
-		b.WriteString(fmt.Sprintf("| `%s` | %s | %s |", r.Code, r.Severity, strings.Join(r.SCSL, ", ")))
+		_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s |", r.Code, r.Severity, strings.Join(r.SCSL, ", "))
 		for _, p := range m.CloudProviders {
 			b.WriteString(" " + mark(r.Cells[p][SourceTerraform].Status) + " |")
 			b.WriteString(" " + mark(r.Cells[p][SourceLive].Status) + " |")
@@ -161,8 +161,8 @@ func (m Matrix) reasonsTable(t coverageStrings) string {
 				if c.Status == Unsupported && strings.HasPrefix(c.Reason, "contrôle non déclaré") {
 					continue // trivial : déjà lisible dans la matrice, et sans information
 				}
-				b.WriteString(fmt.Sprintf("| `%s` | %s | %s | %s `%s` | %s |\n",
-					r.Code, p, src, mark(c.Status), c.Status, oneLine(c.Reason)))
+				_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s | %s `%s` | %s |\n",
+					r.Code, p, src, mark(c.Status), c.Status, oneLine(c.Reason))
 				rows++
 			}
 		}
@@ -196,7 +196,7 @@ func (m Matrix) otherTable(t coverageStrings) string {
 		if !shown {
 			continue
 		}
-		b.WriteString(fmt.Sprintf("| `%s` | %s |", r.Code, r.Severity))
+		_, _ = fmt.Fprintf(&b, "| `%s` | %s |", r.Code, r.Severity)
 		for _, p := range m.OtherProviders {
 			b.WriteString(" " + mark(r.Cells[p][SourceLive].Status) + " |")
 		}
@@ -219,8 +219,8 @@ func (m Matrix) countsTable(t coverageStrings) string {
 			for _, r := range m.Rows {
 				c[r.Cells[p][src].Status]++
 			}
-			b.WriteString(fmt.Sprintf("| %s | %s | %d | %d | %d | %d |\n",
-				p, src, c[Supported], c[Partial], c[NotApplicable], c[Unsupported]))
+			_, _ = fmt.Fprintf(&b, "| %s | %s | %d | %d | %d | %d |\n",
+				p, src, c[Supported], c[Partial], c[NotApplicable], c[Unsupported])
 		}
 	}
 	return b.String()
@@ -238,7 +238,7 @@ func oneLine(s string) string {
 // prochain `mise run gen-docs`.
 func generatedBanner(lang, cmd string) string {
 	if lang == "fr" {
-		return "<!-- PAGE GÉNÉRÉE — ne pas éditer à la main. Régénérer : `" + cmd + "`. -->\n"
+		return "<!-- PAGE GÉNÉRÉE : ne pas éditer à la main. Régénérer avec `" + cmd + "`. -->\n"
 	}
 	return "<!-- GENERATED PAGE — do not edit by hand. Regenerate with `" + cmd + "`. -->\n"
 }

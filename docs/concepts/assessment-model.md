@@ -84,7 +84,7 @@ The table below is rendered from that very map — not transcribed from it:
 | `database_backup_enabled` | `managed_database` | `disable_backup` |
 | `database_encryption_at_rest_enabled` | `managed_database` | `encryption_at_rest` |
 | `database_service_not_open_to_internet` | `managed_database` | `ip_filter` |
-| `governance_resource_region_in_eu` | — | `region` |
+| `governance_resource_region_in_eu` | (none: cross-cutting control) | `region` |
 | `iam_account_mfa_enforced` | `api_access_policy` | `require_trusted_env` |
 | `iam_apiaccesspolicy_max_key_expiration` | `api_access_policy` | `max_access_key_expiration_seconds` |
 | `iam_apiaccessrule_no_public_cidr` | `api_access_rule` | `ip_ranges` |
@@ -367,8 +367,8 @@ reasons observed:
 <!-- pepin:gen not-evaluated-reasons -->
 | Reason | Count | Witness control |
 |---|---:|---|
-| attribut « … » (garde de capacité) | 3 | `compute_instance_public_ip_with_open_securitygroup` |
 | attribut « … » non collecté sur les ressources collectées (garde de capacité) | 1 | `governance_resource_region_in_eu` |
+| attribut « … » non collecté sur les ressources de type « … » (garde de capacité) | 3 | `compute_instance_public_ip_with_open_securitygroup` |
 | aucune ressource de type « … » dans l'inventaire évalué | 3 | `iam_accesskey_expiration_set` |
 | collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « … ») | 1 | `network_documented` |
 <!-- /pepin:gen not-evaluated-reasons -->

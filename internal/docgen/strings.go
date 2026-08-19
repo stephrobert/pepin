@@ -12,6 +12,7 @@ type blockStrings struct {
 	exitCompliant, exitNonCompliance, exitError       string
 	exitNothing, exitMediumPlain, exitMediumStrict    string
 	orWord, none, totalWord, figControls, figDeclared string
+	noTypeWord                                        string
 }
 
 func blockText(lang string) blockStrings {
@@ -34,6 +35,7 @@ func blockText(lang string) blockStrings {
 			totalWord:         "Total",
 			figControls:       "Contrôles au référentiel",
 			figDeclared:       "Contrôles déclarés pour au moins un fournisseur",
+			noTypeWord:        "(aucun : contrôle transverse)",
 		}
 	}
 	return blockStrings{
@@ -54,5 +56,6 @@ func blockText(lang string) blockStrings {
 		totalWord:         "Total",
 		figControls:       "Controls in the reference",
 		figDeclared:       "Controls declared for at least one provider",
+		noTypeWord:        "(none: cross-cutting control)",
 	}
 }

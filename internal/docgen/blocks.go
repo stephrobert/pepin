@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -199,7 +200,7 @@ func exitCodeTable(t blockStrings, c captures) string {
 	var b strings.Builder
 	b.WriteString("| " + t.colSituation + " | " + t.colCommand + " | " + t.colExit + " |\n|---|---|:-:|\n")
 	for _, r := range rows {
-		b.WriteString(fmt.Sprintf("| %s | `%s` | **%d** |\n", r.situation, r.cap.Command(), r.cap.Exit))
+		_, _ = fmt.Fprintf(&b, "| %s | `%s` | **%d** |\n", r.situation, r.cap.Command(), r.cap.Exit)
 	}
 	return b.String()
 }
@@ -284,7 +285,7 @@ func assessmentCountsTable(t blockStrings, c captures) string {
 	var b strings.Builder
 	b.WriteString("| " + t.colStatus + " | " + t.colCount + " |\n|---|---:|\n")
 	for _, s := range []string{"pass", "fail", "not-applicable", "not-evaluated"} {
-		b.WriteString(fmt.Sprintf("| `%s` | %d |\n", s, counts[s]))
+		_, _ = fmt.Fprintf(&b, "| `%s` | %d |\n", s, counts[s])
 	}
 	return b.String()
 }
@@ -333,20 +334,20 @@ func notEvaluatedReasons(t blockStrings, c captures) string {
 	b.WriteString("| " + t.colReason + " | " + t.colCount + " | " + t.colWitness + " |\n|---|---:|---|\n")
 	for _, k := range keys {
 		e := byReason[k]
-		b.WriteString(fmt.Sprintf("| %s | %d | `%s` |\n", oneLine(e.reason), e.count, e.witness))
+		_, _ = fmt.Fprintf(&b, "| %s | %d | `%s` |\n", oneLine(e.reason), e.count, e.witness)
 	}
 	return b.String()
 }
 
-// generalizeReason remplace le nom de type/attribut d'un motif par un caractère générique,
-// pour regrouper les motifs de MÊME NATURE sans en inventer le libellé.
+// quotedName repère un nom (type, attribut, état) cité par le moteur entre guillemets français.
+var quotedName = regexp.MustCompile(`«[^»]*»`)
+
+// generalizeReason remplace CHAQUE nom cité d'un motif par un marqueur générique, pour
+// regrouper les motifs de MÊME NATURE sans en inventer le libellé. Chaque span est traité
+// séparément : englober du premier au dernier guillemet avalerait le texte intermédiaire, et
+// la ligne du tableau ne dirait plus ce que le moteur dit.
 func generalizeReason(s string) string {
-	i := strings.Index(s, "«")
-	j := strings.LastIndex(s, "»")
-	if i < 0 || j <= i {
-		return s
-	}
-	return s[:i] + "« … »" + s[j+len("»"):]
+	return quotedName.ReplaceAllString(s, "« … »")
 }
 
 // requiredAttrTable rend la table des attributs décisifs telle qu'elle est APPLIQUÉE
@@ -369,11 +370,11 @@ func requiredAttrTable(t blockStrings) string {
 		}
 		typ := genprovider.ControlType(c)
 		if typ == "" {
-			typ = "—"
+			typ = t.noTypeWord // contrôle transverse : aucun type de ressource visé
 		} else {
 			typ = "`" + typ + "`"
 		}
-		b.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", c, typ, strings.Join(quoted, " "+t.orWord+" ")))
+		_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s |\n", c, typ, strings.Join(quoted, " "+t.orWord+" "))
 	}
 	return b.String()
 }
@@ -406,7 +407,7 @@ func neverPassTable(t blockStrings, m Matrix) string {
 		if can || reason == "" {
 			continue
 		}
-		b.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", r.Code, r.Severity, oneLine(reason)))
+		_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s |\n", r.Code, r.Severity, oneLine(reason))
 		rows++
 	}
 	if rows == 0 {
@@ -441,10 +442,10 @@ func singleSourceTable(t blockStrings, m Matrix) string {
 			live := r.Cells[p][SourceLive]
 			switch {
 			case tf.Status == Supported && live.Status != Supported:
-				b.WriteString(fmt.Sprintf("| `%s` | %s | terraform | %s |\n", r.Code, p, oneLine(live.Reason)))
+				_, _ = fmt.Fprintf(&b, "| `%s` | %s | terraform | %s |\n", r.Code, p, oneLine(live.Reason))
 				rows++
 			case live.Status == Supported && tf.Status != Supported:
-				b.WriteString(fmt.Sprintf("| `%s` | %s | live | %s |\n", r.Code, p, oneLine(tf.Reason)))
+				_, _ = fmt.Fprintf(&b, "| `%s` | %s | live | %s |\n", r.Code, p, oneLine(tf.Reason))
 				rows++
 			}
 		}
@@ -468,7 +469,7 @@ func notApplicableTable(t blockStrings, m Matrix) string {
 			if c.Status != NotApplicable {
 				continue
 			}
-			b.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", r.Code, p, oneLine(c.Reason)))
+			_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s |\n", r.Code, p, oneLine(c.Reason))
 			rows++
 		}
 	}
@@ -485,9 +486,9 @@ func remediationTable(t blockStrings, rem []RemediationCoverage) string {
 	for _, c := range rem {
 		covered += c.Covered
 		total += c.Total
-		b.WriteString(fmt.Sprintf("| %s | %d / %d |\n", c.Provider, c.Covered, c.Total))
+		_, _ = fmt.Fprintf(&b, "| %s | %d / %d |\n", c.Provider, c.Covered, c.Total)
 	}
-	b.WriteString(fmt.Sprintf("| **%s** | **%d / %d** |\n", t.totalWord, covered, total))
+	_, _ = fmt.Fprintf(&b, "| **%s** | **%d / %d** |\n", t.totalWord, covered, total)
 	return b.String()
 }
 
@@ -505,10 +506,10 @@ func controlCountsTable(t blockStrings, m Matrix) string {
 	}
 	var b strings.Builder
 	b.WriteString("| " + t.colFigure + " | " + t.colCount + " |\n|---|---:|\n")
-	b.WriteString(fmt.Sprintf("| %s | %d |\n", t.figControls, len(m.Rows)))
-	b.WriteString(fmt.Sprintf("| %s | %d |\n", t.figDeclared, declared))
+	_, _ = fmt.Fprintf(&b, "| %s | %d |\n", t.figControls, len(m.Rows))
+	_, _ = fmt.Fprintf(&b, "| %s | %d |\n", t.figDeclared, declared)
 	for _, s := range []string{"critical", "high", "medium", "low"} {
-		b.WriteString(fmt.Sprintf("| `%s` | %d |\n", s, bySeverity[s]))
+		_, _ = fmt.Fprintf(&b, "| `%s` | %d |\n", s, bySeverity[s])
 	}
 	return b.String()
 }

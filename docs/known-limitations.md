@@ -154,7 +154,7 @@ Per provider and per source, over all controls in the reference:
 The per-control detail, with the reason for every cell that is not fully supported, is the
 [coverage matrix](coverage.md).
 
-## Remediation proofs: 4 out of 95
+## Remediation proofs
 
 Beyond the remediation **text** carried by every finding (which is guaranteed by
 `TestEveryFindingCarriesRemediation`), the repository aims to ship a remediation **proof** per

@@ -1,6 +1,6 @@
 > [🇬🇧 English](coverage.md) · 🇫🇷 Français
 
-<!-- PAGE GÉNÉRÉE — ne pas éditer à la main. Régénérer : `mise run gen-docs`. -->
+<!-- PAGE GÉNÉRÉE : ne pas éditer à la main. Régénérer avec `mise run gen-docs`. -->
 
 # Matrice de couverture
 
