@@ -18,7 +18,7 @@
 | Attribut décisif | `auto_upgrade` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale` |
-| Preuves de remédiation | 0 / 2 |
+| Preuves de remédiation | 1 / 2 |
 
 ## Le risque
 
@@ -87,7 +87,7 @@ Activer la maintenance / mise à jour automatique du cluster.
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/kubernetes_cluster_auto_upgrade_enabled`](../../references/remediation/exoscale/kubernetes_cluster_auto_upgrade_enabled) |
 | outscale | _aucune preuve déposée à ce jour_ |
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie

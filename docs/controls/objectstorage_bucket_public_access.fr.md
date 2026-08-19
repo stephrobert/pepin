@@ -18,7 +18,7 @@
 | Attribut décisif | `acl` / `acl_grants` / `public_via_acl` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -90,7 +90,7 @@ Retirer l'accès public de l'ACL/la politique ; servir le contenu via des URLs s
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/objectstorage_bucket_public_access`](../../references/remediation/exoscale/objectstorage_bucket_public_access) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

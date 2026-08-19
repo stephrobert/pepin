@@ -18,7 +18,7 @@
 | Attribut décisif | `state` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale` |
-| Preuves de remédiation | 0 / 2 |
+| Preuves de remédiation | 1 / 2 |
 
 ## Le risque
 
@@ -88,7 +88,7 @@ Mettre en place une politique de sauvegarde régulière avec test de restauratio
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/blockstorage_volume_snapshots_exist`](../../references/remediation/exoscale/blockstorage_volume_snapshots_exist) |
 | outscale | _aucune preuve déposée à ce jour_ |
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie

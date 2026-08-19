@@ -18,7 +18,7 @@
 | Deciding attribute | _none: judged on the presence of a deviation_ |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
-| Remediation proofs | 0 / 3 |
+| Remediation proofs | 1 / 3 |
 
 ## The risk
 
@@ -86,7 +86,7 @@ Name and tag every network (owner, project, environment); keep the network mappi
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/network_documented`](../../references/remediation/exoscale/network_documented) |
 | outscale | _no proof filed yet_ |
 | scaleway | _no proof filed yet_ |
 

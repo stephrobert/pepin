@@ -18,7 +18,7 @@
 | Attribut décisif | _aucun : jugé à la présence d'un écart_ |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -87,7 +87,7 @@ Nommer et étiqueter chaque réseau (propriétaire, projet, environnement) ; ten
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/network_documented`](../../references/remediation/exoscale/network_documented) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

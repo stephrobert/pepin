@@ -18,7 +18,7 @@
 | Attribut décisif | `security_group_ids` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -87,7 +87,7 @@ Associer un groupe de sécurité restrictif (refus par défaut) à chaque instan
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/compute_instance_has_security_group`](../../references/remediation/exoscale/compute_instance_has_security_group) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

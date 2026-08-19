@@ -18,7 +18,7 @@
 | Deciding attribute | `mfa_enabled` |
 | State | active |
 | Declared for | `exoscale`, `scaleway` |
-| Remediation proofs | 0 / 2 |
+| Remediation proofs | 1 / 2 |
 
 ## The risk
 
@@ -90,7 +90,7 @@ Enable MFA on every account, starting with administrative and console access; en
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/iam_user_mfa_enabled.md`](../../references/remediation/exoscale/iam_user_mfa_enabled.md) |
 | scaleway | _no proof filed yet_ |
 
 A remediation proof is a self-contained, **compliant** Terraform module that deploys as

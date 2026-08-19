@@ -18,7 +18,7 @@
 | Attribut décisif | `encrypted` |
 | État | actif |
 | Déclaré pour | `exoscale` |
-| Preuves de remédiation | 0 / 1 |
+| Preuves de remédiation | 1 / 1 |
 
 ## Le risque
 
@@ -90,7 +90,7 @@ Activer le chiffrement au repos du volume (transparent côté fournisseur, ou ch
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/blockstorage_volume_encryption`](../../references/remediation/exoscale/blockstorage_volume_encryption) |
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie
 tel quel, ou une note ancrée sur la documentation officielle. Voir

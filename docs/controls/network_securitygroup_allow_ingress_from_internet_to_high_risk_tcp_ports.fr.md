@@ -18,7 +18,7 @@
 | Attribut décisif | _aucun : jugé à la présence d'un écart_ |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -85,7 +85,7 @@ Restreindre la source à un CIDR d'administration / d'application ; ne jamais ex
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports`](../../references/remediation/exoscale/network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

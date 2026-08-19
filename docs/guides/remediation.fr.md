@@ -211,11 +211,11 @@ couples (contrôle, fournisseur) que le référentiel déclare réellement :
 <!-- pepin:gen remediation-coverage -->
 | Fournisseur | Preuves de remédiation |
 |---|---:|
-| exoscale | 4 / 26 |
+| exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 40 |
 | scaleway | 0 / 25 |
-| **Total** | **4 / 95** |
+| **Total** | **26 / 95** |
 <!-- /pepin:gen remediation-coverage -->
 
 Ce tableau compte des **preuves déployables**, pas des remédiations. La remédiation
@@ -229,16 +229,23 @@ mise run check-remediation                     # tous les fournisseurs
 python3 scripts/check-remediation.py exoscale  # un seul
 ```
 
-## Pourquoi cette porte n'est pas branchée dans `validate`
+## La porte, maintenant qu'un fournisseur est complet
 
-`mise run check-remediation` est volontairement **découplé** de `mise run validate`. Une
-porte rouge en permanence est une porte qu'on apprend à ignorer, et une porte de qualité
-qu'on contourne par habitude est pire que pas de porte : elle enseigne le contournement.
+`mise run check-remediation` reste volontairement **découplé** de `mise run validate`.
+Tous fournisseurs confondus, il est encore rouge, et une porte rouge en permanence est
+une porte qu'on apprend à ignorer : une porte de qualité qu'on contourne par habitude
+est pire que pas de porte, parce qu'elle enseigne le contournement.
 
-La condition de rebranchement est écrite là où on la verra, dans `mise.toml` à côté de
-la tâche : **un fournisseur à 100 %**, branché en `depends = [..., "check-remediation"]`,
-puis les autres au fil de l'eau. En attendant, le chiffre est publié (ci-dessus, et sur
-chaque page de contrôle) plutôt qu'imposé.
+Ce qui a changé, c'est que la condition de rebranchement écrite à côté de la tâche dans
+`mise.toml`, **un fournisseur à 100 %**, est désormais tenue. Chaque contrôle déclaré
+par exoscale porte sa preuve, et cet acquis est gardé par un test plutôt que par une
+bonne intention : `TestExoscaleRemediationCoverageStaysComplete` (`internal/docgen`)
+échoue dès qu'un contrôle exoscale arrive sans la sienne, en nommant ce qui manque. Il
+tourne avec `mise run test`, donc il siège dans la porte de release.
+
+Les autres fournisseurs restent hors de cette garde tant que leur couverture est
+partielle, et chacun l'intègre le jour où il atteint 100 %. En attendant, leur chiffre
+est publié, ci-dessus et sur chaque page de contrôle, plutôt qu'imposé.
 
 ## Déposer une preuve
 

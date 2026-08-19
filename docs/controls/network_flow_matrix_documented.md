@@ -18,7 +18,7 @@
 | Deciding attribute | `description` |
 | State | active |
 | Declared for | `exoscale` |
-| Remediation proofs | 0 / 1 |
+| Remediation proofs | 1 / 1 |
 
 ## The risk
 
@@ -84,7 +84,7 @@ Document every security group rule (service served, reason) in its description; 
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/network_flow_matrix_documented`](../../references/remediation/exoscale/network_flow_matrix_documented) |
 
 A remediation proof is a self-contained, **compliant** Terraform module that deploys as
 is, or a note anchored on the official documentation. See

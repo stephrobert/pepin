@@ -18,7 +18,7 @@
 | Attribut décisif | _aucun : jugé à la présence d'un écart_ |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -85,7 +85,7 @@ Restreindre les règles de sortie aux destinations et ports légitimes.
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/network_securitygroup_unrestricted_egress`](../../references/remediation/exoscale/network_securitygroup_unrestricted_egress) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

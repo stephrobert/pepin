@@ -18,7 +18,7 @@
 | Attribut décisif | `mfa_enabled` |
 | État | actif |
 | Déclaré pour | `exoscale`, `scaleway` |
-| Preuves de remédiation | 0 / 2 |
+| Preuves de remédiation | 1 / 2 |
 
 ## Le risque
 
@@ -91,7 +91,7 @@ Activer la MFA sur tous les comptes, en priorité les accès d'administration et
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/iam_user_mfa_enabled.md`](../../references/remediation/exoscale/iam_user_mfa_enabled.md) |
 | scaleway | _aucune preuve déposée à ce jour_ |
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie

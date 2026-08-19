@@ -18,7 +18,7 @@
 | Attribut décisif | `region` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -86,7 +86,7 @@ Recréer ou migrer la ressource dans une région de l'Union européenne ; restre
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/governance_resource_region_in_eu`](../../references/remediation/exoscale/governance_resource_region_in_eu) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

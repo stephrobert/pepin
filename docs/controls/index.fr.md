@@ -23,7 +23,7 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | `high` | 32 |
 | `medium` | 13 |
 | `low` | 2 |
-| Preuves de remédiation déployables | 4 / 95 |
+| Preuves de remédiation déployables | 26 / 95 |
 
 ## Comment lire ce catalogue
 
@@ -55,26 +55,26 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | [`iam_role_key_lifetime_bounded`](iam_role_key_lifetime_bounded.fr.md) Rôle IAM sans borne de durée de vie des accès | critical | `CLD-IAM-2` | `exoscale` | 1 / 1 |
 | [`iam_role_no_admin_privileges`](iam_role_no_admin_privileges.fr.md) Rôle IAM aux privilèges excessifs | high | `CLD-IAM-1` | `exoscale` | 1 / 1 |
 | [`iam_role_source_ip_restricted`](iam_role_source_ip_restricted.fr.md) Rôle IAM sans restriction d'IP source | high | `CLD-IAM-4` | `exoscale` | 1 / 1 |
-| [`iam_user_mfa_enabled`](iam_user_mfa_enabled.fr.md) MFA non activée sur un compte | high | `CLD-IAM-3` | `exoscale`, `scaleway` | 0 / 2 |
+| [`iam_user_mfa_enabled`](iam_user_mfa_enabled.fr.md) MFA non activée sur un compte | high | `CLD-IAM-3` | `exoscale`, `scaleway` | 1 / 2 |
 
 ## `reseau`
 
 | Contrôle | Sévérité | SCSL | Actif pour | Preuves |
 |---|---|---|---|---|
-| [`compute_instance_public_ip_with_open_securitygroup`](compute_instance_public_ip_with_open_securitygroup.fr.md) Machine exposée publiquement sans filtrage restrictif | critical | `CLD-NET-3` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
+| [`compute_instance_public_ip_with_open_securitygroup`](compute_instance_public_ip_with_open_securitygroup.fr.md) Machine exposée publiquement sans filtrage restrictif | critical | `CLD-NET-3` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 | [`database_service_not_open_to_internet`](database_service_not_open_to_internet.fr.md) Base de données managée joignable depuis Internet | high | `CLD-NET-1` | `scaleway` | 0 / 1 |
 | [`k8s_namespace_network_policy_defined`](k8s_namespace_network_policy_defined.fr.md) Namespace sans NetworkPolicy (réseau plat) | high | `CLD-K8S-6` | `kubernetes` | 0 / 1 |
-| [`network_documented`](network_documented.fr.md) Réseau non documenté (cartographie non tenue) | low | `CLD-NET-5` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`network_flow_matrix_documented`](network_flow_matrix_documented.fr.md) Flux entrant sans justification dans la matrice des flux | medium | `CLD-NET-5` | `exoscale` | 0 / 1 |
+| [`network_documented`](network_documented.fr.md) Réseau non documenté (cartographie non tenue) | low | `CLD-NET-5` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`network_flow_matrix_documented`](network_flow_matrix_documented.fr.md) Flux entrant sans justification dans la matrice des flux | medium | `CLD-NET-5` | `exoscale` | 1 / 1 |
 | [`network_peering_cross_organization`](network_peering_cross_organization.fr.md) Appairage réseau vers un autre système d'information | high | `CLD-NET-7` | `outscale` | 0 / 1 |
-| [`network_securitygroup_allow_ingress_from_internet_to_all_ports`](network_securitygroup_allow_ingress_from_internet_to_all_ports.fr.md) Tout le trafic entrant autorisé depuis Internet (any/any) | critical | `CLD-NET-2` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports`](network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports.fr.md) Port sensible (base de données, annuaire…) ouvert à Internet | high | `CLD-NET-1` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports`](network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports.fr.md) Service UDP sensible (amplification, non authentifié) ouvert à Internet | high | `CLD-NET-1` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`network_securitygroup_allow_ingress_from_internet_to_tcp_port_22`](network_securitygroup_allow_ingress_from_internet_to_tcp_port_22.fr.md) SSH (port 22) ouvert à Internet | high | `CLD-NET-1`, `CLD-IAM-6`, `CLD-NET-6` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389`](network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389.fr.md) RDP (port 3389) ouvert à Internet | high | `CLD-NET-1`, `CLD-IAM-6`, `CLD-NET-6` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
+| [`network_securitygroup_allow_ingress_from_internet_to_all_ports`](network_securitygroup_allow_ingress_from_internet_to_all_ports.fr.md) Tout le trafic entrant autorisé depuis Internet (any/any) | critical | `CLD-NET-2` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports`](network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports.fr.md) Port sensible (base de données, annuaire…) ouvert à Internet | high | `CLD-NET-1` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports`](network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports.fr.md) Service UDP sensible (amplification, non authentifié) ouvert à Internet | high | `CLD-NET-1` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`network_securitygroup_allow_ingress_from_internet_to_tcp_port_22`](network_securitygroup_allow_ingress_from_internet_to_tcp_port_22.fr.md) SSH (port 22) ouvert à Internet | high | `CLD-NET-1`, `CLD-IAM-6`, `CLD-NET-6` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389`](network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389.fr.md) RDP (port 3389) ouvert à Internet | high | `CLD-NET-1`, `CLD-IAM-6`, `CLD-NET-6` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 | [`network_securitygroup_default_deny`](network_securitygroup_default_deny.fr.md) Politique entrante par défaut d'un groupe de sécurité en « accept » | high | `CLD-NET-2` | `scaleway` | 0 / 1 |
 | [`network_securitygroup_default_restrict_traffic`](network_securitygroup_default_restrict_traffic.fr.md) Security group « default » non restrictif | high | `CLD-NET-4` | `outscale` | 0 / 1 |
-| [`network_securitygroup_unrestricted_egress`](network_securitygroup_unrestricted_egress.fr.md) Filtrage sortant non restreint | medium | `CLD-NET-4` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
+| [`network_securitygroup_unrestricted_egress`](network_securitygroup_unrestricted_egress.fr.md) Filtrage sortant non restreint | medium | `CLD-NET-4` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 | [`network_subnet_no_public_ip_by_default`](network_subnet_no_public_ip_by_default.fr.md) Sous-réseau attribuant une IP publique par défaut | medium | `CLD-NET-3` | `outscale` | 0 / 1 |
 
 ## `compute`
@@ -82,12 +82,12 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | Contrôle | Sévérité | SCSL | Actif pour | Preuves |
 |---|---|---|---|---|
 | [`compute_instance_deletion_protection`](compute_instance_deletion_protection.fr.md) Instance sans protection contre la suppression | medium | `CLD-CMP-10` | `outscale` | 0 / 1 |
-| [`compute_instance_has_security_group`](compute_instance_has_security_group.fr.md) Machine sans filtrage réseau | critical | `CLD-CMP-1` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`compute_instance_no_secrets_in_user_data`](compute_instance_no_secrets_in_user_data.fr.md) Secret en clair dans les données utilisateur (user-data) | high | `CLD-CMP-9` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
+| [`compute_instance_has_security_group`](compute_instance_has_security_group.fr.md) Machine sans filtrage réseau | critical | `CLD-CMP-1` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`compute_instance_no_secrets_in_user_data`](compute_instance_no_secrets_in_user_data.fr.md) Secret en clair dans les données utilisateur (user-data) | high | `CLD-CMP-9` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 | [`k8s_namespace_pod_security_enforced`](k8s_namespace_pod_security_enforced.fr.md) Pod Security Standards non imposés sur un namespace | high | `CLD-K8S-5` | `kubernetes` | 0 / 1 |
 | [`k8s_rbac_no_cluster_admin_binding`](k8s_rbac_no_cluster_admin_binding.fr.md) cluster-admin accordé au-delà du binding natif | critical | `CLD-K8S-4` | `kubernetes` | 0 / 1 |
-| [`kubernetes_cluster_auto_upgrade_enabled`](kubernetes_cluster_auto_upgrade_enabled.fr.md) Mises à jour automatiques du cluster Kubernetes désactivées | medium | `CLD-K8S-3` | `exoscale`, `outscale` | 0 / 2 |
-| [`kubernetes_cluster_control_plane_highly_available`](kubernetes_cluster_control_plane_highly_available.fr.md) Plan de contrôle Kubernetes non hautement disponible | high | `CLD-K8S-2` | `exoscale`, `outscale` | 0 / 2 |
+| [`kubernetes_cluster_auto_upgrade_enabled`](kubernetes_cluster_auto_upgrade_enabled.fr.md) Mises à jour automatiques du cluster Kubernetes désactivées | medium | `CLD-K8S-3` | `exoscale`, `outscale` | 1 / 2 |
+| [`kubernetes_cluster_control_plane_highly_available`](kubernetes_cluster_control_plane_highly_available.fr.md) Plan de contrôle Kubernetes non hautement disponible | high | `CLD-K8S-2` | `exoscale`, `outscale` | 1 / 2 |
 | [`kubernetes_cluster_deletion_protection`](kubernetes_cluster_deletion_protection.fr.md) Cluster Kubernetes sans protection contre la suppression | medium | `CLD-K8S-3` | `outscale` | 0 / 1 |
 | [`kubernetes_cluster_not_publicly_accessible`](kubernetes_cluster_not_publicly_accessible.fr.md) API server Kubernetes exposé à Internet | critical | `CLD-K8S-1` | `outscale` | 0 / 1 |
 
@@ -96,18 +96,18 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | Contrôle | Sévérité | SCSL | Actif pour | Preuves |
 |---|---|---|---|---|
 | [`blockstorage_snapshot_not_public`](blockstorage_snapshot_not_public.fr.md) Instantané ou image partagé publiquement | high | `CLD-STO-2` | `outscale` | 0 / 1 |
-| [`blockstorage_volume_snapshots_exist`](blockstorage_volume_snapshots_exist.fr.md) Absence de sauvegarde récente | high | `CLD-STO-3` | `exoscale`, `outscale` | 0 / 2 |
+| [`blockstorage_volume_snapshots_exist`](blockstorage_volume_snapshots_exist.fr.md) Absence de sauvegarde récente | high | `CLD-STO-3` | `exoscale`, `outscale` | 1 / 2 |
 | [`compute_image_not_public`](compute_image_not_public.fr.md) Image machine partagée publiquement | high | `CLD-STO-2` | `outscale` | 0 / 1 |
 | [`database_backup_enabled`](database_backup_enabled.fr.md) Sauvegardes automatiques d'une base managée désactivées | high | `CLD-STO-3` | `scaleway` | 0 / 1 |
-| [`objectstorage_bucket_object_lock_enabled`](objectstorage_bucket_object_lock_enabled.fr.md) Object Lock (immutabilité) désactivé sur le stockage objet | low | `CLD-STO-8` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`objectstorage_bucket_public_access`](objectstorage_bucket_public_access.fr.md) Stockage objet exposé publiquement | critical | `CLD-STO-1` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`objectstorage_bucket_versioning_enabled`](objectstorage_bucket_versioning_enabled.fr.md) Versioning du stockage objet désactivé | medium | `CLD-STO-4` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
+| [`objectstorage_bucket_object_lock_enabled`](objectstorage_bucket_object_lock_enabled.fr.md) Object Lock (immutabilité) désactivé sur le stockage objet | low | `CLD-STO-8` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`objectstorage_bucket_public_access`](objectstorage_bucket_public_access.fr.md) Stockage objet exposé publiquement | critical | `CLD-STO-1` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`objectstorage_bucket_versioning_enabled`](objectstorage_bucket_versioning_enabled.fr.md) Versioning du stockage objet désactivé | medium | `CLD-STO-4` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 
 ## `chiffrement`
 
 | Contrôle | Sévérité | SCSL | Actif pour | Preuves |
 |---|---|---|---|---|
-| [`blockstorage_volume_encryption`](blockstorage_volume_encryption.fr.md) Chiffrement au repos désactivé | high | `CLD-CHF-2` | `exoscale` | 0 / 1 |
+| [`blockstorage_volume_encryption`](blockstorage_volume_encryption.fr.md) Chiffrement au repos désactivé | high | `CLD-CHF-2` | `exoscale` | 1 / 1 |
 | [`database_encryption_at_rest_enabled`](database_encryption_at_rest_enabled.fr.md) Base de données managée sans chiffrement au repos | high | `CLD-CHF-2` | `scaleway` | 0 / 1 |
 | [`k8s_secrets_external_manager`](k8s_secrets_external_manager.fr.md) Secrets Kubernetes sans coffre externe | high | `CLD-K8S-10` | `kubernetes` | 0 / 1 |
 | [`loadbalancer_http_redirect_to_https`](loadbalancer_http_redirect_to_https.fr.md) Listener HTTP sans redirection HTTPS | medium | `CLD-CHF-1` | _dormant_ | aucun |
@@ -126,9 +126,9 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 
 | Contrôle | Sévérité | SCSL | Actif pour | Preuves |
 |---|---|---|---|---|
-| [`governance_provider_sovereignty`](governance_provider_sovereignty.fr.md) Souveraineté du fournisseur non établie | high | `CLD-GVN-4` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`governance_resource_region_in_eu`](governance_resource_region_in_eu.fr.md) Ressource hébergée hors Union européenne | high | `CLD-GVN-3` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
-| [`governance_resource_required_tags`](governance_resource_required_tags.fr.md) Inventaire et étiquetage incomplets | medium | `CLD-GVN-1` | `exoscale`, `outscale`, `scaleway` | 0 / 3 |
+| [`governance_provider_sovereignty`](governance_provider_sovereignty.fr.md) Souveraineté du fournisseur non établie | high | `CLD-GVN-4` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`governance_resource_region_in_eu`](governance_resource_region_in_eu.fr.md) Ressource hébergée hors Union européenne | high | `CLD-GVN-3` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`governance_resource_required_tags`](governance_resource_required_tags.fr.md) Inventaire et étiquetage incomplets | medium | `CLD-GVN-1` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 
 ## Contrôles dormants
 

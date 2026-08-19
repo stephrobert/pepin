@@ -69,17 +69,17 @@ compliant Terraform module under `references/remediation/`.
 <!-- pepin:gen remediation-coverage -->
 | Provider | Remediation proofs |
 |---|---:|
-| exoscale | 4 / 26 |
+| exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 40 |
 | scaleway | 0 / 25 |
-| **Total** | **4 / 95** |
+| **Total** | **26 / 95** |
 <!-- /pepin:gen remediation-coverage -->
 
 `mise run check-remediation` is deliberately not wired into `mise run validate`: a gate
-that is permanently red is a gate people learn to ignore. The plan is to bring one
-provider to 100 %, wire the gate for that provider, then repeat. See the
-[remediation guide](docs/guides/remediation.md).
+that is permanently red is a gate people learn to ignore. Exoscale is the first provider
+at 100 %, and a test now holds that ground; the next providers join it one at a time.
+See the [remediation guide](docs/guides/remediation.md).
 
 ### 3. The control domains that are thin today
 

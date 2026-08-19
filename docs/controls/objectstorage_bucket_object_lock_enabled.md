@@ -18,7 +18,7 @@
 | Deciding attribute | `object_lock_enabled` |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
-| Remediation proofs | 0 / 3 |
+| Remediation proofs | 1 / 3 |
 
 ## The risk
 
@@ -88,7 +88,7 @@ Enable Object Lock (compliance or governance mode) on backup buckets and critica
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/objectstorage_bucket_object_lock_enabled`](../../references/remediation/exoscale/objectstorage_bucket_object_lock_enabled) |
 | outscale | _no proof filed yet_ |
 | scaleway | _no proof filed yet_ |
 

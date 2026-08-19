@@ -207,11 +207,11 @@ provider) pairs the reference actually declares:
 <!-- pepin:gen remediation-coverage -->
 | Provider | Remediation proofs |
 |---|---:|
-| exoscale | 4 / 26 |
+| exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 40 |
 | scaleway | 0 / 25 |
-| **Total** | **4 / 95** |
+| **Total** | **26 / 95** |
 <!-- /pepin:gen remediation-coverage -->
 
 Read that table for what it is: it counts **deployable proofs**, not remediations. The
@@ -225,16 +225,23 @@ mise run check-remediation                     # every provider
 python3 scripts/check-remediation.py exoscale  # one provider
 ```
 
-## Why that gate is not wired into `validate`
+## The gate, now that one provider is complete
 
-`mise run check-remediation` is deliberately **decoupled** from `mise run validate`. A
-gate that is red permanently is a gate people learn to ignore, and a quality gate that
-is routinely bypassed is worse than no gate: it teaches the habit of overriding it.
+`mise run check-remediation` stays deliberately **decoupled** from `mise run validate`.
+Across all providers it is still red, and a gate that is red permanently is a gate
+people learn to ignore: a quality gate that is routinely bypassed is worse than no
+gate, because it teaches the habit of overriding one.
 
-The rebranch condition is written where it will be seen, in `mise.toml` next to the
-task: **one provider at 100 %**, wired in as `depends = [..., "check-remediation"]`,
-then the others as they land. Until then the count is published (above, and on every
-control page) rather than enforced.
+What has changed is that the rebranch condition written next to the task in
+`mise.toml` — **one provider at 100 %** — is now met. Every control exoscale declares
+carries its proof, and that ground is held by a test rather than by good intentions:
+`TestExoscaleRemediationCoverageStaysComplete` (`internal/docgen`) fails when an
+exoscale control lands without one, naming what is missing. It runs with
+`mise run test`, so it sits in the release gate.
+
+The other providers stay outside that gate while their coverage is partial, and each
+joins it the day it reaches 100 %. Until then their count is published — above, and on
+every control page — rather than enforced.
 
 ## Filing a proof
 

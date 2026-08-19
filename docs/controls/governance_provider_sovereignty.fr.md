@@ -18,7 +18,7 @@
 | Attribut décisif | _aucun : jugé à la présence d'un écart_ |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -83,7 +83,7 @@ Pour une exigence souveraine, retenir un fournisseur établi dans l'UE, au contr
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/governance_provider_sovereignty.md`](../../references/remediation/exoscale/governance_provider_sovereignty.md) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

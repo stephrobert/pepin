@@ -167,17 +167,19 @@ note documentée. À ce jour :
 <!-- pepin:gen remediation-coverage -->
 | Fournisseur | Preuves de remédiation |
 |---|---:|
-| exoscale | 4 / 26 |
+| exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 40 |
 | scaleway | 0 / 25 |
-| **Total** | **4 / 95** |
+| **Total** | **26 / 95** |
 <!-- /pepin:gen remediation-coverage -->
 
-Ce contrôle n'est **délibérément pas** branché sur `mise run validate`. Une porte
-perpétuellement rouge est une porte qu'on apprend à ignorer ; elle sera rebranchée fournisseur
-par fournisseur, en commençant par le premier à atteindre 100 %. `mise run check-remediation`
-donne la liste par contrôle.
+Ce contrôle n'est **délibérément pas** branché sur `mise run validate` : tous fournisseurs
+confondus le compte reste partiel, et une porte perpétuellement rouge est une porte qu'on
+apprend à ignorer. Exoscale est le premier fournisseur à 100 %, et un test tient cet acquis :
+`TestExoscaleRemediationCoverageStaysComplete` échoue dès qu'un contrôle exoscale arrive sans
+sa preuve. Les autres fournisseurs rejoindront cette garde en atteignant 100 %.
+`mise run check-remediation` donne la liste par contrôle.
 
 **Conséquence pour vous :** chaque finding vous dit quoi faire, en prose. Tous les findings ne
 sont pas accompagnés d'un module Terraform testé qui le prouve.

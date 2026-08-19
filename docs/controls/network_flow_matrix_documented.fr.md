@@ -18,7 +18,7 @@
 | Attribut décisif | `description` |
 | État | actif |
 | Déclaré pour | `exoscale` |
-| Preuves de remédiation | 0 / 1 |
+| Preuves de remédiation | 1 / 1 |
 
 ## Le risque
 
@@ -85,7 +85,7 @@ Documenter chaque règle de security group (service desservi, raison) via sa des
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/network_flow_matrix_documented`](../../references/remediation/exoscale/network_flow_matrix_documented) |
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie
 tel quel, ou une note ancrée sur la documentation officielle. Voir

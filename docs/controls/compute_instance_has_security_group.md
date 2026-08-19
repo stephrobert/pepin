@@ -18,7 +18,7 @@
 | Deciding attribute | `security_group_ids` |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
-| Remediation proofs | 0 / 3 |
+| Remediation proofs | 1 / 3 |
 
 ## The risk
 
@@ -86,7 +86,7 @@ Attach a restrictive security group (deny by default) to every instance.
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/compute_instance_has_security_group`](../../references/remediation/exoscale/compute_instance_has_security_group) |
 | outscale | _no proof filed yet_ |
 | scaleway | _no proof filed yet_ |
 

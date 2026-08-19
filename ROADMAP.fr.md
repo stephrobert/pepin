@@ -71,17 +71,17 @@ déployable** : un module Terraform autonome et conforme sous `references/remedi
 <!-- pepin:gen remediation-coverage -->
 | Fournisseur | Preuves de remédiation |
 |---|---:|
-| exoscale | 4 / 26 |
+| exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 40 |
 | scaleway | 0 / 25 |
-| **Total** | **4 / 95** |
+| **Total** | **26 / 95** |
 <!-- /pepin:gen remediation-coverage -->
 
 `mise run check-remediation` est volontairement débranché de `mise run validate` : une
-porte rouge en permanence est une porte qu'on apprend à ignorer. Le plan est d'amener un
-fournisseur à 100 %, de rebrancher la porte pour celui-là, puis de recommencer. Voir le
-[guide de remédiation](docs/guides/remediation.fr.md).
+porte rouge en permanence est une porte qu'on apprend à ignorer. Exoscale est le premier
+fournisseur à 100 %, et un test tient désormais cet acquis ; les suivants rejoindront
+cette garde un par un. Voir le [guide de remédiation](docs/guides/remediation.fr.md).
 
 ### 3. Les domaines de contrôles encore minces
 

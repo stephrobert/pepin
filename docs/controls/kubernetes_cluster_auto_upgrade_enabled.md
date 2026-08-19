@@ -18,7 +18,7 @@
 | Deciding attribute | `auto_upgrade` |
 | State | active |
 | Declared for | `exoscale`, `outscale` |
-| Remediation proofs | 0 / 2 |
+| Remediation proofs | 1 / 2 |
 
 ## The risk
 
@@ -86,7 +86,7 @@ Enable automatic maintenance and upgrades on the cluster.
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/kubernetes_cluster_auto_upgrade_enabled`](../../references/remediation/exoscale/kubernetes_cluster_auto_upgrade_enabled) |
 | outscale | _no proof filed yet_ |
 
 A remediation proof is a self-contained, **compliant** Terraform module that deploys as

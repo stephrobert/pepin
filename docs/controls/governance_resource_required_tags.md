@@ -18,7 +18,7 @@
 | Deciding attribute | _none: judged on the presence of a deviation_ |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
-| Remediation proofs | 0 / 3 |
+| Remediation proofs | 1 / 3 |
 
 ## The risk
 
@@ -91,7 +91,7 @@ Enforce mandatory tags (owner, project, environment); check their presence at cr
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/governance_resource_required_tags`](../../references/remediation/exoscale/governance_resource_required_tags) |
 | outscale | _no proof filed yet_ |
 | scaleway | _no proof filed yet_ |
 

@@ -18,7 +18,7 @@
 | Deciding attribute | _none: judged on the presence of a deviation_ |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
-| Remediation proofs | 0 / 3 |
+| Remediation proofs | 1 / 3 |
 
 ## The risk
 
@@ -82,7 +82,7 @@ For a sovereignty requirement, pick a provider established in the EU, under Euro
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/governance_provider_sovereignty.md`](../../references/remediation/exoscale/governance_provider_sovereignty.md) |
 | outscale | _no proof filed yet_ |
 | scaleway | _no proof filed yet_ |
 

@@ -18,7 +18,7 @@
 | Deciding attribute | `state` |
 | State | active |
 | Declared for | `exoscale`, `outscale` |
-| Remediation proofs | 0 / 2 |
+| Remediation proofs | 1 / 2 |
 
 ## The risk
 
@@ -87,7 +87,7 @@ Set up a regular backup policy with restore testing; encrypt the backups and app
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/blockstorage_volume_snapshots_exist`](../../references/remediation/exoscale/blockstorage_volume_snapshots_exist) |
 | outscale | _no proof filed yet_ |
 
 A remediation proof is a self-contained, **compliant** Terraform module that deploys as

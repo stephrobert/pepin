@@ -94,6 +94,37 @@ func TestEveryLinkedRemediationProofExists(t *testing.T) {
 	}
 }
 
+// TestExoscaleRemediationCoverageStaysComplete : exoscale est le PREMIER fournisseur dont
+// chaque contrôle actif porte sa preuve de remédiation déployable. C'est la condition que
+// `mise.toml` posait pour rebrancher une porte sur la couverture des preuves : une porte
+// rouge en permanence s'apprend à ignorer, une porte verte qui protège un acquis se défend.
+// Ce test est cette porte : ajouter un contrôle exoscale sans déposer sa preuve la casse.
+// Les autres fournisseurs restent hors garde tant que leur couverture est partielle.
+func TestExoscaleRemediationCoverageStaysComplete(t *testing.T) {
+	coverages, err := RemediationCoverages(repoRoot)
+	if err != nil {
+		t.Fatalf("couverture des remédiations : %v", err)
+	}
+	var exoscale *RemediationCoverage
+	for i := range coverages {
+		if coverages[i].Provider == "exoscale" {
+			exoscale = &coverages[i]
+		}
+	}
+	if exoscale == nil {
+		t.Fatal("aucune couverture lue pour exoscale : le test ne mesurerait plus rien")
+	}
+	if exoscale.Total == 0 {
+		t.Fatal("exoscale ne déclare aucun contrôle actif : le test ne mesurerait plus rien")
+	}
+	if len(exoscale.Missing) > 0 {
+		t.Errorf("exoscale : %d/%d preuves de remédiation, manquantes : %s\n"+
+			"déposer un module Terraform autonome sous references/remediation/exoscale/<code>/, "+
+			"ou une note <code>.md ancrée sur la documentation officielle",
+			exoscale.Covered, exoscale.Total, strings.Join(exoscale.Missing, ", "))
+	}
+}
+
 // TestDormantControlsAreNamedAsSuch : un contrôle déclaré pour aucun fournisseur ne doit pas
 // se lire comme un contrôle couvert. La page le dit, et l'index le range à part.
 func TestDormantControlsAreNamedAsSuch(t *testing.T) {

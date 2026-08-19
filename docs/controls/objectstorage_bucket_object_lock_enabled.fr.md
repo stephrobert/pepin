@@ -18,7 +18,7 @@
 | Attribut décisif | `object_lock_enabled` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -89,7 +89,7 @@ Activer l'Object Lock (mode conformité ou gouvernance) sur les buckets de sauve
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/objectstorage_bucket_object_lock_enabled`](../../references/remediation/exoscale/objectstorage_bucket_object_lock_enabled) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

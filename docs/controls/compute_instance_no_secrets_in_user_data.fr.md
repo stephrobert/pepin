@@ -18,7 +18,7 @@
 | Attribut décisif | `user_data` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -86,7 +86,7 @@ Bannir les secrets des données utilisateur ; utiliser un coffre de secrets et l
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/compute_instance_no_secrets_in_user_data`](../../references/remediation/exoscale/compute_instance_no_secrets_in_user_data) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

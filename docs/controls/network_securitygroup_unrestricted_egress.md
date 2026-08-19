@@ -18,7 +18,7 @@
 | Deciding attribute | _none: judged on the presence of a deviation_ |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
-| Remediation proofs | 0 / 3 |
+| Remediation proofs | 1 / 3 |
 
 ## The risk
 
@@ -84,7 +84,7 @@ Restrict the egress rules to legitimate destinations and ports.
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/network_securitygroup_unrestricted_egress`](../../references/remediation/exoscale/network_securitygroup_unrestricted_egress) |
 | outscale | _no proof filed yet_ |
 | scaleway | _no proof filed yet_ |
 

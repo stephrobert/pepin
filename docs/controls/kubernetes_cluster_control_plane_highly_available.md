@@ -18,7 +18,7 @@
 | Deciding attribute | `control_plane_multi_az` |
 | State | active |
 | Declared for | `exoscale`, `outscale` |
-| Remediation proofs | 0 / 2 |
+| Remediation proofs | 1 / 2 |
 
 ## The risk
 
@@ -86,7 +86,7 @@ Enable a multi-AZ / multi-master control plane on the managed cluster.
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/kubernetes_cluster_control_plane_highly_available`](../../references/remediation/exoscale/kubernetes_cluster_control_plane_highly_available) |
 | outscale | _no proof filed yet_ |
 
 A remediation proof is a self-contained, **compliant** Terraform module that deploys as

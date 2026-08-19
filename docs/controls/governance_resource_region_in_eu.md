@@ -18,7 +18,7 @@
 | Deciding attribute | `region` |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
-| Remediation proofs | 0 / 3 |
+| Remediation proofs | 1 / 3 |
 
 ## The risk
 
@@ -85,7 +85,7 @@ Recreate or migrate the resource in a European Union region; restrict the allowe
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/governance_resource_region_in_eu`](../../references/remediation/exoscale/governance_resource_region_in_eu) |
 | outscale | _no proof filed yet_ |
 | scaleway | _no proof filed yet_ |
 

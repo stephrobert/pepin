@@ -18,7 +18,7 @@
 | Deciding attribute | `encrypted` |
 | State | active |
 | Declared for | `exoscale` |
-| Remediation proofs | 0 / 1 |
+| Remediation proofs | 1 / 1 |
 
 ## The risk
 
@@ -89,7 +89,7 @@ Enable encryption at rest on the volume (transparent on the provider side, or cl
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/blockstorage_volume_encryption`](../../references/remediation/exoscale/blockstorage_volume_encryption) |
 
 A remediation proof is a self-contained, **compliant** Terraform module that deploys as
 is, or a note anchored on the official documentation. See

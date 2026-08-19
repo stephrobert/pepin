@@ -18,7 +18,7 @@
 | Attribut décisif | `public_ip` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
-| Preuves de remédiation | 0 / 3 |
+| Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
@@ -89,7 +89,7 @@ Retirer l'IP publique si inutile ; restreindre le groupe de sécurité ; placer 
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/compute_instance_public_ip_with_open_securitygroup`](../../references/remediation/exoscale/compute_instance_public_ip_with_open_securitygroup) |
 | outscale | _aucune preuve déposée à ce jour_ |
 | scaleway | _aucune preuve déposée à ce jour_ |
 

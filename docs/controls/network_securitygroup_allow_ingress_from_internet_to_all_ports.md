@@ -18,7 +18,7 @@
 | Deciding attribute | _none: judged on the presence of a deviation_ |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
-| Remediation proofs | 0 / 3 |
+| Remediation proofs | 1 / 3 |
 
 ## The risk
 
@@ -84,7 +84,7 @@ Replace the rule with explicit port-by-port allowances, restricted to legitimate
 
 | Provider | Deployable setup |
 |---|---|
-| exoscale | _no proof filed yet_ |
+| exoscale | [`references/remediation/exoscale/network_securitygroup_allow_ingress_from_internet_to_all_ports`](../../references/remediation/exoscale/network_securitygroup_allow_ingress_from_internet_to_all_ports) |
 | outscale | _no proof filed yet_ |
 | scaleway | _no proof filed yet_ |
 

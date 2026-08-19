@@ -18,7 +18,7 @@
 | Attribut décisif | `control_plane_multi_az` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale` |
-| Preuves de remédiation | 0 / 2 |
+| Preuves de remédiation | 1 / 2 |
 
 ## Le risque
 
@@ -87,7 +87,7 @@ Activer un plan de contrôle multi-AZ / multi-master sur le cluster managé.
 
 | Fournisseur | Montage déployable |
 |---|---|
-| exoscale | _aucune preuve déposée à ce jour_ |
+| exoscale | [`references/remediation/exoscale/kubernetes_cluster_control_plane_highly_available`](../../references/remediation/exoscale/kubernetes_cluster_control_plane_highly_available) |
 | outscale | _aucune preuve déposée à ce jour_ |
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie
