@@ -209,13 +209,18 @@ fi
 # côté celle qu'il a injectée au build, et c'est ce fichier qu'on compare. Le GIF
 # et son relevé sont écrits par la même commande, donc l'un ne peut pas mentir
 # sans l'autre.
+#
+# Les DEUX GIF sont exigés : un lecteur anglophone qui ouvre README.md et un
+# lecteur francophone qui ouvre README.fr.md doivent chacun voir une démo dans
+# leur langue. N'en contrôler qu'un laisserait l'autre se périmer en silence.
 demo_version_file=docs/assets/quickstart.version
-if [ ! -f docs/assets/quickstart.gif ] || [ ! -f "$demo_version_file" ]; then
-  ko "le GIF de démonstration est absent" "lancer PEPIN_DEMO_VERSION=$VERSION mise run demo"
+if [ ! -f docs/assets/quickstart.gif ] || [ ! -f docs/assets/quickstart.fr.gif ] || [ ! -f "$demo_version_file" ]; then
+  ko "un GIF de démonstration est absent (anglais et français sont tous deux requis)" \
+     "lancer PEPIN_DEMO_VERSION=$VERSION mise run demo"
 elif [ "$(tr -d ' \n' <"$demo_version_file")" = "$VERSION" ]; then
-  ok "le GIF du README montre $VERSION"
+  ok "les GIF du README montrent $VERSION"
 else
-  ko "le GIF du README montre $(tr -d ' \n' <"$demo_version_file"), pas $VERSION" \
+  ko "les GIF du README montrent $(tr -d ' \n' <"$demo_version_file"), pas $VERSION" \
      "lancer PEPIN_DEMO_VERSION=$VERSION mise run demo et committer le résultat"
 fi
 

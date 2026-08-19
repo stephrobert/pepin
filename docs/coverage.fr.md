@@ -12,7 +12,8 @@ scan donné : un contrôle marqué ✅ peut parfaitement rendre `not-evaluated` 
 qui ne contient aucune ressource du type visé.
 
 Les titres de contrôles et les justifications proviennent du référentiel et des contrats de
-fournisseurs, qui sont rédigés en français (convention du dépôt) : ils sont cités tels quels.
+fournisseurs, qui sont bilingues : cette page cite la version française, la page anglaise
+cite la version anglaise. Le français reste la langue de référence du contenu normatif.
 
 ## Légende
 

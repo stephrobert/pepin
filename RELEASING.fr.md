@@ -37,12 +37,18 @@ l'outillage Python doit pouvoir couper une release.
 2. **Merger vers `main` par une pull request, et attendre une CI verte.** Le
    tag se construit depuis ce commit, et une release publiée ne se rejoue pas.
 
-3. **Ré-enregistrer le GIF de démonstration** à la version publiée, pour que la
-   page d'accueil du README ne montre pas durablement un produit antérieur :
+3. **Ré-enregistrer les GIF de démonstration** à la version publiée, pour
+   qu'aucune des deux pages d'accueil ne montre durablement un produit
+   antérieur :
 
    ```bash
    PEPIN_DEMO_VERSION=v0.1.0 mise run demo
    ```
+
+   Un enregistrement par langue : `quickstart.gif` pour `README.md`,
+   `quickstart.fr.gif` pour `README.fr.md`, depuis deux tapes qui exécutent
+   exactement les mêmes commandes et ne diffèrent que par la langue imposée. Le
+   preflight exige les deux.
 
    La version est injectée au build, jamais écrite dans le tape, et
    `docs/assets/quickstart.version` la consigne. Le preflight compare ce fichier

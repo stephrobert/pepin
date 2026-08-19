@@ -18,7 +18,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("LBU « %s » sans journal d'accès activé — aucune investigation possible.", [name]),
 		"remediation": "Activer access_log (bucket OOS dédié, rétention configurée).",
-		"labels": {"provider": provider_of(lb), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(lb),
+			"category": "compliance",
+			"message_en": sprintf("LBU \"%s\" has no access log enabled — no investigation is possible.", [name]),
+			"remediation_en": "Enable access_log (a dedicated OOS bucket, with a configured retention).",
+		},
 	}
 }
 

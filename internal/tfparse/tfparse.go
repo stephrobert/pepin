@@ -12,9 +12,12 @@ package tfparse
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
+
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // Resource est une ressource Terraform extraite du plan : son type HCL (ex.
@@ -57,18 +60,18 @@ type planResource struct {
 func ParsePlan(path string) ([]Resource, error) {
 	raw, err := os.ReadFile(path) // #nosec G304 -- chemin de plan Terraform fourni par l'utilisateur en argument CLI, lu en seule lecture.
 	if err != nil {
-		return nil, fmt.Errorf("lecture du plan %s : %w", path, err)
+		return nil, fmt.Errorf(i18n.T("lecture du plan %s : %w", "reading the plan %s: %w"), path, err)
 	}
 	var p plan
 	if err := json.Unmarshal(raw, &p); err != nil {
-		return nil, fmt.Errorf("plan terraform JSON invalide : %w", err)
+		return nil, fmt.Errorf(i18n.T("plan terraform JSON invalide : %w", "invalid Terraform JSON plan: %w"), err)
 	}
 	root := p.PlannedValues
 	if root == nil {
 		root = p.Values
 	}
 	if root == nil {
-		return nil, fmt.Errorf("plan terraform sans bloc planned_values ni values (sortie de `terraform show -json` attendue)")
+		return nil, errors.New(i18n.T("plan terraform sans bloc planned_values ni values (sortie de `terraform show -json` attendue)", "Terraform plan with neither a planned_values nor a values block (`terraform show -json` output expected)"))
 	}
 	var out []Resource
 	collect(&out, root.RootModule)

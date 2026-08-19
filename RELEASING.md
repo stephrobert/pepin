@@ -38,12 +38,17 @@ the Python tooling must still be able to cut a release.
    The tag builds from that commit, and a published release cannot be
    replayed.
 
-3. **Re-record the demo GIF** at the version being released, so the README's
-   front page does not keep showing an older product:
+3. **Re-record the demo GIFs** at the version being released, so neither
+   README's front page keeps showing an older product:
 
    ```bash
    PEPIN_DEMO_VERSION=v0.1.0 mise run demo
    ```
+
+   One recording per language — `quickstart.gif` for `README.md`,
+   `quickstart.fr.gif` for `README.fr.md` — from two tapes that run exactly the
+   same commands and differ only by the language they impose. The preflight
+   requires both.
 
    The version is injected into the build, never typed into the tape, and
    `docs/assets/quickstart.version` records it. The preflight compares that file

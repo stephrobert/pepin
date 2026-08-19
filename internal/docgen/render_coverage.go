@@ -158,7 +158,7 @@ func (m Matrix) reasonsTable(t coverageStrings) string {
 				if c.Status == Supported {
 					continue
 				}
-				if c.Status == Unsupported && strings.HasPrefix(c.Reason, "contrôle non déclaré") {
+				if c.Undeclared {
 					continue // trivial : déjà lisible dans la matrice, et sans information
 				}
 				_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s | %s `%s` | %s |\n",
@@ -274,7 +274,8 @@ func coverageText(lang string) coverageStrings {
 				"scan donné : un contrôle marqué ✅ peut parfaitement rendre `not-evaluated` sur un inventaire\n" +
 				"qui ne contient aucune ressource du type visé.\n\n" +
 				"Les titres de contrôles et les justifications proviennent du référentiel et des contrats de\n" +
-				"fournisseurs, qui sont rédigés en français (convention du dépôt) : ils sont cités tels quels.",
+				"fournisseurs, qui sont bilingues : cette page cite la version française, la page anglaise\n" +
+				"cite la version anglaise. Le français reste la langue de référence du contenu normatif.",
 			legendTitle: "Légende",
 			legend: map[Status]string{
 				Supported:     "la source produit le type de ressource visé, le contrat le déclare `verifie`, et l'attribut décisif est projeté. Pépin peut rendre `pass` ou `fail`.",
@@ -308,7 +309,8 @@ func coverageText(lang string) coverageStrings {
 			"control marked ✅ may well return `not-evaluated` on an inventory that contains no resource of the\n" +
 			"type it reads.\n\n" +
 			"Control titles and justifications come from the reference and from the provider contracts, which\n" +
-			"the repository keeps in French by convention: they are quoted verbatim.",
+			"are bilingual: this page quotes their English version, the French page quotes the French one.\n" +
+			"French remains the reference language of the normative content.",
 		legendTitle: "Legend",
 		legend: map[Status]string{
 			Supported:     "the source produces the resource type the control reads, the contract marks it `verifie`, and the deciding attribute is projected. Pépin can return `pass` or `fail`.",

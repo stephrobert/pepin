@@ -25,7 +25,7 @@ go build -o pepin .          # Go 1.26+
 <!-- pepin:gen provider-list -->
 ```text
 
-// pépin  providers enregistrés
+// pepin  registered providers
   exoscale  Exoscale (CH) — instances, security groups, block storage, SKS, SOS
   kubernetes  Kubernetes (in-cluster) — RBAC, Pod Security Standards, NetworkPolicy
   outscale  Outscale (3DS) — VM, BSU, OOS, EIM, security groups, OKS, LBU
@@ -72,17 +72,17 @@ actionable:
  ⚡ Immediate action — top 3 most severe deviations
 ──────────────────────────────────────────────────────────────────────────────
 
-  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
+  1. 🔴 CRIT  CLD-STO-1 — Bucket "scaleway_object_bucket_acl.backups" is publicly accessi…
      subject: scaleway_object_bucket_acl.backups
-  2. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
+  2. 🟠 HIGH  CLD-CMP-9 — VM "scaleway_instance_server.web": cleartext secret in user-dat…
      subject: scaleway_instance_server.web
-  3. 🟠 HIGH  CLD-STO-3 — sauvegardes automatiques désactivées.
+  3. 🟠 HIGH  CLD-STO-3 — Managed database "pepin-test-rdb": automatic backups are disabl…
      subject: pepin-test-rdb
 
 
 ──────────────────────────────────────────────────────────────────────────────
  CRITICAL  ·  CLD-STO-1  ·  scaleway
- Stockage objet exposé publiquement
+ Object storage publicly exposed
 […]
 ```
 <!-- /pepin:gen scan-vulnerable-head -->
@@ -97,20 +97,20 @@ and closes with the per-control table and the verdict:
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
   │ Code       │ Control                                          │ Sev      │ Tier     │ # │
   ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
-  │ CLD-STO-1  │ Stockage objet exposé publiquement               │ CRITICAL │ scaleway │ 1 │
-  │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
-  │ CLD-CMP-9  │ Secret en clair dans les données utilisateur (u… │ HIGH     │ scaleway │ 1 │
-  │ CLD-IAM-12 │ Politique IAM permettant une élévation de privi… │ HIGH     │ scaleway │ 1 │
-  │ CLD-NET-1  │ Base de données managée joignable depuis Intern… │ HIGH     │ scaleway │ 2 │
-  │ CLD-NET-2  │ Politique entrante par défaut d'un groupe de sé… │ HIGH     │ scaleway │ 1 │
-  │ CLD-STO-3  │ Sauvegardes automatiques d'une base managée dés… │ HIGH     │ scaleway │ 1 │
-  │ CLD-GVN-1  │ Inventaire et étiquetage incomplets              │ MEDIUM   │ scaleway │ 1 │
-  │ CLD-STO-8  │ Object Lock (immutabilité) désactivé sur le sto… │ LOW      │ scaleway │ 1 │
+  │ CLD-STO-1  │ Object storage publicly exposed                  │ CRITICAL │ scaleway │ 1 │
+  │ CLD-CHF-2  │ Managed database without encryption at rest      │ HIGH     │ scaleway │ 1 │
+  │ CLD-CMP-9  │ Cleartext secret in the user data (user-data)    │ HIGH     │ scaleway │ 1 │
+  │ CLD-IAM-12 │ IAM policy allowing privilege escalation         │ HIGH     │ scaleway │ 1 │
+  │ CLD-NET-1  │ Managed database reachable from the internet     │ HIGH     │ scaleway │ 2 │
+  │ CLD-NET-2  │ Security group inbound default policy set to "a… │ HIGH     │ scaleway │ 1 │
+  │ CLD-STO-3  │ Automatic backups disabled on a managed database │ HIGH     │ scaleway │ 1 │
+  │ CLD-GVN-1  │ Incomplete inventory and tagging                 │ MEDIUM   │ scaleway │ 1 │
+  │ CLD-STO-8  │ Object Lock (immutability) disabled on object s… │ LOW      │ scaleway │ 1 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
  Summary
 
- Verdict : NON CONFORME
+ Verdict: NON-COMPLIANT
 
  🔴 CRITICAL 1   🟠 HIGH 7   🟡 MEDIUM 1   🔵 LOW 1
 ──────────────────────────────────────────────────────────────────────────────
@@ -134,15 +134,15 @@ lifted from the run above:
 ```text
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CHF-2  ·  scaleway
- Base de données managée sans chiffrement au repos
+ Managed database without encryption at rest
 ──────────────────────────────────────────────────────────────────────────────
   Total deviations: 1
 
   Details:
-      HIGH  pepin-test-rdb — Base de données managée « pepin-test-rdb » sans chiffrement au repos.
+      HIGH  pepin-test-rdb — Managed database "pepin-test-rdb" has no encryption at rest.
 
   Remediation
-    Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
+    Enable encryption at rest on the instance (at creation time, or through an upgrade).
 
   ↳ docs: https://stephane-robert.info/scsl/CLD-CHF-2
 ```
@@ -205,7 +205,7 @@ without the `IAMManager` permission set, and the four governance tags on the ins
 ──────────────────────────────────────────────────────────────────────────────
  Summary
 
- Verdict : conforme sur le périmètre déclaré (plan Terraform, état planifié) (aucune non-conformité détectée, 16 contrôles conformes)
+ Verdict: compliant on the declared scope (Terraform plan, planned state) (no deviation detected, 16 compliant controls)
 
  🔴 CRITICAL 0   🟠 HIGH 0   🟡 MEDIUM 0   🔵 LOW 0
 ──────────────────────────────────────────────────────────────────────────────

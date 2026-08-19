@@ -22,6 +22,11 @@ deny contains f if {
 		"subject": object.get(r.attributes, "security_group_id", r.id),
 		"message": sprintf("Flux entrant autorisé (port %v) sans justification : la matrice des flux exige une description par règle.", [port]),
 		"remediation": "Documenter chaque règle de security group (service, raison) via sa description ; tenir la matrice des flux à jour.",
-		"labels": {"provider": provider_of(r), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "compliance",
+			"message_en": sprintf("Allowed inbound flow (port %v) with no justification: the flow matrix requires a description per rule.", [port]),
+			"remediation_en": "Document every security group rule (service, reason) in its description; keep the flow matrix up to date.",
+		},
 	}
 }

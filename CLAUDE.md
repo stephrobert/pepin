@@ -65,14 +65,42 @@ CE plan — aucune ressource cloud créée. Le scan live ne sert qu'à confirmer
 **contrat d'API** (champs réels) quand le plan ne suffit pas ; il est alors suivi
 d'un `destroy` immédiat.
 
-### 1.2 Docs du dépôt : bilingues, anglais en premier
+### 1.2 Bilinguisme : docs, CLI et référentiel
 
 Comme pavois, les docs du dépôt sont **bilingues FR/EN**. **L'anglais est la langue
 PRIMAIRE** : `README.md`, `SECURITY.md`, `CONTRIBUTING.md` sont en anglais ; leur
 contrepartie française est `*.fr.md`, reliée par un sélecteur de langue en tête
 (`🇬🇧 English · [🇫🇷 Français](*.fr.md)`). Tenir les deux versions synchronisées à
-chaque changement. Le CODE, les COMMENTAIRES, la CLI et le RÉFÉRENTIEL restent en
-français (produit souverain) ; les COMMITS restent en anglais (Conventional Commits).
+chaque changement.
+
+**La CLI et le RÉFÉRENTIEL sont eux aussi bilingues** (issue #37) : la langue est
+DÉTECTÉE (`--lang` → `PEPIN_LANG` → `LC_ALL` → `LANG` → repli `en`, cf.
+`internal/i18n`), et elle vaut pour tout ce que l'outil imprime (rapport, verdict,
+aide, erreurs) comme pour les formats parsables (`json`, `sarif`, `oscal`,
+`assessment`). Le **français reste la langue de RÉFÉRENCE du contenu normatif** :
+c'est lui qui fait foi, l'anglais en est la traduction maintenue en parallèle.
+
+Concrètement, tout texte destiné à l'utilisateur s'écrit DEUX fois, côte à côte :
+
+- **Go** : `i18n.T(fr, en)` au point de rendu ; les chaînes d'aide de cobra, figées
+  à l'init, sont réécrites par `cmd.localize()` après résolution de la langue.
+- **Rego** : `message`/`remediation` en français, `labels.message_en` et
+  `labels.remediation_en` en anglais (`finding.Finding.Labels` est extensible :
+  **on ne modifie pas scankit**). Le scan consomme ces labels puis les RETIRE, car
+  ce sont un transport, pas une donnée du rapport.
+- **Référentiel** : `titre_en`, `description_en`, `remediation_en` à côté de leurs
+  homologues français dans `referentiel/controles.yaml`.
+- **Contrats providers** : `reason_en` à côté de `reason` (justifications de
+  non-applicabilité, lues par un auditeur dans l'OSCAL).
+
+Trois portes refusent une traduction manquante, et elles sont dans `mise run validate`
+et `mise run test` : `TestEveryControlIsBilingual`, `TestEveryFindingCarriesRemediation`
+et `TestEveryContractJustificationIsBilingual`. Une quatrième, `cmd/lang_test.go`,
+exige qu'une sortie `LANG=en` ne porte aucun mot accenté qui ne vienne pas de
+l'inventaire scanné, et que la sortie française n'ait pas bougé d'un octet.
+
+Le CODE et les COMMENTAIRES restent en français ; les COMMITS restent en anglais
+(Conventional Commits).
 
 ## 2. Ancrage sur le contrat de l'API — règle d'or (skill `ancrage-contrat`)
 
@@ -91,8 +119,10 @@ source du contrat dans l'en-tête de chaque règle.
 - `f` suit le modèle partagé **`scankit/finding.Finding`** (cf. §9) : `code`,
   `severity` (`critical|high|medium|low`), `subject` (ressource fautive),
   `message` (FR actionnable), `remediation` (FR), et
-  `labels: {"provider": provider_of(r), "category": "security|compliance"}` —
-  **`provider` tiré de la ressource via le helper `provider_of`, jamais en dur.**
+  `labels: {"provider": provider_of(r), "category": "security|compliance",
+  "message_en": …, "remediation_en": …}` : **`provider` tiré de la ressource via le
+  helper `provider_of`, jamais en dur**, et les deux labels `_en` OBLIGATOIRES
+  (§1.2 : la traduction voyage dans les labels, scankit n'est pas modifié).
 - **`code` = identifiant de check agnostique, COMMUN à tous les providers**
   (ex. `network_securitygroup_allow_ingress_from_internet_to_tcp_port_22`,
   `objectstorage_bucket_public_access`). Convention `<service>_<resource>_<check>`
@@ -176,12 +206,15 @@ Les artefacts pilotent tout : `catalogue.yaml` (QUOI), `contrats/<provider>.yaml
    son SDK et le consigner `etat: verifie` + mapping dans `referentiel/contrats/<provider>.yaml`.
    Jamais supposer (« absent » se prouve en lisant le SDK).
 3. **Référentiel.** Ajouter le contrôle à `referentiel/controles.yaml` : `code`
-   agnostique, `severite`, `scsl: [CLD-*]` (gelé), `frameworks`, `fournisseurs`.
+   agnostique, `severite`, `scsl: [CLD-*]` (gelé), `frameworks`, `fournisseurs`,
+   et les trois champs BILINGUES `titre`/`titre_en`, `description`/`description_en`,
+   `remediation`/`remediation_en` (§1.2 ; `mise run validate` refuse une absence).
 4. **Collecteur.** Normaliser le champ natif → attribut commun dans
    `providers/<provider>/` (collecteur live ET mapper Terraform). Le squelette se
    génère : `python3 scripts/gen-collector.py <provider>`.
 5. **Règle commune.** UNE règle dans `internal/commonrules/rules/` (`package
-   pepin.rules`, `labels.provider: provider_of(r)`) + test `*_test.rego` (✓ et ✗).
+   pepin.rules`, `labels.provider: provider_of(r)`, plus `labels.message_en` et
+   `labels.remediation_en`, cf. §1.2) + test `*_test.rego` (✓ et ✗).
    Passer l'entrée du catalogue en `statut: implemente`.
 6. **Valider.** `mise run validate` (codes↔règles↔SCSL gelé↔catalogue) **puis**
    `mise run test` + `mise run audit` au vert. Aucun commit si l'un échoue (§1, §7).

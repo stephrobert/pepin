@@ -21,6 +21,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Bucket « %s » sans Object Lock : objets non immuables (pas de protection WORM contre suppression/écrasement).", [name]),
 		"remediation": "Activer l'Object Lock (mode conformité/gouvernance) sur les buckets de sauvegarde et d'objets critiques.",
-		"labels": {"provider": provider_of(b), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(b),
+			"category": "compliance",
+			"message_en": sprintf("Bucket \"%s\" has no Object Lock: objects are mutable (no WORM protection against deletion or overwrite).", [name]),
+			"remediation_en": "Enable Object Lock (compliance or governance mode) on backup buckets and critical objects.",
+		},
 	}
 }

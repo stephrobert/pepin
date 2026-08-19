@@ -18,7 +18,12 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Réseau « %s » sans étiquettes de gouvernance — cartographie réseau non tenue (propriétaire/projet/environnement).", [name]),
 		"remediation": "Étiqueter chaque réseau (propriétaire, projet, environnement) ; tenir la cartographie réseau à jour.",
-		"labels": {"provider": provider_of(n), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(n),
+			"category": "compliance",
+			"message_en": sprintf("Network \"%s\" has no governance tags — the network mapping is not maintained (owner/project/environment).", [name]),
+			"remediation_en": "Tag every network (owner, project, environment); keep the network mapping up to date.",
+		},
 	}
 }
 

@@ -24,7 +24,12 @@ deny contains f if {
 		"subject": object.get(p.attributes, "peering_id", p.id),
 		"message": sprintf("Appairage réseau « %s » entre deux comptes distincts (%s ↔ %s) : flux internes ouverts vers un autre SI — cloisonnement à justifier.", [object.get(p.attributes, "peering_id", p.id), src, acc]),
 		"remediation": "Limiter l'appairage aux réseaux du même SI ; pour un partenaire, justifier et restreindre les routes/flux échangés (matrice de flux).",
-		"labels": {"provider": provider_of(p), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(p),
+			"category": "compliance",
+			"message_en": sprintf("Network peering \"%s\" between two distinct accounts (%s <-> %s): internal flows opened towards another information system — the segregation must be justified.", [object.get(p.attributes, "peering_id", p.id), src, acc]),
+			"remediation_en": "Limit peerings to networks of the same information system; for a partner, justify the peering and restrict the routes and flows exchanged (flow matrix).",
+		},
 	}
 }
 

@@ -5,8 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"runtime/debug"
 	"sort"
@@ -19,6 +21,7 @@ import (
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/commonrules"
 	"github.com/stephrobert/pepin/internal/genprovider"
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/internal/scoring"
@@ -61,10 +64,13 @@ var scanCmd = &cobra.Command{
 		}
 		p, ok := provider.Get(name)
 		if !ok {
-			return fmt.Errorf("provider inconnu : %q (voir `pepin providers`)", name)
+			return fmt.Errorf(tr("provider inconnu : %q (voir `pepin providers`)",
+				"unknown provider: %q (see `pepin providers`)"), name)
 		}
 		if !scanLive && path == "" {
-			return fmt.Errorf("préciser un fichier (export JSON ou plan Terraform), ou utiliser --live")
+			return errors.New(tr(
+				"préciser un fichier (export JSON ou plan Terraform), ou utiliser --live",
+				"give a file (JSON export or Terraform plan), or use --live"))
 		}
 		scanTimestamp = time.Now().UTC().Format(time.RFC3339) // un seul instant, partagé input + run
 
@@ -111,6 +117,11 @@ var scanCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		// La traduction voyage dans les labels des règles ; on la consomme ICI, avant
+		// assess.Build, pour que l'assessment, l'OSCAL et le bundle scellé parlent la
+		// même langue que le terminal. Le rendu de scankit, lui, n'a rien à savoir
+		// de la langue : il reçoit des findings déjà dans la bonne.
+		localizeFindings(findings)
 		// Build the opposable assessment from the AGNOSTIC-coded findings, BEFORE enrichment
 		// rewrites Code to the SCSL id: typed statuses (fail/pass/not-evaluated), exact
 		// normative references, and run provenance (tool/ruleset digests, target, timestamp).
@@ -129,16 +140,21 @@ var scanCmd = &cobra.Command{
 			}
 			inputJSON, merr := json.MarshalIndent(bundleInput, "", "  ")
 			if merr != nil {
-				return fmt.Errorf("sérialisation de l'inventaire évalué : %w", merr)
+				return fmt.Errorf(tr("sérialisation de l'inventaire évalué : %w",
+					"serializing the evaluated inventory: %w"), merr)
 			}
 			cs, err := assess.WriteBundle(scanSeal, asmt, inputJSON)
 			if err != nil {
 				return err
 			}
 			if !scanRedact {
-				_, _ = fmt.Fprintln(os.Stderr, "pepin: ⚠ input.json embarque l'inventaire BRUT (peut contenir des secrets : user-data, policies). Traiter le bundle comme SENSIBLE, ou utiliser --redact pour le partager.")
+				_, _ = fmt.Fprintln(os.Stderr, tr(
+					"pepin: ⚠ input.json embarque l'inventaire BRUT (peut contenir des secrets : user-data, policies). Traiter le bundle comme SENSIBLE, ou utiliser --redact pour le partager.",
+					"pepin: ⚠ input.json embeds the RAW inventory (it may contain secrets: user-data, policies). Treat the bundle as SENSITIVE, or use --redact to share it."))
 			}
-			_, _ = fmt.Fprintf(os.Stderr, "pepin: bundle de preuve écrit dans %s — sceller : cosign sign-blob %s\n", scanSeal, cs)
+			_, _ = fmt.Fprintf(os.Stderr, tr(
+				"pepin: bundle de preuve écrit dans %s — sceller : cosign sign-blob %s\n",
+				"pepin: evidence bundle written to %s — seal it with: cosign sign-blob %s\n"), scanSeal, cs)
 		}
 
 		enrichFromReferentiel(findings)
@@ -169,7 +185,7 @@ var scanCmd = &cobra.Command{
 		}
 		// Portée prestataire/commanditaire : obligatoire pour l'opposabilité (un rapport pepin
 		// ne prouve pas une qualification, seulement la posture d'un tenant).
-		_, _ = fmt.Fprintf(os.Stderr, "\nⓘ %s\n", assess.ScopeDisclaimer)
+		_, _ = fmt.Fprintf(os.Stderr, "\nⓘ %s\n", assess.ScopeDisclaimer())
 		if !res.Conforme {
 			os.Exit(exitNonConformite)
 		}
@@ -315,11 +331,61 @@ func enrichFromReferentiel(findings []finding.Finding) {
 			findings[i].Labels = map[string]string{}
 		}
 		findings[i].Labels["check"] = findings[i].Code
-		findings[i].Title = ctl.Titre
+		findings[i].Title = ctl.TitreIn(i18n.Current())
 		if ctl.SCSL() != "" {
 			findings[i].Code = ctl.SCSL()
 		}
 	}
+}
+
+// labelMessageEn / labelRemediationEn : les deux labels par lesquels une règle Rego
+// transporte sa traduction anglaise. Le modèle amont `scankit/finding.Finding` porte
+// `Labels map[string]string`, extensible : la traduction voyage donc DANS le finding,
+// sans qu'une ligne de scankit ne bouge.
+const (
+	labelMessageEn     = "message_en"
+	labelRemediationEn = "remediation_en"
+)
+
+// localizeFindings substitue le message et la remédiation anglais quand la langue
+// résolue est l'anglais, puis RETIRE les deux labels de traduction dans les deux cas.
+//
+// Le retrait n'est pas cosmétique : `labels` est publié tel quel dans `--format json`,
+// dans le SARIF et dans l'assessment scellé. Les y laisser ferait voyager les deux
+// langues dans chaque finding : un rapport français porterait sa traduction anglaise,
+// et le digest du bundle changerait pour une raison qui ne regarde pas la posture.
+// Les labels sont un TRANSPORT ; ils ne sont pas une donnée du rapport.
+//
+// Une traduction absente laisse le français en place (dégradation propre, cf.
+// i18n.Pick) : c'est le cas d'une règle externe chargée par --policy-dir, que Pépin
+// ne contrôle pas. Pour les règles du dépôt, l'absence est refusée en CI par
+// TestEveryFindingCarriesRemediation, jamais découverte en production.
+func localizeFindings(findings []finding.Finding) {
+	en := i18n.Current() == i18n.EN
+	for i := range findings {
+		labels := findings[i].Labels
+		if labels == nil {
+			continue
+		}
+		if en {
+			findings[i].Message = i18n.Pick(findings[i].Message, labels[labelMessageEn])
+			findings[i].Remediation = i18n.Pick(findings[i].Remediation, labels[labelRemediationEn])
+		}
+		delete(labels, labelMessageEn)
+		delete(labels, labelRemediationEn)
+	}
+}
+
+// cloneFindings copie en profondeur ce que localizeFindings mute (la carte des labels),
+// pour qu'un même jeu de findings puisse être rendu dans les deux langues sans que le
+// premier passage n'ampute le second. Utilisé par `verify --re-derive`.
+func cloneFindings(in []finding.Finding) []finding.Finding {
+	out := make([]finding.Finding, len(in))
+	copy(out, in)
+	for i := range out {
+		out[i].Labels = maps.Clone(out[i].Labels)
+	}
+	return out
 }
 
 // scanSource décrit la provenance des données pour le rapport. En live, le
@@ -328,12 +394,12 @@ func scanSource(path string) string {
 	if !scanLive {
 		return path
 	}
-	src := "collecte live"
+	src := tr("collecte live", "live collection")
 	if scanProfile != "" {
-		src += " · profil " + scanProfile
+		src += tr(" · profil ", " · profile ") + scanProfile
 	}
 	if scanRegion != "" {
-		src += " · région " + scanRegion
+		src += tr(" · région ", " · region ") + scanRegion
 	}
 	return src
 }
@@ -588,7 +654,8 @@ func loadInput(ctx context.Context, p provider.Provider, path string) (any, erro
 	if scanTF {
 		mapper, ok := p.(provider.TerraformMapper)
 		if !ok {
-			return nil, fmt.Errorf("le provider %q ne supporte pas l'audit Terraform", p.Name())
+			return nil, fmt.Errorf(tr("le provider %q ne supporte pas l'audit Terraform",
+				"provider %q does not support Terraform auditing"), p.Name())
 		}
 		resources, err := tfparse.ParsePlan(path)
 		if err != nil {
@@ -608,7 +675,7 @@ func loadInput(ctx context.Context, p provider.Provider, path string) (any, erro
 	}
 	var input any
 	if err := json.Unmarshal(raw, &input); err != nil {
-		return nil, fmt.Errorf("export JSON invalide : %w", err)
+		return nil, fmt.Errorf(tr("export JSON invalide : %w", "invalid JSON export: %w"), err)
 	}
 	return input, nil
 }
@@ -706,20 +773,29 @@ func verdictHeadline(res scoring.Result, asmt assessment.Assessment, source stri
 			}
 		}
 	}
-	scope := "périmètre évalué"
+	scope := tr("périmètre évalué", "assessed scope")
 	if source == "terraform-plan" {
-		scope = "périmètre déclaré (plan Terraform, état planifié)"
+		scope = tr("périmètre déclaré (plan Terraform, état planifié)",
+			"declared scope (Terraform plan, planned state)")
 	}
 	switch {
 	case evaluated == 0:
-		return "Verdict : INDÉTERMINÉ — aucun contrôle mesuré sur des ressources (le " + scope + " est vide ou non collecté)"
+		return tr(
+			"Verdict : INDÉTERMINÉ — aucun contrôle mesuré sur des ressources (le "+scope+" est vide ou non collecté)",
+			"Verdict: UNDETERMINED — no control measured on any resource (the "+scope+" is empty or was not collected)")
 	case !res.Conforme:
-		return "Verdict : NON CONFORME"
+		return tr("Verdict : NON CONFORME", "Verdict: NON-COMPLIANT")
 	case res.Medium+res.Low > 0:
 		// Pas d'écart critique/haut, MAIS des écarts medium/low subsistent : ne pas laisser lire « conforme ».
-		return fmt.Sprintf("Verdict : aucun écart critique/haut, mais %d écart(s) medium/low sur le %s (%d conformes)", res.Medium+res.Low, scope, pass)
+		return fmt.Sprintf(tr(
+			"Verdict : aucun écart critique/haut, mais %d écart(s) medium/low sur le %s (%d conformes)",
+			"Verdict: no critical/high deviation, but %d medium/low deviation(s) on the %s (%d compliant)"),
+			res.Medium+res.Low, scope, pass)
 	default:
-		return fmt.Sprintf("Verdict : conforme sur le %s (aucune non-conformité détectée, %d contrôles conformes)", scope, pass)
+		return fmt.Sprintf(tr(
+			"Verdict : conforme sur le %s (aucune non-conformité détectée, %d contrôles conformes)",
+			"Verdict: compliant on the %s (no deviation detected, %d compliant controls)"),
+			scope, pass)
 	}
 }
 
@@ -739,7 +815,7 @@ func scanReportOptions(provName, path string) screport.Options {
 		Mode:     mode,
 		Source:   path,
 		Banner:   pepinBanner(),
-		Tagline:  "scanner de posture cloud (sécurité · conformité)",
+		Tagline:  tr("scanner de posture cloud (sécurité · conformité)", "cloud posture scanner (security · compliance)"),
 		Brand:    lipgloss.Color("#C792EA"),
 		TierOf:   func(f finding.Finding) string { return f.Label("provider") },
 		DocURL:   docURL,

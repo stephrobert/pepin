@@ -53,6 +53,14 @@ resolution, S3 endpoint, `collecte` (live API), `mapping_terraform`, and the
    mappings, `fournisseurs`).
 3. Validate with a real scan, then activate (`fournisseurs`).
 
+Everything the user reads is **written twice**, side by side, because Pépin
+detects the reader's language. A rule emits `message`/`remediation` in French and
+`labels.message_en`/`labels.remediation_en` in English; a control carries
+`titre_en`, `description_en` and `remediation_en`; a provider contract carries
+`reason_en` next to `reason`. `mise run validate` refuses any of these missing —
+an English report must never fall back to French mid-sentence. French is the
+reference language of the normative content; English is its translation.
+
 ## Docs & commits
 
 Repository docs are **bilingual**: English is primary (`README.md`), French is the

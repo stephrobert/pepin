@@ -15,6 +15,7 @@ import (
 
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/genprovider"
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/referentiel"
 )
 
@@ -55,7 +56,11 @@ const (
 // statut sans motif n'apprend rien à qui doit décider d'adopter l'outil.
 type Cell struct {
 	Status Status
-	Reason string // français, actionnable ; vide pour Supported
+	Reason string // actionnable, dans la langue de la matrice ; vide pour Supported
+	// Undeclared distingue le seul cas d'Unsupported qui n'apprend rien : le contrôle
+	// n'est pas déclaré pour ce fournisseur au référentiel. Un drapeau plutôt qu'un
+	// test sur le texte du motif : un motif est traduit, un drapeau ne l'est pas.
+	Undeclared bool
 }
 
 // Row est la ligne d'un contrôle dans la matrice de couverture.
@@ -113,7 +118,10 @@ func (p projection) add(typ string, keys ...map[string]bool) {
 // BuildMatrix calcule la couverture depuis le dépôt monté à `root`. Les descripteurs sont
 // enregistrés dans genprovider pour que le calcul emprunte EXACTEMENT les fonctions du scan
 // (assess.Verified, genprovider.NonApplicableReason, genprovider.ControlType).
-func BuildMatrix(root string) (Matrix, error) {
+// La matrice porte de la PROSE (titres de contrôles, motifs) : elle est donc calculée
+// pour une langue donnée, et la documentation bilingue en construit une par page.
+func BuildMatrix(root, lang string) (Matrix, error) {
+	l := i18n.Lang(lang)
 	descs, err := loadDescriptors(root)
 	if err != nil {
 		return Matrix{}, err
@@ -156,7 +164,7 @@ func BuildMatrix(root string) (Matrix, error) {
 		ctl := all[code]
 		row := Row{
 			Code:          code,
-			Title:         ctl.Titre,
+			Title:         ctl.TitreIn(l),
 			Severity:      ctl.Severite,
 			Family:        ctl.Famille,
 			SCSL:          ctl.Scsl,
@@ -168,7 +176,7 @@ func BuildMatrix(root string) (Matrix, error) {
 		for name := range descs {
 			row.Cells[name] = map[Source]Cell{}
 			for _, src := range []Source{SourceTerraform, SourceLive} {
-				row.Cells[name][src] = cellStatus(name, ctl, src, projections[name][src], required[code])
+				row.Cells[name][src] = cellStatus(l, name, ctl, src, projections[name][src], required[code])
 			}
 		}
 		rows = append(rows, row)
@@ -181,38 +189,48 @@ func BuildMatrix(root string) (Matrix, error) {
 // source, verrou `verifie` du contrat, puis projection de l'attribut décisif. Toute
 // divergence avec cmd/scan.go se verrait comme une case verte que le scan rend
 // « non évaluée » : c'est pourquoi le verrou lui-même (assess.Verified) est partagé.
-func cellStatus(provider string, ctl referentiel.Control, src Source, proj projection, required []string) Cell {
+func cellStatus(l i18n.Lang, provider string, ctl referentiel.Control, src Source, proj projection, required []string) Cell {
 	code := ctl.Code
-	if reason := genprovider.NonApplicableReason(provider, code); reason != "" {
+	if reason := genprovider.NonApplicableReasonIn(l, provider, code); reason != "" {
 		return Cell{Status: NotApplicable, Reason: reason}
 	}
 	if !contains(ctl.Fournisseurs, provider) {
-		return Cell{Status: Unsupported, Reason: "contrôle non déclaré pour ce fournisseur dans referentiel/controles.yaml"}
+		return Cell{Status: Unsupported, Undeclared: true, Reason: i18n.TIn(l,
+			"contrôle non déclaré pour ce fournisseur dans referentiel/controles.yaml",
+			"control not declared for this provider in referentiel/controles.yaml")}
 	}
 	typ := genprovider.ControlType(code)
 	if typ != "" && !proj.types[typ] {
-		return Cell{Status: Unsupported, Reason: "cette source ne produit aucune ressource de type « " + typ + " »"}
+		return Cell{Status: Unsupported, Reason: i18n.TIn(l,
+			"cette source ne produit aucune ressource de type « "+typ+" »",
+			"this source produces no resource of type \""+typ+"\"")}
 	}
 	if !assess.Verified(provider, code) {
 		if typ == "" {
-			return Cell{Status: Partial, Reason: "aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté"}
+			return Cell{Status: Partial, Reason: i18n.TIn(l,
+				"aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté",
+				"no targeted resource type, and the control does not read the provider descriptor: the \"pass\" lock cannot be lifted, so the scan returns \"not-evaluated\" as long as no deviation is detected")}
 		}
-		return Cell{Status: Partial, Reason: "contrat du fournisseur : le type « " + typ + " » n'est pas déclaré `verifie` (" + etatLabel(provider, typ) + ")"}
+		return Cell{Status: Partial, Reason: i18n.TIn(l,
+			"contrat du fournisseur : le type « "+typ+" » n'est pas déclaré `verifie` ("+etatLabel(l, provider, typ)+")",
+			"provider contract: type \""+typ+"\" is not declared `verifie` ("+etatLabel(l, provider, typ)+")")}
 	}
 	if len(required) > 0 && !anyProjected(proj.attrs[typ], required) {
-		return Cell{Status: Partial, Reason: "attribut décisif « " + strings.Join(required, " / ") + " » non projeté par cette source : garde de capacité, le scan rend « not-evaluated »"}
+		return Cell{Status: Partial, Reason: i18n.TIn(l,
+			"attribut décisif « "+strings.Join(required, " / ")+" » non projeté par cette source : garde de capacité, le scan rend « not-evaluated »",
+			"deciding attribute \""+strings.Join(required, " / ")+"\" not projected by this source: a capability guard, so the scan returns \"not-evaluated\"")}
 	}
 	return Cell{Status: Supported}
 }
 
 // etatLabel rend l'état contractuel d'un type, pour que la raison d'un `partial` cite la
 // donnée du descripteur plutôt qu'une paraphrase.
-func etatLabel(provider, typ string) string {
+func etatLabel(l i18n.Lang, provider, typ string) string {
 	etat := genprovider.TypeEtat(provider, typ)
 	if etat == "" {
-		return "type absent du contrat"
+		return i18n.TIn(l, "type absent du contrat", "type absent from the contract")
 	}
-	return "état : " + etat
+	return i18n.TIn(l, "état : ", "state: ") + etat
 }
 
 func anyProjected(have map[string]bool, want []string) bool {

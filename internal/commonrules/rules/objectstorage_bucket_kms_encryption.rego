@@ -43,6 +43,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Bucket « %s » classé sensible mais chiffré sans clé gérée par le client (SSE-KMS) : données sous le contrôle exclusif du fournisseur.", [name]),
 		"remediation": "Créer une clé dans Key Manager et l'associer au bucket comme clé de chiffrement par défaut (SSE-KMS) pour les données sensibles.",
-		"labels": {"provider": provider_of(b), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(b),
+			"category": "compliance",
+			"message_en": sprintf("Bucket \"%s\" is classified sensitive but encrypted without a customer-managed key (SSE-KMS): its data stays under the provider's exclusive control.", [name]),
+			"remediation_en": "Create a key in Key Manager and attach it to the bucket as its default encryption key (SSE-KMS) for sensitive data.",
+		},
 	}
 }

@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/stephrobert/pepin/internal/genprovider"
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/referentiel"
 	"github.com/stephrobert/scankit/assessment"
 	"github.com/stephrobert/scankit/finding"
@@ -214,13 +215,13 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 		c := controls[f.Code]
 		results = append(results, assessment.Result{
 			Control:     f.Code,
-			Title:       first(c.Titre, f.Title),
+			Title:       first(c.TitreIn(i18n.Current()), f.Title),
 			Status:      assessment.Fail,
 			Severity:    first(f.Severity, c.Severite),
 			Subject:     f.Subject,
 			Evidence:    assessment.Evidence{Observed: stripSubject(f.Message), Source: run.Source},
 			References:  References(c),
-			Remediation: first(f.Remediation, c.Remediation),
+			Remediation: first(f.Remediation, c.RemediationIn(i18n.Current())),
 			Labels:      maps.Clone(f.Labels), // copie : une mutation post-Build (enrichFromReferentiel) ne doit pas altérer l'assessment scellé
 		})
 	}
@@ -238,7 +239,7 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 		c := controls[code]
 		res := assessment.Result{
 			Control:    code,
-			Title:      c.Titre,
+			Title:      c.TitreIn(i18n.Current()),
 			Severity:   c.Severite,
 			Subject:    run.Target.ID,
 			References: References(c),
@@ -258,14 +259,20 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			case verified[code] && applicable(code, controlType, resourceTypes) && attrCollected(code, typ, attrsByType):
 				// A Pass carries WHAT was checked (basis of the assertion), not just a status.
 				res.Status = assessment.Pass
-				observed := "aucune non-conformité détectée (contrat vérifié)"
+				observed := i18n.T(
+					"aucune non-conformité détectée (contrat vérifié)",
+					"no deviation detected (contract verified)")
 				if typ != "" {
-					observed = fmt.Sprintf("aucune non-conformité détectée sur les ressources de type « %s » collectées (contrat vérifié)", typ)
+					observed = fmt.Sprintf(i18n.T(
+						"aucune non-conformité détectée sur les ressources de type « %s » collectées (contrat vérifié)",
+						"no deviation detected on the collected resources of type \"%s\" (contract verified)"), typ)
 				} else if strings.HasPrefix(code, "governance_provider_") {
 					// Réservé aux contrôles dont la donnée EST le descripteur. Les
 					// governance_resource_* sont mesurés sur le tenant : leur attribuer
 					// cette preuve serait un mensonge.
-					observed = "conforme selon les faits de souveraineté déclarés au descripteur du fournisseur (attestation, non mesuré sur le tenant)"
+					observed = i18n.T(
+						"conforme selon les faits de souveraineté déclarés au descripteur du fournisseur (attestation, non mesuré sur le tenant)",
+						"compliant according to the sovereignty facts declared in the provider descriptor (an attestation, not measured on the tenant)")
 				}
 				res.Evidence = assessment.Evidence{Observed: observed, Source: run.Source}
 			default:
@@ -301,19 +308,25 @@ func attrCollected(code, typ string, attrsByType map[string]map[string]bool) boo
 // opposable dit sur quoi il bute (donnée non collectée, ou aucune ressource du type en scope).
 func notEvaluatedReason(code, typ string, verified bool, resourceTypes map[string]bool, attrsByType map[string]map[string]bool) string {
 	if !verified {
-		return "collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « vérifié »)"
+		return i18n.T(
+			"collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « vérifié »)",
+			"collection of the required data is not confirmed for this provider (contract not \"verified\")")
 	}
 	if typ != "" && !resourceTypes[typ] {
-		return fmt.Sprintf("aucune ressource de type « %s » dans l'inventaire évalué", typ)
+		return fmt.Sprintf(i18n.T(
+			"aucune ressource de type « %s » dans l'inventaire évalué",
+			"no resource of type \"%s\" in the assessed inventory"), typ)
 	}
 	if attrs := requiredAttr[code]; len(attrs) > 0 && !attrCollected(code, typ, attrsByType) {
-		where := fmt.Sprintf("les ressources de type « %s »", typ)
+		where := fmt.Sprintf(i18n.T("les ressources de type « %s »", "the resources of type \"%s\""), typ)
 		if typ == "" { // contrôle transverse (gouvernance) : aucun type visé
-			where = "les ressources collectées"
+			where = i18n.T("les ressources collectées", "the collected resources")
 		}
-		return fmt.Sprintf("attribut « %s » non collecté sur %s (garde de capacité)", strings.Join(attrs, " / "), where)
+		return fmt.Sprintf(i18n.T(
+			"attribut « %s » non collecté sur %s (garde de capacité)",
+			"attribute \"%s\" not collected on %s (capability guard)"), strings.Join(attrs, " / "), where)
 	}
-	return "contrôle non évaluable sur cet inventaire"
+	return i18n.T("contrôle non évaluable sur cet inventaire", "control not evaluable on this inventory")
 }
 
 // RulesetDigest hashes the embedded rule set so the assessment's provenance pins exactly which

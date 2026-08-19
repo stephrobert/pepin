@@ -24,6 +24,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Politique EIM « %s » : autorisation Allow portant Resource=\"*\" (toutes les ressources du compte).", [name]),
 		"remediation": "Restreindre Resource aux identifiants (ORN) que la politique doit réellement couvrir.",
-		"labels": {"provider": provider_of(p), "category": "security"},
+		"labels": {
+			"provider": provider_of(p),
+			"category": "security",
+			"message_en": sprintf("EIM policy \"%s\": Allow statement carrying Resource=\"*\" (every resource of the account).", [name]),
+			"remediation_en": "Restrict Resource to the identifiers (ORN) the policy must actually cover.",
+		},
 	}
 }

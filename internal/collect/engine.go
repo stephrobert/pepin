@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
 )
 
@@ -216,7 +217,7 @@ func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsP
 			return items, nil
 		}
 	}
-	return nil, fmt.Errorf("pagination : borne de %d pages atteinte sur %s — collecte tronquée (vérifier la config de pagination)", max, fullURL)
+	return nil, fmt.Errorf(i18n.T("pagination : borne de %d pages atteinte sur %s — collecte tronquée (vérifier la config de pagination)", "pagination: reached the %d-page bound on %s — truncated collection (check the pagination config)"), max, fullURL)
 }
 
 // withBodyPaging fusionne les paramètres de pagination dans le body JSON d'un POST.
@@ -462,14 +463,14 @@ func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Pa
 	defer func() { _ = resp.Body.Close() }()
 	respBody, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
 	if rerr != nil {
-		return nil, fmt.Errorf("lecture de la reponse de %s : %w", u.Host, rerr)
+		return nil, fmt.Errorf(i18n.T("lecture de la reponse de %s : %w", "reading the response from %s: %w"), u.Host, rerr)
 	}
 	if resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
 	}
 	var doc any
 	if err := json.Unmarshal(respBody, &doc); err != nil {
-		return nil, fmt.Errorf("réponse JSON invalide : %w", err)
+		return nil, fmt.Errorf(i18n.T("réponse JSON invalide : %w", "invalid JSON response: %w"), err)
 	}
 	return doc, nil
 }

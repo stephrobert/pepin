@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,10 +14,12 @@ import (
 
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/commonrules"
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/referentiel"
 	"github.com/stephrobert/scankit/assessment"
 	"github.com/stephrobert/scankit/engine"
+	"github.com/stephrobert/scankit/finding"
 	screport "github.com/stephrobert/scankit/report"
 )
 
@@ -45,19 +48,25 @@ var verifyCmd = &cobra.Command{
 		if !signed {
 			// Sans signature, l'intégrité ne détecte que l'altération ACCIDENTELLE : un attaquant
 			// régénère fichiers + checksums. On le dit sans ambiguïté (pas de « ✓ » rassurant).
-			_, _ = fmt.Fprintf(os.Stdout, "⚠ bundle cohérent en interne : %s\n  (intégrité ACCIDENTELLE seulement — NON opposable sans --pubkey pour la signature cosign)\n", dir)
+			_, _ = fmt.Fprintf(os.Stdout, tr(
+				"⚠ bundle cohérent en interne : %s\n  (intégrité ACCIDENTELLE seulement — NON opposable sans --pubkey pour la signature cosign)\n",
+				"⚠ bundle internally consistent: %s\n  (ACCIDENTAL integrity only — NOT defensible without --pubkey for the cosign signature)\n"), dir)
 		} else {
 			if err := verifyCosign(dir, verifyPubKey, verifyBundle); err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(os.Stdout, "✓ bundle intègre et signé (non-répudiation) : %s\n", dir)
+			_, _ = fmt.Fprintf(os.Stdout, tr(
+				"✓ bundle intègre et signé (non-répudiation) : %s\n",
+				"✓ bundle intact and signed (non-repudiation): %s\n"), dir)
 		}
 
 		if verifyReDerive {
 			if err := reDerive(cmd.Context(), dir); err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintln(os.Stdout, "✓ re-dérivation FIDÈLE : l'assessment scellé découle bien de input.json")
+			_, _ = fmt.Fprintln(os.Stdout, tr(
+				"✓ re-dérivation FIDÈLE : l'assessment scellé découle bien de input.json",
+				"✓ FAITHFUL re-derivation: the sealed assessment does follow from input.json"))
 		}
 		return nil
 	},
@@ -71,23 +80,25 @@ func reDeriveOSCAL(dir string, got assessment.Assessment) error {
 		if os.IsNotExist(err) {
 			return nil // bundle sans OSCAL : rien à comparer
 		}
-		return fmt.Errorf("lecture de assessment-oscal.json : %w", err)
+		return fmt.Errorf(tr("lecture de assessment-oscal.json : %w", "reading assessment-oscal.json: %w"), err)
 	}
 	var buf bytes.Buffer
 	if err := screport.OSCAL(&buf, got); err != nil {
-		return fmt.Errorf("re-rendu OSCAL : %w", err)
+		return fmt.Errorf(tr("re-rendu OSCAL : %w", "re-rendering OSCAL: %w"), err)
 	}
 	var a, b any
 	if err := json.Unmarshal(sealedOSCAL, &a); err != nil {
-		return fmt.Errorf("assessment-oscal.json invalide : %w", err)
+		return fmt.Errorf(tr("assessment-oscal.json invalide : %w", "invalid assessment-oscal.json: %w"), err)
 	}
 	if err := json.Unmarshal(buf.Bytes(), &b); err != nil {
-		return fmt.Errorf("OSCAL re-rendu invalide : %w", err)
+		return fmt.Errorf(tr("OSCAL re-rendu invalide : %w", "invalid re-rendered OSCAL: %w"), err)
 	}
 	ja, _ := json.Marshal(a)
 	jb, _ := json.Marshal(b)
 	if string(ja) != string(jb) {
-		return fmt.Errorf("re-dérivation DIVERGE sur l'OSCAL : assessment-oscal.json n'est pas le rendu de l'assessment (artefact normatif fabriqué)")
+		return errors.New(tr(
+			"re-dérivation DIVERGE sur l'OSCAL : assessment-oscal.json n'est pas le rendu de l'assessment (artefact normatif fabriqué)",
+			"re-derivation DIVERGES on the OSCAL: assessment-oscal.json is not the rendering of the assessment (fabricated normative artifact)"))
 	}
 	return nil
 }
@@ -105,7 +116,10 @@ func checkProvenance(input any, sealed assessment.Assessment) error {
 		return nil
 	}
 	if evaluatedAt != sealed.Run.Timestamp {
-		return fmt.Errorf("provenance INCOHÉRENTE : input.evaluated_at (%s) ≠ Run.Timestamp (%s) — le scan grave un instant unique, cet écart trahit un antidatage", evaluatedAt, sealed.Run.Timestamp)
+		return fmt.Errorf(tr(
+			"provenance INCOHÉRENTE : input.evaluated_at (%s) ≠ Run.Timestamp (%s) — le scan grave un instant unique, cet écart trahit un antidatage",
+			"INCONSISTENT provenance: input.evaluated_at (%s) ≠ Run.Timestamp (%s) — a scan carves a single instant, this gap betrays a backdating"),
+			evaluatedAt, sealed.Run.Timestamp)
 	}
 	return nil
 }
@@ -117,37 +131,46 @@ func checkProvenance(input any, sealed assessment.Assessment) error {
 func reDerive(ctx context.Context, dir string) error {
 	sealedRaw, err := os.ReadFile(filepath.Join(dir, "assessment.json")) // #nosec G304 -- dossier de bundle de l'opérateur.
 	if err != nil {
-		return fmt.Errorf("lecture de assessment.json : %w", err)
+		return fmt.Errorf(tr("lecture de assessment.json : %w", "reading assessment.json: %w"), err)
 	}
 	var sealed assessment.Assessment
 	if err := json.Unmarshal(sealedRaw, &sealed); err != nil {
-		return fmt.Errorf("assessment.json invalide : %w", err)
+		return fmt.Errorf(tr("assessment.json invalide : %w", "invalid assessment.json: %w"), err)
 	}
 	inputRaw, err := os.ReadFile(filepath.Join(dir, "input.json")) // #nosec G304 -- dossier de bundle de l'opérateur.
 	if err != nil {
-		return fmt.Errorf("re-dérivation impossible : input.json absent du bundle (%w)", err)
+		return fmt.Errorf(tr("re-dérivation impossible : input.json absent du bundle (%w)",
+			"re-derivation impossible: input.json is missing from the bundle (%w)"), err)
 	}
 	var input any
 	if err := json.Unmarshal(inputRaw, &input); err != nil {
-		return fmt.Errorf("input.json invalide : %w", err)
+		return fmt.Errorf(tr("input.json invalide : %w", "invalid input.json: %w"), err)
 	}
 	name := sealed.Run.Target.Provider
 	if _, ok := provider.Get(name); !ok {
-		return fmt.Errorf("re-dérivation : provider %q du bundle inconnu de ce binaire", name)
+		return fmt.Errorf(tr("re-dérivation : provider %q du bundle inconnu de ce binaire",
+			"re-derivation: provider %q of the bundle is unknown to this binary"), name)
 	}
 	// input.json est DÉJÀ augmenté (governance) et porte evaluated_at : on ne ré-augmente ni ne
 	// ré-horodate (withGovernance est idempotent, evaluated_at préservé) — on réévalue tel quel.
 	findings, err := engine.Evaluate(ctx, input, commonrules.FS())
 	if err != nil {
-		return fmt.Errorf("re-dérivation : %w", err)
+		return fmt.Errorf(tr("re-dérivation : %w", "re-derivation: %w"), err)
 	}
-	got := assess.Build(name, referentiel.All(), findings, resourceTypesOf(input),
-		providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), sealed.Run)
-
-	gotJSON, _ := json.Marshal(assess.Canonical(got).Results)
 	sealedJSON, _ := json.Marshal(assess.Canonical(sealed).Results)
-	if string(gotJSON) != string(sealedJSON) {
-		return fmt.Errorf("re-dérivation DIVERGE de l'assessment scellé : le bundle n'atteste PAS fidèlement input.json (résultat fabriqué ou config différente)")
+
+	// Un bundle porte la LANGUE du scan qui l'a produit ; le vérificateur, lui, tourne
+	// dans la sienne. Comparer sans en tenir compte ferait diverger un bundle
+	// parfaitement fidèle pour la seule raison que son lecteur ne parle pas la même
+	// langue que son auteur, un faux positif de falsification qui est le pire verdict
+	// qu'un vérificateur puisse rendre. On rejoue donc dans les deux langues : ce qui est
+	// comparé (statuts, sujets, références, provenance) est identique, seule la
+	// formulation change, et une seule concordance suffit à établir la fidélité.
+	got, matched := reDeriveInEitherLanguage(name, findings, input, sealed.Run, string(sealedJSON))
+	if !matched {
+		return errors.New(tr(
+			"re-dérivation DIVERGE de l'assessment scellé : le bundle n'atteste PAS fidèlement input.json (résultat fabriqué ou config différente)",
+			"re-derivation DIVERGES from the sealed assessment: the bundle does NOT faithfully attest input.json (fabricated result, or a different configuration)"))
 	}
 	// L'OSCAL est l'artefact qu'un AUDITEUR ingère : ne vérifier que assessment.json
 	// laissait falsifier l'OSCAL (tous les échecs passés en succès) sans que la
@@ -161,9 +184,42 @@ func reDerive(ctx context.Context, dir string) error {
 		return err
 	}
 	if d := configDigest(); d != sealed.Run.Ruleset.Digest {
-		_, _ = fmt.Fprintf(os.Stdout, "  note : config actuelle (%s) ≠ config scellée (%s) — re-dérivation faite avec le référentiel/règles COURANTS\n", short(d), short(sealed.Run.Ruleset.Digest))
+		_, _ = fmt.Fprintf(os.Stdout, tr(
+			"  note : config actuelle (%s) ≠ config scellée (%s) — re-dérivation faite avec le référentiel/règles COURANTS\n",
+			"  note: current config (%s) ≠ sealed config (%s) — re-derivation done with the CURRENT reference and rules\n"),
+			short(d), short(sealed.Run.Ruleset.Digest))
 	}
 	return nil
+}
+
+// reDeriveInEitherLanguage reconstruit l'assessment dans la langue courante puis dans
+// l'autre, et rend le premier qui coïncide avec les résultats scellés. Le second retour
+// dit si l'une des deux a coïncidé ; à défaut, le premier essai est rendu pour que
+// l'appelant dispose d'un assessment non nul.
+func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any, run assessment.Run, sealedJSON string) (assessment.Assessment, bool) {
+	restore := i18n.Current()
+	defer i18n.Set(restore)
+
+	other := i18n.FR
+	if restore == i18n.FR {
+		other = i18n.EN
+	}
+	var first assessment.Assessment
+	for i, lang := range []i18n.Lang{restore, other} {
+		i18n.Set(lang)
+		f := cloneFindings(findings)
+		localizeFindings(f)
+		got := assess.Build(name, referentiel.All(), f, resourceTypesOf(input),
+			providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), run)
+		b, _ := json.Marshal(assess.Canonical(got).Results)
+		if string(b) == sealedJSON {
+			return got, true
+		}
+		if i == 0 {
+			first = got
+		}
+	}
+	return first, false
 }
 
 // short abrège une empreinte pour l'affichage.
@@ -179,19 +235,23 @@ func short(d string) string {
 // invalide/absente.
 func verifyCosign(dir, pubKey, bundlePath string) error {
 	if _, err := exec.LookPath("cosign"); err != nil {
-		return fmt.Errorf("cosign introuvable dans le PATH — requis pour --pubkey")
+		return errors.New(tr("cosign introuvable dans le PATH — requis pour --pubkey",
+			"cosign not found in PATH — required for --pubkey"))
 	}
 	checksums := filepath.Join(dir, "checksums.txt")
 	if bundlePath == "" {
 		bundlePath = checksums + ".bundle"
 	}
 	if _, err := os.Stat(bundlePath); err != nil {
-		return fmt.Errorf("bundle de signature absent (%s) — sceller : cosign sign-blob --key cosign.key --bundle %s %s", bundlePath, bundlePath, checksums)
+		return fmt.Errorf(tr(
+			"bundle de signature absent (%s) — sceller : cosign sign-blob --key cosign.key --bundle %s %s",
+			"signature bundle missing (%s) — seal it with: cosign sign-blob --key cosign.key --bundle %s %s"),
+			bundlePath, bundlePath, checksums)
 	}
 	// #nosec G204 -- arguments issus des options CLI de l'opérateur, pas d'une source distante.
 	out, err := exec.Command("cosign", "verify-blob", "--key", pubKey, "--bundle", bundlePath, checksums).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("signature cosign INVALIDE : %s", string(out))
+		return fmt.Errorf(tr("signature cosign INVALIDE : %s", "INVALID cosign signature: %s"), string(out))
 	}
 	return nil
 }

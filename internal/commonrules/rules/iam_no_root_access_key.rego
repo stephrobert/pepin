@@ -41,6 +41,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Clé d'API « %s » rattachée au compte root — contourne les politiques IAM.", [name]),
 		"remediation": "Créer une application IAM dédiée à moindre privilège puis révoquer la clé root.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("API key \"%s\" attached to the root account — it bypasses IAM policies.", [name]),
+			"remediation_en": "Create a dedicated least-privilege IAM application, then revoke the root key.",
+		},
 	}
 }

@@ -1,6 +1,10 @@
 package genprovider
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/stephrobert/pepin/internal/i18n"
+)
 
 // TypeEtat retourne l'état du contrat d'un type pour un provider (verifie |
 // a_verifier | absent ; vide si non catalogué). Lu depuis le descripteur chargé.
@@ -19,22 +23,37 @@ func ControlNonApplicable(providerName, code string) bool {
 // d'un contrôle pour un provider, ou "" si le contrôle EST applicable. Deux sources : une
 // entrée explicite `contrat.non_applicable` (avec sa raison), ou un type visé marqué
 // `absent` (mécanisme inexistant). Sans justification, un N/A n'est pas opposable.
+//
+// La justification est BILINGUE : elle est rendue à l'auditeur dans `--format
+// assessment`, dans l'OSCAL et dans le bundle scellé. i18n.Pick dégrade vers le
+// français quand `reason_en` manque : l'absence est refusée en CI
+// (TestEveryContractJustificationIsBilingual), jamais découverte par le lecteur.
 func NonApplicableReason(providerName, code string) string {
+	return NonApplicableReasonIn(i18n.Current(), providerName, code)
+}
+
+// NonApplicableReasonIn est NonApplicableReason pour une langue explicite : la
+// documentation bilingue rend les deux versions dans une seule exécution.
+func NonApplicableReasonIn(l i18n.Lang, providerName, code string) string {
 	d := registry[providerName]
 	for _, e := range d.Contrat.NonApplicable {
 		if e.Control == code {
 			if e.Reason != "" {
-				return e.Reason
+				return i18n.PickIn(l, e.Reason, e.ReasonEn)
 			}
-			return "déclaré non applicable pour " + providerName + " (mécanisme inexistant)"
+			return i18n.TIn(l,
+				"déclaré non applicable pour "+providerName+" (mécanisme inexistant)",
+				"declared not applicable for "+providerName+" (no such mechanism)")
 		}
 	}
 	if t := ControlType(code); t != "" {
 		if tc, ok := d.Contrat.Types[t]; ok && tc.Etat == "absent" {
 			if tc.Reason != "" {
-				return tc.Reason
+				return i18n.PickIn(l, tc.Reason, tc.ReasonEn)
 			}
-			return "type de ressource « " + t + " » absent de l'API " + providerName
+			return i18n.TIn(l,
+				"type de ressource « "+t+" » absent de l'API "+providerName,
+				"resource type \""+t+"\" absent from the "+providerName+" API")
 		}
 	}
 	return ""

@@ -25,7 +25,10 @@ const (
 // le nombre signifie « la surface a changé », pas « la surface a cassé ».
 // Gelée dans cmd/testdata/frozen/cli.json ; la procédure de changement délibéré
 // est décrite dans RELEASING.md (frozen-update, bump, ligne de CHANGELOG).
-const cliSurfaceVersion = 1
+//
+// v2 : ajout du drapeau persistant `--lang` (fr | en). Ajout pur : aucun verbe,
+// aucun autre drapeau ni aucun code de sortie ne bouge.
+const cliSurfaceVersion = 2
 
 // findingsSurfaceVersion est la version de FORME de `--format json`
 // ({"findings": [...], "summary": {...}}), la sortie qu'un pipeline parse le

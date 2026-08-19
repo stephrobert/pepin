@@ -36,17 +36,17 @@ verbatim. An unjustified N/A is never produced.
 <!-- pepin:gen not-applicable-list -->
 | Control | Provider | Justification recorded in the contract |
 |---|---|---|
-| `blockstorage_snapshot_not_public` | exoscale | Snapshots block-storage Exoscale non exportables/partageables (doc officielle) : le risque d'exposition publique est structurellement absent, conforme par construction (STO-2). |
-| `blockstorage_snapshot_not_public` | scaleway | Les snapshots block Scaleway (api/block/v1) n'exposent aucun mécanisme de partage ou d'export public : le risque d'exposition publique est structurellement absent, conforme par construction (STO-2). |
-| `blockstorage_volume_encryption` | outscale | osc-sdk-go/v2 Volume n'expose aucun champ de chiffrement ; le chiffrement au repos est côté invité (EncFS/LUKS), responsabilité du client → non observable côté plateforme (CHF-2). |
-| `blockstorage_volume_encryption` | scaleway | Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2). |
-| `iam_user_mfa_enabled` | outscale | type de ressource « iam_user » absent de l'API outscale |
-| `loadbalancer_http_redirect_to_https` | exoscale | type de ressource « load_balancer » absent de l'API exoscale |
-| `loadbalancer_http_redirect_to_https` | outscale | Le LBU Outscale ne peut pas rediriger : `ListenerRule.Action` est documenté « always forward » au contrat OAPI (aucune action de redirection), et aucun attribut de redirection n'existe sur `Listener`. Le mécanisme est inexistant → contrôle non applicable (CHF-1). |
-| `loadbalancer_logging_enabled` | exoscale | type de ressource « load_balancer » absent de l'API exoscale |
-| `loadbalancer_ssl_listeners` | exoscale | type de ressource « load_balancer » absent de l'API exoscale |
-| `objectstorage_bucket_kms_encryption` | exoscale | SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4). |
-| `objectstorage_bucket_kms_encryption` | outscale | OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A. |
+| `blockstorage_snapshot_not_public` | exoscale | Exoscale block-storage snapshots cannot be exported or shared (official documentation): the risk of public exposure is structurally absent, compliant by construction (STO-2). |
+| `blockstorage_snapshot_not_public` | scaleway | Scaleway block snapshots (api/block/v1) expose no sharing or public export mechanism: the risk of public exposure is structurally absent, compliant by construction (STO-2). |
+| `blockstorage_volume_encryption` | outscale | osc-sdk-go/v2 Volume exposes no encryption field; encryption at rest is guest-side (EncFS/LUKS), a customer responsibility, hence unobservable on the platform side (CHF-2). |
+| `blockstorage_volume_encryption` | scaleway | Encryption at rest of block volumes is guest-side (LUKS/Cryptsetup), a customer responsibility (shared responsibility model); the block API exposes no encryption field, hence unobservable on the platform side (CHF-2). |
+| `iam_user_mfa_enabled` | outscale | resource type "iam_user" absent from the outscale API |
+| `loadbalancer_http_redirect_to_https` | exoscale | resource type "load_balancer" absent from the exoscale API |
+| `loadbalancer_http_redirect_to_https` | outscale | The Outscale LBU cannot redirect: `ListenerRule.Action` is documented as "always forward" in the OAPI contract (no redirect action), and no redirect attribute exists on `Listener`. The mechanism does not exist, so the control is not applicable (CHF-1). |
+| `loadbalancer_logging_enabled` | exoscale | resource type "load_balancer" absent from the exoscale API |
+| `loadbalancer_ssl_listeners` | exoscale | resource type "load_balancer" absent from the exoscale API |
+| `objectstorage_bucket_kms_encryption` | exoscale | SOS encrypts at rest by default (SSE-SOS, keys managed by Exoscale, SSE-S3 style) but exposes no customer-managed BYOK/KMS key at the bucket level (SSE-C stays per-object and unobservable), so the BYOK-at-bucket control is moot (CHF-4). |
+| `objectstorage_bucket_kms_encryption` | outscale | OOS encrypts server-side in AES256 with a PROVIDER key; there is neither a KMS service nor a customer-managed master key, so there is no BYOK to audit at the bucket level (CHF-4). Note: enabling SSE itself is opt-in and observable, which is a separate control, not this N/A. |
 <!-- /pepin:gen not-applicable-list -->
 
 The recurring one deserves its own paragraph. **Encryption at rest of block volumes is not
@@ -64,7 +64,7 @@ but they will never confirm compliance.
 <!-- pepin:gen never-pass -->
 | Control | Severity | Reason |
 |---|---|---|
-| `governance_resource_required_tags` | medium | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
+| `governance_resource_required_tags` | medium | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 <!-- /pepin:gen never-pass -->
 
 **Consequence.** A tenant that genuinely satisfies one of these controls still gets
@@ -82,42 +82,42 @@ actually decide them. The reason given is the one that applies to the source tha
 <!-- pepin:gen single-source -->
 | Control | Provider | Observable only through | Reason |
 |---|---|---|---|
-| `blockstorage_snapshot_not_public` | outscale | live | cette source ne produit aucune ressource de type « blockstorage_snapshot » |
-| `blockstorage_volume_snapshots_exist` | outscale | live | cette source ne produit aucune ressource de type « blockstorage_volume » |
-| `compute_instance_deletion_protection` | outscale | live | attribut décisif « deletion_protection » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_no_secrets_in_user_data` | scaleway | terraform | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `database_backup_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
-| `database_encryption_at_rest_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
-| `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
-| `governance_resource_region_in_eu` | outscale | live | attribut décisif « region » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `iam_accesskey_expiration_set` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
-| `iam_account_mfa_enforced` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
-| `iam_apiaccesspolicy_max_key_expiration` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
-| `iam_apiaccessrule_defined` | outscale | live | cette source ne produit aucune ressource de type « api_access_summary » |
-| `iam_apiaccessrule_no_public_cidr` | outscale | live | cette source ne produit aucune ressource de type « api_access_rule » |
-| `iam_no_root_access_key` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
-| `iam_policy_no_privilege_escalation` | scaleway | terraform | cette source ne produit aucune ressource de type « iam_policy » |
-| `iam_user_mfa_enabled` | exoscale | live | cette source ne produit aucune ressource de type « iam_user » |
-| `iam_user_mfa_enabled` | scaleway | live | cette source ne produit aucune ressource de type « iam_user » |
-| `kubernetes_cluster_auto_upgrade_enabled` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
-| `kubernetes_cluster_control_plane_highly_available` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
-| `kubernetes_cluster_deletion_protection` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
-| `kubernetes_cluster_not_publicly_accessible` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
-| `loadbalancer_logging_enabled` | outscale | live | cette source ne produit aucune ressource de type « load_balancer » |
-| `loadbalancer_ssl_listeners` | outscale | live | cette source ne produit aucune ressource de type « load_balancer » |
-| `network_peering_cross_organization` | outscale | live | cette source ne produit aucune ressource de type « network_peering » |
-| `network_securitygroup_default_deny` | scaleway | terraform | cette source ne produit aucune ressource de type « security_group » |
-| `network_securitygroup_default_restrict_traffic` | outscale | live | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `objectstorage_bucket_default_encryption` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_kms_encryption` | scaleway | live | attribut décisif « sse_kms_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `objectstorage_bucket_object_lock_enabled` | exoscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_object_lock_enabled` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_public_access` | exoscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_public_access` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_versioning_enabled` | exoscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_versioning_enabled` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_versioning_enabled` | scaleway | live | attribut décisif « versioning » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `blockstorage_snapshot_not_public` | outscale | live | this source produces no resource of type "blockstorage_snapshot" |
+| `blockstorage_volume_snapshots_exist` | outscale | live | this source produces no resource of type "blockstorage_volume" |
+| `compute_instance_deletion_protection` | outscale | live | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_no_secrets_in_user_data` | scaleway | terraform | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
+| `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
+| `governance_resource_region_in_eu` | outscale | live | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
+| `iam_account_mfa_enforced` | outscale | live | this source produces no resource of type "api_access_policy" |
+| `iam_apiaccesspolicy_max_key_expiration` | outscale | live | this source produces no resource of type "api_access_policy" |
+| `iam_apiaccessrule_defined` | outscale | live | this source produces no resource of type "api_access_summary" |
+| `iam_apiaccessrule_no_public_cidr` | outscale | live | this source produces no resource of type "api_access_rule" |
+| `iam_no_root_access_key` | outscale | live | this source produces no resource of type "access_key" |
+| `iam_policy_no_privilege_escalation` | scaleway | terraform | this source produces no resource of type "iam_policy" |
+| `iam_user_mfa_enabled` | exoscale | live | this source produces no resource of type "iam_user" |
+| `iam_user_mfa_enabled` | scaleway | live | this source produces no resource of type "iam_user" |
+| `kubernetes_cluster_auto_upgrade_enabled` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
+| `kubernetes_cluster_control_plane_highly_available` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
+| `kubernetes_cluster_deletion_protection` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
+| `kubernetes_cluster_not_publicly_accessible` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
+| `loadbalancer_logging_enabled` | outscale | live | this source produces no resource of type "load_balancer" |
+| `loadbalancer_ssl_listeners` | outscale | live | this source produces no resource of type "load_balancer" |
+| `network_peering_cross_organization` | outscale | live | this source produces no resource of type "network_peering" |
+| `network_securitygroup_default_deny` | scaleway | terraform | this source produces no resource of type "security_group" |
+| `network_securitygroup_default_restrict_traffic` | outscale | live | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_default_encryption` | outscale | live | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_kms_encryption` | scaleway | live | deciding attribute "sse_kms_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_object_lock_enabled` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_object_lock_enabled` | outscale | live | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_public_access` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_public_access` | outscale | live | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_versioning_enabled` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_versioning_enabled` | outscale | live | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_versioning_enabled` | scaleway | live | deciding attribute "versioning" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 <!-- /pepin:gen single-source -->
 
 Two structural asymmetries explain most of these rows.

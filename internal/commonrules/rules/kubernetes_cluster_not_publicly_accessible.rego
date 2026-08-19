@@ -19,6 +19,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("Cluster OKS « %s » : admin_whitelist contient %s — API Kubernetes exposée à Internet.", [name, cidr]),
 		"remediation": "Restreindre admin_whitelist aux CIDR d'administration (bastion, runners CI, VPN) ; supprimer 0.0.0.0/0 et ::/0.",
-		"labels": {"provider": provider_of(c), "category": "security"},
+		"labels": {
+			"provider": provider_of(c),
+			"category": "security",
+			"message_en": sprintf("OKS cluster \"%s\": admin_whitelist contains %s — the Kubernetes API is exposed to the internet.", [name, cidr]),
+			"remediation_en": "Restrict admin_whitelist to administration CIDRs (bastion, CI runners, VPN); remove 0.0.0.0/0 and ::/0.",
+		},
 	}
 }

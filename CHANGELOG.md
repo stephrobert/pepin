@@ -21,6 +21,34 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+### Added
+
+- **Pépin is bilingual, and detects the language.** Reports, verdict, help,
+  errors and the parsable formats (`json`, `sarif`, `oscal`, `assessment`) come
+  out in French or in English. Resolution order:
+  `--lang=fr|en` → `PEPIN_LANG` → `LC_ALL` → `LANG` → fallback `en`; the first
+  non-empty source decides, and an unknown locale falls back to English without
+  an error. Until now the skeleton was English and the content French, so a
+  reader got a report in two languages within one sentence.
+  French remains the reference language of the normative content: the reference
+  and the rules are written in French first, and where a legal reading is at
+  stake it is the French wording of a control that governs.
+
+### Changed
+
+- **A finding's prose changes with the language, its keys do not.** Codes
+  (`CLD-*`), check identifiers, severities, statuses, subjects and exit codes are
+  identical in both languages; titles, messages, remediations and evidence are
+  translated. A pipeline that diffs report *text* between runs should pin
+  `PEPIN_LANG`. A pipeline keyed on codes and statuses is unaffected.
+- **A sealed bundle carries the language of the scan that produced it.**
+  `verify --re-derive` replays the rules in both languages and accepts either
+  match, so verifying a French bundle from an English shell is not reported as a
+  falsification. Note that the bundle digest does depend on the language, since
+  the assessment's prose is part of what is sealed.
+- **CLI surface v1 → v2**: the persistent `--lang` flag is added. Pure addition —
+  no verb, no other flag and no exit code moved.
+
 ## [0.1.1] - 2026-08-19
 
 ### Fixed

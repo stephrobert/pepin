@@ -13,6 +13,8 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Afficher la version",
 	Run: func(_ *cobra.Command, _ []string) {
-		_, _ = fmt.Println("pépin " + version)
+		// L'accent tombe en anglais : `pepin version` est la sortie la plus
+		// susceptible d'être coupée, collée et comparée par un script.
+		_, _ = fmt.Println(tr("pépin ", "pepin ") + version)
 	},
 }

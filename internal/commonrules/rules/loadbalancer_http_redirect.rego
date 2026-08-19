@@ -26,6 +26,11 @@ deny contains f if {
 		"subject": name,
 		"message": sprintf("LBU « %s » : listener HTTP:80 sans redirection vers HTTPS — trafic en clair possible.", [name]),
 		"remediation": "Mettre en place une redirection 301 du listener HTTP:80 vers HTTPS.",
-		"labels": {"provider": provider_of(lb), "category": "security"},
+		"labels": {
+			"provider": provider_of(lb),
+			"category": "security",
+			"message_en": sprintf("LBU \"%s\": HTTP:80 listener with no redirect to HTTPS — cleartext traffic is possible.", [name]),
+			"remediation_en": "Set up a 301 redirect from the HTTP:80 listener to HTTPS.",
+		},
 	}
 }

@@ -7,10 +7,9 @@ report:
 
 <!-- pepin:gen scope-disclaimer -->
 ```text
-Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). Les
-correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne
-constituent pas une preuve de qualification/certification, laquelle porte sur le
-prestataire de service cloud.
+This report assesses the configuration of a tenant (customer-side scope). The
+normative mappings (SecNumCloud, ISO, CIS) are indicative: they are not a proof of
+qualification or certification, which applies to the cloud service provider.
 ```
 <!-- /pepin:gen scope-disclaimer -->
 

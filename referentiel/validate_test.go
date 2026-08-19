@@ -1,11 +1,14 @@
 package referentiel
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
+	"unicode"
 
 	yaml "go.yaml.in/yaml/v3"
 )
@@ -251,25 +254,45 @@ func loadFrameworkIDs(t *testing.T) map[string]map[string]bool {
 // (frameworks: {norme: [ids]}) doit être défini dans le catalogue de cette norme
 // (frameworks/<norme>.yaml). Anti-invention symétrique de TestSCSLReferencesExist :
 // interdit qu'un mapping cite un numéro d'exigence qui n'existe pas dans le texte.
-// TestEveryFindingCarriesRemediation — tout finding émis porte une remédiation.
+// TestEveryFindingCarriesRemediation : tout finding émis porte une remédiation,
+// ET les deux langues de Pépin.
 //
-// CLAUDE.md §3 l'impose, et le rendu l'affiche (terminal, CSV, JUnit) : un écart
-// sans remédiation dit à l'utilisateur que quelque chose ne va pas sans lui dire
-// quoi faire, ce qui est la moitié du travail d'un outil de posture. Rien ne
-// l'imposait jusqu'ici : le modèle amont `scankit/finding.Finding` déclare
-// `Remediation` en `omitempty` — optionnel pour la bibliothèque, obligatoire pour
-// Pépin. La discipline tenait, mais une règle future pouvait l'omettre sans
-// qu'aucune porte ne bronche.
+// CLAUDE.md §3 impose la remédiation, et le rendu l'affiche (terminal, CSV,
+// JUnit) : un écart sans remédiation dit à l'utilisateur que quelque chose ne va
+// pas sans lui dire quoi faire, ce qui est la moitié du travail d'un outil de
+// posture. Rien ne l'imposait jusqu'ici : le modèle amont
+// `scankit/finding.Finding` déclare `Remediation` en `omitempty` : optionnel pour
+// la bibliothèque, obligatoire pour Pépin.
 //
-// Appariement identique à TestRegoSeverityMatchesReferentiel : dans un objet
-// finding, "code" précède toujours les autres champs.
+// Le test porte AUSSI les deux labels de traduction (`message_en`,
+// `remediation_en`) : Pépin est bilingue, et une règle qui les omettrait ferait
+// basculer une sortie anglaise au français au milieu d'un rapport. Un seul
+// parcours, un seul appariement : l'invariant de langue est de même nature que
+// celui de remédiation, il n'appelle pas une deuxième mécanique.
+//
+// L'ancrage se fait sur "message" et NON sur "code" : deux findings communs
+// (_sg_finding, _bucket_public_finding) reçoivent leur code en PARAMÈTRE, donc un
+// ancrage sur un littéral `"code": "…"` les manquait entièrement : six règles
+// d'exposition réseau et le contrôle de bucket public échappaient au contrôle.
+// Tout finding porte un message ; c'est lui la borne fiable.
 func TestEveryFindingCarriesRemediation(t *testing.T) {
 	entries, err := os.ReadDir(rulesDir)
 	if err != nil {
 		t.Fatalf("lecture de %s : %v", rulesDir, err)
 	}
-	reCode := regexp.MustCompile(`"code":\s*"([a-z0-9_]+)"`)
-	reRem := regexp.MustCompile(`"remediation":\s*(?:"([^"]*)"|sprintf\()`)
+	// `"message":` ne matche pas `"message_en":` (le deux-points diffère de place) :
+	// les bornes d'objet restent les messages français.
+	reMsg := regexp.MustCompile(`"message":\s*(?:"([^"]*)"|sprintf\()`)
+	// Champs exigés dans le MÊME objet finding, avec leur longueur minimale utile.
+	champs := []struct {
+		nom string
+		re  *regexp.Regexp
+		min int
+	}{
+		{"remediation", regexp.MustCompile(`"remediation":\s*(?:"([^"]*)"|sprintf\()`), 10},
+		{"message_en", regexp.MustCompile(`"message_en":\s*(?:"([^"]*)"|sprintf\()`), 10},
+		{"remediation_en", regexp.MustCompile(`"remediation_en":\s*(?:"([^"]*)"|sprintf\()`), 10},
+	}
 
 	for _, e := range entries {
 		if !strings.HasSuffix(e.Name(), ".rego") || strings.HasSuffix(e.Name(), "_test.rego") {
@@ -280,31 +303,81 @@ func TestEveryFindingCarriesRemediation(t *testing.T) {
 			t.Fatalf("lecture de %s : %v", e.Name(), err)
 		}
 		text := string(b)
-		codeLocs := reCode.FindAllStringSubmatchIndex(text, -1)
-		remLocs := reRem.FindAllStringSubmatchIndex(text, -1)
+		msgLocs := reMsg.FindAllStringSubmatchIndex(text, -1)
+		if len(msgLocs) == 0 {
+			continue // fichier sans finding (lib.rego, helpers)
+		}
+		for _, c := range champs {
+			locs := c.re.FindAllStringSubmatchIndex(text, -1)
+			for i, m := range msgLocs {
+				// Fin de l'objet courant : le début du finding suivant, ou la fin du fichier.
+				end := len(text)
+				if i+1 < len(msgLocs) {
+					end = msgLocs[i+1][0]
+				}
+				where := findingLabel(text, m[0], e.Name())
+				found := false
+				for _, r := range locs {
+					if r[0] <= m[1] || r[0] >= end {
+						continue
+					}
+					// Groupe 1 renseigné = littéral ; absent = forme sprintf(...), acceptée.
+					if r[2] != -1 {
+						val := strings.TrimSpace(text[r[2]:r[3]])
+						if len(val) < c.min {
+							t.Errorf("%s : finding %s porte un %s vide ou trop court pour dire quoi que ce soit : %q",
+								e.Name(), where, c.nom, val)
+						}
+						assertNoAccentedLetter(t, e.Name(), where, c.nom, val)
+					}
+					found = true
+					break
+				}
+				if !found {
+					t.Errorf("%s : finding %s n'a pas de %s — %s", e.Name(), where, c.nom, whyItMatters(c.nom))
+				}
+			}
+		}
+	}
+}
 
-		for i, c := range codeLocs {
-			code := text[c[2]:c[3]]
-			// Fin de l'objet courant : le début du finding suivant, ou la fin du fichier.
-			end := len(text)
-			if i+1 < len(codeLocs) {
-				end = codeLocs[i+1][0]
-			}
-			found := false
-			for _, r := range remLocs {
-				if r[0] <= c[1] || r[0] >= end {
-					continue
-				}
-				// Groupe 1 vide = littéral "" ; absent = forme sprintf(...), acceptée.
-				if r[2] != -1 && len(strings.TrimSpace(text[r[2]:r[3]])) < 10 {
-					t.Errorf("%s : finding %q porte une remédiation vide ou trop courte pour être actionnable", e.Name(), code)
-				}
-				found = true
-				break
-			}
-			if !found {
-				t.Errorf("%s : finding %q n'a pas de remédiation — l'écart est signalé sans dire quoi faire", e.Name(), code)
-			}
+// whyItMatters dit ce que coûte l'absence du champ, plutôt que de la constater.
+func whyItMatters(champ string) string {
+	if champ == "remediation" {
+		return "l'écart est signalé sans dire quoi faire"
+	}
+	return "une sortie anglaise basculerait au français en plein rapport"
+}
+
+// findingLabel nomme le finding fautif dans un message d'échec : son code quand la
+// règle le pose en littéral, sinon la ligne. Les findings communs reçoivent leur
+// code en paramètre et n'ont donc pas de littéral à citer.
+func findingLabel(text string, pos int, file string) string {
+	head := text[:pos]
+	if i := strings.LastIndex(head, `"code": "`); i >= 0 {
+		rest := head[i+len(`"code": "`):]
+		if j := strings.Index(rest, `"`); j >= 0 && !strings.Contains(rest[:j], "\n") {
+			return strconv.Quote(rest[:j])
+		}
+	}
+	return fmt.Sprintf("%s:%d", file, strings.Count(head, "\n")+1)
+}
+
+// assertNoAccentedLetter refuse une lettre non ASCII dans un littéral ANGLAIS.
+//
+// C'est le critère d'acceptation « LANG=en ne produit aucun caractère accenté »,
+// vérifié à la SOURCE. Seules les LETTRES comptent : « — », « … » et « · » sont de
+// la ponctuation légitime en anglais, et les noms de ressources n'apparaissent
+// jamais dans un littéral (ils arrivent par les arguments de sprintf).
+func assertNoAccentedLetter(t *testing.T, file, where, champ, val string) {
+	t.Helper()
+	if !strings.HasSuffix(champ, "_en") {
+		return
+	}
+	for _, r := range val {
+		if r > unicode.MaxASCII && unicode.IsLetter(r) {
+			t.Errorf("%s : finding %s, %s : lettre non ASCII %q dans %q", file, where, champ, r, val)
+			return
 		}
 	}
 }
@@ -321,6 +394,74 @@ func TestFrameworkReferencesExist(t *testing.T) {
 			for _, id := range ids {
 				if !known[id] {
 					t.Errorf("contrôle %q référence %s %q, absent du catalogue frameworks/%s.yaml", code, fw, id, fw)
+				}
+			}
+		}
+	}
+}
+
+// TestEveryControlIsBilingual : tout contrôle porte ses trois champs anglais.
+//
+// Pépin est bilingue et la langue est DÉTECTÉE : un lecteur anglophone reçoit
+// `titre_en`, `description_en`, `remediation_en`. Le rendu dégrade proprement
+// vers le français quand la traduction manque (referentiel.Control.TitreIn), et
+// c'est précisément ce qu'il ne faut PAS découvrir en production : une sortie
+// anglaise qui bascule au français au milieu d'un tableau est le défaut que
+// l'internationalisation vient corriger. La porte est donc ici, en CI.
+//
+// Le seuil de longueur n'est pas cosmétique : « N/A », « TODO » ou une chaîne
+// vide passeraient une simple vérification de présence tout en ne disant rien.
+func TestEveryControlIsBilingual(t *testing.T) {
+	const minProse = 20 // description/remédiation : une phrase actionnable, pas un marqueur
+	for code, ctl := range byCode {
+		champs := []struct {
+			nom, fr, en string
+			min         int
+		}{
+			{"titre_en", ctl.Titre, ctl.TitreEn, 5},
+			{"description_en", ctl.Description, ctl.DescriptionEn, minProse},
+			{"remediation_en", ctl.Remediation, ctl.RemediationEn, minProse},
+		}
+		for _, c := range champs {
+			if strings.TrimSpace(c.fr) == "" {
+				t.Errorf("contrôle %q : champ français de %s vide — le français est la langue de référence", code, c.nom)
+			}
+			en := strings.TrimSpace(c.en)
+			if en == "" {
+				t.Errorf("contrôle %q : %s absent — un contrôle sans traduction ferait basculer la sortie anglaise au français", code, c.nom)
+				continue
+			}
+			if len(en) < c.min {
+				t.Errorf("contrôle %q : %s trop court (%d octets) pour dire quoi que ce soit d'actionnable : %q", code, c.nom, len(en), en)
+			}
+			if en == strings.TrimSpace(c.fr) {
+				t.Errorf("contrôle %q : %s est identique au français — la traduction n'a pas été faite", code, c.nom)
+			}
+		}
+	}
+}
+
+// TestEnglishControlFieldsCarryNoAccent : les champs anglais ne portent aucune
+// lettre accentuée.
+//
+// C'est le critère d'acceptation « LANG=en ne produit aucun caractère accenté »,
+// vérifié à la SOURCE plutôt que sur une sortie : le référentiel alimente le
+// titre du tableau, l'evidence de l'assessment et l'OSCAL. Un « é » oublié dans
+// un titre traduit se retrouverait dans les quatre formats à la fois.
+//
+// Seules les LETTRES sont testées : « — », « … » et « · » sont de la ponctuation,
+// légitime en anglais, et les noms de ressources ne transitent pas par ce fichier.
+func TestEnglishControlFieldsCarryNoAccent(t *testing.T) {
+	for code, ctl := range byCode {
+		for nom, v := range map[string]string{
+			"titre_en":       ctl.TitreEn,
+			"description_en": ctl.DescriptionEn,
+			"remediation_en": ctl.RemediationEn,
+		} {
+			for _, r := range v {
+				if r > unicode.MaxASCII && unicode.IsLetter(r) {
+					t.Errorf("contrôle %q, %s : lettre non ASCII %q dans %q", code, nom, r, v)
+					break
 				}
 			}
 		}

@@ -21,7 +21,12 @@ deny contains f if {
 		"subject": r.id,
 		"message": sprintf("Fournisseur « %s » : siège hors Union européenne (juridiction %s) — exigence d'établissement UE non satisfaite.", [r.id, object.get(r.attributes, "jurisdiction", "?")]),
 		"remediation": "Pour une exigence souveraine, retenir un fournisseur établi dans l'UE (idéalement qualifié SecNumCloud).",
-		"labels": {"provider": provider_of(r), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "compliance",
+			"message_en": sprintf("Provider \"%s\": headquarters outside the European Union (jurisdiction %s) — the EU establishment requirement is not met.", [r.id, object.get(r.attributes, "jurisdiction", "?")]),
+			"remediation_en": "For a sovereignty requirement, pick a provider established in the EU (ideally SecNumCloud qualified).",
+		},
 	}
 }
 
@@ -35,7 +40,12 @@ deny contains f if {
 		"subject": r.id,
 		"message": sprintf("Fournisseur « %s » : contrôle capitalistique extra-UE déterminant — risque de soumission à une juridiction étrangère.", [r.id]),
 		"remediation": "Privilégier un fournisseur dont le contrôle capitalistique reste dans l'UE ; documenter l'exposition.",
-		"labels": {"provider": provider_of(r), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "compliance",
+			"message_en": sprintf("Provider \"%s\": decisive non-EU capital control — risk of falling under a foreign jurisdiction.", [r.id]),
+			"remediation_en": "Prefer a provider whose capital control stays within the EU; document the exposure.",
+		},
 	}
 }
 
@@ -53,7 +63,12 @@ deny contains f if {
 		"subject": r.id,
 		"message": sprintf("Fournisseur « %s » : contrôle capitalistique non établi (à vérifier) — la souveraineté ne peut être présumée conforme.", [r.id]),
 		"remediation": "Tracer la chaîne capitalistique ultime du fournisseur sur des sources officielles et confirmer l'absence de contrôle déterminant extra-UE ; à défaut, retenir une offre qualifiée SecNumCloud.",
-		"labels": {"provider": provider_of(r), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "compliance",
+			"message_en": sprintf("Provider \"%s\": capital control not established (to be checked) — sovereignty cannot be presumed compliant.", [r.id]),
+			"remediation_en": "Trace the provider's ultimate ownership chain against official sources and confirm there is no decisive non-EU control; failing that, pick a SecNumCloud qualified offer.",
+		},
 	}
 }
 
@@ -69,6 +84,11 @@ deny contains f if {
 		"subject": r.id,
 		"message": sprintf("Fournisseur « %s » : exposition à une loi extraterritoriale, sans qualification SecNumCloud établissant l'immunité.", [r.id]),
 		"remediation": "Évaluer l'exposition extraterritoriale ; retenir une offre qualifiée SecNumCloud (immunité reconnue par l'ANSSI).",
-		"labels": {"provider": provider_of(r), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "compliance",
+			"message_en": sprintf("Provider \"%s\": exposed to an extraterritorial law, with no SecNumCloud qualification establishing immunity.", [r.id]),
+			"remediation_en": "Assess the extraterritorial exposure; pick a SecNumCloud qualified offer (immunity recognised by the ANSSI).",
+		},
 	}
 }

@@ -139,7 +139,7 @@ Two entries are worth reading twice:
 {
   "control": "network_securitygroup_allow_ingress_from_internet_to_all_ports",
   "evidence": {
-    "observed": "aucune non-conformité détectée sur les ressources de type « security_group_rule » collectées (contrat vérifié)",
+    "observed": "no deviation detected on the collected resources of type \"security_group_rule\" (contract verified)",
     "proves": [
       "",
       "",
@@ -176,7 +176,7 @@ Two entries are worth reading twice:
   "severity": "critical",
   "status": "pass",
   "subject": "scaleway",
-  "title": "Tout le trafic entrant autorisé depuis Internet (any/any)"
+  "title": "All inbound traffic allowed from the internet (any/any)"
 }
 ```
 <!-- /pepin:gen assessment-pass -->
@@ -203,7 +203,7 @@ resources, not a checklist of controls.
 {
   "control": "objectstorage_bucket_public_access",
   "evidence": {
-    "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
+    "observed": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL).",
     "proves": [
       "",
       "",
@@ -245,11 +245,11 @@ resources, not a checklist of controls.
       "id": "13.2"
     }
   ],
-  "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
+  "remediation": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
   "severity": "critical",
   "status": "fail",
   "subject": "scaleway_object_bucket_acl.backups",
-  "title": "Stockage objet exposé publiquement"
+  "title": "Object storage publicly exposed"
 }
 ```
 <!-- /pepin:gen assessment-fail -->
@@ -293,9 +293,9 @@ rejected by any auditor, so the tool refuses to produce one.
   "severity": "high",
   "status": "not-applicable",
   "subject": "scaleway",
-  "title": "Chiffrement au repos désactivé",
+  "title": "Encryption at rest disabled",
   "waiver": {
-    "justification": "Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2)."
+    "justification": "Encryption at rest of block volumes is guest-side (LUKS/Cryptsetup), a customer responsibility (shared responsibility model); the block API exposes no encryption field, hence unobservable on the platform side (CHF-2)."
   }
 }
 ```
@@ -319,7 +319,7 @@ in scope; or the deciding attribute was not collected. The result always says wh
 {
   "control": "compute_instance_public_ip_with_open_securitygroup",
   "evidence": {
-    "observed": "attribut « public_ip » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
+    "observed": "attribute \"public_ip\" not collected on the resources of type \"compute_instance\" (capability guard)",
     "proves": [
       "",
       "",
@@ -360,7 +360,7 @@ in scope; or the deciding attribute was not collected. The result always says wh
   "severity": "critical",
   "status": "not-evaluated",
   "subject": "scaleway",
-  "title": "Machine exposée publiquement sans filtrage restrictif"
+  "title": "Instance publicly exposed without restrictive filtering"
 }
 ```
 <!-- /pepin:gen assessment-ne -->
@@ -371,10 +371,10 @@ reasons observed:
 <!-- pepin:gen not-evaluated-reasons -->
 | Reason | Count | Witness control |
 |---|---:|---|
-| attribut « … » non collecté sur les ressources collectées (garde de capacité) | 1 | `governance_resource_region_in_eu` |
-| attribut « … » non collecté sur les ressources de type « … » (garde de capacité) | 4 | `compute_instance_has_security_group` |
-| aucune ressource de type « … » dans l'inventaire évalué | 3 | `iam_accesskey_expiration_set` |
-| collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « … ») | 1 | `network_documented` |
+| attribute "…" not collected on the collected resources (capability guard) | 1 | `governance_resource_region_in_eu` |
+| attribute "…" not collected on the resources of type "…" (capability guard) | 4 | `compute_instance_has_security_group` |
+| collection of the required data is not confirmed for this provider (contract not "…") | 1 | `network_documented` |
+| no resource of type "…" in the assessed inventory | 3 | `iam_accesskey_expiration_set` |
 <!-- /pepin:gen not-evaluated-reasons -->
 
 ### `not-evaluated` is never a compliance

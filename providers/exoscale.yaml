@@ -399,6 +399,7 @@ contrat:
   # est NON SATISFAIT (écart), pas « sans objet » — à exposer comme tel ultérieurement.
   - control: blockstorage_snapshot_not_public
     reason: "Snapshots block-storage Exoscale non exportables/partageables (doc officielle) : le risque d'exposition publique est structurellement absent, conforme par construction (STO-2)."
+    reason_en: "Exoscale block-storage snapshots cannot be exported or shared (official documentation): the risk of public exposure is structurally absent, compliant by construction (STO-2)."
   # CHF-4 : depuis 2025, SOS chiffre au repos par défaut via SSE-SOS (clés gérées
   # par Exoscale, type SSE-S3, activé d'office sur les nouveaux buckets, doc
   # storage/object-storage/how-to/encryption). Mais SSE-SOS n'est PAS du BYOK/KMS
@@ -408,3 +409,4 @@ contrat:
   # et attraperait les buckets antérieurs au défaut — à câbler (cf. roadmap §2).
   - control: objectstorage_bucket_kms_encryption
     reason: "SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4)."
+    reason_en: "SOS encrypts at rest by default (SSE-SOS, keys managed by Exoscale, SSE-S3 style) but exposes no customer-managed BYOK/KMS key at the bucket level (SSE-C stays per-object and unobservable), so the BYOK-at-bucket control is moot (CHF-4)."

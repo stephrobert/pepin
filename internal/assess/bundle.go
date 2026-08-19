@@ -11,6 +11,8 @@ import (
 
 	"github.com/stephrobert/scankit/assessment"
 	screport "github.com/stephrobert/scankit/report"
+
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // BundleFormat identifie le schéma du bundle de preuve, version comprise (`/vN`).
@@ -25,9 +27,22 @@ const BundleFormat = "pepin-assessment-bundle/v1"
 // configuration d'un TENANT (périmètre commanditaire) ; les référentiels cités (SecNumCloud,
 // ISO, CIS) portent, eux, sur le PRESTATAIRE ou sont des correspondances thématiques. Un rapport
 // pepin ne prouve donc jamais une qualification/certification, seulement la posture du tenant.
-const ScopeDisclaimer = "Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). " +
-	"Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent " +
-	"pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud."
+//
+// Rendu dans la langue courante : l'avertissement est imprimé à chaque scan et scellé dans le
+// manifest du bundle, deux endroits où un lecteur anglophone doit pouvoir le lire.
+func ScopeDisclaimer() string { return ScopeDisclaimerIn(i18n.Current()) }
+
+// ScopeDisclaimerIn est ScopeDisclaimer pour une langue explicite : la documentation
+// bilingue rend les deux versions dans une seule exécution.
+func ScopeDisclaimerIn(l i18n.Lang) string {
+	return i18n.TIn(l,
+		"Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). "+
+			"Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent "+
+			"pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud.",
+		"This report assesses the configuration of a tenant (customer-side scope). The normative "+
+			"mappings (SecNumCloud, ISO, CIS) are indicative: they are not a proof of "+
+			"qualification or certification, which applies to the cloud service provider.")
+}
 
 // Manifest is the opposable envelope of an evidence bundle: the run provenance, a summary by
 // status, and the digest of every artifact. Sealing it (a detached signature over
@@ -80,13 +95,13 @@ func canonical(a assessment.Assessment) assessment.Assessment {
 // (nil to omit). Returns the path of checksums.txt (the thing to sign).
 func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string, error) {
 	if err := os.MkdirAll(dir, 0o750); err != nil {
-		return "", fmt.Errorf("création du dossier bundle %s : %w", dir, err)
+		return "", fmt.Errorf(i18n.T("création du dossier bundle %s : %w", "creating the bundle directory %s: %w"), dir, err)
 	}
 	a = canonical(a)
 
 	asmtJSON, err := json.MarshalIndent(a, "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("sérialisation de l'assessment : %w", err)
+		return "", fmt.Errorf(i18n.T("sérialisation de l'assessment : %w", "serializing the assessment: %w"), err)
 	}
 	var oscalBuf []byte
 	{
@@ -97,7 +112,7 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string,
 		if oerr := screport.OSCAL(f, a); oerr != nil {
 			_ = f.Close()
 			_ = os.Remove(f.Name())
-			return "", fmt.Errorf("rendu OSCAL : %w", oerr)
+			return "", fmt.Errorf(i18n.T("rendu OSCAL : %w", "rendering the OSCAL: %w"), oerr)
 		}
 		_ = f.Close()
 		oscalBuf, err = os.ReadFile(f.Name()) // #nosec G304 -- fichier temporaire créé juste au-dessus.
@@ -124,7 +139,7 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string,
 
 	manifest := Manifest{
 		Format:     BundleFormat,
-		Disclaimer: ScopeDisclaimer,
+		Disclaimer: ScopeDisclaimer(),
 		Generated:  a.Run.Timestamp,
 		Tool:       a.Run.Tool,
 		Ruleset:    a.Run.Ruleset,
@@ -168,7 +183,7 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte) (string,
 func VerifyBundle(dir string) error {
 	raw, err := os.ReadFile(filepath.Join(dir, "checksums.txt")) // #nosec G304 -- dossier de bundle fourni par l'opérateur.
 	if err != nil {
-		return fmt.Errorf("lecture de checksums.txt : %w", err)
+		return fmt.Errorf(i18n.T("lecture de checksums.txt : %w", "reading checksums.txt: %w"), err)
 	}
 	summed := map[string]string{} // nom -> empreinte attendue (checksums.txt)
 	for _, line := range splitLines(string(raw)) {
@@ -177,27 +192,29 @@ func VerifyBundle(dir string) error {
 		}
 	}
 	if len(summed) == 0 {
-		return fmt.Errorf("aucune empreinte à vérifier dans %s", dir)
+		return fmt.Errorf(i18n.T("aucune empreinte à vérifier dans %s", "no digest to verify in %s"), dir)
 	}
 	// Recoupement manifest.json ↔ checksums.txt : bijection stricte sur les artefacts.
 	manRaw, err := os.ReadFile(filepath.Join(dir, "manifest.json")) // #nosec G304 -- dossier de bundle de l'opérateur.
 	if err != nil {
-		return fmt.Errorf("lecture de manifest.json : %w", err)
+		return fmt.Errorf(i18n.T("lecture de manifest.json : %w", "reading manifest.json: %w"), err)
 	}
 	var man Manifest
 	if err := json.Unmarshal(manRaw, &man); err != nil {
-		return fmt.Errorf("manifest.json invalide : %w", err)
+		return fmt.Errorf(i18n.T("manifest.json invalide : %w", "invalid manifest.json: %w"), err)
 	}
 	declared := map[string]bool{"manifest.json": true} // manifest lui-même listé dans checksums
 	for _, a := range man.Artifacts {
 		declared[a.File] = true
 		if summed[a.File] == "" {
-			return fmt.Errorf("artefact %q déclaré au manifeste mais absent de checksums.txt", a.File)
+			return fmt.Errorf(i18n.T("artefact %q déclaré au manifeste mais absent de checksums.txt",
+				"artifact %q declared in the manifest but missing from checksums.txt"), a.File)
 		}
 	}
 	for name := range summed {
 		if !declared[name] {
-			return fmt.Errorf("fichier %q listé dans checksums.txt mais non déclaré au manifeste", name)
+			return fmt.Errorf(i18n.T("fichier %q listé dans checksums.txt mais non déclaré au manifeste",
+				"file %q listed in checksums.txt but not declared in the manifest"), name)
 		}
 	}
 	// Re-calcul des empreintes.
@@ -208,7 +225,7 @@ func VerifyBundle(dir string) error {
 		// de `verify` un oracle d'existence et de contenu sur tout fichier lisible,
 		// et « ../../dev/zero » une lecture non bornée. Un artefact est un nom simple.
 		if name != filepath.Base(name) || name == "." || name == ".." {
-			return fmt.Errorf("nom d'artefact invalide dans le bundle : %q", name)
+			return fmt.Errorf(i18n.T("nom d'artefact invalide dans le bundle : %q", "invalid artifact name in the bundle: %q"), name)
 		}
 		data, rerr := os.ReadFile(filepath.Join(dir, name)) // #nosec G304 -- nom contraint à un basename juste au-dessus.
 		if rerr != nil {
@@ -216,7 +233,7 @@ func VerifyBundle(dir string) error {
 		}
 		got := sha256.Sum256(data)
 		if hex.EncodeToString(got[:]) != want {
-			return fmt.Errorf("empreinte invalide pour %s (fichier altéré)", name)
+			return fmt.Errorf(i18n.T("empreinte invalide pour %s (fichier altéré)", "invalid digest for %s (tampered file)"), name)
 		}
 	}
 	return nil

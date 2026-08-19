@@ -18,6 +18,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("Image machine « %s » partagée publiquement (lancement autorisé à tous).", [id]),
 		"remediation": "Retirer le partage public de l'image ; la réserver aux comptes légitimes.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("Machine image \"%s\" shared publicly (anyone is allowed to launch it).", [id]),
+			"remediation_en": "Remove the image's public sharing; reserve it for legitimate accounts.",
+		},
 	}
 }

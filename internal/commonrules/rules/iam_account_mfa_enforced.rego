@@ -22,6 +22,11 @@ deny contains f if {
 		"subject": name,
 		"message": "La politique d'accès API n'impose pas la MFA à tous les utilisateurs (environnement de confiance désactivé).",
 		"remediation": "Activer l'exigence d'environnement de confiance (RequireTrustedEnv) pour imposer la MFA à tous les comptes ; configurer WebAuthn/OTP.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": "The API access policy does not enforce MFA for all users (trusted environment disabled).",
+			"remediation_en": "Enable the trusted environment requirement (RequireTrustedEnv) to enforce MFA on every account; configure WebAuthn/OTP.",
+		},
 	}
 }

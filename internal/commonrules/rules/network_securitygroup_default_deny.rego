@@ -20,6 +20,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("Security group « %s » : politique entrante par défaut « accept » — tout trafic non filtré est admis.", [id]),
 		"remediation": "Basculer la politique entrante par défaut sur « drop » et n'ouvrir que les flux légitimes par des règles explicites.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("Security group \"%s\": default inbound policy set to \"accept\" — any unfiltered traffic is admitted.", [id]),
+			"remediation_en": "Switch the default inbound policy to \"drop\" and open only the legitimate flows through explicit rules.",
+		},
 	}
 }

@@ -24,7 +24,12 @@ deny contains f if {
 		"subject": vid,
 		"message": sprintf("Volume « %s » (en usage) sans snapshot dans les 7 derniers jours.", [vid]),
 		"remediation": "Mettre en place un snapshot régulier automatisé ; tester la restauration périodiquement.",
-		"labels": {"provider": provider_of(v), "category": "compliance"},
+		"labels": {
+			"provider": provider_of(v),
+			"category": "compliance",
+			"message_en": sprintf("Volume \"%s\" (in use) has no snapshot in the last 7 days.", [vid]),
+			"remediation_en": "Set up an automated, regular snapshot schedule; test the restore periodically.",
+		},
 	}
 }
 

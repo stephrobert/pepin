@@ -22,6 +22,36 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Unreleased]
 
+### Ajouté
+
+- **Pépin est bilingue, et détecte la langue.** Rapports, verdict, aide, erreurs
+  et formats parsables (`json`, `sarif`, `oscal`, `assessment`) sortent en
+  français ou en anglais. Ordre de résolution :
+  `--lang=fr|en` → `PEPIN_LANG` → `LC_ALL` → `LANG` → repli `en` ; la première
+  source non vide décide, et une locale inconnue retombe sur l'anglais sans
+  erreur. Jusqu'ici l'ossature était anglaise et le contenu français : un lecteur
+  recevait un rapport en deux langues dans la même phrase.
+  Le français reste la langue de référence du contenu normatif : le référentiel
+  et les règles s'écrivent en français d'abord, et là où une lecture juridique
+  est en jeu, c'est la formulation française d'un contrôle qui fait foi.
+
+### Modifié
+
+- **La prose d'un finding change avec la langue, ses clés non.** Codes (`CLD-*`),
+  identifiants de check, sévérités, statuts, sujets et codes de sortie sont
+  identiques dans les deux langues ; titres, messages, remédiations et preuves
+  sont traduits. Un pipeline qui compare le *texte* d'un rapport d'une exécution
+  à l'autre doit figer `PEPIN_LANG`. Un pipeline adossé aux codes et aux statuts
+  n'est pas affecté.
+- **Un bundle scellé porte la langue du scan qui l'a produit.**
+  `verify --re-derive` rejoue les règles dans les deux langues et accepte la
+  concordance de l'une : vérifier un bundle français depuis un shell anglais
+  n'est plus signalé comme une falsification. À noter : l'empreinte du bundle
+  dépend bien de la langue, puisque la prose de l'assessment fait partie de ce
+  qui est scellé.
+- **Surface CLI v1 → v2** : ajout du drapeau persistant `--lang`. Ajout pur :
+  aucun verbe, aucun autre drapeau ni aucun code de sortie ne bouge.
+
 ## [0.1.1] - 2026-08-19
 
 ### Corrigé

@@ -21,6 +21,11 @@ deny contains f if {
 		"subject": bucket,
 		"message": sprintf("Bucket « %s » sans versioning activé (statut %q) — suppression/écrasement irréversible.", [bucket, versioning]),
 		"remediation": "Activer le versioning du bucket, au moins pour les données critiques.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("Bucket \"%s\" has no versioning enabled (status %q) — a deletion or an overwrite is irreversible.", [bucket, versioning]),
+			"remediation_en": "Enable versioning on the bucket, at least for critical data.",
+		},
 	}
 }

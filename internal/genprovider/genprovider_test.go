@@ -96,3 +96,66 @@ func TestContractVerifiedTypesAreCollected(t *testing.T) {
 		}
 	}
 }
+
+// TestEveryContractJustificationIsBilingual : toute justification de
+// non-applicabilité porte sa traduction anglaise.
+//
+// Ces justifications ne sont pas de la décoration : ce sont elles qu'un auditeur
+// lit dans `--format assessment`, dans l'OSCAL et dans le bundle scellé, en face
+// d'un `not-applicable`. Un N/A sans motif n'est pas opposable ; un N/A dont le
+// motif bascule au français dans un rapport anglais ne l'est pas davantage pour
+// l'auditeur qui ne lit pas le français.
+//
+// Le contrôle porte aussi sur l'ABSENCE d'accent dans la version anglaise :
+// c'est le même critère que pour le référentiel et les règles, appliqué à la
+// troisième source de prose du produit.
+func TestEveryContractJustificationIsBilingual(t *testing.T) {
+	entries, err := os.ReadDir(providersDir)
+	if err != nil {
+		t.Fatalf("dossier providers indisponible : %v", err)
+	}
+	check := func(t *testing.T, where, fr, en string) {
+		t.Helper()
+		if strings.TrimSpace(fr) == "" {
+			return // pas de justification française : rien à traduire (repli générique, lui traduit dans le code)
+		}
+		if strings.TrimSpace(en) == "" {
+			t.Errorf("%s : `reason` sans `reason_en` — un rapport anglais afficherait cette justification en français", where)
+			return
+		}
+		if en == fr {
+			t.Errorf("%s : `reason_en` est identique au français — la traduction n'a pas été faite", where)
+		}
+		for _, r := range en {
+			if r > 127 && !strings.ContainsRune("—…«»·≥≠→⚠✓", r) {
+				t.Errorf("%s : `reason_en` porte le caractère non ASCII %q", where, r)
+				break
+			}
+		}
+	}
+	seen := 0
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
+			continue
+		}
+		name := strings.TrimSuffix(e.Name(), ".yaml")
+		d, lerr := Load(os.DirFS(providersDir), e.Name())
+		if lerr != nil {
+			t.Errorf("%s : %v", name, lerr)
+			continue
+		}
+		for _, na := range d.Contrat.NonApplicable {
+			check(t, name+"/non_applicable/"+na.Control, na.Reason, na.ReasonEn)
+			seen++
+		}
+		for typ, tc := range d.Contrat.Types {
+			if tc.Etat != "absent" {
+				continue
+			}
+			check(t, name+"/types/"+typ, tc.Reason, tc.ReasonEn)
+		}
+	}
+	if seen == 0 {
+		t.Fatal("aucune justification de non-applicabilité lue : le test ne mesurerait rien")
+	}
+}

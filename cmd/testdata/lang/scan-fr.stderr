@@ -1,0 +1,12 @@
+
+ ██████╗ ███████╗██████╗ ██╗ ███╗   ██╗
+ ██╔══██╗██╔════╝██╔══██╗██║ ████╗  ██║
+ ██████╔╝█████╗  ██████╔╝██║ ██╔██╗ ██║
+ ██╔═══╝ ██╔══╝  ██╔═══╝ ██║ ██║╚██╗██║
+ ██║     ███████╗██║     ██║ ██║ ╚████║
+ ╚═╝     ╚══════╝╚═╝     ╚═╝ ╚═╝  ╚═══╝
+
+ v0.1.0-dev  · scanner de posture cloud (sécurité · conformité)
+
+
+ⓘ Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud.

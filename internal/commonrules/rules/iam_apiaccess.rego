@@ -23,7 +23,12 @@ deny contains f if {
 		"subject": object.get(r.attributes, "api_access_rule_id", r.id),
 		"message": sprintf("Règle d'accès API « %s » : appels autorisés depuis %s (CIDR public).", [object.get(r.attributes, "api_access_rule_id", r.id), cidr]),
 		"remediation": "Restreindre les plages IP de la règle aux adresses légitimes ; supprimer toute règle ouverte à 0.0.0.0/0 ou ::/0.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("API access rule \"%s\": calls allowed from %s (public CIDR).", [object.get(r.attributes, "api_access_rule_id", r.id), cidr]),
+			"remediation_en": "Restrict the rule's IP ranges to legitimate addresses; remove any rule open to 0.0.0.0/0 or ::/0.",
+		},
 	}
 }
 
@@ -42,7 +47,12 @@ deny contains f if {
 		"subject": object.get(r, "name", r.id),
 		"message": "Aucune règle d'accès API définie : l'API du compte est joignable depuis n'importe où avec une clé valide.",
 		"remediation": "Créer au moins une règle d'accès API restreignant les appels à des plages IP légitimes.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": "No API access rule is defined: the account's API is reachable from anywhere with a valid key.",
+			"remediation_en": "Create at least one API access rule restricting calls to legitimate IP ranges.",
+		},
 	}
 }
 
@@ -57,6 +67,11 @@ deny contains f if {
 		"subject": object.get(r, "name", r.id),
 		"message": "Politique d'accès API : aucune expiration maximale imposée aux clés d'accès.",
 		"remediation": "Configurer une expiration maximale des clés d'accès (ex. 90 jours).",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": "API access policy: no maximum expiry is enforced on access keys.",
+			"remediation_en": "Configure a maximum access key expiry (90 days, for instance).",
+		},
 	}
 }

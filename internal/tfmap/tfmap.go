@@ -12,6 +12,7 @@ import (
 	yaml "go.yaml.in/yaml/v3"
 
 	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/internal/tfparse"
 )
@@ -40,7 +41,7 @@ type Spec struct {
 func Parse(raw []byte) (Spec, error) {
 	var s Spec
 	if err := yaml.Unmarshal(raw, &s); err != nil {
-		return Spec{}, fmt.Errorf("spec de mapping Terraform invalide : %w", err)
+		return Spec{}, fmt.Errorf(i18n.T("spec de mapping Terraform invalide : %w", "invalid Terraform mapping spec: %w"), err)
 	}
 	return s, nil
 }

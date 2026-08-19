@@ -19,6 +19,11 @@ deny contains f if {
 		"subject": id,
 		"message": sprintf("Snapshot « %s » partagé publiquement (création de volume autorisée à tous).", [id]),
 		"remediation": "Retirer la permission globale ; partager le snapshot aux seuls comptes légitimes.",
-		"labels": {"provider": provider_of(r), "category": "security"},
+		"labels": {
+			"provider": provider_of(r),
+			"category": "security",
+			"message_en": sprintf("Snapshot \"%s\" shared publicly (anyone is allowed to create a volume from it).", [id]),
+			"remediation_en": "Remove the global permission; share the snapshot with legitimate accounts only.",
+		},
 	}
 }

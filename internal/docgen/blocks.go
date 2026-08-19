@@ -11,6 +11,7 @@ import (
 
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/genprovider"
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/referentiel"
 )
 
@@ -64,8 +65,8 @@ type captures struct {
 // captureAll exécute la totalité des commandes documentées. Les deux inventaires en ligne sont
 // écrits dans un dossier jetable ; la commande AFFICHÉE, elle, porte le nom de fichier relatif
 // que le lecteur aura créé.
-func captureAll(root, bin string) (captures, error) {
-	r := Runner{Bin: bin, Root: root}
+func captureAll(root, bin, lang string) (captures, error) {
+	r := Runner{Bin: bin, Root: root, Lang: lang}
 	tmp, err := os.MkdirTemp("", "pepin-docgen-")
 	if err != nil {
 		return captures{}, err
@@ -121,7 +122,7 @@ func captureAll(root, bin string) (captures, error) {
 	if verr != nil {
 		return captures{}, verr
 	}
-	if v := strings.TrimPrefix(strings.TrimSpace(ver.Stdout), "pépin "); v != "" {
+	if v := trimToolName(ver.Stdout); v != "" {
 		for _, capt := range []*Capture{&c.vulnerable, &c.fixed, &c.assessment, &c.missingFile,
 			&c.empty, &c.tagless, &c.taglessStr, &c.providers} {
 			capt.Stdout = strings.ReplaceAll(capt.Stdout, "v"+v, "v"+versionPlaceholder)
@@ -134,29 +135,39 @@ func captureAll(root, bin string) (captures, error) {
 // versionPlaceholder remplace la version du binaire dans les sorties capturées.
 const versionPlaceholder = "<version>"
 
+// trimToolName isole la version dans la sortie de `pepin version`, quelle que soit la
+// langue : le nom de l'outil s'écrit « pépin » en français et « pepin » en anglais.
+func trimToolName(out string) string {
+	v := strings.TrimSpace(out)
+	for _, prefix := range []string{"pépin ", "pepin "} {
+		v = strings.TrimPrefix(v, prefix)
+	}
+	return v
+}
+
 // buildBlocks assemble toutes les régions injectables pour une langue.
 func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) map[string]string {
 	t := blockText(lang)
 	b := map[string]string{
-		"scope-disclaimer":          Fence("text", wrapDisclaimer(assess.ScopeDisclaimer)),
+		"scope-disclaimer":          Fence("text", wrapDisclaimer(assess.ScopeDisclaimerIn(i18n.Lang(lang)))),
 		"scan-vulnerable-head":      Fence("text", Head(c.vulnerable.Stdout, 20)),
 		"scan-vulnerable-tail":      Fence("text", Tail(c.vulnerable.Stdout, 22)),
 		"scan-vulnerable-full":      Fence("text", c.vulnerable.Stdout),
 		"scan-vulnerable-banner":    Fence("text", c.vulnerable.Stderr),
 		"scan-fixed-full":           Fence("text", c.fixed.Stdout),
 		"scan-header":               Fence("text", Head(c.vulnerable.Stdout, 4)),
-		"scan-control-encryption":   Fence("text", controlBlock(c.vulnerable.Stdout, "CLD-CHF-2")),
-		"scan-control-objectstore":  Fence("text", controlBlock(c.vulnerable.Stdout, "CLD-STO-1")),
+		"scan-control-encryption":   Fence("text", controlBlock(t, c.vulnerable.Stdout, "CLD-CHF-2")),
+		"scan-control-objectstore":  Fence("text", controlBlock(t, c.vulnerable.Stdout, "CLD-STO-1")),
 		"provider-list":             Fence("text", c.providers.Stdout),
 		"fixture-empty-inventory":   Fence("json", emptyInventory),
 		"fixture-tagless-inventory": Fence("json", taglessInventory),
 		"exit-codes":                exitCodeTable(t, c),
 		"assessment-run":            assessmentRunBlock(c),
 		"assessment-counts":         assessmentCountsTable(t, c),
-		"assessment-fail":           assessmentExtract(c, "fail", "objectstorage_bucket_public_access"),
-		"assessment-pass":           assessmentExtract(c, "pass", "network_securitygroup_allow_ingress_from_internet_to_all_ports"),
-		"assessment-na":             assessmentExtract(c, "not-applicable", "blockstorage_volume_encryption"),
-		"assessment-ne":             assessmentExtract(c, "not-evaluated", "compute_instance_public_ip_with_open_securitygroup"),
+		"assessment-fail":           assessmentExtract(t, c, "fail", "objectstorage_bucket_public_access"),
+		"assessment-pass":           assessmentExtract(t, c, "pass", "network_securitygroup_allow_ingress_from_internet_to_all_ports"),
+		"assessment-na":             assessmentExtract(t, c, "not-applicable", "blockstorage_volume_encryption"),
+		"assessment-ne":             assessmentExtract(t, c, "not-evaluated", "compute_instance_public_ip_with_open_securitygroup"),
 		"not-evaluated-reasons":     notEvaluatedReasons(t, c),
 		"required-attrs":            requiredAttrTable(t),
 		"never-pass":                neverPassTable(t, m),
@@ -176,7 +187,7 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 //
 // Un contrôle absent du scan rend une note EXPLICITE plutôt qu'un bloc vide : la page doit
 // dire qu'elle n'a pas l'exemple, jamais faire semblant de l'avoir.
-func controlBlock(stdout, code string) string {
+func controlBlock(t blockStrings, stdout, code string) string {
 	lines := strings.Split(stdout, "\n")
 	start := -1
 	for i, l := range lines {
@@ -186,7 +197,7 @@ func controlBlock(stdout, code string) string {
 		}
 	}
 	if start < 0 {
-		return "(aucun écart " + code + " sur ce scan)"
+		return strings.ReplaceAll(t.noDeviationFor, "%s", code)
 	}
 	if start > 0 && strings.HasPrefix(strings.TrimSpace(lines[start-1]), "─") {
 		start-- // la règle horizontale qui ouvre le bloc
@@ -276,7 +287,7 @@ func normalizeRun(run map[string]any) {
 // de code. Aucun champ n'est ajouté ni retiré. Le repli garantit qu'un contrôle qui disparaîtrait
 // du scan d'exemple ne casse pas la génération : elle montrerait un autre résultat du même
 // statut, jamais un exemple fabriqué.
-func assessmentExtract(c captures, status, preferred string) string {
+func assessmentExtract(t blockStrings, c captures, status, preferred string) string {
 	doc := parseAssessment(c)
 	if doc == nil {
 		return Fence("json", "{}")
@@ -293,7 +304,7 @@ func assessmentExtract(c captures, status, preferred string) string {
 		}
 	}
 	if len(picked) == 0 {
-		return Fence("text", "(aucun résultat « "+status+" » sur ce scan)")
+		return Fence("text", strings.ReplaceAll(t.noResultFor, "%s", status))
 	}
 	sort.Slice(picked, func(i, j int) bool {
 		a, _ := picked[i]["control"].(string)
@@ -352,7 +363,7 @@ func notEvaluatedReasons(t blockStrings, c captures) string {
 			ev, _ := r["evidence"].(map[string]any)
 			obs, _ := ev["observed"].(string)
 			ctl, _ := r["control"].(string)
-			key := generalizeReason(obs)
+			key := generalizeReason(obs, t.quotedPlaceholder)
 			if e, ok := byReason[key]; ok {
 				e.count++
 				if ctl < e.witness {
@@ -377,15 +388,17 @@ func notEvaluatedReasons(t blockStrings, c captures) string {
 	return b.String()
 }
 
-// quotedName repère un nom (type, attribut, état) cité par le moteur entre guillemets français.
-var quotedName = regexp.MustCompile(`«[^»]*»`)
+// quotedName repère un nom (type, attribut, état) cité par le moteur : guillemets
+// français en français, guillemets droits en anglais. Le moteur cite dans la langue
+// du rapport, la généralisation doit donc reconnaître les deux.
+var quotedName = regexp.MustCompile(`«[^»]*»|"[^"]*"`)
 
 // generalizeReason remplace CHAQUE nom cité d'un motif par un marqueur générique, pour
 // regrouper les motifs de MÊME NATURE sans en inventer le libellé. Chaque span est traité
 // séparément : englober du premier au dernier guillemet avalerait le texte intermédiaire, et
 // la ligne du tableau ne dirait plus ce que le moteur dit.
-func generalizeReason(s string) string {
-	return quotedName.ReplaceAllString(s, "« … »")
+func generalizeReason(s, placeholder string) string {
+	return quotedName.ReplaceAllString(s, placeholder)
 }
 
 // requiredAttrTable rend la table des attributs décisifs telle qu'elle est APPLIQUÉE

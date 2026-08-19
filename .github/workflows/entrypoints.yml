@@ -62,11 +62,19 @@ jobs:
       # Un `--help` qui répond ne prouve rien : l'image doit produire un
       # rapport sur les entrées du dépôt, et rendre les trois codes de sortie
       # que le README publie, à travers docker run, volume monté compris.
+      #
+      # La LANGUE est imposée dans l'assertion, pas héritée du runner : Pépin la
+      # résout depuis l'environnement (PEPIN_LANG, LC_ALL, LANG), donc une
+      # attente écrite en dur dépendrait de la locale de la machine de CI. On
+      # vérifie les DEUX langues : l'outil doit s'annoncer dans celle qu'on lui
+      # demande, et « pépin » n'est pas « pepin ».
       - name: The image scans and keeps the exit codes
         run: |
           set -u
-          got="$(docker run --rm pepin:ci version)"
-          [ "$got" = "pépin v0.0.0-ci" ] || { echo "version à travers l'image : '$got'" >&2; exit 1; }
+          got="$(docker run --rm -e PEPIN_LANG=en pepin:ci version)"
+          [ "$got" = "pepin v0.0.0-ci" ] || { echo "version anglaise à travers l'image : '$got'" >&2; exit 1; }
+          got="$(docker run --rm -e PEPIN_LANG=fr pepin:ci version)"
+          [ "$got" = "pépin v0.0.0-ci" ] || { echo "version française à travers l'image : '$got'" >&2; exit 1; }
           rc=0
           docker run --rm -v "$PWD/examples:/work/examples:ro" pepin:ci \
             scan scaleway --terraform examples/scaleway/terraform/plan.json --format json >/dev/null || rc=$?
@@ -140,8 +148,12 @@ jobs:
           set -u
           mkdir -p inst
           .github/actions/pepin-scan/install.sh 0.0.0-ci inst http://127.0.0.1:8931
-          got="$(inst/pepin version)"
-          [ "$got" = "pépin v0.0.0-ci" ] || { echo "le binaire installé répond '$got'" >&2; exit 1; }
+          # Langue imposée, pour la même raison qu'à l'image : l'attente ne doit pas
+          # dépendre de la locale du runner.
+          got="$(PEPIN_LANG=en inst/pepin version)"
+          [ "$got" = "pepin v0.0.0-ci" ] || { echo "le binaire installé répond '$got'" >&2; exit 1; }
+          got="$(PEPIN_LANG=fr inst/pepin version)"
+          [ "$got" = "pépin v0.0.0-ci" ] || { echo "le binaire installé répond '$got' en français" >&2; exit 1; }
 
       # La falsification : un octet retourné dans le binaire servi, la liste
       # d'empreintes inchangée. Si install.sh installe quand même, la

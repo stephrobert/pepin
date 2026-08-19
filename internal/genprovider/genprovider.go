@@ -22,6 +22,7 @@ import (
 
 	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/collectkit"
+	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/kubeauth"
 	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/internal/provider"
@@ -89,8 +90,9 @@ type Contrat struct {
 
 // TypeContrat est l'ancrage d'un type de ressource sur l'API native.
 type TypeContrat struct {
-	Etat   string `yaml:"etat"`   // verifie | a_verifier | absent
-	Reason string `yaml:"reason"` // justification quand etat=absent (mécanisme inexistant côté API, source doc)
+	Etat     string `yaml:"etat"`      // verifie | a_verifier | absent
+	Reason   string `yaml:"reason"`    // justification quand etat=absent (mécanisme inexistant côté API, source doc)
+	ReasonEn string `yaml:"reason_en"` // la même justification en anglais (Pépin est bilingue, cf. internal/i18n)
 }
 
 // NAEntry déclare un contrôle non applicable à un provider AVEC sa justification —
@@ -98,8 +100,9 @@ type TypeContrat struct {
 // deux formes YAML : un simple code (`- objectstorage_bucket_x`, sans justification, repli
 // générique) ou un mapping justifié (`- {control: ..., reason: ...}`).
 type NAEntry struct {
-	Control string `yaml:"control"` // code de contrôle agnostique
-	Reason  string `yaml:"reason"`  // pourquoi le contrôle est non testable/non applicable (ancré doc)
+	Control  string `yaml:"control"`   // code de contrôle agnostique
+	Reason   string `yaml:"reason"`    // pourquoi le contrôle est non testable/non applicable (ancré doc)
+	ReasonEn string `yaml:"reason_en"` // la même justification en anglais (Pépin est bilingue, cf. internal/i18n)
 }
 
 // UnmarshalYAML accepte la forme courte (scalaire = code) et la forme justifiée (mapping).
@@ -168,7 +171,7 @@ func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) ([]mo
 	if g.desc.Auth.Type == "kubeconfig" {
 		path := collectkit.FirstNonEmpty(cfg.Options["kubeconfig"], creds["kubeconfig"])
 		if path == "" {
-			return nil, fmt.Errorf("provider %s : chemin du kubeconfig requis (--kubeconfig ou KUBECONFIG)", g.desc.Name)
+			return nil, fmt.Errorf(i18n.T("provider %s : chemin du kubeconfig requis (--kubeconfig ou KUBECONFIG)", "provider %s: a kubeconfig path is required (--kubeconfig or KUBECONFIG)"), g.desc.Name)
 		}
 		kc, err := kubeauth.Load(path, 30*time.Second)
 		if err != nil {
@@ -252,7 +255,7 @@ func (g GenericProvider) buildAuth(creds map[string]string) (collect.Auth, error
 	case "exoscale-hmac":
 		return collect.ExoscaleAuth{Key: creds["access_key"], Secret: creds["secret_key"]}, nil
 	}
-	return nil, fmt.Errorf("type d'authentification inconnu : %q (provider %s)", a.Type, g.desc.Name)
+	return nil, fmt.Errorf(i18n.T("type d'authentification inconnu : %q (provider %s)", "unknown authentication type: %q (provider %s)"), a.Type, g.desc.Name)
 }
 
 // resolveCreds résout les identifiants : variables d'environnement, puis fichier
@@ -293,7 +296,7 @@ func (g GenericProvider) resolveCreds(cfg provider.Config) (map[string]string, e
 	// L'auth par kubeconfig ne repose pas sur une paire de clés : les identifiants (et les
 	// droits) sont portés par le fichier lui-même, validé plus tard par kubeauth.Load.
 	if g.desc.Auth.Type != "kubeconfig" && (cr["access_key"] == "" || cr["secret_key"] == "") {
-		return nil, fmt.Errorf("identifiants %s absents : variables d'environnement ou fichier de configuration", g.desc.Name)
+		return nil, fmt.Errorf(i18n.T("identifiants %s absents : variables d'environnement ou fichier de configuration", "%s credentials missing: environment variables or configuration file"), g.desc.Name)
 	}
 	return cr, nil
 }
@@ -306,7 +309,7 @@ func Load(fsys fs.FS, file string) (Descriptor, error) {
 	}
 	var desc Descriptor
 	if err := yaml.Unmarshal(raw, &desc); err != nil {
-		return Descriptor{}, fmt.Errorf("%s invalide : %w", file, err)
+		return Descriptor{}, fmt.Errorf(i18n.T("%s invalide : %w", "invalid %s: %w"), file, err)
 	}
 	return desc, nil
 }
@@ -315,7 +318,7 @@ func Load(fsys fs.FS, file string) (Descriptor, error) {
 func RegisterAll(fsys fs.FS, root string) error {
 	entries, err := fs.ReadDir(fsys, root)
 	if err != nil {
-		return fmt.Errorf("lecture du dossier des providers %s : %w", root, err)
+		return fmt.Errorf(i18n.T("lecture du dossier des providers %s : %w", "reading the providers directory %s: %w"), root, err)
 	}
 	names := make([]string, 0, len(entries))
 	for _, e := range entries {
