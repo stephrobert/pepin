@@ -119,8 +119,10 @@ source du contrat dans l'en-tête de chaque règle.
 - `f` suit le modèle partagé **`scankit/finding.Finding`** (cf. §9) : `code`,
   `severity` (`critical|high|medium|low`), `subject` (ressource fautive),
   `message` (FR actionnable), `remediation` (FR), et
-  `labels: {"provider": provider_of(r), "category": "security|compliance"}` —
-  **`provider` tiré de la ressource via le helper `provider_of`, jamais en dur.**
+  `labels: {"provider": provider_of(r), "category": "security|compliance",
+  "message_en": …, "remediation_en": …}` — **`provider` tiré de la ressource via le
+  helper `provider_of`, jamais en dur**, et les deux labels `_en` OBLIGATOIRES
+  (§1.2 : la traduction voyage dans les labels, scankit n'est pas modifié).
 - **`code` = identifiant de check agnostique, COMMUN à tous les providers**
   (ex. `network_securitygroup_allow_ingress_from_internet_to_tcp_port_22`,
   `objectstorage_bucket_public_access`). Convention `<service>_<resource>_<check>`
@@ -204,12 +206,15 @@ Les artefacts pilotent tout : `catalogue.yaml` (QUOI), `contrats/<provider>.yaml
    son SDK et le consigner `etat: verifie` + mapping dans `referentiel/contrats/<provider>.yaml`.
    Jamais supposer (« absent » se prouve en lisant le SDK).
 3. **Référentiel.** Ajouter le contrôle à `referentiel/controles.yaml` : `code`
-   agnostique, `severite`, `scsl: [CLD-*]` (gelé), `frameworks`, `fournisseurs`.
+   agnostique, `severite`, `scsl: [CLD-*]` (gelé), `frameworks`, `fournisseurs`,
+   et les trois champs BILINGUES `titre`/`titre_en`, `description`/`description_en`,
+   `remediation`/`remediation_en` (§1.2 ; `mise run validate` refuse une absence).
 4. **Collecteur.** Normaliser le champ natif → attribut commun dans
    `providers/<provider>/` (collecteur live ET mapper Terraform). Le squelette se
    génère : `python3 scripts/gen-collector.py <provider>`.
 5. **Règle commune.** UNE règle dans `internal/commonrules/rules/` (`package
-   pepin.rules`, `labels.provider: provider_of(r)`) + test `*_test.rego` (✓ et ✗).
+   pepin.rules`, `labels.provider: provider_of(r)`, plus `labels.message_en` et
+   `labels.remediation_en` — §1.2) + test `*_test.rego` (✓ et ✗).
    Passer l'entrée du catalogue en `statut: implemente`.
 6. **Valider.** `mise run validate` (codes↔règles↔SCSL gelé↔catalogue) **puis**
    `mise run test` + `mise run audit` au vert. Aucun commit si l'un échoue (§1, §7).

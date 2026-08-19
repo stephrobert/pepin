@@ -53,6 +53,15 @@ identifiants, endpoint S3, `collecte` (API live), `mapping_terraform`, et le
    correspondances de normes, `fournisseurs`).
 3. Valider par un scan réel, puis activer (`fournisseurs`).
 
+Tout ce que l'utilisateur lit s'écrit **deux fois**, côte à côte, parce que Pépin
+détecte la langue du lecteur. Une règle émet `message`/`remediation` en français
+et `labels.message_en`/`labels.remediation_en` en anglais ; un contrôle porte
+`titre_en`, `description_en` et `remediation_en` ; un contrat de provider porte
+`reason_en` à côté de `reason`. `mise run validate` refuse toute absence : un
+rapport anglais ne doit jamais basculer au français en milieu de phrase. Le
+français est la langue de référence du contenu normatif, l'anglais en est la
+traduction.
+
 ## Commits
 
 Conventional Commits (`feat`/`fix`/`docs`/`refactor`/`test`/`chore`), sujet à
