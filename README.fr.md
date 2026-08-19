@@ -72,7 +72,8 @@ collecté aucune ressource ne rend jamais `0` : un résultat vide n'est pas un r
   source. **Générée** depuis le référentiel et les descripteurs, vérifiée en CI.
 - [Limites connues](docs/known-limitations.fr.md) : les angles morts, nommés.
 - [Périmètre et non-objectifs](docs/concepts/scope.fr.md) : ce qu'un rapport Pépin n'est pas.
-- [Installation](docs/install.fr.md) · [Feuille de route](docs/roadmap.md)
+- [Installation](docs/install.fr.md) · [Feuille de route](docs/roadmap.md) (document de
+  travail interne)
 
 ## Architecture (en bref)
 

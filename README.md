@@ -73,7 +73,7 @@ no resource never returns `0`: an empty result is not a compliant one.
   **Generated** from the reference and the provider descriptors, and verified in CI.
 - [Known limitations](docs/known-limitations.md) — the blind spots, named.
 - [Scope and non-goals](docs/concepts/scope.md) — what a Pépin report is not.
-- [Install](docs/install.md) · [Roadmap](docs/roadmap.md)
+- [Install](docs/install.md)
 
 ## Architecture (in brief)
 
