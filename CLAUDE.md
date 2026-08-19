@@ -218,6 +218,18 @@ Les artefacts pilotent tout : `catalogue.yaml` (QUOI), `contrats/<provider>.yaml
    Passer l'entrée du catalogue en `statut: implemente`.
 6. **Valider.** `mise run validate` (codes↔règles↔SCSL gelé↔catalogue) **puis**
    `mise run test` + `mise run audit` au vert. Aucun commit si l'un échoue (§1, §7).
+7. **Documenter.** `mise run gen-docs`, et committer ce qu'il régénère : la matrice
+   de couverture et les sorties capturées sont GÉNÉRÉES depuis le binaire et le
+   référentiel, et `TestGeneratedDocsAreUpToDate` casse la CI si elles dérivent.
+   Puis relire ce que le changement rend FAUX ailleurs — `docs/known-limitations.md`
+   si un angle mort se comble, la page du provider concerné, `docs/coverage.md` —
+   dans les DEUX langues. Un changement qui déplace un verdict sur un tenant
+   inchangé, une surface analysable ou un code de sortie a sa ligne au CHANGELOG.
+
+   La documentation n'est pas une étape de suivi : une page qui décrit un produit
+   disparu est pire qu'une page absente, parce qu'elle inspire confiance. La
+   question qui tranche : *quelqu'un qui lit la documentation sans lire le code
+   serait-il induit en erreur par ce changement ?*
 
 Invariants vérifiés par `mise run validate` : tout contrôle actif a une règle ; tout
 code émis est catalogué ; tout `scsl` existe dans l'index **gelé** ; le catalogue
