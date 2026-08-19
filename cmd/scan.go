@@ -457,15 +457,6 @@ func providerNAReasons(provider string) map[string]string {
 	return out
 }
 
-// governanceProviderReaders : contrôles de gouvernance dont la donnée est la ressource
-// synthétique `governance_provider` (toujours construite depuis le descripteur). Leur source
-// est donc intrinsèquement collectée ; les autres contrôles de gouvernance (ex. étiquettes,
-// qui dépendent de la collecte d'attributs par ressource) ne sont PAS présumés vérifiés.
-var governanceProviderReaders = map[string]bool{
-	"governance_resource_region_in_eu": true,
-	"governance_provider_sovereignty":  true,
-}
-
 // controlTypes retourne, par code de contrôle, le type de ressource normalisé qu'il évalue
 // (genprovider.ControlType). assess s'en sert pour tester la présence du TYPE EXACT dans
 // l'inventaire — un « pass » exige une ressource du type visé, pas d'une famille voisine.
@@ -478,20 +469,12 @@ func controlTypes() map[string]string {
 }
 
 // providerVerified indique, par contrôle, si le contrat du provider CONFIRME que la donnée
-// nécessaire est réellement collectée (état `verifie` du type visé). C'est le verrou d'un
-// « pass » opposable : sans confirmation, assess reste sur NotEvaluated plutôt que d'affirmer
-// une conformité qu'une garde de capacité a pu court-circuiter silencieusement.
+// nécessaire est réellement collectée. Le verrou lui-même vit dans assess.Verified : la
+// documentation de couverture s'y adosse aussi, donc il n'existe qu'une seule définition.
 func providerVerified(provider string) map[string]bool {
 	out := map[string]bool{}
 	for code := range referentiel.All() {
-		switch {
-		case governanceProviderReaders[code]:
-			out[code] = true
-		case genprovider.ControlType(code) != "":
-			out[code] = genprovider.TypeEtat(provider, genprovider.ControlType(code)) == "verifie"
-		default:
-			out[code] = false
-		}
+		out[code] = assess.Verified(provider, code)
 	}
 	return out
 }

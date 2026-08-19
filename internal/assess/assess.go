@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/referentiel"
 	"github.com/stephrobert/scankit/assessment"
 	"github.com/stephrobert/scankit/finding"
@@ -112,6 +113,45 @@ var requiredAttr = map[string][]string{
 	// blockstorage_snapshot n'existe : le contrôle ne peut PAS y être évalué,
 	// et s'affichait pourtant vert sur l'exemple livré dans le dépôt.
 	"blockstorage_volume_snapshots_exist": {"state"},
+}
+
+// RequiredAttrs retourne, par contrôle, les attributs dont la PRÉSENCE conditionne un « pass »
+// (copie : la table interne reste immuable). Exposé pour que la documentation de couverture
+// (internal/docgen) soit DÉRIVÉE de la table réellement appliquée, jamais recopiée à côté.
+func RequiredAttrs() map[string][]string {
+	out := make(map[string][]string, len(requiredAttr))
+	for code, attrs := range requiredAttr {
+		out[code] = append([]string(nil), attrs...)
+	}
+	return out
+}
+
+// governanceProviderReaders : contrôles de gouvernance dont la donnée EST la ressource
+// synthétique `governance_provider` (toujours construite depuis le descripteur du
+// fournisseur). Leur source est donc intrinsèquement collectée ; les autres contrôles de
+// gouvernance (ex. étiquettes, qui dépendent de la collecte d'attributs par ressource) ne
+// sont PAS présumés vérifiés.
+var governanceProviderReaders = map[string]bool{
+	"governance_resource_region_in_eu": true,
+	"governance_provider_sovereignty":  true,
+}
+
+// Verified indique si le contrat du fournisseur CONFIRME que la donnée dont un contrôle a
+// besoin est réellement collectée (état `verifie` du type visé). C'est le verrou d'un « pass »
+// opposable : sans confirmation, Build reste sur NotEvaluated plutôt que d'affirmer une
+// conformité qu'une garde de capacité a pu court-circuiter silencieusement. Un contrôle sans
+// type de ressource visé qui ne lit pas le descripteur n'est jamais vérifié — donc jamais
+// « pass ». Fonction UNIQUE : le scan et la documentation de couverture s'y adossent tous deux,
+// pour qu'une page de couverture ne puisse pas décrire un verrou différent de celui appliqué.
+func Verified(provider, code string) bool {
+	switch {
+	case governanceProviderReaders[code]:
+		return true
+	case genprovider.ControlType(code) != "":
+		return genprovider.TypeEtat(provider, genprovider.ControlType(code)) == "verifie"
+	default:
+		return false
+	}
 }
 
 // References converts a control's framework + SCSL mappings into exact, versioned references.
