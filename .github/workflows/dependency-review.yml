@@ -28,4 +28,11 @@ jobs:
       - uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
         with:
           fail-on-severity: high
+          # La liste de refus protège le PRODUIT distribué (Apache-2.0) d'une
+          # contamination copyleft. Elle ne vise pas l'outillage de CI.
           deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0
+          # trufflehog est une ACTION exécutée par la CI, jamais liée ni distribuée
+          # avec le binaire : son AGPL-3.0 ne se propage pas au produit. L'exception
+          # est nominative — la politique reste entière pour tout le reste, et en
+          # particulier pour les dépendances Go, qui elles sont bien distribuées.
+          allow-dependencies-licenses: pkg:githubactions/trufflesecurity/trufflehog
