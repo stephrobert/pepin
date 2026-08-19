@@ -19,6 +19,11 @@
 # et que le preflight vérifie avant de laisser poser un tag.
 
 Output docs/assets/quickstart.gif
+# Le MP4 sort du MÊME enregistrement que le GIF : deux formats d'une seule
+# exécution, donc jamais deux démos qui divergent. Le GIF reste ce que les
+# README affichent (il s'anime sans lecteur) ; le MP4 sert là où un GIF est
+# refusé ou trop lourd, et il pèse une fraction de son poids.
+Output docs/assets/quickstart.mp4
 
 Set Shell bash
 Set FontSize 16

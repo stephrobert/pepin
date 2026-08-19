@@ -155,9 +155,20 @@ jobs:
           set -u
           chmod +x dist/pepin-linux-*
           docker build -t pepin:gate --build-arg VERSION="$TAG" .
-          got="$(docker run --rm pepin:gate version)"
+          # La LANGUE est imposée dans l'assertion, jamais héritée du runner : Pépin
+          # la résout depuis l'environnement (PEPIN_LANG, LC_ALL, LANG), donc une
+          # attente écrite en dur dépend de la locale de la machine de CI. C'est ce
+          # qui a fait échouer la publication de v0.2.0 : le runner est anglophone,
+          # le binaire a répondu « pepin » là où l'assertion voulait « pépin ».
+          # On vérifie les DEUX langues, parce que « pépin » n'est pas « pepin ».
+          got="$(docker run --rm -e PEPIN_LANG=fr pepin:gate version)"
           if [ "$got" != "pépin $TAG" ]; then
-            echo "l'image répond '$got', le tag est '$TAG'" >&2
+            echo "l'image en français répond '$got', le tag est '$TAG'" >&2
+            exit 1
+          fi
+          got="$(docker run --rm -e PEPIN_LANG=en pepin:gate version)"
+          if [ "$got" != "pepin $TAG" ]; then
+            echo "l'image en anglais répond '$got', le tag est '$TAG'" >&2
             exit 1
           fi
           # Les trois codes, à travers docker run : c'est le chemin qu'une CI
@@ -293,9 +304,15 @@ jobs:
         run: |
           set -u
           chmod +x dist/pepin-linux-amd64
-          got="$(dist/pepin-linux-amd64 version)"
+          # Langue imposée, pour la même raison qu'à l'image.
+          got="$(PEPIN_LANG=fr dist/pepin-linux-amd64 version)"
           if [ "$got" != "pépin $TAG" ]; then
-            echo "le binaire répond '$got', le tag est '$TAG'" >&2
+            echo "le binaire en français répond '$got', le tag est '$TAG'" >&2
+            exit 1
+          fi
+          got="$(PEPIN_LANG=en dist/pepin-linux-amd64 version)"
+          if [ "$got" != "pepin $TAG" ]; then
+            echo "le binaire en anglais répond '$got', le tag est '$TAG'" >&2
             exit 1
           fi
           rc=0

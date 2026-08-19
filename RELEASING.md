@@ -50,6 +50,10 @@ the Python tooling must still be able to cut a release.
    same commands and differ only by the language they impose. The preflight
    requires both.
 
+   Both a GIF and an MP4 come out of the same run: the GIF is what the READMEs
+   show (it animates without a player), the MP4 is for places that refuse a GIF
+   or want a fraction of the weight.
+
    The version is injected into the build, never typed into the tape, and
    `docs/assets/quickstart.version` records it. The preflight compares that file
    with the tag and refuses to proceed if they differ.

@@ -124,8 +124,8 @@ go build -trimpath -ldflags "-s -w -X github.com/stephrobert/pepin/cmd.version=$
 PATH="$PWD:$PATH" vhs tools/demo/quickstart.en.tape
 PATH="$PWD:$PATH" vhs tools/demo/quickstart.fr.tape
 printf '%s\n' "${version}" > docs/assets/quickstart.version
-echo "GIF enregistrés pour ${version} :"
-ls -lh docs/assets/quickstart.gif docs/assets/quickstart.fr.gif
+echo "Démos enregistrées pour ${version} (GIF + MP4, même exécution) :"
+ls -lh docs/assets/quickstart.gif docs/assets/quickstart.fr.gif docs/assets/quickstart.mp4 docs/assets/quickstart.fr.mp4
 """
 
 [tasks.release-check]
