@@ -20,7 +20,7 @@ deny contains f if {
 	name := object.get(b.attributes, "name", b.id)
 	f := {
 		"code": "objectstorage_bucket_default_encryption",
-		"severity": "medium",
+		"severity": "high",
 		"subject": name,
 		"message": sprintf("Bucket « %s » sans chiffrement par défaut au repos — les objets y sont écrits en clair côté fournisseur.", [name]),
 		"remediation": "Activer le chiffrement par défaut du bucket (SSE) ; vérifier que les objets déjà déposés sont ré-écrits chiffrés.",

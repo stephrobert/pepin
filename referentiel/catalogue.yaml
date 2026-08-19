@@ -160,7 +160,7 @@ catalogue:
   - { code: blockstorage_public_snapshot, severite: critical, statut: a_trier }
   - { code: blockstorage_snapshot_account_block_public_access, severite: high, statut: a_trier }
   - { code: blockstorage_snapshots_encrypted, severite: high, statut: a_trier }
-  - { code: blockstorage_volume_encryption, severite: medium, statut: implemente }
+  - { code: blockstorage_volume_encryption, severite: high, statut: implemente }
   - { code: blockstorage_volume_protected_by_backup_plan, severite: medium, statut: a_trier }
   - { code: blockstorage_volume_snapshots_exists, severite: high, statut: a_trier }
   - { code: objectstorage_access_point_public_access_block, severite: critical, statut: a_trier }

@@ -781,7 +781,7 @@ controles:
   - code: blockstorage_volume_encryption
     famille: chiffrement
     titre: Chiffrement au repos désactivé
-    severite: medium
+    severite: high
     description: >
       Un volume block storage n'a pas le chiffrement au repos activé. Le modèle
       diffère selon le fournisseur : chiffrement transparent toujours actif
@@ -800,7 +800,7 @@ controles:
   - code: objectstorage_bucket_default_encryption
     famille: chiffrement
     titre: Bucket sans chiffrement par défaut au repos
-    severite: medium
+    severite: high
     description: >
       Un bucket de stockage objet n'a pas de chiffrement par défaut : les objets y
       sont écrits en clair côté fournisseur. Le chiffrement au repos est opt-in par

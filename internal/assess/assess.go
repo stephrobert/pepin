@@ -59,9 +59,14 @@ var requiredAttr = map[string][]string{
 	"objectstorage_bucket_kms_encryption":                {"sse_kms_enabled"},
 	"objectstorage_bucket_versioning_enabled":            {"versioning"},
 	"objectstorage_bucket_default_encryption":            {"default_encryption_enabled"},
-	// Un 403 sur GetBucketAcl ne doit pas rendre un bucket public « conforme » : il faut
-	// qu'AU MOINS un des signaux d'exposition ait été réellement collecté.
-	"objectstorage_bucket_public_access":                {"acl", "acl_grants", "public_via_acl", "policy_public"},
+	// Un 403 sur GetBucketAcl ne doit pas rendre un bucket public « conforme ». La liste
+	// n'accepte QUE des signaux d'ACL, volontairement : `policy_public` en faisait partie,
+	// or collectBucket interroge ACL et policy SÉPARÉMENT (best effort). Un 403 sur
+	// GetBucketAcl suivi d'un GetBucketPolicy réussi posait donc `policy_public: false`
+	// seul, ce qui franchissait le verrou et concluait « conforme » sur une ACL jamais lue —
+	// alors que l'ACL est le vecteur d'exposition le plus courant. Sans signal d'ACL, le
+	// contrôle sort « non évalué », ce qui est la réponse honnête.
+	"objectstorage_bucket_public_access":                {"acl", "acl_grants", "public_via_acl"},
 	"database_encryption_at_rest_enabled":               {"encryption_at_rest"},
 	"loadbalancer_http_redirect_to_https":               {"redirect_to_https"},
 	"loadbalancer_ssl_listeners":                        {"load_balancer_type"},

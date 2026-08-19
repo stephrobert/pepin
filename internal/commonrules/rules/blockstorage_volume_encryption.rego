@@ -29,7 +29,7 @@ deny contains f if {
 	name := object.get(v.attributes, "volume_id", v.id)
 	f := {
 		"code": "blockstorage_volume_encryption",
-		"severity": "medium",
+		"severity": "high",
 		"subject": name,
 		"message": sprintf("Volume block storage « %s » : chiffrement au repos désactivé (données en clair côté plateforme).", [name]),
 		"remediation": "Activer le chiffrement au repos du volume (selon le fournisseur : transparent, clé gérée fournisseur, ou chiffrement client).",
