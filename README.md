@@ -61,6 +61,20 @@ Exit codes: `0` compliant · `1` non-compliance · `2` error · `3` nothing meas
 or, with `--strict`, remaining medium/low gaps (CI-friendly). A scan that collected
 no resource never returns `0`: an empty result is not a compliant one.
 
+## Documentation
+
+- [Quickstart](docs/getting-started/quickstart.md) — five minutes, no cloud account:
+  a real failure, its fix, and a second scan that says something different.
+- [Understanding a scan](docs/getting-started/understanding-a-scan.md) — one real run,
+  read line by line, down to the exit code.
+- [The assessment model](docs/concepts/assessment-model.md) — what `pass`, `fail`,
+  `not-applicable` and `not-evaluated` actually assert.
+- [Coverage matrix](docs/coverage.md) — what is measurable, per provider and per source.
+  **Generated** from the reference and the provider descriptors, and verified in CI.
+- [Known limitations](docs/known-limitations.md) — the blind spots, named.
+- [Scope and non-goals](docs/concepts/scope.md) — what a Pépin report is not.
+- [Install](docs/install.md) · [Roadmap](docs/roadmap.md)
+
 ## Architecture (in brief)
 
 - `internal/collect`: declarative collection engine (YAML specs → normalized model).

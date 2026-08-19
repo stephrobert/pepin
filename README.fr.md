@@ -60,6 +60,20 @@ Codes de sortie : `0` conforme · `1` non-conformité · `2` erreur · `3` rien 
 ou, avec `--strict`, écarts medium/low restants (exploitables en CI). Un scan qui n'a
 collecté aucune ressource ne rend jamais `0` : un résultat vide n'est pas un résultat conforme.
 
+## Documentation
+
+- [Démarrage rapide](docs/getting-started/quickstart.fr.md) : cinq minutes, aucun compte
+  cloud, un échec réel, sa correction, et un second scan qui dit autre chose.
+- [Lire un scan](docs/getting-started/understanding-a-scan.fr.md) : un run réel, commenté
+  ligne à ligne, jusqu'au code de sortie.
+- [Le modèle d'assessment](docs/concepts/assessment-model.fr.md) : ce que `pass`, `fail`,
+  `not-applicable` et `not-evaluated` affirment réellement.
+- [Matrice de couverture](docs/coverage.fr.md) : ce qui est mesurable, par fournisseur et par
+  source. **Générée** depuis le référentiel et les descripteurs, vérifiée en CI.
+- [Limites connues](docs/known-limitations.fr.md) : les angles morts, nommés.
+- [Périmètre et non-objectifs](docs/concepts/scope.fr.md) : ce qu'un rapport Pépin n'est pas.
+- [Installation](docs/install.fr.md) · [Feuille de route](docs/roadmap.md)
+
 ## Architecture (en bref)
 
 - `internal/collect` : moteur de collecte déclaratif (specs YAML → modèle normalisé).

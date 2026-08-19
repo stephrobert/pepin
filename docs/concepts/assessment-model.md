@@ -1,0 +1,443 @@
+> 🇬🇧 English · [🇫🇷 Français](assessment-model.fr.md)
+
+# The assessment model — `pass`, `fail`, `not-applicable`, `not-evaluated`
+
+A posture scanner is only worth its weakest claim. Pépin's weakest claim is `pass`, so this
+page is mostly about what has to be true before Pépin is allowed to say it.
+
+Every scan produces one **assessment**: one typed result per control, each carrying its exact
+normative references and the provenance of the run. Read it with `--format assessment`, or
+find it sealed inside a `--seal` bundle.
+
+## The four statuses in one sentence each
+
+| Status | Pépin asserts |
+|---|---|
+| `pass` | *I looked at this, with data I can name, and found no deviation.* |
+| `fail` | *I looked at this and found a deviation, on this subject, with this evidence.* |
+| `not-applicable` | *This control cannot exist here, and here is the recorded justification.* |
+| `not-evaluated` | *I could not decide, and here is exactly what I was missing.* |
+
+There is no fifth status, and in particular **no silent one**. A control that is implemented
+for the scanned provider always comes back with one of these four.
+
+## The decision, exactly as the code takes it
+
+```mermaid
+flowchart TD
+    A[Control from the common reference] --> B{A finding was emitted<br/>for this control?}
+    B -- yes --> FAIL[fail]
+    B -- no --> C{Provider contract declares it<br/>not applicable, with a reason?}
+    C -- yes --> NA[not-applicable<br/>+ justification]
+    C -- no --> D{Provider listed in<br/>fournisseurs for this control?}
+    D -- no --> OUT[out of this scan's scope<br/>no result emitted]
+    D -- yes --> E{Contract marks the target<br/>resource type verifie?}
+    E -- no --> NE1[not-evaluated<br/>data collection unconfirmed]
+    E -- yes --> F{A resource of that exact type<br/>in the evaluated inventory?}
+    F -- no --> NE2[not-evaluated<br/>nothing of that type in scope]
+    F -- yes --> G{Deciding attribute actually<br/>collected on that type?}
+    G -- no --> NE3[not-evaluated<br/>capability guard]
+    G -- yes --> PASS[pass]
+```
+
+Three gates stand between "no finding" and `pass`, and each one exists because removing it
+produced a false green in practice.
+
+## `pass` — and the lock that guards it
+
+### Precondition
+
+A `pass` requires **all four** of:
+
+1. the provider is listed in `fournisseurs` for that control in `referentiel/controles.yaml`;
+2. the provider contract (`providers/<name>.yaml`, section `contrat.types`) marks the target
+   resource type `verifie` — that is, someone read the SDK and confirmed the data is really
+   collected;
+3. the evaluated inventory contains at least one resource of the **exact** type the control
+   reads (a `compute_image` control is not satisfied by the presence of `compute_instance`);
+4. the **deciding attribute** was actually collected on at least one resource of that type.
+
+### Why gate 4 exists
+
+Most Pépin rules carry a *capability guard*: they only fire when the attribute they judge is
+present, so that a provider which does not expose it produces no finding rather than a storm
+of false positives. That guard is correct — and it is also exactly what turns "attribute never
+collected" into "no finding", and "no finding" into a false `pass`.
+
+`internal/assess` closes the hole with a table, `requiredAttr`, that names the attribute whose
+*presence* each such control depends on. If none of those attributes was collected on any
+resource of the type, the control comes back `not-evaluated`, never `pass`.
+
+The table below is rendered from that very map — not transcribed from it:
+
+<!-- pepin:gen required-attrs -->
+| Control | Resource type read | Deciding attribute |
+|---|---|---|
+| `blockstorage_snapshot_not_public` | `blockstorage_snapshot` | `global_permission` |
+| `blockstorage_volume_encryption` | `blockstorage_volume` | `encrypted` |
+| `blockstorage_volume_snapshots_exist` | `blockstorage_volume` | `state` |
+| `compute_image_not_public` | `compute_image` | `public` |
+| `compute_instance_deletion_protection` | `compute_instance` | `deletion_protection` |
+| `compute_instance_has_security_group` | `compute_instance` | `security_group_ids` |
+| `compute_instance_no_secrets_in_user_data` | `compute_instance` | `user_data` |
+| `compute_instance_public_ip_with_open_securitygroup` | `compute_instance` | `public_ip` |
+| `database_backup_enabled` | `managed_database` | `disable_backup` |
+| `database_encryption_at_rest_enabled` | `managed_database` | `encryption_at_rest` |
+| `database_service_not_open_to_internet` | `managed_database` | `ip_filter` |
+| `governance_resource_region_in_eu` | — | `region` |
+| `iam_account_mfa_enforced` | `api_access_policy` | `require_trusted_env` |
+| `iam_apiaccesspolicy_max_key_expiration` | `api_access_policy` | `max_access_key_expiration_seconds` |
+| `iam_apiaccessrule_no_public_cidr` | `api_access_rule` | `ip_ranges` |
+| `iam_no_root_access_key` | `access_key` | `root_owned` or `scope` |
+| `iam_policy_no_administrative_privileges` | `iam_policy` | `statements` |
+| `iam_policy_no_notaction_notresource` | `iam_policy` | `statements` |
+| `iam_policy_no_privilege_escalation` | `iam_policy` | `manages_iam` or `statements` |
+| `iam_policy_no_wildcard_resource` | `iam_policy` | `statements` |
+| `iam_role_key_lifetime_bounded` | `iam_role` | `max_session_ttl` or `policy_has_expiration` |
+| `iam_role_no_admin_privileges` | `iam_role` | `admin_privileges` |
+| `iam_role_source_ip_restricted` | `iam_role` | `source_ip_restricted` |
+| `iam_user_mfa_enabled` | `iam_user` | `mfa_enabled` |
+| `kubernetes_cluster_audit_logging_enabled` | `kubernetes_cluster` | `audit_enabled` |
+| `kubernetes_cluster_auto_upgrade_enabled` | `kubernetes_cluster` | `auto_upgrade` |
+| `kubernetes_cluster_control_plane_highly_available` | `kubernetes_cluster` | `control_plane_multi_az` |
+| `kubernetes_cluster_deletion_protection` | `kubernetes_cluster` | `deletion_protection` |
+| `kubernetes_cluster_not_publicly_accessible` | `kubernetes_cluster` | `admin_whitelist` |
+| `loadbalancer_http_redirect_to_https` | `load_balancer` | `redirect_to_https` |
+| `loadbalancer_ssl_listeners` | `load_balancer` | `load_balancer_type` |
+| `network_flow_matrix_documented` | `security_group_rule` | `description` |
+| `network_peering_cross_organization` | `network_peering` | `accepter_account` or `source_account` |
+| `network_securitygroup_default_deny` | `security_group` | `inbound_default_policy` |
+| `network_securitygroup_default_restrict_traffic` | `security_group_rule` | `security_group_name` |
+| `network_subnet_no_public_ip_by_default` | `subnet` | `map_public_ip_on_launch` |
+| `objectstorage_bucket_default_encryption` | `object_storage_bucket` | `default_encryption_enabled` |
+| `objectstorage_bucket_kms_encryption` | `object_storage_bucket` | `sse_kms_enabled` |
+| `objectstorage_bucket_object_lock_enabled` | `object_storage_bucket` | `object_lock_enabled` |
+| `objectstorage_bucket_public_access` | `object_storage_bucket` | `acl` or `acl_grants` or `public_via_acl` |
+| `objectstorage_bucket_versioning_enabled` | `object_storage_bucket` | `versioning` |
+<!-- /pepin:gen required-attrs -->
+
+Two entries are worth reading twice:
+
+- `objectstorage_bucket_public_access` accepts only **ACL** signals. `policy_public` used to be
+  in the list, and the bucket ACL and the bucket policy are fetched by two separate,
+  best-effort calls: a `403` on `GetBucketAcl` followed by a successful `GetBucketPolicy` left
+  `policy_public: false` alone in the inventory, cleared the gate, and concluded "compliant"
+  about an ACL that was never read.
+- The IAM policy controls require `statements`, and an *empty collection does not count as
+  collected*. The collector always sets `statements`, falling back to `[]` when the document
+  could not be parsed; without that rule, four `critical`/`high` controls concluded "compliant"
+  on zero information.
+
+### What a `pass` looks like
+
+<!-- pepin:gen assessment-pass -->
+```json
+{
+  "control": "network_securitygroup_allow_ingress_from_internet_to_all_ports",
+  "evidence": {
+    "observed": "aucune non-conformité détectée sur les ressources de type « security_group_rule » collectées (contrat vérifié)",
+    "proves": [
+      "",
+      "",
+      ""
+    ],
+    "source": "terraform-plan"
+  },
+  "references": [
+    {
+      "framework": "scsl",
+      "id": "CLD-NET-2"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "4.4"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "12.2"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.20"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.22"
+    },
+    {
+      "framework": "secnumcloud-3.2",
+      "id": "13.2"
+    }
+  ],
+  "severity": "critical",
+  "status": "pass",
+  "subject": "scaleway",
+  "title": "Tout le trafic entrant autorisé depuis Internet (any/any)"
+}
+```
+<!-- /pepin:gen assessment-pass -->
+
+Note `evidence.observed`: a `pass` states **what was checked**, not merely that nothing was
+found. That sentence is the difference between an assertion and an absence.
+
+### Difference from "no finding"
+
+"No finding" is a property of the rule engine: no rule produced output. `pass` is a property of
+the assessment: a rule that *could* have produced output did not. The first is compatible with
+having collected nothing at all; the second is not.
+
+## `fail`
+
+### Precondition
+
+A rule emitted a finding. One `fail` result is produced **per finding**, so a control that
+fails on three subjects yields three results — an assessment is a list of facts about
+resources, not a checklist of controls.
+
+<!-- pepin:gen assessment-fail -->
+```json
+{
+  "control": "objectstorage_bucket_public_access",
+  "evidence": {
+    "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
+    "proves": [
+      "",
+      "",
+      ""
+    ],
+    "source": "terraform-plan"
+  },
+  "labels": {
+    "category": "security",
+    "provider": "scaleway"
+  },
+  "references": [
+    {
+      "framework": "scsl",
+      "id": "CLD-STO-1"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "3.3"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.5.15"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.3"
+    },
+    {
+      "framework": "iso-27017",
+      "id": "CLD.9.5.1"
+    },
+    {
+      "framework": "secnumcloud-3.2",
+      "id": "9.7"
+    },
+    {
+      "framework": "secnumcloud-3.2",
+      "id": "13.2"
+    }
+  ],
+  "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
+  "severity": "critical",
+  "status": "fail",
+  "subject": "scaleway_object_bucket_acl.backups",
+  "title": "Stockage objet exposé publiquement"
+}
+```
+<!-- /pepin:gen assessment-fail -->
+
+`evidence.observed` is the finding's message with the subject prefix stripped; `subject` names
+the offending resource; `remediation` is the actionable fix. `references` carries the exact
+normative mappings, which is what makes the result usable in an audit.
+
+### Consequence
+
+At least one `critical` or `high` deviation makes the run exit `1`. `medium` and `low`
+deviations do not, unless you ask for `--strict`.
+
+## `not-applicable`
+
+### Precondition
+
+The provider contract declares the control untestable **with a justification**: either an
+explicit `contrat.non_applicable` entry, or a target resource type marked `etat: absent`.
+Without a justification, Pépin does not mark a control not-applicable — an unjustified N/A is
+rejected by any auditor, so the tool refuses to produce one.
+
+<!-- pepin:gen assessment-na -->
+```json
+{
+  "control": "blockstorage_volume_encryption",
+  "references": [
+    {
+      "framework": "scsl",
+      "id": "CLD-CHF-2"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.24"
+    },
+    {
+      "framework": "secnumcloud-3.2",
+      "id": "10.1"
+    }
+  ],
+  "severity": "high",
+  "status": "not-applicable",
+  "subject": "scaleway",
+  "title": "Chiffrement au repos désactivé",
+  "waiver": {
+    "justification": "Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2)."
+  }
+}
+```
+<!-- /pepin:gen assessment-na -->
+
+The reason travels in `waiver.justification`, quoted verbatim from the contract.
+
+### Consequence
+
+Not a deviation, and not a compliance either. It is a documented absence of subject.
+
+## `not-evaluated`
+
+### Precondition
+
+Any of: the contract does not confirm the data is collected; no resource of the target type is
+in scope; or the deciding attribute was not collected. The result always says which.
+
+<!-- pepin:gen assessment-ne -->
+```json
+{
+  "control": "compute_instance_public_ip_with_open_securitygroup",
+  "evidence": {
+    "observed": "attribut « public_ip » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
+    "proves": [
+      "",
+      "",
+      ""
+    ],
+    "source": "terraform-plan"
+  },
+  "references": [
+    {
+      "framework": "scsl",
+      "id": "CLD-NET-3"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "4.4"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "12.2"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.20"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.22"
+    },
+    {
+      "framework": "iso-27017",
+      "id": "CLD.9.5.2"
+    },
+    {
+      "framework": "secnumcloud-3.2",
+      "id": "13.2"
+    }
+  ],
+  "severity": "critical",
+  "status": "not-evaluated",
+  "subject": "scaleway",
+  "title": "Machine exposée publiquement sans filtrage restrictif"
+}
+```
+<!-- /pepin:gen assessment-ne -->
+
+On the walkthrough scan of `examples/scaleway/terraform/plan.json`, these are the distinct
+reasons observed:
+
+<!-- pepin:gen not-evaluated-reasons -->
+| Reason | Count | Witness control |
+|---|---:|---|
+| attribut « … » (garde de capacité) | 3 | `compute_instance_public_ip_with_open_securitygroup` |
+| attribut « … » non collecté sur les ressources collectées (garde de capacité) | 1 | `governance_resource_region_in_eu` |
+| aucune ressource de type « … » dans l'inventaire évalué | 3 | `iam_accesskey_expiration_set` |
+| collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « … ») | 1 | `network_documented` |
+<!-- /pepin:gen not-evaluated-reasons -->
+
+### `not-evaluated` is never a compliance
+
+It is the honest answer to a question that could not be asked. Treating it as a `pass` would
+convert every collection failure into a green light — expired credentials, a read-only role
+missing one permission, a region that was not scanned. Treating it as a `fail` would be equally
+wrong: nothing was observed to be broken either.
+
+If you need a gate that refuses uncertainty, use `--strict`, and read the exit codes below.
+
+## The scenarios, mapped
+
+| Scenario | Status | Where the reason comes from |
+|---|---|---|
+| Resource genuinely compliant | `pass` | rule silent, all four gates cleared |
+| Resource non-compliant | `fail` | rule emitted a finding |
+| Service does not exist at this provider | `not-applicable` | `contrat.non_applicable`, or type `etat: absent` |
+| API unreachable / insufficient rights | `not-evaluated` | attribute absent → capability guard |
+| Attribute not exposed by the source | `not-evaluated` | deciding attribute not projected by that source |
+| Empty inventory | `not-evaluated` for every control | no resource of any target type |
+| Partially collected data | `pass`/`fail` on what was collected, `not-evaluated` on the rest | per-control, per-attribute |
+
+The last row is the important one: the granularity is the **control**, not the run. A scan is
+never globally "trustworthy" or not — each control carries its own answer.
+
+## Status counts on a real scan
+
+Scanning the deliberately misconfigured plan of the
+[quickstart](../getting-started/quickstart.md) yields all four statuses at once:
+
+<!-- pepin:gen assessment-counts -->
+| Status | Count |
+|---|---:|
+| `pass` | 6 |
+| `fail` | 11 |
+| `not-applicable` | 2 |
+| `not-evaluated` | 8 |
+<!-- /pepin:gen assessment-counts -->
+
+## The link with exit code `3`
+
+A run whose assessment contains **no** `pass` and **no** `fail` outside governance controls
+measured nothing. Pépin returns **3** for it, and does so **without requiring `--strict`**:
+
+<!-- pepin:gen exit-codes -->
+| Situation | Command | Exit code |
+|---|---|:-:|
+| No deviation in the evaluated scope | `./pepin scan scaleway --terraform examples/scaleway/terraform-fixed/plan.json` | **0** |
+| At least one critical or high deviation | `./pepin scan scaleway --terraform examples/scaleway/terraform/plan.json` | **1** |
+| Technical error (unreadable file, unknown provider, unreachable API) | `./pepin scan scaleway examples/scaleway/plan-absent.json` | **2** |
+| Nothing was measured (empty inventory): **without having to ask for `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
+| Medium/low deviations only, without `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
+| Medium/low deviations only, with `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+<!-- /pepin:gen exit-codes -->
+
+Governance controls are excluded from that count on purpose. `governance_provider_sovereignty`
+passes on facts declared in the provider descriptor, not on anything measured in your tenant;
+counting it would let a tenant emptied of all its resources report itself compliant.
+
+The terminal banner says the same thing before the exit code does: `Verdict : INDÉTERMINÉ`.
+
+## See also
+
+- [Coverage matrix](../coverage.md) — which controls can reach `pass` at all, per provider and
+  per source.
+- [Known limitations](../known-limitations.md) — including the controls that can never reach
+  `pass` today.
+- [Understanding a scan](../getting-started/understanding-a-scan.md) — the same document, read
+  through the terminal report.
