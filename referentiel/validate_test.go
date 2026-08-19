@@ -251,6 +251,64 @@ func loadFrameworkIDs(t *testing.T) map[string]map[string]bool {
 // (frameworks: {norme: [ids]}) doit être défini dans le catalogue de cette norme
 // (frameworks/<norme>.yaml). Anti-invention symétrique de TestSCSLReferencesExist :
 // interdit qu'un mapping cite un numéro d'exigence qui n'existe pas dans le texte.
+// TestEveryFindingCarriesRemediation — tout finding émis porte une remédiation.
+//
+// CLAUDE.md §3 l'impose, et le rendu l'affiche (terminal, CSV, JUnit) : un écart
+// sans remédiation dit à l'utilisateur que quelque chose ne va pas sans lui dire
+// quoi faire, ce qui est la moitié du travail d'un outil de posture. Rien ne
+// l'imposait jusqu'ici : le modèle amont `scankit/finding.Finding` déclare
+// `Remediation` en `omitempty` — optionnel pour la bibliothèque, obligatoire pour
+// Pépin. La discipline tenait, mais une règle future pouvait l'omettre sans
+// qu'aucune porte ne bronche.
+//
+// Appariement identique à TestRegoSeverityMatchesReferentiel : dans un objet
+// finding, "code" précède toujours les autres champs.
+func TestEveryFindingCarriesRemediation(t *testing.T) {
+	entries, err := os.ReadDir(rulesDir)
+	if err != nil {
+		t.Fatalf("lecture de %s : %v", rulesDir, err)
+	}
+	reCode := regexp.MustCompile(`"code":\s*"([a-z0-9_]+)"`)
+	reRem := regexp.MustCompile(`"remediation":\s*(?:"([^"]*)"|sprintf\()`)
+
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".rego") || strings.HasSuffix(e.Name(), "_test.rego") {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(rulesDir, e.Name()))
+		if err != nil {
+			t.Fatalf("lecture de %s : %v", e.Name(), err)
+		}
+		text := string(b)
+		codeLocs := reCode.FindAllStringSubmatchIndex(text, -1)
+		remLocs := reRem.FindAllStringSubmatchIndex(text, -1)
+
+		for i, c := range codeLocs {
+			code := text[c[2]:c[3]]
+			// Fin de l'objet courant : le début du finding suivant, ou la fin du fichier.
+			end := len(text)
+			if i+1 < len(codeLocs) {
+				end = codeLocs[i+1][0]
+			}
+			found := false
+			for _, r := range remLocs {
+				if r[0] <= c[1] || r[0] >= end {
+					continue
+				}
+				// Groupe 1 vide = littéral "" ; absent = forme sprintf(...), acceptée.
+				if r[2] != -1 && len(strings.TrimSpace(text[r[2]:r[3]])) < 10 {
+					t.Errorf("%s : finding %q porte une remédiation vide ou trop courte pour être actionnable", e.Name(), code)
+				}
+				found = true
+				break
+			}
+			if !found {
+				t.Errorf("%s : finding %q n'a pas de remédiation — l'écart est signalé sans dire quoi faire", e.Name(), code)
+			}
+		}
+	}
+}
+
 func TestFrameworkReferencesExist(t *testing.T) {
 	defined := loadFrameworkIDs(t)
 	for code, ctl := range byCode {

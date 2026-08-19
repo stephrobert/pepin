@@ -1,7 +1,14 @@
 # Preuves de remédiation
 
-Pour **chaque règle** (`code` agnostique) et **chaque provider** qui l'implémente,
-un artefact qui montre **comment être conforme** : de préférence du **Terraform
+> **État : chantier en cours, couverture partielle.** 4 preuves sur 95 attendues
+> (exoscale 4/26 · outscale 0/40 · scaleway 0/25 · kubernetes 0/4). Le chiffre à
+> jour vient de `mise run check-remediation`. Ce qui suit décrit la **cible** et la
+> forme attendue d'une preuve — pas l'état du répertoire. La remédiation *textuelle*,
+> elle, est garantie : chaque finding émis en porte une, et un test du référentiel
+> le vérifie.
+
+Cible : pour **chaque règle** (`code` agnostique) et **chaque provider** qui
+l'implémente, un artefact qui montre **comment être conforme** : de préférence du **Terraform
 déployable** (vocabulaire natif du provider), à défaut une **note** pointant la
 doc officielle. Ces artefacts sont la matière première de la future **doc de
 remédiation** : la règle dit *ce qui ne va pas*, la preuve montre *le bon montage*.
@@ -44,6 +51,11 @@ Chaque fichier rappelle, en commentaire de tête : le `code`, l'exigence SCSL
 
 ## Statut de couverture
 
-`python3 scripts/check-remediation.py` liste, par provider, les règles **sans**
-preuve de remédiation (pendant de `make validate`). Le miroir non conforme de ces
+`mise run check-remediation` liste, par provider, les règles **sans** preuve de
+remédiation, et rend 1 s'il en manque.
+
+Ce contrôle est **volontairement découplé** de `mise run validate` : le rebrancher
+aujourd'hui rendrait la porte de qualité rouge en permanence, ce qui la ferait
+ignorer. Condition de rebranchement (`depends` dans `mise.toml`) : couverture à
+100 % pour au moins un provider complet, puis pour les autres au fil de l'eau. Le miroir non conforme de ces
 montages vit dans `examples/<provider>/terraform/` (fixtures de test).

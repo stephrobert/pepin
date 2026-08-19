@@ -28,9 +28,13 @@ run = "opa test internal/commonrules/rules -v"
 description = "Cohérence des référentiels (codes ↔ règles ↔ index SCSL gelé ↔ catalogue)"
 run = "go test ./referentiel/ -run 'Control|Rule|SCSL|Catalogue|Lookup|Coherent' -v"
 
-# NB : check-remediation est volontairement DÉCOUPLÉ de `validate` tant que toutes
-# les règles ne sont pas écrites (les preuves de remédiation sont rédigées en bloc
-# à la fin). À rebrancher dans `validate` (depends) une fois la couverture complète.
+# check-remediation est volontairement DÉCOUPLÉ de `validate` : la couverture est
+# aujourd'hui de 4/95 (exoscale 4/26, outscale 0/40, scaleway 0/25, kubernetes 0/4),
+# et une porte rouge en permanence est une porte qu'on apprend à ignorer.
+# CONDITION DE REBRANCHEMENT (`depends = [..., "check-remediation"]`) : un provider
+# à 100 %, puis les suivants au fil de l'eau. À NE PAS confondre avec la remédiation
+# TEXTUELLE portée par chaque finding, elle garantie par
+# TestEveryFindingCarriesRemediation (referentiel/validate_test.go).
 [tasks.check-remediation]
 description = "Présence d'une preuve de remédiation par (contrôle, fournisseur) sous references/remediation/"
 run = "python3 scripts/check-remediation.py"
