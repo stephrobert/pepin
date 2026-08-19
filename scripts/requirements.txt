@@ -10,3 +10,8 @@
 #     python3 -m pip install -r scripts/requirements.txt
 trafilatura==2.1.0
 PyYAML==6.0.1
+
+# Dépendance de scripts/generer-marque.py, outil de mainteneur lui aussi : il
+# convertit « Pépin » en courbes depuis Poppins SemiBold. Épinglée pour la même
+# raison, la sortie étant versionnée dans docs/assets/brand/.
+fonttools==4.63.0

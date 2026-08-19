@@ -1,5 +1,10 @@
 > 🇬🇧 English · [🇫🇷 Français](README.fr.md)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/pepin-lockup-dark.svg">
+  <img src="docs/assets/brand/pepin-lockup-light.svg" alt="Pépin" width="200">
+</picture>
+
 # Pépin
 
 [![CI](https://github.com/stephrobert/pepin/actions/workflows/ci.yml/badge.svg)](https://github.com/stephrobert/pepin/actions/workflows/ci.yml)
@@ -105,4 +110,8 @@ certification — those bear on the cloud **service provider**, not on a tenant 
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Apache-2.0: see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+The mark and its files are documented in [docs/brand.md](docs/brand.md);
+**the name *Pépin* and the logo are not covered by the Apache 2.0
+licence**.
