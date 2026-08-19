@@ -71,6 +71,10 @@ run = "PEPIN_UPDATE_FROZEN=1 go test ./cmd/ -run 'Frozen|Fixture|VersionBump' -c
 description = "Pose le ruleset GitHub qui restreint la création des tags v* aux admins"
 run = "tools/release/apply-tag-ruleset.sh"
 
+[tasks.branch-ruleset]
+description = "Pose la protection de la branche par défaut (PR + revue CODEOWNER + status checks)"
+run = "tools/release/apply-branch-ruleset.sh"
+
 [tasks.release-check]
 description = "Tout ce qui doit être vrai avant qu'un tag existe : mise run release-check -- vX.Y.Z"
 run = "tools/release/preflight.sh"
