@@ -15,30 +15,33 @@ type controlStrings struct {
 	colProofs, colFamily, colFigure, colCount  string
 	figTotal, figActive, figDormant, figProofs string
 
-	backToIndex                                string
-	colField, colValue                         string
-	rowCode, rowFamily, rowSeverity, rowSCSL   string
-	rowType, rowAttrs, rowState, rowDeclared   string
-	rowProofs, noType, noAttr                  string
-	stateActive, stateDormant                  string
-	whyTitle, whyNote                          string
-	mappingTitle, mappingIntro                 string
-	colFramework, colRefs                      string
-	whereTitle, whereIntro, reasonsIntro       string
-	colProvider, colTerraform, colLive         string
-	colSource, colStatus, colReason, noReason  string
-	concludeTitle, colMeans, colWhere          string
-	meansFail, meansPass, meansNA, meansNE     string
-	concludeNote                               string
-	investigateTitle, investType, investNoType string
-	investAttrs, investNoAttrs, investGuard    string
-	investDescriptors, investRule              string
-	remediateTitle, colProof, proofMissing     string
-	proofDormant, proofNote                    string
-	verifyTitle, verifyTF, verifyLive          string
-	verifyBodyFmt, verifyNone, verifyPartial   string
-	noSource                                   string
-	seeAlsoTitle, seeAlso                      string
+	backToIndex                               string
+	colField, colValue                        string
+	rowCode, rowFamily, rowSeverity, rowSCSL  string
+	rowType, rowAttrs, rowState, rowDeclared  string
+	rowProofs, noType, noAttr                 string
+	stateActive, stateDormant                 string
+	whyTitle, whyNote                         string
+	mappingTitle, mappingIntro                string
+	colFramework, colRefs                     string
+	whereTitle, whereIntro, reasonsIntro      string
+	colProvider, colTerraform, colLive        string
+	colSource, colStatus, colReason, noReason string
+	concludeTitle, colMeans, colWhere         string
+	// meansCompliant porte la glose du statut `pass`. Le champ n'est pas nommé
+	// d'après le statut : un identifiant contenant « pass » déclenche G101
+	// (gosec) sur ce littéral, et un renommage vaut mieux qu'un //nolint.
+	meansFail, meansCompliant, meansNA, meansNE string
+	concludeNote                                string
+	investigateTitle, investType, investNoType  string
+	investAttrs, investNoAttrs, investGuard     string
+	investDescriptors, investRule               string
+	remediateTitle, colProof, proofMissing      string
+	proofDormant, proofNote                     string
+	verifyTitle, verifyTF, verifyLive           string
+	verifyBodyFmt, verifyNone, verifyPartial    string
+	noSource                                    string
+	seeAlsoTitle, seeAlso                       string
 }
 
 func controlText(lang string) controlStrings {
@@ -104,10 +107,10 @@ func controlText(lang string) controlStrings {
 			noReason:      "_Aucune : toutes les cases déclarées sont pleinement observables._",
 			concludeTitle: "Ce que Pépin peut conclure",
 			colMeans:      "Ce que le statut affirme", colWhere: "Atteignable depuis",
-			meansFail: "un écart a été détecté sur une ressource réelle",
-			meansPass: "la donnée décisive a été collectée, et elle est conforme",
-			meansNA:   "le contrat du fournisseur déclare le contrôle non testable, avec sa justification",
-			meansNE:   "le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée",
+			meansFail:      "un écart a été détecté sur une ressource réelle",
+			meansCompliant: "la donnée décisive a été collectée, et elle est conforme",
+			meansNA:        "le contrat du fournisseur déclare le contrôle non testable, avec sa justification",
+			meansNE:        "le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée",
 			concludeNote: "Un contrôle observable rend tout de même `not-evaluated` sur un inventaire qui ne\n" +
 				"contient aucune ressource du type visé : « rien à voir » n'est pas « conforme ».",
 			investigateTitle: "Comment enquêter",
@@ -208,10 +211,10 @@ func controlText(lang string) controlStrings {
 		noReason:      "_None: every declared cell is fully observable._",
 		concludeTitle: "What Pépin can conclude",
 		colMeans:      "What the status asserts", colWhere: "Reachable from",
-		meansFail: "a deviation was detected on a real resource",
-		meansPass: "the deciding data was collected, and it is compliant",
-		meansNA:   "the provider contract declares the control untestable, with its justification",
-		meansNE:   "the control is implemented, but the data it depends on was not confirmed",
+		meansFail:      "a deviation was detected on a real resource",
+		meansCompliant: "the deciding data was collected, and it is compliant",
+		meansNA:        "the provider contract declares the control untestable, with its justification",
+		meansNE:        "the control is implemented, but the data it depends on was not confirmed",
 		concludeNote: "An observable control still returns `not-evaluated` on an inventory that contains no\n" +
 			"resource of the targeted type: \"nothing to look at\" is not \"compliant\".",
 		investigateTitle: "How to investigate",

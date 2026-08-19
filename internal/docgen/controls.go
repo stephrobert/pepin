@@ -368,7 +368,7 @@ func (m Matrix) concludeTable(t controlStrings, r Row) string {
 	var b strings.Builder
 	b.WriteString("| " + t.colStatus + " | " + t.colMeans + " | " + t.colWhere + " |\n|---|---|---|\n")
 	_, _ = fmt.Fprintf(&b, "| `fail` | %s | %s |\n", t.meansFail, orNone(t, strings.Join(fail, " · ")))
-	_, _ = fmt.Fprintf(&b, "| `pass` | %s | %s |\n", t.meansPass, orNone(t, strings.Join(pass, " · ")))
+	_, _ = fmt.Fprintf(&b, "| `pass` | %s | %s |\n", t.meansCompliant, orNone(t, strings.Join(pass, " · ")))
 	_, _ = fmt.Fprintf(&b, "| `not-applicable` | %s | %s |\n", t.meansNA, orNone(t, strings.Join(na, " · ")))
 	_, _ = fmt.Fprintf(&b, "| `not-evaluated` | %s | %s |\n", t.meansNE, orNone(t, strings.Join(ne, " · ")))
 	b.WriteString("\n" + t.concludeNote + "\n")
