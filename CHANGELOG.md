@@ -21,6 +21,53 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-19
+
+### Fixed
+
+- **A Scaleway instance whose security group is created by the same plan is no
+  longer reported `CRITICAL` "VM without a security group".** At plan time
+  `security_group_id` is *unknown after apply*, so it is absent from
+  `planned_values`; the `list` transform then fabricated an empty collection,
+  which satisfied the rule's capability guard — the guard that exists precisely
+  to prevent this. A collection transform now only runs when the source key
+  actually exists. Absent means the source does not expose the information;
+  present-and-empty is information.
+
+  This changes a verdict on an unchanged tenant: the control moves from `fail`
+  to `not-evaluated` on a Terraform plan. On a plan, an instance genuinely
+  without a security group is indistinguishable from one whose group is not yet
+  known, so Pépin now says so instead of guessing. The live path benefits too,
+  where an API omitting a key produced the same fabricated `[]`.
+
+  Found by replaying fifteen third-party Terraform stacks against the binary.
+
+- **The documentation drift gate now compiles what it measures.** It reused a
+  `./pepin` already present at the repository root, so a stale binary could
+  validate stale pages — it did, reporting "up to date" while the docs still
+  advertised the finding above.
+
+### Added
+
+- **Product documentation, generated rather than transcribed.** Six pages in
+  English with synchronised French counterparts: a five-minute quickstart that
+  needs no cloud account, the assessment model (`pass` / `fail` /
+  `not-applicable` / `not-evaluated`), the provider × control coverage matrix,
+  known limitations, a commented walkthrough of a real scan, and the exact scope
+  and non-goals. Every command output is captured from a real run of the binary,
+  the coverage matrix is computed from the reference and the provider
+  descriptors, and a CI gate fails when either drifts.
+
+- **Fuzzing over untrusted inputs** — `FuzzParsePlan` and `FuzzInventoryWalk`,
+  covering the Terraform plan and inventory export paths. It immediately found a
+  resource with an empty type entering the model, now rejected and kept as a
+  regression.
+
+### Security
+
+- `SECURITY.md` now links its private reporting channel instead of only
+  describing it.
+
 ## [0.1.0] - 2026-08-19
 
 ### Security

@@ -12,6 +12,12 @@
 
 **Pépin trouve les pépins de votre cloud souverain.**
 
+![Pépin scannant un plan Terraform volontairement non conforme, puis le même module corrigé : le verdict et le code de sortie changent](docs/assets/quickstart.gif)
+
+*Chaque commande de cet enregistrement s'exécute réellement. Il est régénéré à
+chaque release depuis `tools/demo/quickstart.tape`, et le preflight refuse de
+taguer une version que le GIF ne montre pas.*
+
 Pépin est un scanner de posture (CSPM) pour les clouds **souverains européens**
 (Exoscale, Outscale, Scaleway). Il évalue la configuration effective d'un tenant
 contre un référentiel commun ancré sur **SCSL**, **SecNumCloud 3.2**, **CIS

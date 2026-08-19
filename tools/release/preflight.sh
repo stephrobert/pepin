@@ -199,6 +199,26 @@ else
   ko "CHANGELOG.md et CHANGELOG.fr.md ne listent pas les mêmes versions" "les deux langues se publient ensemble"
 fi
 
+# --- le GIF du README montre la version qu'on publie ----------------------------
+#
+# Le GIF est la première chose que voit un lecteur du README, et il affiche un
+# `pepin version`. S'il porte une version antérieure, la page d'accueil du projet
+# annonce durablement une démo d'un produit qui n'est plus celui qu'on livre.
+#
+# On ne lit évidemment pas la version DANS l'image : `mise run demo` consigne à
+# côté celle qu'il a injectée au build, et c'est ce fichier qu'on compare. Le GIF
+# et son relevé sont écrits par la même commande, donc l'un ne peut pas mentir
+# sans l'autre.
+demo_version_file=docs/assets/quickstart.version
+if [ ! -f docs/assets/quickstart.gif ] || [ ! -f "$demo_version_file" ]; then
+  ko "le GIF de démonstration est absent" "lancer PEPIN_DEMO_VERSION=$VERSION mise run demo"
+elif [ "$(tr -d ' \n' <"$demo_version_file")" = "$VERSION" ]; then
+  ok "le GIF du README montre $VERSION"
+else
+  ko "le GIF du README montre $(tr -d ' \n' <"$demo_version_file"), pas $VERSION" \
+     "lancer PEPIN_DEMO_VERSION=$VERSION mise run demo et committer le résultat"
+fi
+
 # --- la CI sur ce commit exact --------------------------------------------------
 #
 # Non relancé ici : audit (gosec, govulncheck, OSV) et le schéma OSCAL du NIST

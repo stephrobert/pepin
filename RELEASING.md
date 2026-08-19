@@ -38,7 +38,18 @@ the Python tooling must still be able to cut a release.
    The tag builds from that commit, and a published release cannot be
    replayed.
 
-3. **Run the preflight**, which replays offline everything that must hold:
+3. **Re-record the demo GIF** at the version being released, so the README's
+   front page does not keep showing an older product:
+
+   ```bash
+   PEPIN_DEMO_VERSION=v0.1.0 mise run demo
+   ```
+
+   The version is injected into the build, never typed into the tape, and
+   `docs/assets/quickstart.version` records it. The preflight compares that file
+   with the tag and refuses to proceed if they differ.
+
+4. **Run the preflight**, which replays offline everything that must hold:
 
    ```bash
    mise run release-check -- v0.1.0
@@ -60,7 +71,7 @@ the Python tooling must still be able to cut a release.
    CI runs them on every push; the preflight asks CI whether it did, on this
    exact commit.
 
-4. **Tag and push**:
+5. **Tag and push**:
 
    ```bash
    git tag -a v0.1.0 -m "v0.1.0"

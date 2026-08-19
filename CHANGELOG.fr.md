@@ -22,6 +22,54 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-19
+
+### Corrigé
+
+- **Une instance Scaleway dont le groupe de sécurité est créé par le même plan
+  n'est plus rapportée `CRITICAL` « VM sans groupe de sécurité ».** Au stade
+  plan, `security_group_id` est *unknown after apply*, donc absent de
+  `planned_values` ; le transform `list` fabriquait alors une collection vide,
+  qui satisfaisait la garde de capacité de la règle, celle-là même qui existe
+  pour empêcher ce cas. Un transform de collection ne s'applique désormais que
+  si la clé source existe réellement. « Absent » signifie que la source n'expose
+  pas l'information ; « présent et vide » est une information.
+
+  Cela change un verdict sur un tenant inchangé : sur un plan Terraform, le
+  contrôle passe de `fail` à `non évalué`. Sur un plan, une instance réellement
+  dépourvue de groupe de sécurité est indistinguable d'une instance dont le
+  groupe n'est pas encore connu : Pépin le dit maintenant au lieu de deviner. Le
+  chemin live en bénéficie aussi, où une API omettant une clé produisait le même
+  `[]` fabriqué.
+
+  Trouvé en rejouant quinze stacks Terraform de tiers contre le binaire.
+
+- **La porte de non-dérive de la documentation compile désormais ce qu'elle
+  mesure.** Elle réutilisait un `./pepin` déjà présent à la racine : un binaire
+  périmé pouvait donc valider des pages périmées, ce qui est arrivé, la porte
+  annonçant « à jour » pendant que la doc affichait encore le finding ci-dessus.
+
+### Ajouté
+
+- **Documentation produit, générée plutôt que recopiée.** Six pages en anglais
+  avec leur contrepartie française synchronisée : un démarrage en cinq minutes
+  sans compte cloud, le modèle d'assessment (`pass` / `fail` / `non applicable` /
+  `non évalué`), la matrice de couverture providers × contrôles, les limites
+  connues, la lecture commentée d'un scan réel, et le périmètre exact avec ses
+  non-objectifs. Toute sortie de commande est capturée d'une exécution réelle du
+  binaire, la matrice est calculée depuis le référentiel et les descripteurs de
+  providers, et une porte de CI échoue dès que l'un des deux dérive.
+
+- **Fuzzing des entrées non fiables** : `FuzzParsePlan` et `FuzzInventoryWalk`,
+  couvrant le plan Terraform et l'export d'inventaire. Il a immédiatement trouvé
+  une ressource au type vide entrant dans le modèle, désormais écartée et
+  conservée en régression.
+
+### Sécurité
+
+- `SECURITY.md` lie désormais son canal de signalement privé au lieu de
+  seulement le décrire.
+
 ## [0.1.0] - 2026-08-19
 
 ### Sécurité

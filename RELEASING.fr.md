@@ -37,7 +37,18 @@ l'outillage Python doit pouvoir couper une release.
 2. **Merger vers `main` par une pull request, et attendre une CI verte.** Le
    tag se construit depuis ce commit, et une release publiée ne se rejoue pas.
 
-3. **Lancer le preflight**, qui rejoue hors ligne tout ce qui doit tenir :
+3. **Ré-enregistrer le GIF de démonstration** à la version publiée, pour que la
+   page d'accueil du README ne montre pas durablement un produit antérieur :
+
+   ```bash
+   PEPIN_DEMO_VERSION=v0.1.0 mise run demo
+   ```
+
+   La version est injectée au build, jamais écrite dans le tape, et
+   `docs/assets/quickstart.version` la consigne. Le preflight compare ce fichier
+   au tag et refuse d'avancer s'ils diffèrent.
+
+4. **Lancer le preflight**, qui rejoue hors ligne tout ce qui doit tenir :
 
    ```bash
    mise run release-check -- v0.1.0
@@ -60,7 +71,7 @@ l'outillage Python doit pouvoir couper une release.
    peut ne pas avoir. La CI les fait tourner à chaque push ; le preflight lui
    demande si elle l'a fait, sur ce commit exact.
 
-4. **Taguer et pousser** :
+5. **Taguer et pousser** :
 
    ```bash
    git tag -a v0.1.0 -m "v0.1.0"

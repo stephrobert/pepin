@@ -85,6 +85,38 @@ run = "tools/release/apply-tag-ruleset.sh"
 description = "Pose la protection de la branche par défaut (PR + revue CODEOWNER + status checks)"
 run = "tools/release/apply-branch-ruleset.sh"
 
+[tasks.demo]
+description = "Ré-enregistre le GIF de démonstration du README (vhs) à la version publiée"
+# Le tape est versionné, le GIF en est un PRODUIT. Cet ordre est le sujet même du
+# projet : un enregistrement que personne ne peut rejouer est une affirmation, pas
+# une preuve. Chaque commande du tape s'exécute réellement, donc une démo qui casse
+# est une démo qui dit la vérité sur une régression.
+#
+# La version affichée n'est jamais écrite à la main : elle est INJECTÉE au build,
+# et consignée dans docs/assets/quickstart.version. Le preflight refuse de taguer
+# si ce fichier ne nomme pas la version demandée — sans quoi le README montrerait
+# durablement la démo d'une version antérieure.
+#
+#   mise run demo                              # version dérivée de git describe
+#   PEPIN_DEMO_VERSION=v0.1.1 mise run demo    # version imposée, celle qu'on va taguer
+#
+# La version passe par l'ENVIRONNEMENT et non par un argument : mise appende les
+# arguments à la dernière commande du script au lieu de les exposer en $1, ce qui
+# faisait enregistrer la version dérivée de git tout en croyant l'avoir imposée.
+#
+# Requiert vhs (et le ttyd + ffmpeg qu'il pilote) :
+#   go install github.com/charmbracelet/vhs@latest
+run = """
+set -eu
+command -v vhs >/dev/null 2>&1 || { echo "vhs absent : go install github.com/charmbracelet/vhs@latest" >&2; exit 1; }
+version="${PEPIN_DEMO_VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo dev)}"
+go build -trimpath -ldflags "-s -w -X github.com/stephrobert/pepin/cmd.version=${version}" -o pepin .
+PATH="$PWD:$PATH" vhs tools/demo/quickstart.tape
+printf '%s\n' "${version}" > docs/assets/quickstart.version
+echo "GIF enregistré pour ${version} :"
+ls -lh docs/assets/quickstart.gif
+"""
+
 [tasks.release-check]
 description = "Tout ce qui doit être vrai avant qu'un tag existe : mise run release-check -- vX.Y.Z"
 run = "tools/release/preflight.sh"
