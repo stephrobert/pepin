@@ -1,5 +1,10 @@
 > [🇬🇧 English](README.md) · 🇫🇷 Français
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/pepin-lockup-dark.svg">
+  <img src="docs/assets/brand/pepin-lockup-light.svg" alt="Pépin" width="200">
+</picture>
+
 # Pépin
 
 [![CI](https://github.com/stephrobert/pepin/actions/workflows/ci.yml/badge.svg)](https://github.com/stephrobert/pepin/actions/workflows/ci.yml)
@@ -107,4 +112,8 @@ tenant.
 
 ## Licence
 
-Apache-2.0 — voir [LICENSE](LICENSE) et [NOTICE](NOTICE).
+Apache-2.0 : voir [LICENSE](LICENSE) et [NOTICE](NOTICE).
+
+La marque et ses fichiers sont documentés dans
+[docs/brand.fr.md](docs/brand.fr.md) ; **le nom *Pépin* et le logo ne
+sont pas couverts par la licence Apache 2.0**.

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60.00 60.00" width="60.00" height="60.00" role="img" aria-label="Pépin">
+  <!-- Shield and pip, one path: the pip is a hole through fill-rule, not a white shape, so any background shows through it (single ink). -->
+  <g transform="translate(6.00 0.00)">
+    <path fill="#0F172A" fill-rule="evenodd" d="M 11 8 L 37 8 Q 41 8 41 12 L 41 27 Q 41 44 24 52 Q 7 44 7 27 L 7 12 Q 7 8 11 8 Z M 24 16 Q 32 27 24 40 Q 16 27 24 16 Z"/>
+  </g>
+</svg>
