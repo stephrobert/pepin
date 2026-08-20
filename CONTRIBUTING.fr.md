@@ -51,7 +51,16 @@ identifiants, endpoint S3, `collecte` (API live), `mapping_terraform`, et le
    avec garde de capacité) et son test `_test.rego`.
 2. Déclarer le contrôle dans `referentiel/controles.yaml` (sévérité, SCSL,
    correspondances de normes, `fournisseurs`).
-3. Valider par un scan réel, puis activer (`fournisseurs`).
+3. **Écrire ses scénarios de véracité** dans
+   `internal/veracity/testdata/scenarios/` : un fichier par chemin
+   contrôle × fournisseur × source, prouvant de bout en bout, à travers le
+   binaire, les verdicts que ce chemin peut atteindre. Un test Rego ne prouve
+   qu'un maillon ; l'unité qui compte est la chaîne entière, et c'est un
+   *collecteur* qui a laissé passer l'incident fondateur, pas une règle. Ce qui
+   n'est pas prouvé se **consigne** (`mise run veracity-update`), jamais ne se
+   masque : le registre est une porte dans les deux sens, et un contrôle ajouté
+   sans ses scénarios fait échouer la construction.
+4. Valider par un scan réel, puis activer (`fournisseurs`).
 
 Tout ce que l'utilisateur lit s'écrit **deux fois**, côte à côte, parce que Pépin
 détecte la langue du lecteur. Une règle émet `message`/`remediation` en français

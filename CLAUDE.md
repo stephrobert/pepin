@@ -226,9 +226,19 @@ Les artefacts pilotent tout : `catalogue.yaml` (QUOI), `contrats/<provider>.yaml
    pepin.rules`, `labels.provider: provider_of(r)`, plus `labels.message_en` et
    `labels.remediation_en`, cf. §1.2) + test `*_test.rego` (✓ et ✗).
    Passer l'entrée du catalogue en `statut: implemente`.
-6. **Valider.** `mise run validate` (codes↔règles↔SCSL gelé↔catalogue) **puis**
+6. **Contrat de véracité.** Un test Rego ne prouve qu'un maillon. Écrire les
+   scénarios de bout en bout dans `internal/veracity/testdata/scenarios/` : un
+   fichier par chemin contrôle × fournisseur × source, prouvant les verdicts que
+   ce chemin peut atteindre (`fail`/`pass`/`not-evaluated` s'il sait conclure,
+   `not-applicable` si le contrat le déclare tel). Un scénario `live` dont le type
+   est produit par la spec `collecte` entre par `api:` — des réponses canned
+   servies au collecteur RÉEL —, jamais par `inventory:` : c'est le collecteur qui
+   a laissé passer l'incident fondateur, pas la règle. Ce qui n'est pas prouvé se
+   CONSIGNE (`mise run veracity-update`), jamais ne se masque ; le registre est une
+   porte dans les deux sens, et un contrôle ajouté sans ses scénarios casse la CI.
+7. **Valider.** `mise run validate` (codes↔règles↔SCSL gelé↔catalogue) **puis**
    `mise run test` + `mise run audit` au vert. Aucun commit si l'un échoue (§1, §7).
-7. **Documenter.** `mise run gen-docs`, et committer ce qu'il régénère : la matrice
+8. **Documenter.** `mise run gen-docs`, et committer ce qu'il régénère : la matrice
    de couverture et les sorties capturées sont GÉNÉRÉES depuis le binaire et le
    référentiel, et `TestGeneratedDocsAreUpToDate` casse la CI si elles dérivent.
    Puis relire ce que le changement rend FAUX ailleurs — `docs/known-limitations.md`

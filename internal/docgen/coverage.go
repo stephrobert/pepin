@@ -16,6 +16,7 @@ import (
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
+	"github.com/stephrobert/pepin/internal/veracity"
 	"github.com/stephrobert/pepin/referentiel"
 )
 
@@ -322,4 +323,35 @@ func contains(vals []string, v string) bool {
 		}
 	}
 	return false
+}
+
+// VeracityCells rend les cases de la matrice sous la forme réduite qu'attend le
+// contrat de véracité : un chemin et son statut de couverture, rien de plus.
+//
+// La conversion vit ICI et non dans internal/veracity, parce que c'est ici que la
+// matrice se calcule. Le contrat de véracité reste ainsi une feuille de l'arbre
+// de dépendances, et la documentation générée peut publier son compteur de dette
+// sans qu'aucun cycle n'apparaisse.
+func VeracityCells(m Matrix) []veracity.Cell {
+	var out []veracity.Cell
+	for _, row := range m.Rows {
+		for provider, bySource := range row.Cells {
+			for source, cell := range bySource {
+				out = append(out, veracity.Cell{
+					Control: row.Code, Provider: provider,
+					Source: string(source), Status: string(cell.Status),
+				})
+			}
+		}
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Control != out[j].Control {
+			return out[i].Control < out[j].Control
+		}
+		if out[i].Provider != out[j].Provider {
+			return out[i].Provider < out[j].Provider
+		}
+		return out[i].Source < out[j].Source
+	})
+	return out
 }

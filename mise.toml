@@ -79,6 +79,15 @@ run = "python3 scripts/scsl-drift.py"
 description = "Réécrit la baseline SCSL depuis l'index vivant, APRÈS triage humain des écarts"
 run = "python3 scripts/scsl-drift.py --update"
 
+# Le contrat de véracité (issue #43) : chaque chemin contrôle × fournisseur × source
+# doit prouver, de bout en bout et à travers le binaire, les verdicts qu'il peut
+# atteindre. Ce qui n'est pas prouvé est CONSIGNÉ, jamais masqué : le registre est
+# une checklist qui rétrécit, et un contrôle ajouté sans ses scénarios y apparaît
+# sans y être écrit — donc casse la CI. La régénération est explicite à dessein.
+[tasks.veracity-update]
+description = "Régénère le registre de dette du contrat de véracité (internal/veracity/testdata/debt.txt) après avoir ajouté un contrôle ou un scénario"
+run = "PEPIN_UPDATE_VERACITY=1 go test ./internal/veracity/ -run 'DebtLedgerIsExact' -count=1"
+
 [tasks.frozen-update]
 description = "Régénère les fixtures de surface gelée (cmd/testdata/frozen/) après un changement délibéré ; incrémenter ensuite la constante de version de la surface"
 run = "PEPIN_UPDATE_FROZEN=1 go test ./cmd/ -run 'Frozen|Fixture|VersionBump' -count=1"

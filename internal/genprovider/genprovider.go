@@ -392,6 +392,18 @@ func DescriptorsDigest() string { return descriptorsDigest }
 // contrôles (contrats) à la roadmap `pepin scsl`.
 var registry = map[string]Descriptor{}
 
+// Descriptors rend une COPIE des descripteurs chargés, indexés par nom. Exposé
+// pour que les vérifications qui rejouent la collecte réelle (contrat de
+// véracité) empruntent la spec du dépôt plutôt qu'une spec réécrite pour le test —
+// un harnais qui décrirait lui-même ce qu'il éprouve ne mesurerait que lui-même.
+func Descriptors() map[string]Descriptor {
+	out := make(map[string]Descriptor, len(registry))
+	for name, d := range registry {
+		out[name] = d
+	}
+	return out
+}
+
 // subst remplace les variables {clef} par leur valeur.
 func subst(s string, vars map[string]string) string {
 	for k, v := range vars {

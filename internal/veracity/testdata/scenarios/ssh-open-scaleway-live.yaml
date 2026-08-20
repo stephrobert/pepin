@@ -1,0 +1,39 @@
+# SSH ouvert à Internet, sur une collecte live Scaleway.
+#
+# Les réponses ci-dessous sont servies à la spec `collecte` RÉELLE du descripteur :
+# la jointure parent→enfant (lister les groupes de sécurité, puis les règles de
+# chacun), la pagination, la projection `dest_port_from → port_from`, la
+# coalescence `dest_port_to||dest_port_from` et la table de transform
+# `TCP → tcp` s'exécutent toutes. C'est le chemin qu'un test Rego seul ne voit pas.
+control: network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
+provider: scaleway
+source: live
+
+scenarios:
+  - expect: fail
+    why: "l'API rend une regle entrante TCP/22 depuis 0.0.0.0/0"
+    api:
+      /instance/v1/zones/fr-par-1/security_groups: |
+        {"security_groups": [{"id": "sg-web", "name": "web"}]}
+      /instance/v1/zones/fr-par-1/security_groups/sg-web/rules: |
+        {"rules": [
+          {"direction": "inbound", "action": "accept", "protocol": "TCP",
+           "dest_port_from": 22, "ip_range": "0.0.0.0/0"}
+        ]}
+
+  - expect: pass
+    why: "la meme regle, restreinte au reseau d'administration"
+    api:
+      /instance/v1/zones/fr-par-1/security_groups: |
+        {"security_groups": [{"id": "sg-web", "name": "web"}]}
+      /instance/v1/zones/fr-par-1/security_groups/sg-web/rules: |
+        {"rules": [
+          {"direction": "inbound", "action": "accept", "protocol": "TCP",
+           "dest_port_from": 22, "ip_range": "10.42.0.0/16"}
+        ]}
+
+  - expect: not-evaluated
+    why: "l'API repond, et le tenant n'a aucun groupe de securite : rien a conclure, mais rien n'a manque non plus"
+    api:
+      /instance/v1/zones/fr-par-1/security_groups: |
+        {"security_groups": []}

@@ -1,0 +1,38 @@
+# Politique EIM autorisant une action ciblée sur `Resource: "*"`, sur une
+# collecte live Outscale.
+#
+# Le chemin traverse la chaîne à deux niveaux du descripteur (ReadPolicies puis
+# ReadPolicyVersion par politique), la pagination par offset dans le CORPS de la
+# requête (`FirstItem` / `HasMoreItems`, propre à l'OAPI), et le transform
+# `iampolicy` qui analyse le document JSON en `statements` normalisés. C'est très
+# exactement le trajet dont l'incident fondateur de cette vague a montré qu'il
+# pouvait s'interrompre sans que rien ne rougisse.
+control: iam_policy_no_wildcard_resource
+provider: outscale
+source: live
+
+scenarios:
+  - expect: fail
+    why: "policy autorisant ReadVms sur Resource \"*\" : portee non bornee"
+    api:
+      /ReadPolicies: |
+        {"Policies": [{"PolicyId": "policy-1", "PolicyName": "ci-deployer",
+                       "Orn": "orn:eim:policy:ci-deployer", "PolicyDefaultVersionId": "v1"}],
+         "HasMoreItems": false}
+      /ReadPolicyVersion: |
+        {"PolicyVersion": {"Body": "{\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"ReadVms\"],\"Resource\":[\"*\"]}]}"}}
+
+  - expect: pass
+    why: "la meme policy, bornee a une ressource nommee"
+    api:
+      /ReadPolicies: |
+        {"Policies": [{"PolicyId": "policy-1", "PolicyName": "ci-deployer",
+                       "Orn": "orn:eim:policy:ci-deployer", "PolicyDefaultVersionId": "v1"}],
+         "HasMoreItems": false}
+      /ReadPolicyVersion: |
+        {"PolicyVersion": {"Body": "{\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"ReadVms\"],\"Resource\":[\"orn:api:vm:eu-west-2:123:vm/i-1\"]}]}"}}
+
+  - expect: not-evaluated
+    why: "ReadPolicies refuse par un 403 : la collecte est incomplete, et aucun verdict ne peut en sortir"
+    deny:
+      - /ReadPolicies

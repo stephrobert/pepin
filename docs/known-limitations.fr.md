@@ -184,6 +184,43 @@ sa preuve. Les autres fournisseurs rejoindront cette garde en atteignant 100 %.
 **Conséquence pour vous :** chaque finding vous dit quoi faire, en prose. Tous les findings ne
 sont pas accompagnés d'un module Terraform testé qui le prouve.
 
+## Le contrat de véracité, et ce qu'il doit encore
+
+Pour un scanner de posture, l'unité qui compte n'est pas `fixture → Rego → FAIL attendu`. C'est
+la chaîne entière : **réponse d'API ou plan → collecteur → normalisation → garde de capacité →
+Rego → assessment → verdict**. L'incident des politiques EIM inline l'a prouvé : une policy
+accordant `Action: "*"` échappait à *tous* les contrôles `iam_policy_*`, la règle Rego n'était
+pas fausse, et la donnée n'arrivait simplement jamais jusqu'à elle. Un test Rego parfait serait
+resté vert pendant que le scanner produisait un faux vert.
+
+Un scénario de véracité s'exécute donc contre le **binaire**, sur toute la chaîne, et lit le
+statut que publie l'assessment. Chaque chemin — contrôle × fournisseur × source — doit prouver
+les verdicts qu'il peut réellement atteindre : trois pour un chemin qui sait conclure (`fail`,
+`pass`, `not-evaluated`), un pour un chemin qui ne peut pas lever le verrou du `pass`, un pour
+un chemin que le contrat du fournisseur déclare non applicable.
+
+Ce qui n'est pas encore prouvé est **compté**, pas masqué :
+
+<!-- pepin:gen veracity-debt -->
+| Chiffre | Nombre |
+|---|---:|
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 178 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 5 |
+| Verdicts à prouver au total | 458 |
+| Verdicts restant à prouver | 445 |
+<!-- /pepin:gen veracity-debt -->
+
+Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est
+une porte dans les deux sens : une obligation non prouvée qui n'y figure *pas* fait échouer la
+construction — un contrôle ajouté sans ses scénarios ne peut donc pas passer — et une ligne qui
+n'est plus due la fait échouer aussi.
+
+**Pourquoi une dette comptée plutôt qu'une matrice verte.** Quatre scénarios par chemin
+feraient quelque sept cents cas. Personne ne peut *éprouver* sept cents cas — c'est-à-dire les
+casser un par un pour vérifier qu'ils rougissent —, et une matrice engendrée par gabarit serait
+exactement le faux vert que ce scanner existe pour combattre : un test qui passe parce que ses
+cas sont creux ne mesure que lui-même.
+
 ## Limites de l'outil lui-même
 
 ### Un bundle de preuve non caviardé est un artefact sensible

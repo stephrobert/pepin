@@ -13,6 +13,7 @@ import (
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
+	"github.com/stephrobert/pepin/internal/veracity"
 	"github.com/stephrobert/pepin/referentiel"
 )
 
@@ -450,7 +451,7 @@ func trimToolName(out string) string {
 }
 
 // buildBlocks assemble toutes les régions injectables pour une langue.
-func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) map[string]string {
+func buildBlocks(root, lang string, m Matrix, c captures, rem []RemediationCoverage) map[string]string {
 	t := blockText(lang)
 	b := map[string]string{
 		"scope-disclaimer":          Fence("text", wrapDisclaimer(assess.ScopeDisclaimerIn(i18n.Lang(lang)))),
@@ -466,6 +467,7 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"fixture-empty-inventory":   Fence("json", emptyInventory),
 		"fixture-tagless-inventory": Fence("json", taglessInventory),
 		"fixture-partial-inventory": Fence("json", partialInventory),
+		"veracity-debt":             veracityDebt(t, root),
 		"exit-codes":                exitCodeTable(t, c),
 		"exit-run-clean":            consoleRun(c.fixed, Tail(c.fixed.Stdout, 6)),
 		"exit-run-nonconformity":    consoleRun(c.vulnerable, Tail(c.vulnerable.Stdout, 6)),
@@ -641,6 +643,48 @@ func exitCodeTable(t blockStrings, c captures) string {
 	}
 	return b.String()
 }
+
+// veracityBlock rend l'état du contrat de véracité : combien de chemins
+// contrôle × fournisseur × source savent prouver, de bout en bout, les verdicts
+// qu'ils peuvent atteindre, et combien restent dus.
+//
+// Publier ce chiffre est le point. Une matrice de sept cents cas engendrés par
+// gabarit serait verte et ne prouverait rien ; un compteur de dette est laid,
+// exact, et il rétrécit. Il est DÉRIVÉ du registre committé et des obligations
+// calculées, donc il ne peut pas flatter la réalité.
+// veracityDebt enveloppe veracityBlock : un calcul impossible rend un tableau qui
+// le DIT, plutôt qu'un tableau vide qu'un lecteur prendrait pour une dette nulle.
+func veracityDebt(t blockStrings, root string) string {
+	out, err := veracityBlock(t, root)
+	if err != nil {
+		return t.veracityUnavailable
+	}
+	return out
+}
+
+func veracityBlock(t blockStrings, root string) (string, error) {
+	m, err := BuildMatrix(root, "en") // la langue n'entre pas dans le calcul
+	if err != nil {
+		return "", err
+	}
+	obligations := veracity.Obligations(VeracityCells(m))
+	files, err := veracity.LoadScenarios(filepath.Join(root, veracityScenarios))
+	if err != nil {
+		return "", err
+	}
+	c := veracity.Count(obligations, veracity.Covered(files))
+	var b strings.Builder
+	b.WriteString("| " + t.colFigure + " | " + t.colCount + " |\n|---|---:|\n")
+	row := func(label string, n int) { _, _ = fmt.Fprintf(&b, "| %s | %d |\n", label, n) }
+	row(t.veracityPaths, c.Paths)
+	row(t.veracityProven, c.PathsProven)
+	row(t.veracityObligations, c.Obligations)
+	row(t.veracityRemaining, c.Remaining)
+	return b.String(), nil
+}
+
+// veracityScenarios : le répertoire des scénarios, relatif à la racine du dépôt.
+const veracityScenarios = "internal/veracity/testdata/scenarios"
 
 // capabilityReportOf isole le relevé de capacités d'un flux d'erreur capturé. Le
 // relevé y voisine avec le bandeau et l'avertissement de portée ; on découpe entre

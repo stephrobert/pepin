@@ -24,6 +24,29 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Un contrat de véracité, et un compteur de dette plutôt qu'une matrice verte.**
+  Pour chaque chemin contrôle × fournisseur × source, `internal/veracity` dérive les
+  verdicts que ce chemin peut réellement atteindre — trois quand il sait conclure, un
+  quand il ne peut pas lever le verrou du `pass`, un quand le contrat du fournisseur
+  le déclare non applicable — et les compare aux scénarios committés, qui s'exécutent
+  **contre le binaire**, sur toute la chaîne : des réponses d'API canned servies à la
+  spec de collecte RÉELLE du descripteur, ou un plan Terraform minimal passé à son
+  mapper réel. Ce qui n'est pas prouvé est consigné dans
+  `internal/veracity/testdata/debt.txt`, une porte dans les deux sens : une
+  obligation non prouvée absente du registre fait échouer la construction — **un
+  contrôle ajouté sans ses scénarios ne peut donc pas passer** — et une ligne qui
+  n'est plus due la fait échouer aussi. Les compteurs sont publiés dans
+  `docs/known-limitations.fr.md`. Aujourd'hui : 178 chemins, 5 entièrement prouvés,
+  458 obligations, 445 restantes. Une matrice de sept cents cas engendrés par gabarit
+  serait verte et ne prouverait rien.
+
+- **Une suite de dégradation avec une seule garantie : jamais un `pass`.** Un
+  endpoint refusé, une jointure enfant refusée, une réponse partielle, un service
+  indisponible, une réponse illisible, un attribut Terraform encore inconnu au stade
+  du plan — chacun produit pour de vrai contre un serveur vivant ou un plan réel, et
+  vérifié sur **tous** les contrôles qui lisent le type touché, pas sur un témoin
+  choisi.
+
 - **Un finding Terraform porte son origine : fichier, ligne, module.** `--format json`
   gagne `labels.tf_file`, `labels.tf_line` et `labels.tf_module` ; le résultat SARIF
   gagne un `physicalLocation` avec sa `region`, ce qui fait qu'une forge annote le bloc

@@ -51,7 +51,14 @@ resolution, S3 endpoint, `collecte` (live API), `mapping_terraform`, and the
    `code`, with a capability guard) and its `_test.rego`.
 2. Declare the control in `referentiel/controles.yaml` (severity, SCSL, norm
    mappings, `fournisseurs`).
-3. Validate with a real scan, then activate (`fournisseurs`).
+3. **Write its veracity scenarios** in `internal/veracity/testdata/scenarios/` —
+   one file per control × provider × source path, proving the verdicts that path
+   can reach end to end, through the binary. A Rego test proves one link; the unit
+   that matters is the whole chain, and it is a *collector* that let the founding
+   incident through, not a rule. What is not proven is **recorded**
+   (`mise run veracity-update`), never hidden: the ledger is a gate in both
+   directions, and a control added without its scenarios fails the build.
+4. Validate with a real scan, then activate (`fournisseurs`).
 
 Everything the user reads is **written twice**, side by side, because Pépin
 detects the reader's language. A rule emits `message`/`remediation` in French and

@@ -23,6 +23,26 @@ belongs in `git log`.
 
 ### Added
 
+- **A veracity contract, and a debt counter rather than a green matrix.** For each
+  control × provider × source path, `internal/veracity` derives the verdicts that
+  path can actually reach — three where it can conclude, one where it cannot lift
+  the `pass` lock, one where the provider contract declares it not applicable — and
+  compares them to committed scenarios that run **against the binary**, over the
+  whole chain: canned API responses served to the descriptor's real collection spec,
+  or a minimal Terraform plan passed to its real mapper. What is not proven is
+  recorded in `internal/veracity/testdata/debt.txt`, a gate in both directions: an
+  unproven obligation missing from the ledger fails the build, so **a control added
+  without its scenarios cannot land**, and a line no longer owed fails it too. The
+  counts are published in `docs/known-limitations.md`. Today: 178 paths, 5 fully
+  proven, 458 obligations, 445 outstanding. A matrix of seven hundred
+  template-generated cases would be green and would prove nothing.
+
+- **A degradation suite with one guarantee: never a `pass`.** A refused endpoint, a
+  refused child join, a partial response, an unavailable service, an unreadable
+  response, a Terraform attribute still unknown at plan time — each produced for
+  real against a live server or a real plan, and checked on **every** control that
+  reads the affected type rather than on a chosen witness.
+
 - **A Terraform finding carries its origin: file, line, module.** `--format json`
   gains `labels.tf_file`, `labels.tf_line` and `labels.tf_module`; the SARIF result
   gains a `physicalLocation` with a `region`, which is what makes a forge annotate the

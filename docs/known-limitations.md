@@ -184,6 +184,42 @@ proof. The other providers join that guard as they reach 100 %. Run
 **Consequence for you:** every finding tells you what to do, in prose. Not every finding comes
 with a tested Terraform module proving it.
 
+## The veracity contract, and what it still owes
+
+For a posture scanner the unit that matters is not `fixture → Rego → expected FAIL`. It is the
+whole chain: **API response or plan → collector → normalization → capability guard → Rego →
+assessment → verdict**. The inline EIM policy incident proved why: a policy granting `Action:
+"*"` escaped *every* `iam_policy_*` control, the Rego rule was not wrong, and the data simply
+never reached it. A perfect Rego test would have stayed green while the scanner produced a
+false green.
+
+A veracity scenario therefore runs against the **binary**, on the whole chain, and reads the
+status the assessment publishes. Each path — control × provider × source — must prove the
+verdicts it can actually reach: three for a path that can conclude (`fail`, `pass`,
+`not-evaluated`), one for a path that cannot lift the `pass` lock, one for a path the provider
+contract declares not applicable.
+
+What is not yet proven is **counted**, not hidden:
+
+<!-- pepin:gen veracity-debt -->
+| Figure | Count |
+|---|---:|
+| Control x provider x source paths on which Pépin concludes | 178 |
+| Paths whose every reachable verdict is proven end to end | 5 |
+| Verdicts to prove in total | 458 |
+| Verdicts left to prove | 445 |
+<!-- /pepin:gen veracity-debt -->
+
+The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a
+gate in both directions: an unproven obligation that is *not* written there fails the build — so
+a control added without its scenarios cannot land — and a line that is no longer owed fails it
+too.
+
+**Why a counted debt rather than a green matrix.** Four scenarios for every path would be some
+seven hundred cases. Nobody can *test* seven hundred cases — that is, break each one to check it
+turns red — and a matrix generated from a template would be exactly the false green this
+scanner exists to fight: a test that passes because its cases are hollow measures only itself.
+
 ## Limitations of the tool itself
 
 ### An unredacted evidence bundle is a sensitive artifact
