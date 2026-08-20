@@ -128,6 +128,8 @@ control is the one that governs.
   [Output formats](docs/reference/output-formats.md) ·
   [Normalized inventory](docs/reference/inventory.md).
 - Guides: [Remediation](docs/guides/remediation.md) ·
+  [Configuring controls](docs/guides/control-configuration.md) — the policy file, and what a
+  relaxation costs ·
   [Evidence bundles](docs/guides/evidence-bundles.md) ·
   [GitHub Actions](docs/guides/github-actions.md) · [GitLab CI](docs/guides/gitlab-ci.md).
 - Contributing: [Adding a control](docs/contributing/adding-a-control.md) ·

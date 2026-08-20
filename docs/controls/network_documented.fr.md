@@ -4,7 +4,7 @@
 
 # `network_documented`
 
-**Réseau non documenté (cartographie non tenue)**
+**Réseau sans étiquettes de cartographie**
 
 [Retour au catalogue](index.fr.md)
 
@@ -15,14 +15,14 @@
 | Sévérité | `low` |
 | Exigence SCSL (index gelé) | `CLD-NET-5` |
 | Type de ressource lu | `network` |
-| Attribut décisif | _aucun : jugé à la présence d'un écart_ |
+| Attribut décisif | `tags` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
 | Preuves de remédiation | 1 / 3 |
 
 ## Le risque
 
-Un réseau (VPC / Net / réseau privé) n'a pas de nom ou d'étiquettes de gouvernance : la cartographie réseau (inventaire, propriétaire, projet) n'est pas tenue à jour, ce qui nuit à la revue et à la réponse aux incidents.
+CE QUI EST VÉRIFIÉ : chaque réseau (VPC / Net / réseau privé) porte les étiquettes de gouvernance qui le documentent — par défaut propriétaire, projet et environnement. Une étiquette hors sujet ne documente rien : la présence d'un tag quelconque ne suffit pas. La comparaison est insensible à la casse et aux séparateurs, et le profil d'étiquetage est configurable (`controls.tagging.network_required_tags`) ; le profil livré est une recommandation, pas une norme. Sans étiquettes collectées, le contrôle rend « non évalué » plutôt que de conclure.
 
 Cette description vient du référentiel : c'est le texte que le rapport cite, dans la
 langue du lecteur.
@@ -77,13 +77,14 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 ## Comment enquêter
 
 - Type de ressource normalisé lu par la règle : `network`
-- Aucun verrou d'attribut : le contrôle se juge à la présence d'un écart, l'absence de mauvaise configuration valant conformité.
+- Attribut dont la décision dépend : `tags`
+- Sans cet attribut sur une ressource du type visé, le scan rend `not-evaluated` et non `pass` (`internal/assess`, table `requiredAttr`).
 - Ce que chaque source projette se lit dans le descripteur : [`providers/exoscale.yaml`](../../providers/exoscale.yaml) · [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - La règle qui émet ce code vit dans [`internal/commonrules/rules/`](../../internal/commonrules/rules) : elle est **commune** à tous les fournisseurs, seule la source change.
 
 ## Comment corriger
 
-Nommer et étiqueter chaque réseau (propriétaire, projet, environnement) ; tenir à jour la cartographie réseau et la réviser périodiquement.
+Étiqueter chaque réseau avec son propriétaire, son projet et son environnement ; tenir à jour la cartographie réseau et la réviser périodiquement.
 
 | Fournisseur | Montage déployable |
 |---|---|

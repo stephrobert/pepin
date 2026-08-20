@@ -589,28 +589,44 @@ controles:
 
   - code: network_documented
     famille: reseau
-    titre: Réseau non documenté (cartographie non tenue)
-    titre_en: Undocumented network (mapping not maintained)
+    titre: Réseau sans étiquettes de cartographie
+    titre_en: Network without mapping tags
     severite: low
     description: >
-      Un réseau (VPC / Net / réseau privé) n'a pas de nom ou d'étiquettes de
-      gouvernance : la cartographie réseau (inventaire, propriétaire, projet) n'est
-      pas tenue à jour, ce qui nuit à la revue et à la réponse aux incidents.
+      CE QUI EST VÉRIFIÉ : chaque réseau (VPC / Net / réseau privé) porte les
+      étiquettes de gouvernance qui le documentent — par défaut propriétaire,
+      projet et environnement. Une étiquette hors sujet ne documente rien : la
+      présence d'un tag quelconque ne suffit pas. La comparaison est insensible à
+      la casse et aux séparateurs, et le profil d'étiquetage est configurable
+      (`controls.tagging.network_required_tags`) ; le profil livré est une
+      recommandation, pas une norme. Sans étiquettes collectées, le contrôle rend
+      « non évalué » plutôt que de conclure.
     description_en: >
-      A network (VPC / Net / private network) has no name and no governance
-      tags: the network mapping (inventory, owner, project) is not kept up to
-      date, which hurts review and incident response.
+      WHAT IS CHECKED: every network (VPC / Net / private network) carries the
+      governance tags that document it - by default owner, project and
+      environment. An off-topic tag documents nothing: the mere presence of some
+      tag is not enough. The comparison ignores case and separators, and the
+      tagging profile is configurable (`controls.tagging.network_required_tags`);
+      the shipped profile is a recommendation, not a standard. Without collected
+      tags the control returns "not evaluated" rather than concluding.
     remediation: >
-      Nommer et étiqueter chaque réseau (propriétaire, projet, environnement) ;
-      tenir à jour la cartographie réseau et la réviser périodiquement.
+      Étiqueter chaque réseau avec son propriétaire, son projet et son
+      environnement ; tenir à jour la cartographie réseau et la réviser
+      périodiquement.
     remediation_en: >
-      Name and tag every network (owner, project, environment); keep the
+      Tag every network with its owner, project and environment; keep the
       network mapping up to date and review it periodically.
     scsl: [CLD-NET-5]
     frameworks:
       secnumcloud_3_2: ["13.1"]
       iso_27001_2022: ["A.5.9"]
     fournisseurs: [exoscale, outscale, scaleway]
+    # La cartographie exige de savoir à QUI et à QUOI sert un réseau. Retirer une
+    # de ces étiquettes du profil, ou élargir ce qu'un nom logique accepte, c'est
+    # cesser de mesurer ce que CLD-NET-5 demande.
+    config_requise:
+      - parametre: tagging.network_required_tags
+        contrainte: au_moins_aussi_strict_que_le_defaut
 
   - code: network_peering_cross_organization
     famille: reseau
@@ -710,6 +726,13 @@ controles:
     frameworks:
       secnumcloud_3_2: ["10.5"]
     fournisseurs: [outscale, exoscale, scaleway]
+    # Chaque détection porte son niveau de confiance (high | medium | low) et le
+    # seuil de signalement est réglable. Le monter TAIT des détections : « aucun
+    # secret en clair » (CLD-CMP-9) ne se prouve plus si l'on a choisi de ne pas
+    # regarder une partie de ce qui a été trouvé.
+    config_requise:
+      - parametre: secrets.min_confidence
+        contrainte: au_plus_le_defaut
 
   - code: k8s_rbac_no_cluster_admin_binding
     famille: compute
@@ -1031,27 +1054,56 @@ controles:
 
   - code: blockstorage_volume_snapshots_exist
     famille: stockage
-    titre: Absence de sauvegarde récente
-    titre_en: No recent backup
+    titre: Absence de snapshot récente et terminée
+    titre_en: No recent, completed snapshot
     severite: high
     description: >
-      Un volume de données en usage n'a pas d'instantané/sauvegarde récent : la
-      restauration après incident n'est pas garantie.
+      CE QUI EST MESURÉ : un volume en usage a-t-il, dans la fenêtre configurée
+      (par défaut 7 jours, `controls.snapshots.max_age_days`), au moins une
+      snapshot dont l'état natif la dit TERMINÉE ? L'état est vérifié, pas
+      seulement la date : une snapshot en erreur ou en cours ne restaure rien.
+      CE QUE LE CONTRÔLE NE PROUVE PAS : ni que la snapshot soit restaurable
+      (aucune restauration n'est tentée), ni qu'elle soit complète au sens
+      applicatif, ni qu'une rétention soit respectée, ni qu'une politique de
+      sauvegarde existe. Un volume sauvegardé autrement (sauvegarde applicative,
+      réplication, service du fournisseur) sera signalé ici : c'est un faux
+      positif assumé, à traiter par une dérogation datée, jamais en désactivant
+      le contrôle. Ce contrôle ne participe donc pas à une affirmation
+      « sauvegarde conforme ».
     description_en: >
-      A data volume in use has no recent snapshot or backup: restoring after
-      an incident is not guaranteed.
+      WHAT IS MEASURED: does a volume in use have, within the configured window
+      (7 days by default, `controls.snapshots.max_age_days`), at least one
+      snapshot whose native state says it is COMPLETED? The state is checked, not
+      just the date: a failed or in-progress snapshot restores nothing.
+      WHAT THIS CONTROL DOES NOT PROVE: neither that the snapshot is restorable
+      (no restore is attempted), nor that it is complete in the application
+      sense, nor that a retention is honoured, nor that a backup policy exists. A
+      volume backed up by other means (application backup, replication, provider
+      service) will be reported here: an accepted false positive, to be handled
+      with a dated exemption rather than by disabling the control. This control
+      therefore takes no part in a "backup compliant" claim.
     remediation: >
-      Mettre en place une politique de sauvegarde régulière avec test de
-      restauration ; chiffrer et appliquer une rétention documentée.
+      Mettre en place un snapshot régulier automatisé et tester la restauration
+      périodiquement. Si le volume est sauvegardé autrement, poser une dérogation
+      datée et justifiée plutôt que de désactiver le contrôle.
     remediation_en: >
-      Set up a regular backup policy with restore testing; encrypt the backups
-      and apply a documented retention.
+      Set up an automated, regular snapshot schedule and test the restore
+      periodically. If the volume is backed up by other means, file a dated,
+      justified exemption rather than disabling the control.
     scsl: [CLD-STO-3]
     frameworks:
       secnumcloud_3_2: ["12.5"]
       cis_controls_v8: ["11.2"]
       iso_27001_2022: ["A.8.13"]
     fournisseurs: [outscale, exoscale]
+    # Allonger la fenêtre, ou compter des snapshots que leur état natif dit
+    # inachevées, c'est cesser de mesurer la fraîcheur que CLD-STO-3 / CIS 11.2
+    # demandent.
+    config_requise:
+      - parametre: snapshots.max_age_days
+        contrainte: au_plus_le_defaut
+      - parametre: snapshots.accepted_states
+        contrainte: sous_ensemble_du_defaut
 
   # ───────────────────────── Chiffrement & clés ──────────────────────
   - code: loadbalancer_ssl_listeners
@@ -1244,23 +1296,47 @@ controles:
     titre_en: Incomplete inventory and tagging
     severite: medium
     description: >
-      Des ressources n'ont pas les étiquettes de gouvernance (propriétaire,
-      projet, environnement) : l'inventaire et la responsabilité ne sont pas tenus.
+      CE QUI EST VÉRIFIÉ : une ressource facturable porte les étiquettes de
+      gouvernance exigées — par défaut centre de coût, projet, environnement et
+      propriétaire. Ce qui est exigé, ce sont les QUESTIONS auxquelles un
+      inventaire doit répondre (qui paye, pour quoi, à quel stade, qui répond),
+      jamais des mots précis : la comparaison est insensible à la casse et aux
+      séparateurs (`cost-center` ≡ `CostCenter`), et le profil, les alias et les
+      types de ressources visés sont configurables (`controls.tagging`). Le
+      profil livré est une RECOMMANDATION, pas une norme. Sans étiquettes
+      collectées, le contrôle rend « non évalué ».
     description_en: >
-      Some resources do not carry the governance tags (owner, project,
-      environment): the inventory and the accountability are not maintained.
+      WHAT IS CHECKED: a billable resource carries the required governance tags -
+      by default cost centre, project, environment and owner. What is required
+      are the QUESTIONS an inventory must answer (who pays, for what, at which
+      stage, who is accountable), never exact words: the comparison ignores case
+      and separators (`cost-center` = `CostCenter`), and the profile, its aliases
+      and the targeted resource types are configurable (`controls.tagging`). The
+      shipped profile is a RECOMMENDATION, not a standard. Without collected tags
+      the control returns "not evaluated".
     remediation: >
-      Imposer des étiquettes obligatoires (propriétaire, projet, environnement) ;
-      contrôler leur présence à la création.
+      Ajouter les étiquettes de gouvernance manquantes ; contrôler leur présence
+      à la création. Si votre convention diffère, la déclarer dans le fichier de
+      politique plutôt que de désactiver le contrôle.
     remediation_en: >
-      Enforce mandatory tags (owner, project, environment); check their
-      presence at creation time.
+      Add the missing governance tags; check their presence at creation time. If
+      your convention differs, declare it in the policy file rather than
+      disabling the control.
     scsl: [CLD-GVN-1]
     frameworks:
       secnumcloud_3_2: ["8.1"]
       cis_controls_v8: ["1.1"]
       iso_27001_2022: ["A.5.9", "A.8.9"]
     fournisseurs: [outscale, scaleway, exoscale]
+    # Un inventaire tenu (CLD-GVN-1, CIS 1.1) suppose de savoir qui paye, pour
+    # quoi, à quel stade et qui répond, SUR TOUT ce qui est facturable. Retirer
+    # une étiquette du profil, élargir ce qu'un nom accepte, ou rétrécir le
+    # périmètre des types visés fait tomber la correspondance.
+    config_requise:
+      - parametre: tagging.required_tags
+        contrainte: au_moins_aussi_strict_que_le_defaut
+      - parametre: tagging.resource_types
+        contrainte: superset_du_defaut
 
   - code: governance_resource_region_in_eu
     famille: gouvernance

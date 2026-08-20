@@ -26,11 +26,11 @@ verdict. Voir [Codes de sortie](exit-codes.fr.md).
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v3** |
+| `cli` | verbes, drapeaux et codes de sortie | **v4** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
-| `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v2** |
-| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v3** |
+| `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v4** |
 <!-- /pepin:gen surface-versions -->
 
 « Gelé » signifie qu'un test échoue quand la forme bouge sans que sa version ait suivi : les
@@ -114,14 +114,25 @@ Forme gelée : `{"findings": [...], "summary": {...}}`.
 agnostique, commun à tous les fournisseurs. Les deux sont stables d'une langue à l'autre ;
 `title`, `message` et `remediation` sont traduits.
 
-Deux clés additives apparaissent quand elles ont quelque chose à dire, et toutes deux existent
-pour qu'un pipeline lise ce qu'il accepte au lieu de le déduire :
+Trois clés additives se tiennent à côté de `findings` et `summary`, et elles existent pour
+qu'un pipeline lise ce qu'il accepte au lieu de le déduire :
 
-- `exemptions` : présente quand `--exceptions` a été donné (voir ci-dessous) ;
+- `config` : **toujours présente** — l'empreinte de la configuration effective des contrôles,
+  la configuration elle-même, et, quand un réglage sort d'une contrainte normative, les
+  `relaxations` et les `dropped_references` qu'elles coûtent. Un scan par défaut n'est jamais
+  muet sur sa politique : un lecteur doit pouvoir vérifier qu'un scan a bien tourné sous les
+  réglages attendus, pas seulement constater qu'il n'a rien dit. Voir
+  [Configurer les contrôles](../guides/control-configuration.fr.md) ;
+- `exemptions` : présente quand `--exceptions` (ou `--policy`) a fourni des dérogations
+  (voir ci-dessous) ;
 - `collection` : présente quand Pépin a **mesuré** l'inventaire — l'état de chaque unité de
   collecte, et les types de ressources que la source portait sans qu'aucune spec ne les
   projette. Sa forme est décrite dans
   [l'inventaire normalisé](inventory.fr.md#létat-de-collecte).
+
+Un finding de détection de secret porte en outre `labels.confidence` (`high` | `medium` |
+`low`), pour qu'un pipeline trie les heuristiques génériques à part des secrets confirmés sans
+changer le scan. La valeur détectée, elle, n'apparaît jamais, quel que soit le niveau.
 
 **Ce que ce format ne sait pas dire** : il liste des écarts, donc un tableau `findings` vide
 signifie « aucun écart trouvé », ce qui recouvre aussi bien « le tenant est propre » que « rien
@@ -129,6 +140,33 @@ n'a été collecté ». Le booléen `summary.conforme` ne dit rien non plus de l
 cette distinction compte, et pour une porte de conformité elle compte, lire le code de sortie
 (3 signifie que le scan n'établit pas la conformité : rien de mesuré, ou un périmètre lu en
 partie seulement), lire `collection`, ou utiliser le format assessment.
+
+### `config` : toujours présente
+
+```json
+{
+  "config": {
+    "policy_digest": "sha256:…",
+    "effective": { "tagging": { "…": "…" }, "snapshots": { "…": "…" }, "secrets": { "…": "…" } },
+    "relaxations": [
+      {
+        "control": "blockstorage_volume_snapshots_exist",
+        "parameter": "snapshots.max_age_days",
+        "constraint": "au_plus_le_defaut",
+        "default": "7 jours",
+        "effective": "90 jours",
+        "dropped_references": ["scsl:CLD-STO-3", "cis-v8:11.2", "iso-27001:A.8.13", "secnumcloud-3.2:12.5"]
+      }
+    ],
+    "dropped_references": ["cis-v8:11.2", "iso-27001:A.8.13", "scsl:CLD-STO-3", "secnumcloud-3.2:12.5"]
+  }
+}
+```
+
+`relaxations` et `dropped_references` sont absentes sous le profil par défaut. Quand elles
+apparaissent, les résultats correspondants du format `assessment` ont **perdu leurs
+`references`** et portent `labels.config_relaxed` : le contrôle a bien été évalué, mais contre
+une barre plus basse que l'exigence qu'il citait, donc il ne prétend plus la couvrir.
 
 ### `exemptions` : présent seulement avec `--exceptions`
 

@@ -24,13 +24,17 @@ run = "go test ./... -race"
 description = "Tests des politiques Rego (toutes communes)"
 run = "opa test internal/commonrules/rules -v"
 
+# `Config` sélectionne les gardes de l'issue #65 : une contrainte de configuration
+# ininterprétable (réglage inconnu, sens de contrainte inexistant) est refusée ici,
+# parce qu'une contrainte que personne n'évalue est pire qu'une contrainte absente —
+# elle donne l'impression que la correspondance normative est protégée.
 # `Finding` sélectionne TestEveryFindingCarriesRemediation, qui exige de chaque
 # règle sa remédiation ET ses deux labels de traduction (message_en,
 # remediation_en). C'est une vérification purement statique du texte des .rego :
 # elle a sa place dans la porte de cohérence, à côté de celle du référentiel.
 [tasks.validate]
 description = "Cohérence des référentiels (codes ↔ règles ↔ index SCSL gelé ↔ catalogue ↔ bilinguisme)"
-run = "go test ./referentiel/ -run 'Control|Rule|SCSL|Catalogue|Lookup|Coherent|Finding' -v"
+run = "go test ./referentiel/ -run 'Control|Rule|SCSL|Catalogue|Lookup|Coherent|Finding|Config' -v"
 
 # check-remediation est volontairement DÉCOUPLÉ de `validate` : la couverture est
 # aujourd'hui de 26/95 (exoscale 26/26, outscale 0/40, scaleway 0/25, kubernetes 0/4),

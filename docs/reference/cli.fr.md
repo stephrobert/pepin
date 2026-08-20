@@ -22,7 +22,7 @@ de drapeaux viennent de la surface gelée ; chaque aide ci-dessous est la sortie
 | `pepin provider list` | _(aucun drapeau propre)_ |
 | `pepin provider new` | _(aucun drapeau propre)_ |
 | `pepin provider validate` | _(aucun drapeau propre)_ |
-| `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
+| `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
 | `pepin scsl` | `--index` |
 | `pepin verify` | `--bundle`, `--pubkey`, `--re-derive` |
 | `pepin version` | _(aucun drapeau propre)_ |
@@ -37,11 +37,11 @@ séparément :
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v3** |
+| `cli` | verbes, drapeaux et codes de sortie | **v4** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
-| `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v2** |
-| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v3** |
+| `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v4** |
 <!-- /pepin:gen surface-versions -->
 
 Un numéro monte à **tout** changement de forme, ajout compris : il signifie « la surface a
@@ -118,13 +118,14 @@ Flags:
   -h, --help                             help for scan
       --kubeconfig string                chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)
       --live                             collecter l'inventaire en direct via l'API du provider (identifiants requis)
+      --policy fichier                   fichier YAML de politique : réglages des contrôles (`controls:`) ET dérogations (`exceptions:`) — un seul fichier, nom moderne de --exceptions
   -p, --policy-dir stringArray           répertoire de règles externes (.rego), répétable — chargé sans recompilation
       --profile string                   profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)
       --redact                           caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive
       --region string                    région cible pour la collecte live
       --s3-endpoint string               endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)
       --seal string                      écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier
-      --strict                           porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance) ou s'il subsiste un écart medium/low
+      --strict                           porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance), s'il subsiste un écart medium/low, ou si un réglage assoupli a fait tomber une correspondance normative
   -t, --terraform terraform show -json   auditer un plan Terraform (terraform show -json) au lieu d'un export d'inventaire
 
 Global Flags:

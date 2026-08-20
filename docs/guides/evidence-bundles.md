@@ -55,8 +55,8 @@ raises a version number and gets a CHANGELOG line.
 <!-- pepin:gen bundle-manifest -->
 ```json
 {
-  "format": "pepin-assessment-bundle/v2",
-  "inventory_schema": "pepin-inventory/v3",
+  "format": "pepin-assessment-bundle/v3",
+  "inventory_schema": "pepin-inventory/v4",
   "disclaimer": "This report assesses the configuration of a tenant (customer-side scope). The normative mappings (SecNumCloud, ISO, CIS) are indicative: they are not a proof of qualification or certification, which applies to the cloud service provider.",
   "generated": "<timestamp>",
   "tool": {
@@ -148,6 +148,24 @@ opening anything else.
 that, a perfectly faithful bundle would be declared falsified for the sole reason that the
 verifier does not hold the operator's exemptions file, and a valid waiver would appear to
 "expire" between the scan and the verification.
+
+### `config.json` — only when a policy file was given
+
+The same principle, one step earlier: a dossier that does not say **under which requirement**
+it was rendered is not defensible either. When a scan is given `--policy` (or `--exceptions`
+carrying a `controls:` section), the bundle carries an artifact recording the effective
+control configuration, its digest, and every **relaxation** — a setting that fell outside the
+constraint under which a control's normative mapping holds, with the mappings it cost.
+
+Its digest is in `checksums.txt` too, so the bundle digest **depends on the settings**: a
+dossier cannot hide the bar it lowered without failing its own verification. The manifest
+carries the summary — `policy_digest`, `relaxed_controls`, `dropped_references` — and
+`relaxed_controls` is the line a verifier should read first.
+
+The effective configuration also travels inside `input.json`, next to `evaluated_at`. That is
+what makes `verify --re-derive` faithful: the replay uses the settings of the day the bundle
+was sealed, never today's. See
+[Configuring controls](control-configuration.md).
 
 ## Verifying a bundle
 

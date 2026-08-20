@@ -27,7 +27,13 @@ import (
 // appliquées ; le bundle gagne l'artefact exemptions.json quand une politique de
 // dérogations a été appliquée. Un dossier qui tait ses exemptions n'est pas
 // opposable, donc elles sont scellées comme le reste.
-const BundleFormat = "pepin-assessment-bundle/v2"
+// v3 : le manifeste porte la CONFIGURATION appliquée — l'empreinte de la
+// politique résolue et, le cas échéant, les assouplissements qui ont fait tomber
+// une correspondance normative ; le bundle gagne l'artefact config.json quand un
+// fichier de politique a été fourni. Un dossier qui tait sous quelle exigence il
+// a été rendu n'est pas opposable : c'est très exactement la porte dérobée vers
+// le vert que la configurabilité ouvrirait sans lui.
+const BundleFormat = "pepin-assessment-bundle/v3"
 
 // ScopeDisclaimer : avertissement de PORTÉE, obligatoire pour l'opposabilité. pepin évalue la
 // configuration d'un TENANT (périmètre commanditaire) ; les référentiels cités (SecNumCloud,
@@ -69,7 +75,25 @@ type Manifest struct {
 	// Exemptions : l'effet des dérogations sur CE dossier. Absent quand aucune
 	// politique n'a été fournie ; jamais silencieux quand il y en a une.
 	Exemptions *ExemptionSummary `json:"exemptions,omitempty"`
-	Artifacts  []Artifact        `json:"artifacts"`
+	// Config : la configuration des contrôles sous laquelle ce dossier a été
+	// rendu. Absente quand aucun fichier de politique n'a été fourni — la
+	// configuration EFFECTIVE, elle, voyage toujours dans input.json, ce qui rend
+	// le dossier re-dérivable dans les deux cas.
+	Config    *ConfigSummary `json:"config,omitempty"`
+	Artifacts []Artifact     `json:"artifacts"`
+}
+
+// ConfigSummary résume, dans le manifeste, sous quels réglages ce dossier a été
+// rendu et ce qu'ils ont fait perdre. Le détail est dans config.json, lui aussi
+// empreint et signé ; ce résumé est ce qu'un vérificateur lit AVANT d'ouvrir le
+// reste — et `relaxed_controls` est la ligne qu'il doit lire en premier.
+type ConfigSummary struct {
+	// PolicyDigest : empreinte de la configuration RÉSOLUE (défauts compris).
+	PolicyDigest string `json:"policy_digest"`
+	// RelaxedControls : les contrôles dont une correspondance normative est tombée.
+	RelaxedControls []string `json:"relaxed_controls,omitempty"`
+	// DroppedReferences : les correspondances abandonnées, `framework:id`.
+	DroppedReferences []string `json:"dropped_references,omitempty"`
 }
 
 // ExemptionSummary résume, dans le manifeste, ce que les dérogations ont changé.
@@ -93,6 +117,10 @@ type BundleExtras struct {
 	Exemptions []byte
 	// ExemptionSummary : son résumé, porté par le manifeste.
 	ExemptionSummary *ExemptionSummary
+	// Config : le document config.json (nil = aucun fichier de politique fourni).
+	Config []byte
+	// ConfigSummary : son résumé, porté par le manifeste.
+	ConfigSummary *ConfigSummary
 }
 
 // Artifact is one file of the bundle with its digest, so any tampering is detectable.
@@ -172,6 +200,16 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte, extras B
 			data       []byte
 		}{{"input.json", "evaluated-input", inputJSON}}, files...)
 	}
+	if extras.Config != nil {
+		// La configuration APPLIQUÉE fait partie de la preuve, au même titre que les
+		// dérogations : elle entre au bundle, donc au checksums.txt que l'opérateur
+		// signe. Le digest du dossier dépend ainsi des réglages, et un dossier ne
+		// peut pas taire l'assouplissement sous lequel il a été rendu.
+		files = append(files, struct {
+			name, role string
+			data       []byte
+		}{"config.json", "applied-configuration", extras.Config})
+	}
 	if extras.Exemptions != nil {
 		// La dérogation APPLIQUÉE fait partie de la preuve : elle entre au bundle,
 		// donc au checksums.txt que l'opérateur signe. Le digest du dossier dépend
@@ -193,6 +231,7 @@ func WriteBundle(dir string, a assessment.Assessment, inputJSON []byte, extras B
 		Source:          a.Run.Source,
 		Summary:         summaryOf(a),
 		Exemptions:      extras.ExemptionSummary,
+		Config:          extras.ConfigSummary,
 	}
 	var checksums string
 	for _, f := range files {

@@ -4,7 +4,7 @@
 
 # `network_documented`
 
-**Undocumented network (mapping not maintained)**
+**Network without mapping tags**
 
 [Back to the catalogue](index.md)
 
@@ -15,14 +15,14 @@
 | Severity | `low` |
 | SCSL requirement (frozen index) | `CLD-NET-5` |
 | Resource type read | `network` |
-| Deciding attribute | _none: judged on the presence of a deviation_ |
+| Deciding attribute | `tags` |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
 | Remediation proofs | 1 / 3 |
 
 ## The risk
 
-A network (VPC / Net / private network) has no name and no governance tags: the network mapping (inventory, owner, project) is not kept up to date, which hurts review and incident response.
+WHAT IS CHECKED: every network (VPC / Net / private network) carries the governance tags that document it - by default owner, project and environment. An off-topic tag documents nothing: the mere presence of some tag is not enough. The comparison ignores case and separators, and the tagging profile is configurable (`controls.tagging.network_required_tags`); the shipped profile is a recommendation, not a standard. Without collected tags the control returns "not evaluated" rather than concluding.
 
 This description comes from the reference: it is the text the report quotes, in the
 reader's language.
@@ -76,13 +76,14 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 ## How to investigate
 
 - Normalized resource type the rule reads: `network`
-- No attribute lock: the control is judged on the presence of a deviation, absence of a bad configuration counting as compliance.
+- Attribute the decision depends on: `tags`
+- Without that attribute on a resource of the targeted type, the scan returns `not-evaluated` rather than `pass` (`internal/assess`, `requiredAttr` table).
 - What each source projects is readable in the descriptor: [`providers/exoscale.yaml`](../../providers/exoscale.yaml) · [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - The rule that emits this code lives in [`internal/commonrules/rules/`](../../internal/commonrules/rules): it is **common** to every provider, only the source changes.
 
 ## How to remediate
 
-Name and tag every network (owner, project, environment); keep the network mapping up to date and review it periodically.
+Tag every network with its owner, project and environment; keep the network mapping up to date and review it periodically.
 
 | Provider | Deployable setup |
 |---|---|

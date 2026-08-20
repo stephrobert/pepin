@@ -196,7 +196,16 @@ $ echo $?
 ```
 <!-- /pepin:gen exit-run-strict -->
 
-`--strict` n'ajoute donc qu'un seul comportement : les écarts medium/low deviennent bloquants.
+`--strict` n'ajoute donc que deux comportements, et seulement deux : les écarts medium/low
+deviennent bloquants, et une **correspondance normative tombée sous un réglage assoupli**
+l'est aussi.
+
+Un réglage assoupli est un réglage qui sort de la contrainte sous laquelle la correspondance
+d'un contrôle vaut — une fenêtre de snapshot allongée, une étiquette exigée retirée, un seuil
+de détection de secrets relevé. Le contrôle est toujours évalué, mais contre une barre plus
+basse que l'exigence qu'il cite, donc il ne prétend plus la couvrir. Un pipeline qui vend de
+la conformité ne doit pas rendre `0` sur un contrôle qu'il a lui-même abaissé. Voir
+[Configurer les contrôles](../guides/control-configuration.fr.md).
 Il ne crée pas la porte « rien n'a été mesuré », qui existe sans lui.
 
 ### La collecte n'a pas pu lire tout le périmètre
@@ -428,7 +437,8 @@ Quand plusieurs situations se présentent en même temps, les codes se décident
 4. **3** : la collecte était incomplète, et au moins un contrôle y a perdu son `pass` faute
    d'avoir pu lire la donnée dont il dépend.
 5. **4** : au moins une dérogation a été appliquée.
-6. **3** : `--strict` et des écarts medium/low subsistent, ou le fichier de dérogations est périmé.
+6. **3** : `--strict` et des écarts medium/low subsistent, le fichier de dérogations est
+   périmé, ou un réglage assoupli a fait tomber une correspondance normative.
 7. **0** : aucun des cas ci-dessus.
 
 ## Ce qui ne change pas le code de sortie

@@ -313,6 +313,39 @@ is worse than no line at all.
 A result describes an instant. Pépin has no agent, no watch mode and no history. Continuous
 posture is a scheduling problem you solve in CI, and the sealed bundles are what you keep.
 
+### A recent snapshot is not a backup policy
+
+`blockstorage_volume_snapshots_exist` measures one thing: does a volume in use have, within
+the configured window (7 days by default), at least one snapshot whose native state says it is
+completed? The state is checked, not just the date.
+
+It does not prove that the snapshot is **restorable** — no restore is attempted —, that it is
+**complete** in the application sense, that a **retention** is honoured (one snapshot
+satisfies the control), or that a **backup policy** exists at all. Symmetrically, a volume
+backed up by other means — application backup, replication, a provider backup service, an
+external tool — is reported here: an accepted false positive, to be handled with a dated
+exemption rather than by disabling the control.
+
+This control therefore takes no part in any "backup compliant" claim. Its wording says so, in
+both languages, and the reference records it in the control description.
+
+### Secret detection has confidence levels, not certainty
+
+Generic heuristics (`password=…`, `api_key=…`) cannot tell `password=changeme123456` from a
+real secret. Each finding carries `labels.confidence` (`high` | `medium` | `low`) so a
+pipeline can triage, and the reporting threshold is configurable. Raising it is a relaxation:
+"no cleartext secret" cannot be proven once you have chosen not to look at part of what was
+found, so the CLD-CMP-9 mapping is dropped and the report says so. The detected value never
+appears, at any level.
+
+### A relaxed setting removes the mapping, not the measurement
+
+A control whose configuration falls outside its normative constraint keeps its status: it was
+genuinely evaluated, against a lower bar. What it loses are its `references` — it no longer
+claims to cover CIS, ISO or SecNumCloud. Pépin cannot tell you whether your own bar is
+appropriate for your context; it can only refuse to let a lowered bar keep a badge it no
+longer earns. See [Configuring controls](guides/control-configuration.md).
+
 ## 5 — requirements a scanner cannot answer
 
 Some SCSL, SecNumCloud and ISO requirements are about organisation, contracts, procedures or

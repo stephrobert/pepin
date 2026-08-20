@@ -318,6 +318,41 @@ Un résultat décrit un instant. Pépin n'a ni agent, ni mode veille, ni histori
 continue est un problème d'ordonnancement que vous résolvez en CI, et les bundles scellés sont
 ce que vous conservez.
 
+### Une snapshot récente n'est pas une politique de sauvegarde
+
+`blockstorage_volume_snapshots_exist` mesure une chose : un volume en usage a-t-il, dans la
+fenêtre configurée (7 jours par défaut), au moins une snapshot dont l'état natif la dit
+terminée ? L'état est vérifié, pas seulement la date.
+
+Il ne prouve pas que la snapshot soit **restaurable** — aucune restauration n'est tentée —,
+qu'elle soit **complète** au sens applicatif, qu'une **rétention** soit respectée (une seule
+snapshot satisfait le contrôle), ni qu'une **politique de sauvegarde** existe. Symétriquement,
+un volume sauvegardé autrement — sauvegarde applicative, réplication, service de backup du
+fournisseur, outil externe — est signalé ici : un faux positif assumé, à traiter par une
+dérogation datée plutôt qu'en désactivant le contrôle.
+
+Ce contrôle ne participe donc à aucune affirmation « sauvegarde conforme ». Son libellé le dit,
+dans les deux langues, et le référentiel le consigne dans la description du contrôle.
+
+### La détection de secrets a des niveaux de confiance, pas des certitudes
+
+Les heuristiques génériques (`password=…`, `api_key=…`) ne distinguent pas
+`password=changeme123456` d'un vrai secret. Chaque finding porte `labels.confidence`
+(`high` | `medium` | `low`) pour qu'un pipeline puisse trier, et le seuil de signalement est
+configurable. Le relever est un assouplissement : « aucun secret en clair » ne se prouve plus
+dès lors qu'on a choisi de ne pas regarder une partie de ce qui a été trouvé, donc la
+correspondance CLD-CMP-9 tombe et le rapport le dit. La valeur détectée, elle, n'apparaît
+jamais, quel que soit le niveau.
+
+### Un réglage assoupli retire la correspondance, pas la mesure
+
+Un contrôle dont la configuration sort de sa contrainte normative garde son statut : il a bel
+et bien été évalué, contre une barre plus basse. Ce qu'il perd, ce sont ses `references` — il
+ne prétend plus couvrir CIS, ISO ni SecNumCloud. Pépin ne sait pas vous dire si votre propre
+barre convient à votre contexte ; il sait seulement refuser qu'une barre abaissée conserve un
+badge qu'elle ne mérite plus. Voir
+[Configurer les contrôles](guides/control-configuration.fr.md).
+
 ## 5 : les exigences auxquelles un scanner ne peut pas répondre
 
 Certaines exigences SCSL, SecNumCloud et ISO portent sur l'organisation, les contrats, les

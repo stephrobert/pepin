@@ -26,11 +26,11 @@ See [Exit codes](exit-codes.md).
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v3** |
+| `cli` | verbs, flags and exit codes | **v4** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
-| `bundle` | shape of the evidence bundle (files, roles, manifest) | **v2** |
-| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v3** |
+| `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v4** |
 <!-- /pepin:gen surface-versions -->
 
 "Frozen" means a test fails when the shape moves and its version has not: field paths and JSON
@@ -114,14 +114,24 @@ Frozen shape: `{"findings": [...], "summary": {...}}`.
 identifier, common to every provider. Both are stable across languages; `title`, `message` and
 `remediation` are translated.
 
-Two additive keys appear when they have something to say, and both exist so a pipeline can
+Three additive keys sit next to `findings` and `summary`, and they exist so a pipeline can
 read what it is accepting rather than infer it:
 
-- `exemptions` — present when `--exceptions` was given: which deviations were waived, by whom,
-  and until when.
+- `config` — **always present**: the digest of the effective control configuration, the
+  configuration itself, and, when a setting falls outside a normative constraint, the
+  `relaxations` and the `dropped_references` they cost. A default scan is never silent about
+  its policy: a reader must be able to verify that a scan ran under the expected settings, not
+  merely observe that it said nothing. See
+  [Configuring controls](../guides/control-configuration.md).
+- `exemptions` — present when `--exceptions` (or `--policy`) supplied waivers: which
+  deviations were waived, by whom, and until when.
 - `collection` — present when Pépin **measured** the inventory: the state of each collection
   unit, and the resource types the source carried that no spec projects. Its shape is described
   in [the normalized inventory](inventory.md#the-collection-state).
+
+A secret-detection finding also carries `labels.confidence` (`high` | `medium` | `low`), so a
+pipeline can triage generic heuristics apart from confirmed secrets without changing the scan.
+The detected value itself never appears, at any level.
 
 **What this format cannot tell you**: it lists deviations, so an empty `findings` array means
 "no deviation found", which covers both "the tenant is clean" and "nothing was collected". The
@@ -129,6 +139,33 @@ read what it is accepting rather than infer it:
 and for a compliance gate it does — read the exit code (3 means the scan does not establish
 compliance: nothing measured, or a scope only partially read), read `collection`, or use the
 assessment format.
+
+### `config` — always present
+
+```json
+{
+  "config": {
+    "policy_digest": "sha256:…",
+    "effective": { "tagging": { "…": "…" }, "snapshots": { "…": "…" }, "secrets": { "…": "…" } },
+    "relaxations": [
+      {
+        "control": "blockstorage_volume_snapshots_exist",
+        "parameter": "snapshots.max_age_days",
+        "constraint": "au_plus_le_defaut",
+        "default": "7 days",
+        "effective": "90 days",
+        "dropped_references": ["scsl:CLD-STO-3", "cis-v8:11.2", "iso-27001:A.8.13", "secnumcloud-3.2:12.5"]
+      }
+    ],
+    "dropped_references": ["cis-v8:11.2", "iso-27001:A.8.13", "scsl:CLD-STO-3", "secnumcloud-3.2:12.5"]
+  }
+}
+```
+
+`relaxations` and `dropped_references` are absent under the default profile. When they appear,
+the matching results in the `assessment` format have **lost their `references`** and carry
+`labels.config_relaxed`: the control was evaluated, but against a lower bar than the
+requirement it used to cite, so it no longer claims to cover it.
 
 ### `exemptions` — present only under `--exceptions`
 

@@ -129,6 +129,8 @@ d'un contrôle qui fait foi.
   [Formats de sortie](docs/reference/output-formats.fr.md) ·
   [Inventaire normalisé](docs/reference/inventory.fr.md).
 - Guides : [Remédiation](docs/guides/remediation.fr.md) ·
+  [Configurer les contrôles](docs/guides/control-configuration.fr.md) — le fichier de
+  politique, et ce qu'un assouplissement fait perdre ·
   [Le bundle de preuve](docs/guides/evidence-bundles.fr.md) ·
   [GitHub Actions](docs/guides/github-actions.fr.md) ·
   [GitLab CI](docs/guides/gitlab-ci.fr.md).

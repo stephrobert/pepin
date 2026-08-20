@@ -174,6 +174,93 @@ l'une ni l'autre appartient au `git log`.
   (`gh attestation verify` sans jeton) : ces tags ne doivent être épinglés par
   personne.
 
+- **Les contrôles deviennent réglables, et un réglage assoupli ne garde pas son badge.**
+  Quatre contrôles lisent désormais un fichier de politique : le profil d'étiquetage
+  obligatoire, la fenêtre de fraîcheur et les états acceptés d'une snapshot, le seuil de
+  détection de secrets. Chaque réglage est une poignée qui permet de fabriquer du vert :
+  chaque correspondance normative du référentiel porte donc les **contraintes sous
+  lesquelles elle vaut** (`config_requise`, quatre sens interprétables :
+  `au_plus_le_defaut`, `superset_du_defaut`, `sous_ensemble_du_defaut`,
+  `au_moins_aussi_strict_que_le_defaut`). Une
+  configuration qui sort d'une contrainte fait **perdre au contrôle ses `references`**
+  dans l'assessment — il cesse de prétendre couvrir CIS, ISO ou SecNumCloud — et
+  l'assouplissement apparaît en cinq endroits à la fois : le terminal (`CONFIGURATION
+  ASSOUPLIE`), les labels et la preuve de l'assessment, `--format json`
+  (`config.relaxations`), le bandeau de verdict, et le bundle scellé (`config.json` plus
+  une entrée `config` au manifeste, tous deux couverts par `checksums.txt`). Durcir un
+  réglage n'est pas un assouplissement et n'est signalé nulle part. `mise run validate`
+  refuse une contrainte qui nomme un réglage que le moteur de politique ne sait pas
+  évaluer. Voir `docs/guides/control-configuration.fr.md`.
+
+- **Un seul fichier de politique : `scan --policy`.** Il porte `controls:` (les réglages)
+  et `exceptions:` (les dérogations, format inchangé). `--exceptions` reste le nom
+  historique du même fichier et lit le même schéma : une invocation existante et un
+  fichier existant continuent de fonctionner. Les deux drapeaux sont **mutuellement
+  exclusifs**, parce que deux fichiers de politique sont deux fichiers qui divergeront.
+  Surface CLI v4.
+
+- **La détection de secrets porte un niveau de confiance.** Chaque finding de
+  `compute_instance_no_secrets_in_user_data` publie `labels.confidence` : `high` pour un
+  bloc PEM de clé privée, `medium` pour un préfixe reconnu au format attendu (`ghp_`,
+  `AKIA`, `SCW`, `EXO`, `glpat-`, JWT), `low` pour une heuristique générique
+  (`password=…`, `api_key=…`). Le seuil de signalement par défaut est `low` : tout est
+  signalé, exactement comme avant. La valeur détectée n'apparaît toujours jamais, quel
+  que soit le niveau, et cette propriété est désormais testée aux trois niveaux, sur le
+  message et sur la remédiation, dans les deux langues.
+
+- **L'inventaire évalué porte sa configuration.** L'enveloppe gagne `config`, la
+  configuration effective des contrôles, à côté de `evaluated_at` — l'`input.json` d'un
+  bundle scellé rejoue donc sous les réglages de son propre jour, et
+  `verify --re-derive` reste fidèle sans qu'on lui redonne le fichier de politique.
+  `--format json` publie `config.policy_digest` et `config.effective` sur **chaque**
+  scan, le défaut compris : un lecteur doit pouvoir vérifier qu'un scan a tourné sous les
+  réglages attendus, pas seulement constater qu'il n'a rien dit. Format de bundle v3.
+
+### Modifié
+
+- **`network_documented` vérifie enfin ce qu'il annonce.** La règle promettait
+  propriétaire, projet et environnement, et évaluait `count(tags) > 0` : un unique
+  `foo=bar` suffisait à déclarer un réseau documenté — une conformité affirmée sans avoir
+  été mesurée. Elle exige désormais les étiquettes qui documentent réellement (par défaut
+  `Owner, Project, Env`, configurables), et elle se tait quand l'attribut `tags` n'a pas
+  été collecté, là où elle signalait un écart. Le **code est inchangé** : il voyage dans
+  les `ruleId` SARIF, les assessments archivés et les fichiers de dérogations, où un
+  renommage transformerait du jour au lendemain une dérogation valide en dérogation
+  orpheline et ferait réapparaître l'écart qu'elle couvrait. Titre et description sont
+  réécrits dans les deux langues.
+
+- **La politique d'étiquetage obligatoire est configurable, et la comparaison est
+  indifférente aux conventions.** `governance_resource_required_tags` n'exige plus quatre
+  littéraux figés. La comparaison est insensible à la casse et aux séparateurs
+  (`cost-center` ≡ `CostCenter`), et les alias élargissent chaque nom logique (`team`
+  pour `Owner`, `environment` pour `Env`) : une organisation qui écrit `cost-center,
+  application, environment, team` n'est plus signalée comme non gouvernée. Les types de
+  ressources visés sont explicites et justifiés, et quatre types facturables entrent dans
+  le périmètre — `blockstorage_snapshot`, `compute_image`, `managed_database`,
+  `kubernetes_cluster` —, ce qui comble un faux négatif sur des services payants qui en
+  étaient exclus. Le profil livré est documenté comme une **recommandation, pas comme une
+  norme**.
+
+- **Le contrôle de fraîcheur des snapshots dit ce qu'il mesure, et ce qu'il ne prouve
+  pas.** `blockstorage_volume_snapshots_exist` vérifie désormais l'**état natif** de la
+  snapshot en plus de sa date : une snapshot en `error`, `pending` ou `creating` ne compte
+  plus comme une sauvegarde. Le délai est configurable (7 jours par défaut). Le titre
+  devient « Absence de snapshot récente et terminée », et la description énonce
+  franchement ce que le contrôle ne prouve pas — restaurabilité, complétude applicative,
+  rétention, existence d'une politique de sauvegarde. Le code est inchangé, pour la même
+  raison que ci-dessus. Ancré sur Outscale `Snapshot.State` et Exoscale
+  `block-storage-snapshot.state`, désormais projetés par les collecteurs. L'inventaire
+  normalisé gagne donc un attribut, ce qui est un changement de contrat : schéma
+  d'inventaire v4, dont la note consigne aussi la clé d'enveloppe `config` ajoutée
+  plus haut.
+
+- **`--strict` refuse aussi une correspondance normative tombée.** Il refusait déjà une
+  couverture nulle, des écarts medium/low restants et un fichier de dérogations périmé ;
+  il rend maintenant `3` quand un réglage assoupli a coûté sa correspondance à un
+  contrôle. Aucun nouveau code de sortie : l'incomplétude et l'assouplissement disent la
+  même chose — ne lisez pas ce scan comme un feu vert — et les deux occupent déjà la
+  place de `3`.
+
 ## [0.2.0] - 2026-08-19
 
 ### Ajouté

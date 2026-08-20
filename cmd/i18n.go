@@ -122,9 +122,12 @@ func localize() {
 	setUsage(scanCmd, "exceptions", tr(
 		"`fichier` YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme",
 		"exemptions YAML `file` (control, justification, expires_at, owner, approved_by) — a covered deviation becomes exempted, never compliant"))
+	setUsage(scanCmd, "policy", tr(
+		"`fichier` YAML de politique : réglages des contrôles (`controls:`) ET dérogations (`exceptions:`) — un seul fichier, nom moderne de --exceptions",
+		"policy YAML `file`: control settings (`controls:`) AND exemptions (`exceptions:`) — one single file, the modern name of --exceptions"))
 	setUsage(scanCmd, "strict", tr(
-		"porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance) ou s'il subsiste un écart medium/low",
-		"strict CI gate: non-zero exit code if no control is measured (governance aside) or if medium/low deviations remain"))
+		"porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance), s'il subsiste un écart medium/low, ou si un réglage assoupli a fait tomber une correspondance normative",
+		"strict CI gate: non-zero exit code if no control is measured (governance aside), if medium/low deviations remain, or if a relaxed setting dropped a normative mapping"))
 	setUsage(scanCmd, "redact", tr(
 		"caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive",
 		"redact the sensitive values (user-data, policies) from the bundle's input.json — for sharing with a third party; INCOMPATIBLE with verify --re-derive"))

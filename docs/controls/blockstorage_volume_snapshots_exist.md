@@ -4,7 +4,7 @@
 
 # `blockstorage_volume_snapshots_exist`
 
-**No recent backup**
+**No recent, completed snapshot**
 
 [Back to the catalogue](index.md)
 
@@ -22,7 +22,7 @@
 
 ## The risk
 
-A data volume in use has no recent snapshot or backup: restoring after an incident is not guaranteed.
+WHAT IS MEASURED: does a volume in use have, within the configured window (7 days by default, `controls.snapshots.max_age_days`), at least one snapshot whose native state says it is COMPLETED? The state is checked, not just the date: a failed or in-progress snapshot restores nothing. WHAT THIS CONTROL DOES NOT PROVE: neither that the snapshot is restorable (no restore is attempted), nor that it is complete in the application sense, nor that a retention is honoured, nor that a backup policy exists. A volume backed up by other means (application backup, replication, provider service) will be reported here: an accepted false positive, to be handled with a dated exemption rather than by disabling the control. This control therefore takes no part in a "backup compliant" claim.
 
 This description comes from the reference: it is the text the report quotes, in the
 reader's language.
@@ -83,7 +83,7 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 
 ## How to remediate
 
-Set up a regular backup policy with restore testing; encrypt the backups and apply a documented retention.
+Set up an automated, regular snapshot schedule and test the restore periodically. If the volume is backed up by other means, file a dated, justified exemption rather than disabling the control.
 
 | Provider | Deployable setup |
 |---|---|

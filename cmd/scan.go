@@ -46,7 +46,8 @@ var (
 	scanKubeconfig string
 	scanS3Endpoint string
 	scanSeal       string
-	scanExceptions string // fichier de dérogations (versionné, revu comme du code)
+	scanExceptions string // nom HISTORIQUE du fichier de politique (dérogations seules)
+	scanPolicy     string // fichier de politique : réglages des contrôles + dérogations
 	scanRedact     bool   // caviarder les valeurs sensibles de l'input.json embarqué
 	scanStrict     bool   // porte CI stricte : échec sur couverture nulle ou écart medium/low
 	scanTimestamp  string // instant d'évaluation (RFC3339 UTC), partagé input.evaluated_at + Run.Timestamp
@@ -82,13 +83,14 @@ var scanCmd = &cobra.Command{
 		// incomplet arrête le scan ici, plutôt que de produire un rapport qui tairait la
 		// moitié de ses exceptions. Les champs obligatoires se vérifient au chargement,
 		// jamais au moment de l'appliquer.
-		var exPolicy exempt.Policy
-		if scanExceptions != "" {
-			pol, lerr := exempt.Load(scanExceptions)
-			if lerr != nil {
-				return lerr
-			}
-			exPolicy = pol
+		// La POLITIQUE du scan tient dans un seul fichier, deux sections : les
+		// réglages des contrôles et les dérogations (cf. cmd/policy.go). Elle est
+		// chargée et validée AVANT toute collecte pour la même raison que les
+		// dérogations l'étaient déjà : un fichier à moitié compris produirait un
+		// rapport dont personne ne saurait dire sous quelle exigence il a été rendu.
+		cfg, exPolicy, perr := loadPolicy(scanPolicy, scanExceptions)
+		if perr != nil {
+			return perr
 		}
 
 		opts := scanReportOptions(name, scanSource(path))
@@ -114,6 +116,18 @@ var scanCmd = &cobra.Command{
 		if m, ok := input.(map[string]any); ok {
 			if _, present := m["evaluated_at"]; !present {
 				m["evaluated_at"] = scanTimestamp
+			}
+			// La CONFIGURATION EFFECTIVE voyage elle aussi dans l'input, et pour la
+			// même raison : le moteur partagé ne passe que l'input aux règles, et une
+			// configuration laissée en mémoire ne serait pas rejouable. Portée par
+			// l'input.json d'un bundle, elle rend `verify --re-derive` fidèle sans
+			// qu'on ait à redonner le fichier de politique. Elle n'est PAS écrasée si
+			// elle est déjà présente (rejeu d'un input.json scellé) : sinon le rejeu
+			// appliquerait la politique du jour à un dossier d'hier.
+			if _, present := m["config"]; !present {
+				m["config"] = cfg.Resolved
+			} else {
+				cfg.Resolved = replayedConfig(m["config"], cfg.Resolved)
 			}
 		}
 
@@ -174,6 +188,11 @@ var scanCmd = &cobra.Command{
 		// qu'un `fail`, et ne produisent jamais un `pass`. L'instant de référence est
 		// celui du scan (pas l'horloge), pour qu'un bundle rejoué rende le même verdict.
 		asmt, exReport := exempt.Apply(asmt, exPolicy, evaluatedAt(), subjectsOf(input), knownControls())
+		// Les ASSOUPLISSEMENTS, en dernière passe : un contrôle réglé sous la barre
+		// de son exigence perd la correspondance normative qu'il ne tient plus. En
+		// dernier parce que la mention doit survivre à tout ce qui précède —
+		// dégradation et dérogations réécrivent l'un le motif, l'autre le statut.
+		asmt = assess.WithRelaxations(asmt, cfg.Relaxations)
 		for _, notice := range exReport.Notices() {
 			_, _ = fmt.Fprintln(os.Stderr, tr("pepin: ⚠ ", "pepin: ⚠ ")+notice)
 		}
@@ -197,6 +216,11 @@ var scanCmd = &cobra.Command{
 			if eerr != nil {
 				return eerr
 			}
+			cextras, cerr := bundleConfig(cfg)
+			if cerr != nil {
+				return cerr
+			}
+			extras.Config, extras.ConfigSummary = cextras.Config, cextras.ConfigSummary
 			cs, err := assess.WriteBundle(scanSeal, asmt, inputJSON, extras)
 			if err != nil {
 				return err
@@ -218,11 +242,11 @@ var scanCmd = &cobra.Command{
 		enrichFromReferentiel(findings)
 		res := scoring.Summarize(findings)
 		gate := scoring.Summarize(open)
-		opts.SummaryHeadline = verdictHeadline(res, gate, asmt, exReport, asmt.Run.Source, len(degraded))
+		opts.SummaryHeadline = verdictHeadline(res, gate, asmt, exReport, asmt.Run.Source, len(degraded), len(cfg.Relaxations))
 
 		switch scanFormat {
 		case "json":
-			if err := renderJSON(findings, res, exReport, coll); err != nil {
+			if err := renderJSON(findings, res, exReport, coll, cfg); err != nil {
 				return err
 			}
 		case "assessment":
@@ -247,6 +271,7 @@ var scanCmd = &cobra.Command{
 		default:
 			_ = screport.Terminal(os.Stdout, opts, findings, scscoring.Summarize(findings)) // best-effort render
 			renderExemptions(os.Stdout, exReport)
+			renderRelaxations(os.Stdout, cfg)
 		}
 		// Portée prestataire/commanditaire : obligatoire pour l'opposabilité (un rapport pepin
 		// ne prouve pas une qualification, seulement la posture d'un tenant).
@@ -297,6 +322,15 @@ var scanCmd = &cobra.Command{
 			os.Exit(exitStrict)
 		}
 		if scanStrict && exReport.Stale() {
+			os.Exit(exitStrict)
+		}
+		// --strict refuse aussi une correspondance normative TOMBÉE. Le contrôle a
+		// bien été évalué, mais contre une barre plus basse que celle de l'exigence
+		// citée : un pipeline qui vend de la conformité ne doit pas rendre 0 dessus.
+		// Le code 3 dit déjà « ne lisez pas ce scan comme un feu vert » ; c'est
+		// exactement ce qu'un assouplissement impose de lire, et il n'y a
+		// délibérément pas de cinquième code (cf. surface.go).
+		if scanStrict && len(cfg.Relaxations) > 0 {
 			os.Exit(exitStrict)
 		}
 		return nil
@@ -552,10 +586,14 @@ func init() {
 	scanCmd.Flags().StringVar(&scanS3Endpoint, "s3-endpoint", "", "endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)")
 	scanCmd.Flags().StringVar(&scanSeal, "seal", "", "écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier")
 	scanCmd.Flags().StringVar(&scanExceptions, "exceptions", "", "`fichier` YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme")
-	scanCmd.Flags().BoolVar(&scanStrict, "strict", false, "porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance) ou s'il subsiste un écart medium/low")
+	scanCmd.Flags().StringVar(&scanPolicy, "policy", "", "`fichier` YAML de politique : réglages des contrôles (`controls:`) ET dérogations (`exceptions:`) — un seul fichier, nom moderne de --exceptions")
+	scanCmd.Flags().BoolVar(&scanStrict, "strict", false, "porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance), s'il subsiste un écart medium/low, ou si un réglage assoupli a fait tomber une correspondance normative")
 	scanCmd.Flags().BoolVar(&scanRedact, "redact", false, "caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive")
 	// --live et --terraform sont exclusifs : sinon loadInput privilégie le live et ignore le plan en silence.
 	scanCmd.MarkFlagsMutuallyExclusive("live", "terraform")
+	// --policy et --exceptions désignent le MÊME fichier, sous deux noms. En
+	// accepter deux différents, c'est garantir que l'un des deux dérivera.
+	scanCmd.MarkFlagsMutuallyExclusive("policy", "exceptions")
 }
 
 // enrichFromReferentiel rattache chaque finding à l'index SCSL. Les règles Rego
@@ -1060,7 +1098,7 @@ func docURL(f finding.Finding) string {
 // un scan où RIEN n'a été évalué (collecte vide, gardes de capacité) ne doit jamais s'afficher
 // « CONFORME », et un verdict sur un plan Terraform est qualifié « périmètre déclaré » (état
 // planifié, pas configuration effective). Le code de sortie reste piloté par res.Conforme.
-func verdictHeadline(res scoring.Result, gate scoring.Result, asmt assessment.Assessment, ex exempt.Report, source string, degraded int) string {
+func verdictHeadline(res scoring.Result, gate scoring.Result, asmt assessment.Assessment, ex exempt.Report, source string, degraded, relaxed int) string {
 	// `evaluated` ne compte QUE des contrôles mesurés sur des ressources collectées : les
 	// contrôles de gouvernance passent sur des faits AUTO-DÉCLARÉS (souveraineté) et ne doivent
 	// pas empêcher INDÉTERMINÉ sur un inventaire par ailleurs vide (sinon un tenant vidé de ses
@@ -1122,6 +1160,16 @@ func verdictHeadline(res scoring.Result, gate scoring.Result, asmt assessment.As
 			"Verdict : INCOMPLET — %d contrôle(s) non évaluables faute d'une collecte complète, %d écart(s) medium/low sur ce qui a pu être lu",
 			"Verdict: INCOMPLETE — %d control(s) are not evaluable because the collection is incomplete, %d medium/low deviation(s) on what could be read"),
 			degraded, res.Medium+res.Low)
+	case relaxed > 0:
+		// Aucun écart critique/haut, mais un ou plusieurs contrôles ont été évalués
+		// sous une barre PLUS BASSE que celle de l'exigence qu'ils citent. Afficher
+		// « conforme » ici serait le faux vert le plus coûteux de tous : celui qu'on
+		// a soi-même réglé. Le bandeau nomme donc le nombre de correspondances
+		// tombées, et le détail suit sous le rapport.
+		return fmt.Sprintf(tr(
+			"Verdict : SOUS CONFIGURATION ASSOUPLIE — %d contrôle(s) évalué(s) sous une exigence abaissée, leur correspondance normative n'est pas tenue (%d écart(s) medium/low)",
+			"Verdict: UNDER RELAXED CONFIGURATION — %d control(s) assessed against a lowered requirement, their normative mapping does not hold (%d medium/low deviation(s))"),
+			relaxed, res.Medium+res.Low)
 	case res.Medium+res.Low > 0:
 		// Pas d'écart critique/haut, MAIS des écarts medium/low subsistent : ne pas laisser lire « conforme ».
 		return fmt.Sprintf(tr(
@@ -1176,7 +1224,7 @@ func pepinBanner() []string {
 	return lines
 }
 
-func renderJSON(findings []finding.Finding, res scoring.Result, ex exempt.Report, coll model.Collection) error {
+func renderJSON(findings []finding.Finding, res scoring.Result, ex exempt.Report, coll model.Collection, cfg scanConfig) error {
 	out := map[string]any{"findings": findings, "summary": res}
 	// L'état de collecte est une SURFACE ANALYSABLE, au même titre que les
 	// dérogations : un pipeline qui accepte le code de sortie d'une collecte
@@ -1191,6 +1239,12 @@ func renderJSON(findings []finding.Finding, res scoring.Result, ex exempt.Report
 	if len(ex.Records) > 0 {
 		out["exemptions"] = ex
 	}
+	// La CONFIGURATION est une surface analysable elle aussi, et c'est celle qui
+	// décide de ce que le rapport a le droit d'affirmer : un pipeline doit pouvoir
+	// lire l'empreinte de la politique appliquée et, surtout, les correspondances
+	// normatives qu'elle a fait tomber. Toujours présente : une configuration par
+	// défaut est une information, pas un silence.
+	out["config"] = jsonConfig(cfg)
 	b, err := json.MarshalIndent(out, "", "  ")
 	if err != nil {
 		return err

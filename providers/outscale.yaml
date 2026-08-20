@@ -342,6 +342,7 @@ collecte:
         snapshot_id: SnapshotId
         volume_id: VolumeId
         creation_date: CreationDate
+        state: State
         global_permission: PermissionsToCreateVolume.GlobalPermission
   
     # Politiques EIM : ReadPolicies puis ReadPolicyVersion (document JSON → statements).
@@ -601,6 +602,10 @@ contrat:
         snapshot_id: SnapshotId
         volume_id: VolumeId
         creation_date: CreationDate
+        state: 'State ∈ in-queue | pending | completed | error | deleting (schéma Snapshot de l''API
+          OUTSCALE, osc-api/outscale.yaml). Seul « completed » désigne une snapshot TERMINÉE, donc
+          exploitable : les autres sont en file, en cours, en erreur ou en suppression. Lu par
+          blockstorage_volume_snapshots_exist (CLD-STO-3), qui vérifie l''état et pas seulement la date.'
         global_permission: PermissionsToCreateVolume.GlobalPermission
     object_storage_bucket:
       etat: verifie

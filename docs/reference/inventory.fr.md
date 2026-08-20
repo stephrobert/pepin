@@ -12,7 +12,7 @@ gelée, avec les mêmes égards que la surface CLI.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v3
+pepin-inventory/v4
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -140,7 +140,7 @@ code.
 | `api_access_policy` | `id` `max_access_key_expiration_seconds` `require_trusted_env` |
 | `api_access_rule` | `api_access_rule_id` `ca_ids` `cns` `ip_ranges` |
 | `api_access_summary` | `id` `rule_count` |
-| `blockstorage_snapshot` | `creation_date` `global_permission` `snapshot_id` `volume_id` |
+| `blockstorage_snapshot` | `creation_date` `global_permission` `snapshot_id` `state` `volume_id` |
 | `blockstorage_volume` | `encrypted` `state` `tags` `volume_id` |
 | `compute_image` | `image_id` `public` `state` `tags` |
 | `compute_instance` | `deletion_protection` `nic_public_ips` `public_ip` `security_group_ids` `state` `tags` `user_data` `vm_id` |

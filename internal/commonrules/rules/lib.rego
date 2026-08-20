@@ -218,9 +218,6 @@ sensitive_udp_ports := {
 	5353, # mDNS
 }
 
-# required_tags — étiquettes de gouvernance obligatoires.
-required_tags := ["CostCenter", "Project", "Env", "Owner"]
-
 # provider_of — provider d'une ressource (pour `labels.provider` des règles
 # communes ; tiré de la ressource, jamais codé en dur).
 provider_of(r) := object.get(r, "provider", "")
@@ -267,3 +264,135 @@ region_known(p, reg) if reg in _eu_regions[p]
 region_known(p, reg) if reg in _trusted_regions[p]
 
 region_known(p, reg) if reg in _noneu_regions[p]
+
+# ─────────────────────────── Configuration des contrôles ───────────────────────────
+#
+# Quatre contrôles sont RÉGLABLES (issues #47, #48, #49, #61). Leur configuration
+# effective est injectée par `pepin scan` dans `input.config`, exactement comme
+# `input.evaluated_at` : le moteur partagé ne passe que l'input, et une
+# configuration portée par l'input est scellée dans l'input.json du bundle — donc
+# rejouée à l'identique par `verify --re-derive`.
+#
+# Chaque lecture porte son DÉFAUT ici. Ce défaut a deux emplois, et un seul est
+# celui du produit :
+#
+#   - `opa test` évalue les règles sans passer par le scan : sans défaut local,
+#     tous les tests de règles deviendraient des tests de configuration ;
+#   - une règle externe (--policy-dir) ou un input.json d'une version antérieure
+#     n'apportent pas de `config` : le repli est alors le comportement d'avant.
+#
+# Le défaut Rego et le profil par défaut Go (internal/policy) doivent donc dire la
+# MÊME chose. Ce n'est pas laissé à la relecture : TestDefaultConfigMatchesTheRegoFallback
+# scanne chaque fixture du dépôt avec et sans configuration injectée et exige des
+# findings identiques.
+
+_config := object.get(input, "config", {})
+
+_config_tagging := object.get(_config, "tagging", {})
+
+_config_snapshots := object.get(_config, "snapshots", {})
+
+_config_secrets := object.get(_config, "secrets", {})
+
+# normalize_tag_key — forme COMPARABLE d'un nom d'étiquette : minuscules, sans
+# séparateur. `CostCenter`, `cost-center`, `cost_center` et `Cost Center` s'y
+# réduisent tous à `costcenter`. Une convention d'écriture n'est pas une norme :
+# refuser `cost-center` à qui n'écrit pas `CostCenter` est un faux positif, et un
+# outil qui crie au loup sur une typographie finit désactivé.
+normalize_tag_key(k) := lower(regex.replace(k, `[-_. /:]`, ""))
+
+# required_tags_billable / required_tags_network — les étiquettes exigées, sous la
+# forme [{name, keys}] : le nom LOGIQUE (celui que lit un humain dans le message)
+# et les écritures acceptées, déjà normalisées côté Go.
+required_tags_billable := object.get(_config_tagging, "required", _default_required_billable)
+
+required_tags_network := object.get(_config_tagging, "network_required", _default_required_network)
+
+# tagged_resource_types — les types de ressources sur lesquels l'étiquetage de
+# gouvernance est exigé (critère : facturable ET étiquetable, cf. internal/policy).
+tagged_resource_types := object.get(_config_tagging, "resource_types", _default_tagged_types)
+
+# missing_required_tags — les noms logiques d'étiquettes qui MANQUENT sur la liste
+# de tags donnée. Une étiquette présente mais vide ne documente rien : elle compte
+# comme manquante, comme dans has_tag.
+missing_required_tags(tags, required) := [req.name |
+	some req in required
+	not _tag_satisfied(tags, req)
+]
+
+_tag_satisfied(tags, req) if {
+	some t in tags
+	normalize_tag_key(object.get(t, "key", "")) in req.keys
+	object.get(t, "value", "") != ""
+}
+
+# required_tags_label — la liste des étiquettes exigées, telle qu'une remédiation
+# la cite. Dérivée de la politique EFFECTIVE et non écrite en dur : une
+# remédiation qui nommerait quatre étiquettes figées serait fausse dès qu'une
+# organisation en déclare d'autres — et une remédiation fausse coûte plus cher
+# qu'une remédiation absente, parce qu'elle est suivie.
+required_tags_label(required) := concat(", ", [req.name | some req in required])
+
+# snapshot_max_age_days / snapshot_max_age_ns — la fenêtre de fraîcheur d'une
+# snapshot. Les deux formes existent parce que le message la cite en JOURS (ce
+# qu'un humain règle) et que la comparaison se fait en nanosecondes (ce que
+# time.parse_rfc3339_ns rend).
+snapshot_max_age_days := object.get(_config_snapshots, "max_age_days", _default_snapshot_max_age_days)
+
+snapshot_max_age_ns := ((snapshot_max_age_days * 24) * 3600) * 1000000000
+
+# snapshot_accepted_states — les états NATIFS d'une snapshot réellement
+# exploitable. Ancrés sur le contrat de chaque API, jamais devinés :
+#   Outscale Snapshot.State ∈ in-queue|pending|completed|error|deleting
+#     (osc-api/outscale.yaml, schéma Snapshot) → `completed` ;
+#   Exoscale block-storage-snapshot.state ∈ partially-destroyed|destroying|
+#     creating|created|promoting|error|destroyed|allocated
+#     (openapi-v2.exoscale.com, schéma block-storage-snapshot) → `created`.
+snapshot_accepted_states := object.get(_config_snapshots, "accepted_states", _default_snapshot_states)
+
+# secret_min_confidence — le niveau de confiance minimal qu'une détection doit
+# porter pour être signalée.
+secret_min_confidence := object.get(_config_secrets, "min_confidence", _default_min_confidence)
+
+# confidence_rank — rang ordonné d'un niveau de confiance. Un niveau inconnu vaut
+# le rang le plus bas : une détection ne se perd pas parce qu'on n'a pas su lire
+# son étiquette.
+confidence_rank(level) := r if {
+	ranks := {"low": 0, "medium": 1, "high": 2}
+	r := object.get(ranks, level, 0)
+}
+
+# meets_confidence — la détection atteint le seuil configuré.
+meets_confidence(level) if confidence_rank(level) >= confidence_rank(secret_min_confidence)
+
+# ── Le profil PAR DÉFAUT, répliqué pour `opa test` (cf. commentaire d'en-tête) ──
+
+_default_required_billable := [
+	{"name": "CostCenter", "keys": ["billing", "billingcode", "cc", "costcenter"]},
+	{"name": "Project", "keys": ["app", "application", "project", "service"]},
+	{"name": "Env", "keys": ["env", "environment", "stage"]},
+	{"name": "Owner", "keys": ["contact", "owner", "responsible", "team"]},
+]
+
+_default_required_network := [
+	{"name": "Owner", "keys": ["contact", "owner", "responsible", "team"]},
+	{"name": "Project", "keys": ["app", "application", "project", "service"]},
+	{"name": "Env", "keys": ["env", "environment", "stage"]},
+]
+
+_default_tagged_types := [
+	"blockstorage_snapshot",
+	"blockstorage_volume",
+	"compute_image",
+	"compute_instance",
+	"kubernetes_cluster",
+	"load_balancer",
+	"managed_database",
+	"object_storage_bucket",
+]
+
+_default_snapshot_max_age_days := 7
+
+_default_snapshot_states := ["completed", "created"]
+
+_default_min_confidence := "low"
