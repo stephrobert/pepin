@@ -23,6 +23,18 @@ belongs in `git log`.
 
 ### Added
 
+- **A Terraform finding carries its origin: file, line, module.** `--format json`
+  gains `labels.tf_file`, `labels.tf_line` and `labels.tf_module`; the SARIF result
+  gains a `physicalLocation` with a `region`, which is what makes a forge annotate the
+  guilty `resource` block instead of the plan file. The module is read off the resource
+  address; the file and the line are **measured** in the `.tf` sources beside the plan,
+  because `terraform show -json` carries neither — verified in Terraform's own source,
+  where a resource's configuration representation holds `address`, `type`, `name` and
+  `expressions` and nothing about the document. When the sources are absent, the module
+  is remote, or the same block header appears twice, the origin is simply absent: a
+  wrong line sends someone to fix the wrong place, and it is believed. On a live
+  collection the notion does not exist and no label is set.
+
 - **Minimum permissions are declared in the descriptor, not only in prose.** Each
   provider descriptor now carries a `permissions:` block, one entry per collection
   unit: the grant in the provider's native vocabulary, the official source that
@@ -151,6 +163,9 @@ belongs in `git log`.
   and the usage rules in `docs/brand.md`. Both READMEs open on it.
 
 ### Changed
+
+- **Inventory schema `pepin-inventory/v3`.** A resource gains `source` (`file`, `line`,
+  `module`), present only where it could be measured. Pure addition.
 
 - **Exit code `3` widens from "nothing measured" to "the scan does not establish
   compliance".** It now also fires when the collection could not read part of the

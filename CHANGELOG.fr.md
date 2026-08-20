@@ -24,6 +24,19 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Un finding Terraform porte son origine : fichier, ligne, module.** `--format json`
+  gagne `labels.tf_file`, `labels.tf_line` et `labels.tf_module` ; le résultat SARIF
+  gagne un `physicalLocation` avec sa `region`, ce qui fait qu'une forge annote le bloc
+  `resource` fautif plutôt que le fichier de plan. Le module se lit dans l'adresse de
+  la ressource ; le fichier et la ligne sont **mesurés** dans les sources `.tf` posées à
+  côté du plan, parce que `terraform show -json` ne porte ni l'un ni l'autre — vérifié
+  dans la source de Terraform elle-même, où la représentation `configuration` d'une
+  ressource contient `address`, `type`, `name`, `expressions`, et rien sur le document.
+  Quand les sources sont absentes, que le module est distant ou que le même en-tête de
+  bloc apparaît deux fois, l'origine est simplement absente : une ligne fausse envoie
+  corriger le mauvais endroit, et on la croit. Sur une collecte live, la notion n'existe
+  pas et aucun label n'est posé.
+
 - **Les permissions minimales sont déclarées au descripteur, pas seulement en prose.**
   Chaque descripteur de fournisseur porte désormais un bloc `permissions:`, une entrée
   par unité de collecte : le droit dans le vocabulaire natif du fournisseur, la source
@@ -160,6 +173,9 @@ l'une ni l'autre appartient au `git log`.
   Les deux README s'ouvrent dessus.
 
 ### Modifié
+
+- **Schéma d'inventaire `pepin-inventory/v3`.** Une ressource gagne `source` (`file`,
+  `line`, `module`), présent seulement là où il a pu être mesuré. Ajout pur.
 
 - **Le code de sortie `3` s'élargit de « rien n'a été mesuré » à « le scan n'établit
   pas la conformité ».** Il se déclenche désormais aussi quand la collecte n'a pas pu

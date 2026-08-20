@@ -258,6 +258,23 @@ champ lors d'une exécution mesurée ». Si les deux divergeaient sur votre tena
 dirait par un `not-evaluated` accompagné de son motif, jamais par un vert silencieux ; mais la
 matrice, elle, est une déclaration du descripteur, pas une preuve.
 
+### Le fichier et la ligne d'un finding exigent les sources `.tf` à côté du plan
+
+`terraform show -json` ne porte ni fichier ni ligne : la représentation `configuration` d'une
+ressource contient `address`, `type`, `name` et `expressions`, et rien sur le document dont elle
+provient. Pépin *mesure* donc l'origine dans les `.tf` posés à côté du plan. Trois conséquences,
+et aucune n'est contournée :
+
+- Un plan produit ailleurs et transmis seul obtient un **module**, sans fichier ni ligne.
+- Un module tiré d'un registre ou d'un dépôt git n'a aucun répertoire dans l'arbre de travail :
+  ses ressources gardent leur module, et rien de plus.
+- Un en-tête `resource "type" "nom"` écrit sur plusieurs lignes, ou déclaré dans un fichier
+  `.tf.json`, n'est pas trouvé ; l'origine est alors absente plutôt qu'approximative.
+
+Aucun drapeau ne permet de désigner un autre arbre de sources, et c'est délibéré : résoudre un
+en-tête de bloc contre un arbre d'où le plan ne vient pas produirait une ligne plausible et
+fausse, ce qui est pire que pas de ligne du tout.
+
 ### Rien n'est mesuré entre deux runs
 
 Un résultat décrit un instant. Pépin n'a ni agent, ni mode veille, ni historique. La posture

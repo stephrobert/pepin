@@ -255,6 +255,23 @@ this field during a measured run". Should the two diverge on your tenant, the sc
 a `not-evaluated` and its reason, never with a silent green — but the matrix itself is a
 statement of intent by the descriptor, not evidence.
 
+### A finding's file and line need the `.tf` sources beside the plan
+
+`terraform show -json` carries no file and no line — the configuration representation of a
+resource holds `address`, `type`, `name` and `expressions`, and nothing about the document it
+came from. Pépin therefore *measures* the origin in the `.tf` files sitting next to the plan.
+Three consequences, and none of them is worked around:
+
+- A plan produced elsewhere and handed over alone gets a **module** and no file or line.
+- A module pulled from a registry or a git repository has no directory in the working tree: its
+  resources keep their module, and nothing more.
+- A `resource "type" "name"` header written across several lines, or declared in a `.tf.json`
+  file, is not found; the origin is absent rather than approximate.
+
+There is no flag to point at a different source tree, and that is deliberate: resolving a block
+header against a tree the plan did not come from would produce a plausible and wrong line, which
+is worse than no line at all.
+
 ### Nothing is measured between two runs
 
 A result describes an instant. Pépin has no agent, no watch mode and no history. Continuous

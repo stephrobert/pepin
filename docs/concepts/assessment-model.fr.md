@@ -216,7 +216,9 @@ ressources, pas une liste à cocher de contrôles.
   },
   "labels": {
     "category": "security",
-    "provider": "scaleway"
+    "provider": "scaleway",
+    "tf_file": "main.tf",
+    "tf_line": "81"
   },
   "references": [
     {

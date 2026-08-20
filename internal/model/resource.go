@@ -19,6 +19,30 @@ type Resource struct {
 	Region     string         `json:"region,omitempty"`
 	Attributes map[string]any `json:"attributes"`
 	Provenance Provenance     `json:"provenance,omitempty"`
+	// Source situe la ressource dans le CODE qui l'a déclarée (plan Terraform
+	// seulement). Absente sur une collecte live : l'information n'y existe pas, et
+	// son absence est propre — elle n'est ni inventée, ni cause d'échec.
+	Source *SourceRef `json:"source,omitempty"`
+}
+
+// SourceRef est l'origine d'une ressource dans le code d'infrastructure : le
+// fichier, la ligne et le module qui la déclarent.
+//
+// Ce qu'elle transforme, et pourquoi elle mérite d'être portée jusqu'au rapport :
+// un finding qui désigne « scaleway_object_bucket_acl.backups » oblige à retrouver
+// à la main quel fichier et quel module corriger, plusieurs fois par finding sur
+// un dépôt d'infrastructure réel. Le parcours devient « trouver, comprendre,
+// corriger » au lieu de « chercher, trouver, comprendre, corriger ».
+//
+// Les trois champs sont indépendants et facultatifs. `Module` est presque toujours
+// connu (il se lit dans l'adresse de la ressource) ; `File` et `Line` supposent que
+// les sources HCL aient pu être lues. Une origine partielle est rendue telle
+// quelle : mieux vaut « module.production_network, fichier inconnu » qu'un fichier
+// deviné.
+type SourceRef struct {
+	File   string `json:"file,omitempty"`
+	Line   int    `json:"line,omitempty"`
+	Module string `json:"module,omitempty"`
 }
 
 // Posture est l'export d'inventaire soumis à l'évaluation.

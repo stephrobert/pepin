@@ -12,7 +12,7 @@ with the same regard as the CLI surface.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v2
+pepin-inventory/v3
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -87,7 +87,12 @@ them. It is there so that "Pépin saw ten resources and can read six of them" is
 ```
 
 - `provider`, `type`, `id`, `name`, `attributes` are always present.
-- `region` and `provenance` are present when they carry something.
+- `region`, `provenance` and `source` are present when they carry something.
+- `source` is the **origin in the infrastructure code**: `file`, `line` and `module`. It exists
+  only for the Terraform source, and only as far as it can be measured — the module is read off
+  the resource address, the file and the line are found in the `.tf` sources beside the plan.
+  A live collection carries none of it, and none is invented. See
+  [Terraform plan vs live collection](../concepts/terraform-vs-live.md#where-a-finding-comes-from).
 - `attributes` is a **flat** map from attribute name to JSON value. This is what the Rego rules
   read, and it is why one rule can be common to every cloud.
 - `provenance` is indexed by the **same** attribute names, never nested inside a value. See

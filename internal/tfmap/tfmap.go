@@ -106,9 +106,28 @@ func Apply(spec Spec, resources []tfparse.Resource) model.Inventory {
 				if n, ok := res.Values["name"].(string); ok && n != "" {
 					name = n
 				}
-				inv.Resources = append(inv.Resources, model.Resource{Provider: spec.Provider, Type: rs.Type, ID: id, Name: name, Region: region, Attributes: attrs, Provenance: prov})
+				inv.Resources = append(inv.Resources, model.Resource{
+					Provider: spec.Provider, Type: rs.Type, ID: id, Name: name, Region: region,
+					Attributes: attrs, Provenance: prov,
+					// L'origine voyage avec la ressource : une spec `items` éclate un bloc
+					// répété en N ressources normalisées, qui viennent toutes du MÊME bloc
+					// HCL. Leur donner la même origine est fidèle — c'est bien ce bloc qu'il
+					// faut corriger.
+					Source: sourceRefOf(res.Origin),
+				})
 			}
 		}
 	}
 	return inv
+}
+
+// sourceRefOf transpose l'origine d'une ressource du plan vers le modèle commun.
+// Une origine vide reste ABSENTE (pointeur nil) : porter un objet à trois champs
+// vides dans chaque ressource d'un inventaire live donnerait l'apparence d'une
+// information qui n'existe pas.
+func sourceRefOf(o tfparse.Origin) *model.SourceRef {
+	if o.Empty() {
+		return nil
+	}
+	return &model.SourceRef{File: o.File, Line: o.Line, Module: o.Module}
 }

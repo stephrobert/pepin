@@ -12,7 +12,7 @@ gelée, avec les mêmes égards que la surface CLI.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v2
+pepin-inventory/v3
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -89,7 +89,13 @@ et sait en lire six » ne soit jamais silencieux.
 ```
 
 - `provider`, `type`, `id`, `name`, `attributes` sont toujours présents.
-- `region` et `provenance` sont présents quand ils portent quelque chose.
+- `region`, `provenance` et `source` sont présents quand ils portent quelque chose.
+- `source` est l'**origine dans le code d'infrastructure** : `file`, `line` et `module`. Elle
+  n'existe que pour la source Terraform, et seulement dans la mesure où elle se mesure — le
+  module se lit dans l'adresse de la ressource, le fichier et la ligne se trouvent dans les
+  sources `.tf` posées à côté du plan. Une collecte live n'en porte rien, et rien n'y est
+  inventé. Voir
+  [Plan Terraform et collecte live](../concepts/terraform-vs-live.fr.md#doù-vient-un-finding).
 - `attributes` est une carte **plate** de nom d'attribut vers valeur JSON. C'est ce que lisent
   les règles Rego, et c'est pourquoi une même règle vaut pour tous les clouds.
 - `provenance` est indexée par les **mêmes** noms d'attributs, jamais imbriquée dans une

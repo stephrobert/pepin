@@ -153,6 +153,10 @@ var scanCmd = &cobra.Command{
 		// même langue que le terminal. Le rendu de scankit, lui, n'a rien à savoir
 		// de la langue : il reçoit des findings déjà dans la bonne.
 		localizeFindings(findings)
+		// L'ORIGINE Terraform de chaque finding : fichier, ligne, module. Passe
+		// postérieure qui n'écrit que des labels — aucun verdict ne peut en bouger.
+		// Vide sur toute autre source : ce qui n'existe pas ne s'invente pas.
+		withTerraformOrigin(findings, originsOf(input))
 		// Build the opposable assessment from the AGNOSTIC-coded findings, BEFORE enrichment
 		// rewrites Code to the SCSL id: typed statuses (fail/pass/not-evaluated), exact
 		// normative references, and run provenance (tool/ruleset digests, target, timestamp).
@@ -232,7 +236,12 @@ var scanCmd = &cobra.Command{
 				return err
 			}
 		case "sarif":
-			if err := screport.SARIF(os.Stdout, opts, path, findings); err != nil {
+			// Le rendu reste celui de scankit ; Pépin y AJOUTE la localisation, que le
+			// modèle de résultat amont ne sait pas encore porter. C'est elle qui alimente
+			// l'annotation de code d'une forge.
+			if err := writeSARIF(os.Stdout, func(w io.Writer) error {
+				return screport.SARIF(w, opts, path, findings)
+			}, findings); err != nil {
 				return err
 			}
 		default:

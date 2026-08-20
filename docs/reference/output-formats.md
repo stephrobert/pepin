@@ -30,7 +30,7 @@ See [Exit codes](exit-codes.md).
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v2** |
-| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v2** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v3** |
 <!-- /pepin:gen surface-versions -->
 
 "Frozen" means a test fails when the shape moves and its version has not: field paths and JSON
@@ -97,7 +97,9 @@ Frozen shape: `{"findings": [...], "summary": {...}}`.
   "labels": {
     "category": "security",
     "check": "objectstorage_bucket_public_access",
-    "provider": "scaleway"
+    "provider": "scaleway",
+    "tf_file": "main.tf",
+    "tf_line": "81"
   },
   "message": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL).",
   "remediation": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
@@ -191,7 +193,9 @@ One result:
   },
   "labels": {
     "category": "security",
-    "provider": "scaleway"
+    "provider": "scaleway",
+    "tf_file": "main.tf",
+    "tf_line": "81"
   },
   "references": [
     {
@@ -325,26 +329,26 @@ SARIF 2.1.0, the format GitHub's Code Scanning tab reads. This is the one to upl
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/sarif-2.1/schema/sarif-schema-2.1.0.json",
-  "version": "2.1.0",
   "runs": [
     {
-      "tool": {
-        "driver": {
-          "name": "pepin",
-          "version": "<version>",
-          "rules": [
+      "results": [
+        {
+          "level": "error",
+          "locations": [
             {
-              "id": "CLD-CHF-2",
-              "shortDescription": {
-                "text": "CLD-CHF-2 (scaleway)"
-              },
-              "helpUri": "https://stephane-robert.info/scsl/CLD-CHF-2"
-            },
-            {
-              "id": "CLD-CMP-9",
-              "shortDescription": {
-                "text": "CLD-CMP-9 (scaleway)"
-              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.tf"
+                },
+                "region": {
+                  "startLine": 81
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL)."
+          },
 […]
 ```
 <!-- /pepin:gen format-sarif-head -->
@@ -359,7 +363,10 @@ One result:
     {
       "physicalLocation": {
         "artifactLocation": {
-          "uri": "examples/scaleway/terraform/plan.json"
+          "uri": "main.tf"
+        },
+        "region": {
+          "startLine": 81
         }
       }
     }
@@ -374,10 +381,13 @@ One result:
 
 Two things to know before wiring it up:
 
-- **Locations point at the scanned file, not at a line.** The `artifactLocation.uri` is the
-  input Pépin read (here the Terraform plan); no `region` is emitted, because a normalized
-  resource does not carry the line of the `.tf` file it came from. Alerts therefore land on the
-  file, not on the guilty attribute.
+- **Locations point at the `.tf` block when Pépin could measure it.** On a Terraform plan whose
+  sources sit beside it, `artifactLocation.uri` is the `.tf` file and `region.startLine` is the
+  line of the `resource` block: a Code Scanning alert lands on the declaration to fix. When the
+  origin could not be established — a plan handed over without its sources, a module pulled from
+  a registry, an ambiguous block header — the location falls back to the scanned file with no
+  `region`, and nothing is guessed. On a live collection the notion does not exist at all; see
+  [where a finding comes from](../concepts/terraform-vs-live.md#where-a-finding-comes-from).
 - **`level`** is derived from the severity: `error` for `critical` and `high`, `warning` for
   `medium`, `note` for `low`.
 

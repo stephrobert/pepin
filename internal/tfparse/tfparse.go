@@ -28,6 +28,10 @@ type Resource struct {
 	Name    string
 	Address string
 	Values  map[string]any
+	// Origin situe la ressource dans le CODE qui la déclare (module toujours ;
+	// fichier et ligne quand les sources HCL ont pu être lues à côté du plan).
+	// Vide sur toute source qui n'est pas un plan : rien n'y est inventé.
+	Origin Origin
 }
 
 // plan reflète la structure minimale de `terraform show -json`. La sortie d'un
@@ -37,6 +41,26 @@ type Resource struct {
 type plan struct {
 	PlannedValues *valuesBlock `json:"planned_values"`
 	Values        *valuesBlock `json:"values"`
+	// Configuration porte les appels de modules, dont la SOURCE permet de situer
+	// les sources HCL d'un module local. C'est le seul indice de localisation de
+	// document que le format JSON de Terraform expose (vérifié dans
+	// internal/command/jsonconfig/config.go) : il n'y a ni fichier ni ligne.
+	Configuration *configBlock `json:"configuration"`
+}
+
+// configBlock est la représentation `configuration` du plan, réduite à ce qui
+// situe un module local.
+type configBlock struct {
+	RootModule configModule `json:"root_module"`
+}
+
+type configModule struct {
+	ModuleCalls map[string]moduleCall `json:"module_calls"`
+}
+
+type moduleCall struct {
+	Source string       `json:"source"`
+	Module configModule `json:"module"`
 }
 
 type valuesBlock struct {
@@ -76,6 +100,10 @@ func ParsePlan(path string) ([]Resource, error) {
 	var out []Resource
 	collect(&out, root.RootModule)
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Address < out[j].Address })
+	// L'origine est renseignée APRÈS le tri, sur les ressources déjà extraites : elle
+	// n'entre dans aucune décision de parsing et son absence ne fait rien échouer.
+	// Sur un plan dont les sources HCL ne sont pas à côté, seul le module est rendu.
+	resolveOrigins(out, path, moduleDirsOf(p.Configuration))
 	return out, nil
 }
 
