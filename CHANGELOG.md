@@ -162,6 +162,44 @@ belongs in `git log`.
   action of v0.1.0 and v0.1.1 could not install anything (`gh attestation verify`
   without a token), so those tags should not be pinned by anyone.
 
+- **Controls become configurable, and a relaxed setting cannot keep its badge.** Four
+  controls now read a policy file — the mandatory tagging profile, the snapshot
+  freshness window and accepted states, the secret-detection threshold. Every setting
+  is a handle that can manufacture green, so each normative mapping in the reference
+  carries the **constraints under which it holds** (`config_requise`, with four
+  interpretable senses: `au_plus_le_defaut`, `superset_du_defaut`,
+  `sous_ensemble_du_defaut`, `au_moins_aussi_strict_que_le_defaut`). A configuration that falls outside a constraint makes the
+  control **lose its `references`** in the assessment — it stops claiming CIS,
+  ISO or SecNumCloud — and the relaxation appears in five places at once: the terminal
+  (`RELAXED CONFIGURATION`), the assessment labels and evidence, `--format json`
+  (`config.relaxations`), the verdict banner, and the sealed bundle (`config.json`
+  plus a `config` entry in the manifest, both covered by `checksums.txt`). Tightening a
+  setting is not a relaxation and is reported nowhere. `mise run validate` refuses a
+  constraint naming a setting the policy engine cannot evaluate. See
+  `docs/guides/control-configuration.md`.
+
+- **One policy file: `scan --policy`.** It carries `controls:` (the settings) and
+  `exceptions:` (the exemptions, unchanged format). `--exceptions` remains as the
+  historic name of the same file and reads the same schema, so an existing invocation
+  and an existing file keep working; the two flags are **mutually exclusive**, because
+  two policy files are two files that will drift. CLI surface v4.
+
+- **The evaluated inventory carries its configuration.** The envelope gains `config`,
+  the effective control configuration, next to `evaluated_at` — so a sealed bundle's
+  `input.json` replays under the settings of its own day, and `verify --re-derive` stays
+  faithful without being handed the policy file. `--format json` publishes
+  `config.policy_digest` and `config.effective` on **every** scan, default included: a
+  reader must be able to check that a scan ran under the expected settings, not merely
+  observe that it said nothing. Bundle format v3.
+
+### Changed
+
+- **`--strict` also refuses a dropped normative mapping.** It already refused zero
+  coverage, remaining medium/low deviations and a stale exemptions file; it now returns
+  `3` when a relaxed setting cost a control its mapping. No new exit code: incompleteness
+  and relaxation say the same thing — do not read this scan as a green light — and both
+  already sit where `3` sits.
+
 ## [0.2.0] - 2026-08-19
 
 ### Added

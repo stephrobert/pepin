@@ -195,8 +195,16 @@ $ echo $?
 ```
 <!-- /pepin:gen exit-run-strict -->
 
-`--strict` therefore adds one behaviour only: medium/low deviations become blocking. It does
-not create the "nothing measured" gate, which exists without it.
+`--strict` therefore adds two behaviours, and only two: medium/low deviations become
+blocking, and so does a **normative mapping dropped by a relaxed setting**. It does not
+create the "nothing measured" gate, which exists without it.
+
+A relaxed setting is one that falls outside the constraint under which a control's mapping
+holds — a longer snapshot window, a required tag removed, a raised secret-detection
+threshold. The control is still evaluated, but against a lower bar than the requirement it
+cites, so it no longer claims to cover it. A pipeline that sells compliance must not return
+`0` on a control it lowered itself. See
+[Configuring controls](../guides/control-configuration.md).
 
 ### The collection could not read the whole scope
 
@@ -423,7 +431,8 @@ When several situations apply at once, the codes are decided in this order:
 4. **3** — the collection was incomplete: at least one control lost its `pass` because the
    data it needed could not be read.
 5. **4** — at least one exemption was applied.
-6. **3** — `--strict` and medium/low deviations remain, or the exemption file is stale.
+6. **3** — `--strict` and medium/low deviations remain, the exemption file is stale, or a
+   relaxed setting dropped a normative mapping.
 7. **0** — none of the above.
 
 ## What does not change the exit code

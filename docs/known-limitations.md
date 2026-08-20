@@ -313,6 +313,14 @@ is worse than no line at all.
 A result describes an instant. Pépin has no agent, no watch mode and no history. Continuous
 posture is a scheduling problem you solve in CI, and the sealed bundles are what you keep.
 
+### A relaxed setting removes the mapping, not the measurement
+
+A control whose configuration falls outside its normative constraint keeps its status: it was
+genuinely evaluated, against a lower bar. What it loses are its `references` — it no longer
+claims to cover CIS, ISO or SecNumCloud. Pépin cannot tell you whether your own bar is
+appropriate for your context; it can only refuse to let a lowered bar keep a badge it no
+longer earns. See [Configuring controls](guides/control-configuration.md).
+
 ## 5 — requirements a scanner cannot answer
 
 Some SCSL, SecNumCloud and ISO requirements are about organisation, contracts, procedures or

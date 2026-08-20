@@ -318,6 +318,15 @@ Un résultat décrit un instant. Pépin n'a ni agent, ni mode veille, ni histori
 continue est un problème d'ordonnancement que vous résolvez en CI, et les bundles scellés sont
 ce que vous conservez.
 
+### Un réglage assoupli retire la correspondance, pas la mesure
+
+Un contrôle dont la configuration sort de sa contrainte normative garde son statut : il a bel
+et bien été évalué, contre une barre plus basse. Ce qu'il perd, ce sont ses `references` — il
+ne prétend plus couvrir CIS, ISO ni SecNumCloud. Pépin ne sait pas vous dire si votre propre
+barre convient à votre contexte ; il sait seulement refuser qu'une barre abaissée conserve un
+badge qu'elle ne mérite plus. Voir
+[Configurer les contrôles](guides/control-configuration.fr.md).
+
 ## 5 : les exigences auxquelles un scanner ne peut pas répondre
 
 Certaines exigences SCSL, SecNumCloud et ISO portent sur l'organisation, les contrats, les

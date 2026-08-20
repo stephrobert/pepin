@@ -135,12 +135,7 @@ func Load(path string) (Policy, error) {
 			"dérogations %s : aucune entrée sous la clé `exceptions`",
 			"exemptions %s: no entry under the `exceptions` key"), path)
 	}
-	var problems []string
-	for i, e := range p.Exemptions {
-		for _, pb := range e.validate() {
-			problems = append(problems, fmt.Sprintf("  exceptions[%d] : %s", i, pb))
-		}
-	}
+	problems := Problems(p.Exemptions)
 	if len(problems) > 0 {
 		return Policy{}, fmt.Errorf(i18n.T(
 			"dérogations %s : %d champ(s) obligatoire(s) manquant ou invalide :\n%s",
@@ -148,6 +143,21 @@ func Load(path string) (Policy, error) {
 			path, len(problems), strings.Join(problems, "\n"))
 	}
 	return p, nil
+}
+
+// Problems rend les problèmes de chaque dérogation, préfixés de sa position dans
+// le fichier. Exportée pour que le chargeur de POLITIQUE (internal/policy), qui lit
+// le même schéma dans un fichier à deux sections, applique EXACTEMENT la même
+// validation : deux validations parallèles finiraient par diverger, et c'est
+// précisément sur une dérogation mal formée qu'un rapport tairait ses exceptions.
+func Problems(exemptions []Exemption) []string {
+	var out []string
+	for i, e := range exemptions {
+		for _, pb := range e.validate() {
+			out = append(out, fmt.Sprintf("  exceptions[%d] : %s", i, pb))
+		}
+	}
+	return out
 }
 
 // validate rend les problèmes d'une entrée. Une dérogation incomplète n'engage

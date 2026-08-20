@@ -611,6 +611,12 @@ controles:
       secnumcloud_3_2: ["13.1"]
       iso_27001_2022: ["A.5.9"]
     fournisseurs: [exoscale, outscale, scaleway]
+    # La cartographie exige de savoir à QUI et à QUOI sert un réseau. Retirer une
+    # de ces étiquettes du profil, ou élargir ce qu'un nom logique accepte, c'est
+    # cesser de mesurer ce que CLD-NET-5 demande.
+    config_requise:
+      - parametre: tagging.network_required_tags
+        contrainte: au_moins_aussi_strict_que_le_defaut
 
   - code: network_peering_cross_organization
     famille: reseau
@@ -710,6 +716,13 @@ controles:
     frameworks:
       secnumcloud_3_2: ["10.5"]
     fournisseurs: [outscale, exoscale, scaleway]
+    # Chaque détection porte son niveau de confiance (high | medium | low) et le
+    # seuil de signalement est réglable. Le monter TAIT des détections : « aucun
+    # secret en clair » (CLD-CMP-9) ne se prouve plus si l'on a choisi de ne pas
+    # regarder une partie de ce qui a été trouvé.
+    config_requise:
+      - parametre: secrets.min_confidence
+        contrainte: au_plus_le_defaut
 
   - code: k8s_rbac_no_cluster_admin_binding
     famille: compute
@@ -1052,6 +1065,14 @@ controles:
       cis_controls_v8: ["11.2"]
       iso_27001_2022: ["A.8.13"]
     fournisseurs: [outscale, exoscale]
+    # Allonger la fenêtre, ou compter des snapshots que leur état natif dit
+    # inachevées, c'est cesser de mesurer la fraîcheur que CLD-STO-3 / CIS 11.2
+    # demandent.
+    config_requise:
+      - parametre: snapshots.max_age_days
+        contrainte: au_plus_le_defaut
+      - parametre: snapshots.accepted_states
+        contrainte: sous_ensemble_du_defaut
 
   # ───────────────────────── Chiffrement & clés ──────────────────────
   - code: loadbalancer_ssl_listeners
@@ -1261,6 +1282,15 @@ controles:
       cis_controls_v8: ["1.1"]
       iso_27001_2022: ["A.5.9", "A.8.9"]
     fournisseurs: [outscale, scaleway, exoscale]
+    # Un inventaire tenu (CLD-GVN-1, CIS 1.1) suppose de savoir qui paye, pour
+    # quoi, à quel stade et qui répond, SUR TOUT ce qui est facturable. Retirer
+    # une étiquette du profil, élargir ce qu'un nom accepte, ou rétrécir le
+    # périmètre des types visés fait tomber la correspondance.
+    config_requise:
+      - parametre: tagging.required_tags
+        contrainte: au_moins_aussi_strict_que_le_defaut
+      - parametre: tagging.resource_types
+        contrainte: superset_du_defaut
 
   - code: governance_resource_region_in_eu
     famille: gouvernance

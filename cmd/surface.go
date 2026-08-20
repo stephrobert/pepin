@@ -44,7 +44,14 @@ const (
 // encore : aucun code existant ne change de sens, mais un code de plus change ce
 // qu'un pipeline doit savoir interpréter — d'où l'incrément et sa ligne de
 // CHANGELOG.
-const cliSurfaceVersion = 3
+//
+// v4 : ajout de `scan --policy`, le fichier de politique UNIQUE (réglages des
+// contrôles sous `controls:`, dérogations sous `exceptions:`). `--exceptions`
+// reste, inchangé, comme nom historique du même fichier ; les deux drapeaux sont
+// mutuellement exclusifs. Aucun code de sortie n'est ajouté ni redéfini, mais
+// `--strict` refuse désormais aussi une correspondance normative tombée sous un
+// réglage assoupli — un pipeline qui utilise --strict doit le savoir.
+const cliSurfaceVersion = 4
 
 // findingsSurfaceVersion est la version de FORME de `--format json`
 // ({"findings": [...], "summary": {...}}), la sortie qu'un pipeline parse le

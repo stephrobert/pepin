@@ -22,7 +22,7 @@ by running the binary. A public flag that is missing here fails
 | `pepin provider list` | _(no flag of its own)_ |
 | `pepin provider new` | _(no flag of its own)_ |
 | `pepin provider validate` | _(no flag of its own)_ |
-| `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
+| `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
 | `pepin scsl` | `--index` |
 | `pepin verify` | `--bundle`, `--pubkey`, `--re-derive` |
 | `pepin version` | _(no flag of its own)_ |
@@ -37,10 +37,10 @@ independently:
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v3** |
+| `cli` | verbs, flags and exit codes | **v4** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
-| `bundle` | shape of the evidence bundle (files, roles, manifest) | **v2** |
+| `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
 | `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v3** |
 <!-- /pepin:gen surface-versions -->
 
@@ -117,13 +117,14 @@ Flags:
   -h, --help                             help for scan
       --kubeconfig string                path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (use READ-ONLY, short-lived access — never cluster-admin)
       --live                             collect the inventory live through the provider API (credentials required)
+      --policy file                      policy YAML file: control settings (`controls:`) AND exemptions (`exceptions:`) — one single file, the modern name of --exceptions
   -p, --policy-dir stringArray           directory of external rules (.rego), repeatable — loaded without recompiling
       --profile string                   credentials profile for the live collection (e.g. ~/.osc/config.json)
       --redact                           redact the sensitive values (user-data, policies) from the bundle's input.json — for sharing with a third party; INCOMPATIBLE with verify --re-derive
       --region string                    target region for the live collection
       --s3-endpoint string               custom S3 endpoint for object storage (live collection; e.g. MinIO http://localhost:9000)
       --seal string                      write a defensible evidence bundle (assessment + OSCAL + manifest + checksums) into this directory
-      --strict                           strict CI gate: non-zero exit code if no control is measured (governance aside) or if medium/low deviations remain
+      --strict                           strict CI gate: non-zero exit code if no control is measured (governance aside), if medium/low deviations remain, or if a relaxed setting dropped a normative mapping
   -t, --terraform terraform show -json   audit a Terraform plan (terraform show -json) instead of an inventory export
 
 Global Flags:

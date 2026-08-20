@@ -57,7 +57,7 @@ et un changement de cette forme incrémente un numéro de version et reçoit sa 
 <!-- pepin:gen bundle-manifest -->
 ```json
 {
-  "format": "pepin-assessment-bundle/v2",
+  "format": "pepin-assessment-bundle/v3",
   "inventory_schema": "pepin-inventory/v3",
   "disclaimer": "Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud.",
   "generated": "<timestamp>",
@@ -151,6 +151,26 @@ vérificateur le voie avant d'ouvrir quoi que ce soit d'autre.
 bundle parfaitement fidèle serait déclaré falsifié pour la seule raison que le vérificateur ne
 détient pas le fichier de l'opérateur, et une dérogation valide semblerait « expirer » entre le
 scan et la vérification.
+
+### `config.json` : seulement quand un fichier de politique a été donné
+
+Le même principe, un cran plus tôt : un dossier qui ne dit pas **sous quelle exigence** il a
+été rendu n'est pas opposable non plus. Quand un scan reçoit `--policy` (ou un `--exceptions`
+portant une section `controls:`), le bundle porte un artefact qui enregistre la configuration
+effective des contrôles, son empreinte, et chaque **assouplissement** — un réglage sorti de la
+contrainte sous laquelle la correspondance normative d'un contrôle vaut, avec les
+correspondances qu'il a coûtées.
+
+Son empreinte est dans `checksums.txt` elle aussi, donc l'empreinte du bundle **dépend des
+réglages** : un dossier ne peut pas cacher la barre qu'il a abaissée sans échouer à sa propre
+vérification. Le manifeste porte le résumé — `policy_digest`, `relaxed_controls`,
+`dropped_references` — et `relaxed_controls` est la ligne qu'un vérificateur doit lire en
+premier.
+
+La configuration effective voyage également dans `input.json`, à côté de `evaluated_at`. C'est
+ce qui rend `verify --re-derive` fidèle : le rejeu utilise les réglages du jour où le bundle a
+été scellé, jamais ceux d'aujourd'hui. Voir
+[Configurer les contrôles](control-configuration.fr.md).
 
 ## Vérifier un bundle
 

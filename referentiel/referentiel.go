@@ -38,6 +38,12 @@ type Control struct {
 	Scsl          []string            `yaml:"scsl"`
 	Frameworks    map[string][]string `yaml:"frameworks"`
 	Fournisseurs  []string            `yaml:"fournisseurs"`
+	// ConfigRequise porte les contraintes de configuration sous lesquelles les
+	// correspondances ci-dessus (`Scsl`, `Frameworks`) VALENT. Vide pour un
+	// contrôle non réglable, ce qui est le cas de la grande majorité. Voir
+	// config.go : une configuration qui s'en écarte fait tomber la correspondance,
+	// et le rapport le dit plutôt que de continuer à l'afficher.
+	ConfigRequise []ConfigConstraint `yaml:"config_requise"`
 }
 
 type catalog struct {
