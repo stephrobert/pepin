@@ -72,8 +72,9 @@ terraform plan -out tfplan && terraform show -json tfplan > plan.json
 
 Output formats: `--format table|json|assessment|oscal|sarif`.
 Exit codes: `0` compliant · `1` non-compliance · `2` error · `3` nothing measured
-or, with `--strict`, remaining medium/low gaps (CI-friendly). A scan that collected
-no resource never returns `0`: an empty result is not a compliant one.
+or, with `--strict`, remaining medium/low gaps · `4` every critical/high deviation is
+covered by a valid exemption (CI-friendly). A scan that collected no resource never
+returns `0`: an empty result is not a compliant one, and an exempted one is not either.
 
 ## Language
 
