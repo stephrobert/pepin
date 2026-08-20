@@ -24,6 +24,28 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Une session de collecte enregistrée, et la porte qui la rejoue.** Un descripteur
+  de fournisseur déclare des endpoints ; rien ne prouvait que le collecteur les
+  *émet*, ce qui est la forme exacte de l'incident des politiques EIM inline (règle
+  juste, donnée qui n'arrivait jamais, aucun test Rego capable de le voir).
+  `mise run trace` enregistre désormais une vraie collecte `--live` à travers un proxy
+  d'interception, contre un **émulateur local** et sans **aucun identifiant cloud** ;
+  l'enregistrement est versé dans `internal/genprovider/testdata/transcripts/`. Deux
+  portes le rejouent à chaque build : `TestTheRecordedCollectionStillHappens` (moins
+  d'appels que ce que l'enregistrement a vu, c'est une donnée qui a cessé d'arriver ;
+  plus d'appels, c'est un endpoint déclaré mais jamais mesuré) et
+  `TestEveryDeclaredEndpointIsObservedOrDeclaredUnobserved` (le registre
+  `non_observes` est exact dans les deux sens). Le rejeu sert les réponses
+  **enregistrées**, jamais des réponses dérivées de la spec qu'il éprouve : un harnais
+  qui répondrait « ce que la spec attend » mesurerait sa propre copie de la spec et
+  resterait vert sur un `items:` faux. Mesuré à la première session : aucun endpoint
+  déclaré ne reste muet, sauf trois jointures enfants d'Outscale et une d'Exoscale
+  dont la liste parente n'est pas servie par l'émulateur ou est revenue vide ;
+  chacune est désormais consignée avec sa raison. Nouveau guide :
+  [Tracer les appels réels](docs/guides/tracing-api-calls.fr.md). Aucune ligne de
+  Pépin n'a changé, donc aucun endpoint de collecte n'est devenu surchargeable et
+  aucune surface d'exfiltration n'a été créée.
+
 - **Un contrat de véracité, et un compteur de dette plutôt qu'une matrice verte.**
   Pour chaque chemin contrôle × fournisseur × source, `internal/veracity` dérive les
   verdicts que ce chemin peut réellement atteindre — trois quand il sait conclure, un

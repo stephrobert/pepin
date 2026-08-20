@@ -63,6 +63,18 @@ scanning account cannot see this" (fix the account policy) from "the service did
 (retry). `detail` carries the provider's own response, untranslated — it is data, not Pépin
 prose.
 
+**How far each class is measured.** The *mapping* is measured against real sockets:
+`internal/collect/status_test.go` drives a server that really refuses, really times out and
+really truncates a page, and a `403` there really comes out as `permission_denied`. A recorded
+emulator session (`internal/genprovider/testdata/transcripts/`) adds `not_found` and
+`unavailable` on the wire, including through the AWS SDK's error interface on the object-storage
+path. What no check in this repository establishes is which class a **given provider** will
+trigger: whether Outscale answers `403` rather than `200` with an `Errors` body, whether a
+throttled Scaleway call is `429` rather than `503`. The emulator cannot settle it either — it
+accepts every credential and can therefore never refuse. That is owed to a real scan; see
+[Known limitations](../known-limitations.md) and
+[Tracing real API calls](../guides/tracing-api-calls.md).
+
 Every control that reads a type fed by an incomplete unit becomes `not-evaluated`, with that
 unit named as the reason, and the scan does not return `0`. That decision belongs to the
 assessment, never to a rule: a per-rule guard is a guard someone forgets to write on the

@@ -259,12 +259,22 @@ qui s'étend au-delà.
 ### Les permissions minimales sont documentées, pas mesurées
 
 Chaque page de fournisseur liste les appels d'API que fait un scan et les permissions de lecture
-qu'ils exigent. Ces listes sont **dérivées des descripteurs de collecte** — les endpoints que la
-spec déclare — et confrontées à la documentation IAM publique du fournisseur. Elles n'ont pas
-été confirmées en lançant un scan avec un rôle délibérément réduit : ce dépôt ne détient aucun
-identifiant cloud, par construction, et aucun contrôle automatisé n'atteint une API de
-fournisseur. Chaque page distingue les lignes confirmées par la documentation de celles qui
-restent non vérifiées.
+qu'ils exigent. Ces listes sont **dérivées des descripteurs de collecte**, c'est-à-dire des
+endpoints que la spec déclare, et confrontées à la documentation IAM publique du fournisseur.
+Chaque page distingue les lignes confirmées par la documentation de celles qui restent non
+vérifiées.
+
+Deux moitiés, et elles ne sont pas dans le même état. La moitié **endpoints** est désormais
+mesurée : une session enregistrée prouve que le collecteur émet bien ce que le descripteur
+déclare, donc la liste n'est plus une affirmation sur du code que personne n'a regardé tourner
+([Tracer les appels réels](guides/tracing-api-calls.fr.md)). La moitié **droits** ne l'est pas,
+et ne peut pas l'être d'ici : confirmer que `InstancesReadOnly` et rien de plus suffit à
+`ListSecurityGroups` exige de lancer un scan avec un rôle délibérément réduit contre un tenant
+réel. Ce dépôt ne détient aucun identifiant cloud, par construction, et aucun contrôle
+automatisé n'atteint une API de fournisseur. Chez Outscale, l'essentiel des lignes est
+`a_verifier` pour une raison plus tranchée encore : les noms d'action y sont **inférés** de la
+syntaxe EIM documentée, et non recopiés d'un catalogue de permissions publié. Un droit inféré
+est une supposition, et c'est précisément ce qu'un CSPM ne doit pas vous demander d'accorder.
 
 ### Les faits de souveraineté sont déclarés, pas vérifiés
 
@@ -281,19 +291,55 @@ module partagé `scankit` (`[running, persistent, reboot-survivable]`). Cette no
 au durcissement d'hôte, pas à la posture cloud : Pépin ne la renseigne jamais, et elle se
 sérialise en `["", "", ""]`. Les consommateurs doivent l'ignorer, ce n'est pas un signal Pépin.
 
-### La colonne « live » de la matrice de couverture est dérivée, jamais observée
+### La colonne « live » est dérivée ; seule sa plomberie est observée
 
 La matrice de couverture est **calculée depuis les descripteurs** : elle dit ce que la spec de
 collecte live et le mapping Terraform d'un fournisseur sont déclarés projeter, et ce que le
-contrat d'API marque comme vérifié. Elle n'est pas le compte rendu d'une exécution observée :
-aucun scan live ne produit cette colonne, et aucun contrôle automatisé de ce dépôt n'appelle
-l'API d'un fournisseur.
+contrat d'API marque comme vérifié. Aucun contrôle automatisé de ce dépôt n'appelle l'API d'un
+fournisseur.
 
-La nuance compte à la lecture d'une case verte dans la colonne « live ». Elle signifie « ce
-descripteur projette l'attribut décisif, et le contrat est vérifié », pas « une API a rendu ce
-champ lors d'une exécution mesurée ». Si les deux divergeaient sur votre tenant, le scan le
-dirait par un `not-evaluated` accompagné de son motif, jamais par un vert silencieux ; mais la
-matrice, elle, est une déclaration du descripteur, pas une preuve.
+Depuis la v0.4.0, une moitié de cette affirmation n'est plus une simple déclaration. Une session
+enregistrée d'appels HTTP réels, prise contre un **émulateur local**, `feint serve`, sans le
+moindre identifiant cloud, est rejouée à chaque build
+(`internal/genprovider/testdata/transcripts/`, [Tracer les appels réels](guides/tracing-api-calls.fr.md)).
+Elle mesure que les endpoints annoncés par un descripteur partent réellement sur le réseau, que
+les jointures parent/enfant tirent sur un identifiant lu dans la réponse du parent, et que les
+paramètres de pagination sont ceux qui sont déclarés. Un endpoint déclaré et jamais émis casse
+désormais le build.
+
+Ce que cet enregistrement n'établit **pas**, et qu'une case verte « live » ne signifie donc
+toujours pas :
+
+- que le fournisseur rende le champ sous ce nom et ce type : le contrat natif se lit dans le
+  SDK, il ne se mesure pas ici ;
+- que ses bornes réelles de pagination correspondent aux bornes déclarées ;
+- comment il se comporte sous limitation de débit ;
+- qu'il refuse par un `403` plutôt que par un `200` accompagné d'un corps d'erreur.
+
+Une case verte signifie donc « ce descripteur projette l'attribut décisif, le contrat est marqué
+vérifié, et l'appel qui irait le chercher est démontrablement émis ». Elle ne signifie pas
+« une API a rendu ce champ lors d'une exécution mesurée ». Si les deux divergeaient sur votre
+tenant, le scan le dirait par un `not-evaluated` accompagné de son motif, jamais par un vert
+silencieux.
+
+### Un émulateur n'est pas le fournisseur
+
+Les enregistrements ci-dessus viennent de `feint`, un émulateur local de Scaleway, Outscale et
+Exoscale. La distinction qu'il impose mérite d'être posée seule, parce que la confondre
+fabriquerait exactement la fausse confiance que cette page existe pour empêcher : **un émulateur
+prouve ce que Pépin fait, pas ce que le cloud répond.**
+
+Une conséquence est structurelle, et non accidentelle. L'émulateur **accepte n'importe quel
+identifiant**. C'est mesuré : sans en-tête d'authentification il rend `200`, avec un jeton bidon
+il rend `200`, et il n'expose aucune injection de panne. Il ne peut donc jamais produire de
+`403`, et aucun enregistrement pris contre lui ne peut mesurer la classification d'un vrai refus
+de droits. Cette classification est éprouvée par `internal/collect/status_test.go` contre une
+socket qui refuse vraiment ; ce qui reste inconnu, c'est de savoir si tel fournisseur refuse
+bien avec ce statut.
+
+Il en va de même de chaque valeur d'un enregistrement : elles sont frappées par l'émulateur au
+démarrage, pas rendues par un cloud. C'est exactement pour cela qu'elles sont sûres à committer,
+et exactement pour cela qu'elles ne prouvent rien du contrat d'un fournisseur.
 
 ### Le fichier et la ligne d'un finding exigent les sources `.tf` à côté du plan
 
@@ -323,6 +369,15 @@ ce que vous conservez.
 `blockstorage_volume_snapshots_exist` mesure une chose : un volume en usage a-t-il, dans la
 fenêtre configurée (7 jours par défaut), au moins une snapshot dont l'état natif la dit
 terminée ? L'état est vérifié, pas seulement la date.
+
+**Quel état signifie « terminée » est lu, pas observé.** `completed` chez Outscale et `created`
+chez Exoscale viennent des schémas OpenAPI publiés par ces fournisseurs, cités dans les
+contrats. Aucune snapshot dans un état terminal n'a jamais été vue par ce dépôt, et les
+enregistrements contre l'émulateur ne comblent pas ce trou non plus : il rend une liste vide
+pour ces deux types, donc aucune valeur d'état ne les a traversés. Si un fournisseur rendait un
+jour une valeur hors de son propre énuméré, le contrôle ne conclurait pas, car le verrou porte
+sur la valeur et non sur son absence ; mais rien ici ne remarquerait la dérive avant un scan
+réel.
 
 Il ne prouve pas que la snapshot soit **restaurable** — aucune restauration n'est tentée —,
 qu'elle soit **complète** au sens applicatif, qu'une **rétention** soit respectée (une seule

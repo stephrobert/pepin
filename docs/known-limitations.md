@@ -258,10 +258,20 @@ reports the surface it was given, and the absence of that surface, never what li
 
 Each provider page lists the API calls a scan makes and the read permissions they need. Those
 lists are **derived from the collection descriptors** — the endpoints the spec declares — and
-checked against the provider's public IAM documentation. They have not been confirmed by
-running a scan with a deliberately reduced role: this repository holds no cloud credentials, by
-design, and no automated check reaches a provider API. Each page marks which lines are
+checked against the provider's public IAM documentation. Each page marks which lines are
 confirmed by documentation and which remain unverified.
+
+Two halves, and they are not in the same state. The **endpoints** half is now measured: a
+recorded session proves the collector really emits what the descriptor declares, so the list is
+no longer a claim about code nobody watched run
+([Tracing real API calls](guides/tracing-api-calls.md)). The **grants** half is not, and cannot
+be from here: confirming that `InstancesReadOnly` and nothing more suffices for
+`ListSecurityGroups` requires running a scan with a deliberately reduced role against a real
+tenant. This repository holds no cloud credentials, by design, and no automated check reaches a
+provider API. Most of Outscale's entries are `a_verifier` for a sharper reason still: the action
+names are **inferred** from the documented EIM syntax rather than read from a published
+permission set, and an inferred grant is a guess, which is precisely what a CSPM must not ask
+you to grant.
 
 ### Sovereignty facts are declared, not verified
 
@@ -278,18 +288,51 @@ the shared `scankit` module (`[running, persistent, reboot-survivable]`). That n
 to host hardening, not to cloud posture: Pépin never fills it, and it serialises as
 `["", "", ""]`. Consumers should ignore it; it is not a Pépin signal.
 
-### The `live` column of the coverage matrix is derived, not observed
+### The `live` column of the coverage matrix is derived; only its plumbing is observed
 
 The coverage matrix is **computed from the descriptors**: it states what a provider's live
 collection spec and Terraform mapping are declared to project, and what the API contract marks
-as verified. It is not the record of an observed run: no live scan produces that column, and
-nothing in this repository's automated checks calls a provider API.
+as verified. Nothing in this repository's automated checks calls a provider API.
 
-That distinction matters when reading a green cell in the `live` column. It means "this
-descriptor projects the deciding attribute, and the contract is verified", not "an API returned
-this field during a measured run". Should the two diverge on your tenant, the scan says so with
-a `not-evaluated` and its reason, never with a silent green — but the matrix itself is a
-statement of intent by the descriptor, not evidence.
+Since v0.4.0, one half of that statement is no longer merely declared. A recorded session of
+real HTTP calls — taken against a **local emulator**, `feint serve`, with no cloud credential
+whatsoever — is replayed on every build
+(`internal/genprovider/testdata/transcripts/`, [Tracing real API calls](guides/tracing-api-calls.md)).
+It measures that the endpoints a descriptor announces really go out on the wire, that
+parent/child joins fire on an id read from the parent's response, and that the pagination
+parameters are the declared ones. An endpoint declared and never emitted now fails the build.
+
+What that recording does **not** establish, and what a green `live` cell therefore still does
+not mean:
+
+- that the provider returns the field under that name and that type — the native contract is
+  read in the SDK, never measured here;
+- that the provider's real pagination bounds match the declared ones;
+- how it behaves under rate limiting;
+- that it refuses with `403` rather than `200` and an error body.
+
+So a green cell means "this descriptor projects the deciding attribute, the contract is marked
+verified, and the call that would fetch it is provably emitted". It does not mean "an API
+returned this field during a measured run". Should the two diverge on your tenant, the scan
+says so with a `not-evaluated` and its reason, never with a silent green.
+
+### An emulator is not the provider
+
+The recordings above come from `feint`, a local emulator of Scaleway, Outscale and Exoscale.
+The distinction it forces is worth stating on its own, because collapsing it would manufacture
+exactly the false confidence this page exists to prevent: **an emulator proves what Pépin does,
+not what the cloud answers.**
+
+One consequence is structural rather than incidental. The emulator **accepts every credential**
+— measured: no auth header returns `200`, a junk token returns `200`, and it exposes no fault
+injection. It can therefore never produce a `403`, and no recording against it can measure how
+a real permission refusal is classified. That classification is exercised by
+`internal/collect/status_test.go` against a socket that really refuses; what stays unknown is
+whether a given provider refuses with that status at all.
+
+The same holds for every value in a recording: they are minted by the emulator at startup, not
+returned by a cloud. They are safe to commit for exactly that reason, and useless as evidence
+about a provider's contract for exactly that reason too.
 
 ### A finding's file and line need the `.tf` sources beside the plan
 
@@ -318,6 +361,14 @@ posture is a scheduling problem you solve in CI, and the sealed bundles are what
 `blockstorage_volume_snapshots_exist` measures one thing: does a volume in use have, within
 the configured window (7 days by default), at least one snapshot whose native state says it is
 completed? The state is checked, not just the date.
+
+**Which state means "completed" is read, not observed.** `completed` for Outscale and `created`
+for Exoscale come from those providers' published OpenAPI schemas, cited in the contracts. No
+snapshot in a terminal state has ever been seen by this repository, and the emulator recordings
+do not close that gap either: it returns an empty list for both types, so no state value passed
+through them. If a provider ever returns a value outside its own documented enum, the control
+does not conclude — the guard is on the value, not on its absence — but nothing here would
+notice the drift before a real scan did.
 
 It does not prove that the snapshot is **restorable** — no restore is attempted —, that it is
 **complete** in the application sense, that a **retention** is honoured (one snapshot

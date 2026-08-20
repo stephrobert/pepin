@@ -32,3 +32,9 @@ references/docs/*/
 
 # Notes internes assistées par IA (mémoire, comptes) — jamais publiées.
 .claude/
+
+# Sortie de `mise run trace` : transcriptions brutes d'une session de collecte.
+# Les corps y sont conservés en entier, car ils SONT la mesure. Contre un vrai
+# tenant ils portent son inventaire. Ce qui entre au dépôt le fait seulement
+# après relecture valeur par valeur, dans internal/genprovider/testdata/.
+.trace/

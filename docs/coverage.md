@@ -11,6 +11,17 @@ This page is **computed** from `referentiel/controles.yaml` (codes, severities, 
 control marked ✅ may well return `not-evaluated` on an inventory that contains no resource of the
 type it reads.
 
+**What the "live" column is, and what it is not.** It is DERIVED from the descriptors: it
+says which resource type the `collecte` spec declares it produces, not what a provider
+actually answered. Two things are now MEASURED rather than merely declared: that the announced
+endpoints really go out on the wire, and that parent/child joins fire. That comes from a
+recording of real calls, replayed on every build (`internal/genprovider/testdata/transcripts/`,
+see [Tracing real API calls](guides/tracing-api-calls.md)). That recording was taken against a
+LOCAL EMULATOR: it proves what Pépin does, never what the provider answers. The field names and
+types of the native contract, the real pagination bounds and the behaviour on a permission
+refusal remain UNOBSERVED; they are owed to a real scan, which this repository does not run
+because it holds no cloud credentials.
+
 Control titles and justifications come from the reference and from the provider contracts, which
 are bilingual: this page quotes their English version, the French page quotes the French one.
 French remains the reference language of the normative content.

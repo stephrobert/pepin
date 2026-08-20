@@ -11,6 +11,18 @@ La page est **calculée** depuis `referentiel/controles.yaml` (codes, sévérit�
 scan donné : un contrôle marqué ✅ peut parfaitement rendre `not-evaluated` sur un inventaire
 qui ne contient aucune ressource du type visé.
 
+**Ce que la colonne « live » est, et ce qu'elle n'est pas.** Elle est DÉRIVÉE des
+descripteurs : elle dit quel type de ressource la spec `collecte` déclare produire, pas ce
+qu'un fournisseur a effectivement répondu. Deux choses sont désormais MESURÉES, et pas
+seulement déclarées : que les endpoints annoncés partent réellement sur le réseau, et que
+les jointures parent/enfant tirent. Cela vient d'un enregistrement d'appels réels, rejoué à
+chaque build (`internal/genprovider/testdata/transcripts/`, cf.
+[Tracer les appels réels](guides/tracing-api-calls.fr.md)). Cet enregistrement a été pris
+contre un ÉMULATEUR LOCAL : il prouve ce que Pépin fait, jamais ce que le fournisseur
+répond. Les noms et types de champs du contrat natif, les bornes réelles de pagination et
+le comportement devant un refus de droits restent NON OBSERVÉS ; ils sont dus à un scan
+réel, que ce dépôt ne fait pas puisqu'il ne détient aucun identifiant cloud.
+
 Les titres de contrôles et les justifications proviennent du référentiel et des contrats de
 fournisseurs, qui sont bilingues : cette page cite la version française, la page anglaise
 cite la version anglaise. Le français reste la langue de référence du contenu normatif.
