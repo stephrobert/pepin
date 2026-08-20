@@ -303,6 +303,8 @@ echo $?   # 1
 | Rien n'a été mesuré (inventaire vide) : **sans avoir à demander `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Écarts medium/low seulement, sans `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Écarts medium/low seulement, avec `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| Tout écart critical/high est couvert par une dérogation valide | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
+| La même dérogation, échue : elle ne s'applique plus | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->
 
 ## Le même run, en assessment
@@ -363,7 +365,7 @@ marqueurs ; tout le reste est le document capturé.)*
 - `scope.included` liste les types de ressources réellement évalués. Un contrôle portant sur un
   type absent de cette liste ne peut pas avoir été mesuré, et l'assessment le dit.
 
-### Les quatre statuts, sur ce seul run
+### Les quatre statuts mesurés, sur ce seul run
 
 <!-- pepin:gen assessment-counts -->
 | Statut | Nombre |
@@ -374,7 +376,9 @@ marqueurs ; tout le reste est le document capturé.)*
 | `not-evaluated` | 9 |
 <!-- /pepin:gen assessment-counts -->
 
-Un unique scan sans compte cloud produit les quatre. Chacun est documenté dans
+Un unique scan sans compte cloud produit les quatre. Le cinquième statut, `exempted`, relève
+d'une décision et non d'une mesure : il n'apparaît qu'avec une dérogation fournie par
+`--exceptions`. Chacun est documenté dans
 [le modèle d'assessment](../concepts/assessment-model.fr.md) ; en voici un de chaque, mot pour
 mot.
 
@@ -385,13 +389,14 @@ mot.
 {
   "control": "objectstorage_bucket_public_access",
   "evidence": {
+    "attribute": "acl",
     "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
     "proves": [
       "",
       "",
       ""
     ],
-    "source": "terraform-plan"
+    "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
     "category": "security",

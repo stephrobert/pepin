@@ -61,6 +61,13 @@ func CollectClusters(ctx context.Context, hc *http.Client, provider, endpoint, r
 	return out, nil
 }
 
+// ClusterAttributes énumère les attributs communs qu'un cluster managé collecté
+// par cette API peut porter. Déclaré à côté du projecteur qui les pose, et lu par
+// le catalogue de l'inventaire (genprovider.InventoryCatalogue).
+func ClusterAttributes() []string {
+	return []string{"admin_whitelist", "auto_upgrade", "control_plane_multi_az", "deletion_protection", "name", "version"}
+}
+
 // mapCluster projette un cluster OKS (champs natifs de l'API v2) vers le modèle normalisé.
 // Un attribut ABSENT n'est pas posé : les règles le traitent alors comme conforme par
 // défaut (object.get(..., true)), donc pas de faux échec.

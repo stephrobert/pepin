@@ -65,11 +65,17 @@ func Apply(spec Spec, resources []tfparse.Resource) []model.Resource {
 			if rs.Region != "" {
 				region, _ = res.Values[rs.Region].(string)
 			}
+			// La source atteste le TYPE de ressource du plan, pas l'adresse : l'adresse
+			// est déjà l'identifiant de la ressource, le type est ce qui dit d'où la
+			// valeur a été lue. Une valeur issue d'un plan n'est PAS une observation de
+			// la configuration effective, et l'origine `terraform-plan` le porte.
+			src := collect.Source{Origin: model.OriginTerraform, Ref: res.Type}
 			for _, it := range items {
-				attrs := collect.Project(it, rs.Map, rs.Transforms)
+				attrs, prov := collect.ProjectAttested(it, rs.Map, rs.Transforms, src)
 				for k, v := range rs.Const {
 					attrs[k] = v
 				}
+				collect.AttestConst(&prov, rs.Const, "descriptor:const")
 				id, _ := attrs[rs.ID].(string)
 				if id == "" {
 					id = res.Address
@@ -78,7 +84,7 @@ func Apply(spec Spec, resources []tfparse.Resource) []model.Resource {
 				if n, ok := res.Values["name"].(string); ok && n != "" {
 					name = n
 				}
-				out = append(out, model.Resource{Provider: spec.Provider, Type: rs.Type, ID: id, Name: name, Region: region, Attributes: attrs})
+				out = append(out, model.Resource{Provider: spec.Provider, Type: rs.Type, ID: id, Name: name, Region: region, Attributes: attrs, Provenance: prov})
 			}
 		}
 	}

@@ -13,6 +13,7 @@ changer leur signification est une rupture qui a sa propre ligne de CHANGELOG.
 | **1** | `non_conformite` | au moins un écart critical ou high |
 | **2** | `erreur` | erreur technique : le scan n'a pas pu conclure |
 | **3** | `strict` | rien n'a été mesuré (sans `--strict`), ou écarts medium/low restants avec `--strict` |
+| **4** | `derogation` | tout écart critical/high restant est couvert par une dérogation datée et attribuée (`--exceptions`) |
 <!-- /pepin:gen cli-exit-codes -->
 
 La distinction dont dépend toute cette page : **1 et 3 sont des verdicts sur un tenant, 2 est
@@ -20,7 +21,7 @@ une panne de la mesure elle-même.** Un pipeline peut légitimement décider de 
 verdict sans bloquer dessus. Il ne peut jamais le faire avec 2 : une erreur technique avalée
 rapporte une posture que personne n'a mesurée.
 
-## Un tableau, six situations, six exécutions réelles
+## Un tableau, huit situations, huit exécutions réelles
 
 Chaque commande de ce tableau a été exécutée par le générateur de documentation, et le code de
 la dernière colonne est celui que le processus a rendu.
@@ -34,10 +35,13 @@ la dernière colonne est celui que le processus a rendu.
 | Rien n'a été mesuré (inventaire vide) : **sans avoir à demander `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Écarts medium/low seulement, sans `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Écarts medium/low seulement, avec `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| Tout écart critical/high est couvert par une dérogation valide | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
+| La même dérogation, échue : elle ne s'applique plus | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->
 
-Les deux dernières lignes sont le même inventaire, avec et sans `--strict`. Les deux qui les
-précèdent portent la distinction la plus importante, et c'est l'objet de la suite.
+Les lignes cinq et six sont le même inventaire, avec et sans `--strict` ; les deux dernières
+sont le même inventaire et la même dérogation, valide puis échue. Les deux lignes qui portent
+la distinction la plus importante sont la troisième et la quatrième, et c'est l'objet de la suite.
 
 ## `0` : conforme
 
@@ -193,6 +197,132 @@ $ echo $?
 `--strict` n'ajoute donc qu'un seul comportement : les écarts medium/low deviennent bloquants.
 Il ne crée pas la porte « rien n'a été mesuré », qui existe sans lui.
 
+## `4` : tout écart restant est sous dérogation
+
+Un CSPM utilisé en production doit permettre des exceptions. Sans elles, une équipe désactive
+le contrôle, ou cesse de lire l'outil : deux issues pires que l'écart lui-même. Mais une
+dérogation ne doit jamais rendre une porte verte en silence, d'où un code qui n'appartient
+qu'à elle.
+
+On donne au scan un fichier de dérogations versionné, avec `--exceptions` :
+
+<!-- pepin:gen fixture-exceptions -->
+```yaml
+exceptions:
+  - control: network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
+    resource: sg-bastion
+    justification: "Bastion administre, acces restreint par IP source en amont"
+    expires_at: 2099-12-31
+    owner: platform-security
+    approved_by: security@example.org
+```
+<!-- /pepin:gen fixture-exceptions -->
+
+Appliqué à un inventaire dont le seul écart high est celui qu'il couvre :
+
+<!-- pepin:gen fixture-bastion-inventory -->
+```json
+{
+  "provider": "scaleway",
+  "resources": [
+    {
+      "provider": "scaleway",
+      "type": "security_group_rule",
+      "id": "vm-bastion",
+      "name": "vm-bastion",
+      "region": "fr-par",
+      "attributes": {
+        "security_group_id": "sg-bastion",
+        "direction": "inbound",
+        "action": "accept",
+        "protocol": "tcp",
+        "port_from": 22,
+        "port_to": 22,
+        "cidrs": ["0.0.0.0/0"],
+        "description": "Acces d administration du bastion"
+      }
+    }
+  ]
+}
+```
+<!-- /pepin:gen fixture-bastion-inventory -->
+
+<!-- pepin:gen exit-run-exempted -->
+```console
+$ ./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml
+[…]
+  │ CLD-NET-1 │ SSH (port 22) ouvert à Internet │ HIGH │ scaleway │ 1 │
+  ╰───────────┴─────────────────────────────────┴──────┴──────────┴───╯
+──────────────────────────────────────────────────────────────────────────────
+ Summary
+
+ Verdict : NON CONFORME sous dérogation, 1 écart(s) critique/haut tous couverts par une dérogation datée et attribuée
+
+ 🔴 CRITICAL 0   🟠 HIGH 1   🟡 MEDIUM 0   🔵 LOW 0
+──────────────────────────────────────────────────────────────────────────────
+
+DÉROGATIONS APPLIQUÉES : écarts assumés, NON conformes
+  · network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 (sg-bastion)
+    Bastion administre, acces restreint par IP source en amont
+    jusqu'au 2099-12-31 · responsable platform-security · approuvé par security@example.org
+$ echo $?
+4
+```
+<!-- /pepin:gen exit-run-exempted -->
+
+La ligne de verdict se lit telle quelle : **NON CONFORME sous dérogation**. L'écart n'a pas
+disparu, il a été écarté. Le statut du contrôle dans `--format assessment` est `exempted`,
+jamais `pass` ; le finding reste dans `--format json`, dans le SARIF et dans le décompte par
+sévérité ; seule la porte bouge.
+
+Pourquoi 4 plutôt que 0 ou 1. Rendre **0** ferait d'une exemption un faux vert silencieux,
+c'est-à-dire exactement ce que le statut `exempted` existe pour empêcher. Rendre **1**
+rendrait la dérogation inutile, et une équipe qui ne peut pas déroger à un contrôle finit par
+le supprimer. **4** est non nul, donc rien ne passe en silence, et distinct, donc un pipeline
+qui choisit de l'accepter doit écrire le chiffre, et par conséquent savoir qu'il existe.
+
+### Une dérogation expirée n'ouvre pas la porte
+
+Le même fichier, avec une date passée. La dérogation ne s'applique plus, l'écart redevient un
+écart, et l'expiration est signalée sur la sortie d'erreur :
+
+<!-- pepin:gen exit-run-expired -->
+```console
+$ ./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml
+
+ ██████╗ ███████╗██████╗ ██╗ ███╗   ██╗
+ ██╔══██╗██╔════╝██╔══██╗██║ ████╗  ██║
+ ██████╔╝█████╗  ██████╔╝██║ ██╔██╗ ██║
+ ██╔═══╝ ██╔══╝  ██╔═══╝ ██║ ██║╚██╗██║
+ ██║     ███████╗██║     ██║ ██║ ╚████║
+ ╚═╝     ╚══════╝╚═╝     ╚═╝ ╚═╝  ╚═══╝
+
+ v<version>  · scanner de posture cloud (sécurité · conformité)
+
+pepin: ⚠ dérogation EXPIRÉE le 2020-01-01 sur network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 / sg-bastion : elle ne s'applique plus, l'écart redevient un écart (platform-security)
+
+ⓘ Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud.
+$ echo $?
+1
+```
+<!-- /pepin:gen exit-run-expired -->
+
+Une dérogation qui nomme un contrôle ou une ressource inexistants est signalée de la même
+façon, comme `ORPHAN` : c'est le symptôme d'une exception oubliée après un renommage ou un
+retrait. Sous `--strict`, une dérogation expirée ou orpheline suffit à refuser la porte
+(code 3) : un pipeline qui demande la rigueur demande que son fichier de dérogations soit revu.
+
+### Ordre de priorité
+
+Quand plusieurs situations se présentent en même temps, les codes se décident dans cet ordre :
+
+1. **2** : une erreur technique, rien d'autre n'est un verdict.
+2. **1** : au moins un écart critical/high **non** couvert par une dérogation valide.
+3. **3** : rien n'a été mesuré (hors gouvernance).
+4. **4** : au moins une dérogation a été appliquée.
+5. **3** : `--strict` et des écarts medium/low subsistent, ou le fichier de dérogations est périmé.
+6. **0** : aucun des cas ci-dessus.
+
 ## Ce qui ne change pas le code de sortie
 
 - **Le format de sortie.** `--format json`, `sarif`, `oscal` ou `assessment` changent ce qui
@@ -213,6 +343,7 @@ case "$code" in
   0) echo "conforme" ;;
   1) echo "non-conformité : au moins un écart critical/high" ; exit 1 ;;
   3) echo "rien mesuré, ou écarts medium/low sous --strict" ; exit 1 ;;
+  4) echo "des écarts subsistent, tous sous dérogation datée" ; exit 1 ;;
   2) echo "erreur technique : le scan n'a pas pu conclure" ; exit 2 ;;
   *) echo "code inattendu $code" ; exit 2 ;;
 esac

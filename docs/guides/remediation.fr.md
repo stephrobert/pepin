@@ -52,13 +52,14 @@ Avant, sur `examples/scaleway/terraform/plan.json` :
 {
   "control": "objectstorage_bucket_public_access",
   "evidence": {
+    "attribute": "acl",
     "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
     "proves": [
       "",
       "",
       ""
     ],
-    "source": "terraform-plan"
+    "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
     "category": "security",
@@ -110,13 +111,14 @@ Après, sur `examples/scaleway/terraform-fixed/plan.json` :
 {
   "control": "objectstorage_bucket_public_access",
   "evidence": {
+    "attribute": "acl",
     "observed": "aucune non-conformité détectée sur les ressources de type « object_storage_bucket » collectées (contrat vérifié)",
     "proves": [
       "",
       "",
       ""
     ],
-    "source": "terraform-plan"
+    "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "references": [
     {

@@ -119,6 +119,9 @@ func localize() {
 	setUsage(scanCmd, "seal", tr(
 		"écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier",
 		"write a defensible evidence bundle (assessment + OSCAL + manifest + checksums) into this directory"))
+	setUsage(scanCmd, "exceptions", tr(
+		"`fichier` YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme",
+		"exemptions YAML `file` (control, justification, expires_at, owner, approved_by) — a covered deviation becomes exempted, never compliant"))
 	setUsage(scanCmd, "strict", tr(
 		"porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance) ou s'il subsiste un écart medium/low",
 		"strict CI gate: non-zero exit code if no control is measured (governance aside) or if medium/low deviations remain"))

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"os"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/commonrules"
+	"github.com/stephrobert/pepin/internal/exempt"
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
@@ -44,6 +46,7 @@ var (
 	scanKubeconfig string
 	scanS3Endpoint string
 	scanSeal       string
+	scanExceptions string // fichier de dérogations (versionné, revu comme du code)
 	scanRedact     bool   // caviarder les valeurs sensibles de l'input.json embarqué
 	scanStrict     bool   // porte CI stricte : échec sur couverture nulle ou écart medium/low
 	scanTimestamp  string // instant d'évaluation (RFC3339 UTC), partagé input.evaluated_at + Run.Timestamp
@@ -62,6 +65,7 @@ var scanCmd = &cobra.Command{
 		if len(args) > 1 {
 			path = args[1]
 		}
+		scanTargetProvider = name
 		p, ok := provider.Get(name)
 		if !ok {
 			return fmt.Errorf(tr("provider inconnu : %q (voir `pepin providers`)",
@@ -73,6 +77,19 @@ var scanCmd = &cobra.Command{
 				"give a file (JSON export or Terraform plan), or use --live"))
 		}
 		scanTimestamp = time.Now().UTC().Format(time.RFC3339) // un seul instant, partagé input + run
+
+		// Les dérogations sont chargées et VALIDÉES avant toute collecte : un fichier
+		// incomplet arrête le scan ici, plutôt que de produire un rapport qui tairait la
+		// moitié de ses exceptions. Les champs obligatoires se vérifient au chargement,
+		// jamais au moment de l'appliquer.
+		var exPolicy exempt.Policy
+		if scanExceptions != "" {
+			pol, lerr := exempt.Load(scanExceptions)
+			if lerr != nil {
+				return lerr
+			}
+			exPolicy = pol
+		}
 
 		opts := scanReportOptions(name, scanSource(path))
 
@@ -127,6 +144,16 @@ var scanCmd = &cobra.Command{
 		// normative references, and run provenance (tool/ruleset digests, target, timestamp).
 		rtypes := resourceTypesOf(input)
 		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), buildRun(name, rtypes))
+		// La provenance des attributs décisifs, en PASSE POSTÉRIEURE : elle enrichit la
+		// preuve (d'où vient la donnée, a-t-elle été observée) et ne touche aucun statut.
+		asmt = assess.WithProvenance(asmt, assess.ProvenanceOf(input), controlTypes())
+		// Les dérogations, en passe postérieure elles aussi : elles ne peuvent toucher
+		// qu'un `fail`, et ne produisent jamais un `pass`. L'instant de référence est
+		// celui du scan (pas l'horloge), pour qu'un bundle rejoué rende le même verdict.
+		asmt, exReport := exempt.Apply(asmt, exPolicy, evaluatedAt(), subjectsOf(input), knownControls())
+		for _, notice := range exReport.Notices() {
+			_, _ = fmt.Fprintln(os.Stderr, tr("pepin: ⚠ ", "pepin: ⚠ ")+notice)
+		}
 
 		// Bundle de preuve horodaté et hashé (opposabilité : intégrité + non-répudiation).
 		if scanSeal != "" {
@@ -143,7 +170,11 @@ var scanCmd = &cobra.Command{
 				return fmt.Errorf(tr("sérialisation de l'inventaire évalué : %w",
 					"serializing the evaluated inventory: %w"), merr)
 			}
-			cs, err := assess.WriteBundle(scanSeal, asmt, inputJSON)
+			extras, eerr := bundleExemptions(exReport)
+			if eerr != nil {
+				return eerr
+			}
+			cs, err := assess.WriteBundle(scanSeal, asmt, inputJSON, extras)
 			if err != nil {
 				return err
 			}
@@ -157,13 +188,18 @@ var scanCmd = &cobra.Command{
 				"pepin: evidence bundle written to %s — seal it with: cosign sign-blob %s\n"), scanSeal, cs)
 		}
 
+		// Le RAPPORT dit tout : aucun écart ne disparaît d'un format analysable parce
+		// qu'il est exempté. Seule la PORTE (le code de sortie) tient compte des
+		// dérogations, et elle le fait vers un code dédié, jamais vers 0.
+		open := openFindings(findings, exemptedKeys(asmt))
 		enrichFromReferentiel(findings)
 		res := scoring.Summarize(findings)
-		opts.SummaryHeadline = verdictHeadline(res, asmt, asmt.Run.Source)
+		gate := scoring.Summarize(open)
+		opts.SummaryHeadline = verdictHeadline(res, gate, asmt, exReport, asmt.Run.Source)
 
 		switch scanFormat {
 		case "json":
-			if err := renderJSON(findings, res); err != nil {
+			if err := renderJSON(findings, res, exReport); err != nil {
 				return err
 			}
 		case "assessment":
@@ -182,11 +218,12 @@ var scanCmd = &cobra.Command{
 			}
 		default:
 			_ = screport.Terminal(os.Stdout, opts, findings, scscoring.Summarize(findings)) // best-effort render
+			renderExemptions(os.Stdout, exReport)
 		}
 		// Portée prestataire/commanditaire : obligatoire pour l'opposabilité (un rapport pepin
 		// ne prouve pas une qualification, seulement la posture d'un tenant).
 		_, _ = fmt.Fprintf(os.Stderr, "\nⓘ %s\n", assess.ScopeDisclaimer())
-		if !res.Conforme {
+		if !gate.Conforme {
 			os.Exit(exitNonConformite)
 		}
 		// Couverture nulle : JAMAIS 0, et sans avoir à demander --strict. « Aucun finding »
@@ -197,9 +234,19 @@ var scanCmd = &cobra.Command{
 		if evaluatedNonGov(asmt) == 0 {
 			os.Exit(exitStrict)
 		}
+		// Une dérogation a écarté un écart : le scan ne peut PAS rendre 0. Un code
+		// dédié plutôt que 1 (le pipeline doit pouvoir distinguer « écart ouvert » de
+		// « écart assumé, daté et attribué ») et jamais 0 (une exemption ne rend pas
+		// vert en silence — c'est tout l'objet du statut exempted).
+		if exReport.Applied() {
+			os.Exit(exitDerogation)
+		}
 		// --strict : porte CI plus exigeante, qui refuse aussi les écarts medium/low
-		// (que le code de sortie normal ignore).
+		// (que le code de sortie normal ignore) et un fichier de dérogations périmé.
 		if scanStrict && res.Medium+res.Low > 0 {
+			os.Exit(exitStrict)
+		}
+		if scanStrict && exReport.Stale() {
 			os.Exit(exitStrict)
 		}
 		return nil
@@ -283,6 +330,150 @@ func redactInventory(input any) any {
 	return out
 }
 
+// evaluatedAt rend l'instant d'évaluation du scan. Les dérogations s'y ancrent
+// (et non à l'horloge) : une politique dont la date tombe pendant un scan ne doit
+// pas s'appliquer à la moitié des résultats, et un bundle rejoué doit rendre le
+// même verdict que le jour de son scellement.
+func evaluatedAt() time.Time {
+	t, err := time.Parse(time.RFC3339, scanTimestamp)
+	if err != nil {
+		return time.Now().UTC()
+	}
+	return t
+}
+
+// subjectsOf rend l'ensemble des sujets nommables de l'inventaire : identifiants ET
+// noms de ressources. Une dérogation écrite par un humain nomme ce qu'il connaît
+// (« vm-bastion »), pas nécessairement l'identifiant technique ; les deux formes
+// sont donc acceptées, et une dérogation qui ne correspond à NI l'un NI l'autre est
+// orpheline, donc signalée.
+func subjectsOf(input any) map[string]bool {
+	out := map[string]bool{}
+	m, ok := input.(map[string]any)
+	if !ok {
+		return out
+	}
+	add := func(vals ...string) {
+		for _, v := range vals {
+			if v != "" {
+				out[v] = true
+			}
+		}
+	}
+	switch rs := m["resources"].(type) {
+	case []model.Resource:
+		for _, r := range rs {
+			add(r.ID, r.Name)
+		}
+	case []any:
+		for _, it := range rs {
+			if rm, ok := it.(map[string]any); ok {
+				id, _ := rm["id"].(string)
+				name, _ := rm["name"].(string)
+				add(id, name)
+			}
+		}
+	}
+	// La cible elle-même est un sujet : les résultats non liés à une ressource
+	// précise (contrôles transverses) le portent.
+	add(targetID(scanTargetProvider))
+	return out
+}
+
+// scanTargetProvider retient le provider scanné, pour que subjectsOf compose le
+// même identifiant de cible que les résultats.
+var scanTargetProvider string
+
+// knownControls rend l'ensemble des codes de contrôle du référentiel. Une
+// dérogation qui vise autre chose est orpheline : le symptôme d'une exception
+// oubliée après le renommage ou le retrait d'un contrôle.
+func knownControls() map[string]bool {
+	out := map[string]bool{}
+	for code := range referentiel.All() {
+		out[code] = true
+	}
+	return out
+}
+
+// exemptedKeys rend les couples (contrôle, sujet) qu'une dérogation a écartés.
+func exemptedKeys(asmt assessment.Assessment) map[string]bool {
+	out := map[string]bool{}
+	for _, r := range asmt.Results {
+		if r.Status == exempt.StatusExempted {
+			out[r.Control+"\x00"+r.Subject] = true
+		}
+	}
+	return out
+}
+
+// openFindings rend les écarts NON couverts par une dérogation. Ils sont la base de
+// la porte de CI ; le rapport, lui, continue de tout montrer. Les findings sont
+// encore codés en agnostique ici (avant enrichFromReferentiel), comme l'assessment.
+func openFindings(findings []finding.Finding, exempted map[string]bool) []finding.Finding {
+	if len(exempted) == 0 {
+		return findings
+	}
+	out := make([]finding.Finding, 0, len(findings))
+	for _, f := range findings {
+		if exempted[f.Code+"\x00"+f.Subject] {
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
+// bundleExemptions sérialise l'effet des dérogations pour le sceller au bundle.
+func bundleExemptions(rep exempt.Report) (assess.BundleExtras, error) {
+	if len(rep.Records) == 0 && len(rep.Exemptions) == 0 {
+		return assess.BundleExtras{}, nil
+	}
+	raw, err := json.MarshalIndent(rep, "", "  ")
+	if err != nil {
+		return assess.BundleExtras{}, fmt.Errorf(tr("sérialisation des dérogations : %w",
+			"serializing the exemptions: %w"), err)
+	}
+	return assess.BundleExtras{
+		Exemptions: raw,
+		ExemptionSummary: &assess.ExemptionSummary{
+			PolicyDigest: rep.PolicyDigest,
+			Applied:      rep.Count(exempt.EffectApplied),
+			Expired:      rep.Count(exempt.EffectExpired),
+			Orphan:       rep.Count(exempt.EffectOrphan),
+		},
+	}, nil
+}
+
+// renderExemptions affiche les dérogations APPLIQUÉES, en clair et en évidence.
+// Une exemption discrète est une exemption qu'on oublie de revoir : elle porte donc
+// son responsable, son approbateur et sa date, à côté de ce qu'elle écarte.
+func renderExemptions(w io.Writer, rep exempt.Report) {
+	if !rep.Applied() {
+		return
+	}
+	_, _ = fmt.Fprintf(w, "\n%s\n", exemptStyle.Render(tr(
+		"DÉROGATIONS APPLIQUÉES : écarts assumés, NON conformes",
+		"EXEMPTIONS APPLIED — accepted deviations, NOT compliant")))
+	for _, rec := range rep.Records {
+		if rec.Effect != exempt.EffectApplied {
+			continue
+		}
+		_, _ = fmt.Fprintf(w, "  · %s%s\n", rec.Control, subjectsLabel(rec.Subjects))
+		_, _ = fmt.Fprintf(w, "    %s\n", rec.Justification)
+		_, _ = fmt.Fprintf(w, "    %s\n", fmt.Sprintf(tr(
+			"jusqu'au %s · responsable %s · approuvé par %s",
+			"until %s · owner %s · approved by %s"), rec.ExpiresAt, rec.Owner, rec.ApprovedBy))
+	}
+}
+
+// subjectsLabel rend la liste des sujets écartés par une dérogation.
+func subjectsLabel(subjects []string) string {
+	if len(subjects) == 0 {
+		return ""
+	}
+	return " (" + strings.Join(subjects, ", ") + ")"
+}
+
 // evaluatedNonGov compte les contrôles réellement mesurés (pass/fail) hors gouvernance.
 func evaluatedNonGov(asmt assessment.Assessment) int {
 	n := 0
@@ -310,6 +501,7 @@ func init() {
 	scanCmd.Flags().StringVar(&scanProfile, "profile", "", "profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)")
 	scanCmd.Flags().StringVar(&scanS3Endpoint, "s3-endpoint", "", "endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)")
 	scanCmd.Flags().StringVar(&scanSeal, "seal", "", "écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier")
+	scanCmd.Flags().StringVar(&scanExceptions, "exceptions", "", "`fichier` YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme")
 	scanCmd.Flags().BoolVar(&scanStrict, "strict", false, "porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance) ou s'il subsiste un écart medium/low")
 	scanCmd.Flags().BoolVar(&scanRedact, "redact", false, "caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive")
 	// --live et --terraform sont exclusifs : sinon loadInput privilégie le live et ignore le plan en silence.
@@ -753,7 +945,7 @@ func docURL(f finding.Finding) string {
 // un scan où RIEN n'a été évalué (collecte vide, gardes de capacité) ne doit jamais s'afficher
 // « CONFORME », et un verdict sur un plan Terraform est qualifié « périmètre déclaré » (état
 // planifié, pas configuration effective). Le code de sortie reste piloté par res.Conforme.
-func verdictHeadline(res scoring.Result, asmt assessment.Assessment, source string) string {
+func verdictHeadline(res scoring.Result, gate scoring.Result, asmt assessment.Assessment, ex exempt.Report, source string) string {
 	// `evaluated` ne compte QUE des contrôles mesurés sur des ressources collectées : les
 	// contrôles de gouvernance passent sur des faits AUTO-DÉCLARÉS (souveraineté) et ne doivent
 	// pas empêcher INDÉTERMINÉ sur un inventaire par ailleurs vide (sinon un tenant vidé de ses
@@ -778,11 +970,30 @@ func verdictHeadline(res scoring.Result, asmt assessment.Assessment, source stri
 		scope = tr("périmètre déclaré (plan Terraform, état planifié)",
 			"declared scope (Terraform plan, planned state)")
 	}
+	// Les écarts EXEMPTÉS ne rendent jamais un verdict conforme : ils le qualifient.
+	// « NON CONFORME sous dérogation » dit les deux choses vraies à la fois — l'écart
+	// existe, et quelqu'un l'a assumé — là où « conforme » n'en dirait aucune.
+	exempted := 0
+	for _, r := range asmt.Results {
+		if r.Status == exempt.StatusExempted {
+			exempted++
+		}
+	}
 	switch {
 	case evaluated == 0:
 		return tr(
 			"Verdict : INDÉTERMINÉ — aucun contrôle mesuré sur des ressources (le "+scope+" est vide ou non collecté)",
 			"Verdict: UNDETERMINED — no control measured on any resource (the "+scope+" is empty or was not collected)")
+	case !res.Conforme && gate.Conforme && exempted > 0:
+		return fmt.Sprintf(tr(
+			"Verdict : NON CONFORME sous dérogation, %d écart(s) critique/haut tous couverts par une dérogation datée et attribuée",
+			"Verdict: NON-COMPLIANT under waiver — %d critical/high deviation(s), all covered by a dated, attributed exemption"),
+			res.Critical+res.High)
+	case !res.Conforme && exempted > 0:
+		return fmt.Sprintf(tr(
+			"Verdict : NON CONFORME, %d écart(s) critique/haut restant(s) hors dérogation, %d contrôle(s) exempté(s)",
+			"Verdict: NON-COMPLIANT — %d critical/high deviation(s) left outside any exemption, %d exempted control(s)"),
+			gate.Critical+gate.High, exempted)
 	case !res.Conforme:
 		return tr("Verdict : NON CONFORME", "Verdict: NON-COMPLIANT")
 	case res.Medium+res.Low > 0:
@@ -839,8 +1050,14 @@ func pepinBanner() []string {
 	return lines
 }
 
-func renderJSON(findings []finding.Finding, res scoring.Result) error {
+func renderJSON(findings []finding.Finding, res scoring.Result, ex exempt.Report) error {
 	out := map[string]any{"findings": findings, "summary": res}
+	// Les dérogations sont une SURFACE ANALYSABLE : un pipeline qui accepte le code
+	// de sortie des dérogations doit pouvoir lire lesquelles, par qui et jusqu'à
+	// quand. Absent quand aucune politique n'a été fournie.
+	if len(ex.Records) > 0 {
+		out["exemptions"] = ex
+	}
 	b, err := json.MarshalIndent(out, "", "  ")
 	if err != nil {
 		return err

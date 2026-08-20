@@ -596,7 +596,7 @@ func TestFetchItemsTokenPagination(t *testing.T) {
 	defer srv.Close()
 
 	p := &Paging{Style: "token", TokenParam: "page_token", TokenPath: "next"}
-	items, err := fetchItems(context.Background(), srv.Client(), nil, srv.URL, "items", p, "GET", "")
+	items, _, err := fetchItems(context.Background(), srv.Client(), nil, srv.URL, "items", p, "GET", "")
 	if err != nil {
 		t.Fatalf("fetchItems: %v", err)
 	}
@@ -613,7 +613,7 @@ func TestFetchItemsPageBoundGuardsInfiniteLoop(t *testing.T) {
 	defer srv.Close()
 
 	p := &Paging{Style: "page", Param: "page", Size: 2, MaxPages: 5}
-	_, err := fetchItems(context.Background(), srv.Client(), nil, srv.URL, "items", p, "GET", "")
+	_, _, err := fetchItems(context.Background(), srv.Client(), nil, srv.URL, "items", p, "GET", "")
 	if err == nil {
 		t.Error("un serveur qui ignore la pagination doit provoquer une ERREUR de borne, pas une boucle infinie")
 	}

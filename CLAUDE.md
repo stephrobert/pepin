@@ -161,7 +161,11 @@ source du contrat dans l'en-tête de chaque règle.
 ## 6. Codes de sortie (portes de CI)
 
 `0` conforme · `1` non-conformité (≥ 1 finding critical/high) · `2` erreur
-technique. Ne pas changer cette sémantique sans mettre à jour README et tests.
+technique · `3` rien de mesuré (inventaire vide, ou écarts medium/low avec
+`--strict`) · `4` tout écart critical/high est couvert par une dérogation valide.
+`3` et `4` ne sont PAS des `0` : ni le vide ni la dérogation ne valent conformité.
+Ne pas changer cette sémantique sans mettre à jour README, `docs/reference/exit-codes.md`
+(généré) et les tests.
 
 ## 7. Commits & branches
 

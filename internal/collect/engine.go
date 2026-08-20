@@ -118,20 +118,31 @@ func collectResource(ctx context.Context, hc *http.Client, spec Spec, auth Auth,
 	if r.ForEach != nil {
 		return collectForEach(ctx, hc, spec, auth, r, vars)
 	}
-	items, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, r.Path, vars), r.Items, r.Paging, r.Method, subst(r.Body, vars))
+	items, called, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, r.Path, vars), r.Items, r.Paging, r.Method, subst(r.Body, vars))
 	if err != nil {
 		return nil, err
 	}
+	src := Source{Origin: model.OriginAPI, Ref: called}
 	if r.Aggregate != "" {
 		attrs := map[string]any{r.Aggregate: int64(len(items))}
+		// L'agrégat est CALCULÉ sur une réponse réelle : origine `api`, valeur dérivée.
+		var prov model.Provenance
+		prov.Attest(r.Aggregate, model.Attestation{
+			Origin: model.OriginAPI, Source: called, Observed: true, Derived: true,
+		})
 		for k, v := range r.Const {
 			attrs[k] = v
 		}
+		AttestConst(&prov, r.Const, constRef)
 		id, _ := attrs[r.ID].(string)
-		return []model.Resource{{Provider: spec.Provider, Type: r.Type, ID: id, Name: id, Region: vars["region"], Attributes: attrs}}, nil
+		return []model.Resource{{Provider: spec.Provider, Type: r.Type, ID: id, Name: id, Region: vars["region"], Attributes: attrs, Provenance: prov}}, nil
 	}
-	return mapItems(spec, r, items, vars), nil
+	return mapItems(spec, r, items, vars, src), nil
 }
+
+// constRef nomme la source d'un attribut littéral : le `const:` du descripteur du
+// fournisseur. Ni un appel, ni une mesure — une déclaration.
+const constRef = "descriptor:const"
 
 // resourceURL construit l'URL complète d'une ressource : base_url de la ressource
 // (override, multi-API) sinon base_url global, + le chemin ; variables substituées.
@@ -147,7 +158,7 @@ func resourceURL(spec Spec, r ResourceSpec, path string, vars map[string]string)
 // (variables {<as>.<champ>} + `_parent`).
 func collectForEach(ctx context.Context, hc *http.Client, spec Spec, auth Auth, r ResourceSpec, vars map[string]string) ([]model.Resource, error) {
 	fe := r.ForEach
-	parents, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, fe.Path, vars), fe.Items, fe.Paging, fe.Method, subst(fe.Body, vars))
+	parents, _, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, fe.Path, vars), fe.Items, fe.Paging, fe.Method, subst(fe.Body, vars))
 	if err != nil {
 		return nil, fmt.Errorf("liste parente %s : %w", fe.Path, err)
 	}
@@ -155,14 +166,14 @@ func collectForEach(ctx context.Context, hc *http.Client, spec Spec, auth Auth, 
 	for _, p := range parents {
 		pm, _ := p.(map[string]any)
 		v2 := mergeVars(vars, fe.As, pm)
-		items, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, r.Path, v2), r.Items, r.Paging, r.Method, subst(r.Body, v2))
+		items, called, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, r.Path, v2), r.Items, r.Paging, r.Method, subst(r.Body, v2))
 		if err != nil {
 			return nil, err
 		}
 		for i := range items {
 			items[i] = withParent(items[i], pm)
 		}
-		out = append(out, mapItems(spec, r, items, v2)...)
+		out = append(out, mapItems(spec, r, items, v2, Source{Origin: model.OriginAPI, Ref: called})...)
 	}
 	return out, nil
 }
@@ -171,53 +182,57 @@ func collectForEach(ctx context.Context, hc *http.Client, spec Spec, auth Auth, 
 // Styles : "page" (numéro de page incrémenté jusqu'à un lot incomplet) et "token" (jeton de
 // page suivante lu dans la réponse jusqu'à épuisement). Une borne de pages empêche toute
 // boucle infinie et, si elle est atteinte, retourne une ERREUR (jamais une troncature muette).
-func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsPath string, paging *Paging, method, body string) ([]any, error) {
+func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsPath string, paging *Paging, method, body string) ([]any, string, error) {
 	max := defaultMaxPages
 	if paging != nil && paging.MaxPages > 0 {
 		max = paging.MaxPages
 	}
 	var items []any
+	called := ""
 	token := ""
 	for page := 1; page <= max; page++ {
 		// L'offset avance du nombre d'items RÉELLEMENT reçus, jamais de la taille
 		// demandée : un serveur qui plafonne la page sous `size` (Outscale borne à 100
 		// même si l'on demande 1000) ferait sinon sauter des items.
-		doc, err := fetch(ctx, hc, fullURL, auth, paging, page, len(items), token, method, body)
+		doc, endpoint, err := fetch(ctx, hc, fullURL, auth, paging, page, len(items), token, method, body)
+		if endpoint != "" {
+			called = endpoint
+		}
 		if err != nil {
-			return nil, err
+			return nil, called, err
 		}
 		batch := extractItems(doc, itemsPath)
 		items = append(items, batch...)
 		if paging == nil {
-			return items, nil
+			return items, called, nil
 		}
 		switch paging.Style {
 		case "page", "offset-body":
 			if len(batch) == 0 {
-				return items, nil
+				return items, called, nil
 			}
 			// Quand l'API dit elle-même s'il reste des items (HasMoreItems), on la croit :
 			// c'est le seul critère fiable si elle plafonne la page sous `size`.
 			if paging.MorePath != "" {
 				if !boolFromDoc(doc, paging.MorePath) {
-					return items, nil
+					return items, called, nil
 				}
 				continue
 			}
 			// À défaut : une page incomplète est la dernière.
 			if len(batch) < paging.Size {
-				return items, nil
+				return items, called, nil
 			}
 		case "token", "token-body":
 			token = tokenFromDoc(doc, paging.TokenPath)
 			if token == "" {
-				return items, nil
+				return items, called, nil
 			}
 		default:
-			return items, nil
+			return items, called, nil
 		}
 	}
-	return nil, fmt.Errorf(i18n.T("pagination : borne de %d pages atteinte sur %s — collecte tronquée (vérifier la config de pagination)", "pagination: reached the %d-page bound on %s — truncated collection (check the pagination config)"), max, fullURL)
+	return nil, called, fmt.Errorf(i18n.T("pagination : borne de %d pages atteinte sur %s — collecte tronquée (vérifier la config de pagination)", "pagination: reached the %d-page bound on %s — truncated collection (check the pagination config)"), max, fullURL)
 }
 
 // withBodyPaging fusionne les paramètres de pagination dans le body JSON d'un POST.
@@ -268,18 +283,29 @@ func tokenFromDoc(doc any, path string) string {
 // mapItems projette les items bruts vers des ressources normalisées (map +
 // transforms). La région de collecte (vars["region"]) est propagée sur chaque
 // ressource pour les contrôles de localisation (souveraineté, CLD-GVN-3).
-func mapItems(spec Spec, r ResourceSpec, items []any, vars map[string]string) []model.Resource {
+func mapItems(spec Spec, r ResourceSpec, items []any, vars map[string]string, src Source) []model.Resource {
 	region := vars["region"]
 	out := make([]model.Resource, 0, len(items))
 	for _, it := range items {
-		attrs := Project(it, r.Map, r.Transforms)
+		attrs, prov := ProjectAttested(it, r.Map, r.Transforms, src)
 		for k, v := range r.Const {
 			attrs[k] = v
 		}
+		AttestConst(&prov, r.Const, constRef)
 		id, _ := attrs[r.ID].(string)
-		out = append(out, model.Resource{Provider: spec.Provider, Type: r.Type, ID: id, Name: id, Region: region, Attributes: attrs})
+		out = append(out, model.Resource{Provider: spec.Provider, Type: r.Type, ID: id, Name: id, Region: region, Attributes: attrs, Provenance: prov})
 	}
 	return out
+}
+
+// Source décrit ce qui a produit un lot d'items, tel qu'il s'est réellement passé.
+// `Ref` d'une source `api` est la requête EFFECTIVEMENT émise (méthode + URL, lue
+// après la réponse), jamais le chemin déclaré par la spec : une provenance qui
+// nommerait un endpoint jamais appelé donnerait l'apparence de la traçabilité.
+// Une Source à zéro (Origin vide) désactive l'attestation.
+type Source struct {
+	Origin model.Origin
+	Ref    string
 }
 
 // Project applique une projection DÉCLARATIVE (map attribut_commun -> chemin dans
@@ -287,9 +313,34 @@ func mapItems(spec Spec, r ResourceSpec, items []any, vars map[string]string) []
 // `values` d'une ressource Terraform) et retourne les attributs normalisés. C'est
 // le cœur commun à la collecte live ET au mapping Terraform (mêmes specs YAML).
 func Project(item any, mapping map[string]string, transforms map[string]any) map[string]any {
+	attrs, _ := ProjectAttested(item, mapping, transforms, Source{})
+	return attrs
+}
+
+// ProjectAttested est Project qui rend EN PLUS l'attestation de chaque attribut du
+// mapping : d'où il vient, et si la source le portait réellement.
+//
+// L'attestation est posée pour TOUT attribut du mapping, y compris ceux que la
+// source n'expose pas et qui ne sont donc pas projetés. C'est l'information utile :
+// « on a cherché `encrypted` à ce chemin, la réponse ne le portait pas » n'est pas
+// « on n'a jamais regardé ». Les attributs projetés, eux, sortent exactement comme
+// avant : la provenance ne déplace aucune valeur.
+func ProjectAttested(item any, mapping map[string]string, transforms map[string]any, src Source) (map[string]any, model.Provenance) {
 	attrs := make(map[string]any, len(mapping))
+	var prov model.Provenance
+	attest := func(attr, path string, observed, derived bool) {
+		if src.Origin == "" {
+			return
+		}
+		prov.Attest(attr, model.Attestation{
+			Origin: src.Origin, Source: src.Ref, Path: path,
+			Observed: observed, Derived: derived,
+		})
+	}
 	for attr, path := range mapping {
 		v := lookupCoalesce(item, path)
+		present := sourcePresent(item, path)
+		derived := false
 		if t, ok := transforms[attr]; ok {
 			// `kv`/`list` fabriquent une COLLECTION VIDE même sur nil, pour préserver
 			// « présent mais vide » (des tags déclarés et vides sont une information).
@@ -299,21 +350,38 @@ func Project(item any, mapping map[string]string, transforms map[string]any) map
 			// à une collecte réussie, franchirait la garde de capacité de la règle et
 			// produirait un faux positif. C'est le cas d'une instance dont le groupe de
 			// sécurité est créé par le même plan — la configuration la plus courante.
-			if v == nil && !sourcePresent(item, path) {
+			if v == nil && !present {
+				attest(attr, path, false, false)
 				continue
 			}
 			v = applyTransform(v, t)
+			derived = true
 		}
 		if v == nil {
 			// Attribut absent de la source (l'API n'a rien renvoyé) : on ne le projette PAS,
 			// au lieu de le forcer à "". Sinon les gardes de capacité (`"k" in object.keys`)
 			// sont toujours vraies et un champ numérique absent devient une chaîne vide qui
 			// casse les comparaisons — doctrine « ce que le provider n'expose pas ne se teste pas ».
+			attest(attr, path, present, false)
 			continue
 		}
 		attrs[attr] = v
+		attest(attr, path, present, derived)
 	}
-	return attrs
+	return attrs, prov
+}
+
+// AttestConst atteste les attributs LITTÉRAUX d'une spec (`const:`). Ils ne viennent
+// d'aucun appel : leur origine est `derived`, et c'est précisément ce qu'un lecteur
+// doit pouvoir constater. Deux contrôles franchissent aujourd'hui leur garde d'attribut
+// grâce à un `const` (chiffrement transparent Exoscale, portée des clés Outscale) :
+// l'attestation ne change pas leur verdict, elle le rend LISIBLE.
+func AttestConst(prov *model.Provenance, consts map[string]any, ref string) {
+	for attr := range consts {
+		prov.Attest(attr, model.Attestation{
+			Origin: model.OriginDerived, Source: ref, Derived: true,
+		})
+	}
 }
 
 // mergeVars copie vars et y ajoute {<as>.<champ>} pour chaque champ scalaire du parent.
@@ -414,10 +482,14 @@ func lookupCoalesce(it any, path string) any {
 	return nil
 }
 
-func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Paging, page, offset int, token, method, body string) (any, error) {
+// fetch émet UNE requête et rend le document ainsi que la ligne de requête
+// EFFECTIVEMENT servie (« GET https://hote/chemin », sans les paramètres de
+// pagination). Cette ligne est lue sur la requête après une réponse valide : elle
+// atteste un appel qui a eu lieu, jamais un endpoint que la spec déclare.
+func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Paging, page, offset int, token, method, body string) (any, string, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if p != nil && p.Style == "page" {
 		q := u.Query()
@@ -446,33 +518,37 @@ func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Pa
 	}
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), bodyReader)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if body != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if auth != nil {
 		if err := auth.Apply(req); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 	}
 	resp, err := hc.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
+	// La requête telle qu'elle a été émise. Les paramètres de requête (page, jeton)
+	// sont écartés : ils varient d'une page à l'autre alors que l'endpoint, lui, est
+	// ce qui atteste la donnée.
+	called := req.Method + " " + req.URL.Scheme + "://" + req.URL.Host + req.URL.Path
 	respBody, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
 	if rerr != nil {
-		return nil, fmt.Errorf(i18n.T("lecture de la reponse de %s : %w", "reading the response from %s: %w"), u.Host, rerr)
+		return nil, called, fmt.Errorf(i18n.T("lecture de la reponse de %s : %w", "reading the response from %s: %w"), u.Host, rerr)
 	}
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+		return nil, called, fmt.Errorf("HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
 	}
 	var doc any
 	if err := json.Unmarshal(respBody, &doc); err != nil {
-		return nil, fmt.Errorf(i18n.T("réponse JSON invalide : %w", "invalid JSON response: %w"), err)
+		return nil, called, fmt.Errorf(i18n.T("réponse JSON invalide : %w", "invalid JSON response: %w"), err)
 	}
-	return doc, nil
+	return doc, called, nil
 }
 
 // ExtractItems expose extractItems pour le mapping Terraform (internal/tfmap) :

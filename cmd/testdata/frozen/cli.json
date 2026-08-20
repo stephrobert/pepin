@@ -110,6 +110,64 @@
           }
         }
       }
+    },
+    {
+      "schema_version": 3,
+      "content": {
+        "exit_codes": {
+          "conforme": 0,
+          "derogation": 4,
+          "erreur": 2,
+          "non_conformite": 1,
+          "strict": 3
+        },
+        "verbs": {
+          "provider": {
+            "flags": {}
+          },
+          "provider list": {
+            "flags": {}
+          },
+          "provider new": {
+            "flags": {}
+          },
+          "provider validate": {
+            "flags": {}
+          },
+          "scan": {
+            "flags": {
+              "exceptions": "",
+              "format": "f",
+              "kubeconfig": "",
+              "lang": "",
+              "live": "",
+              "policy-dir": "p",
+              "profile": "",
+              "redact": "",
+              "region": "",
+              "s3-endpoint": "",
+              "seal": "",
+              "strict": "",
+              "terraform": "t"
+            }
+          },
+          "scsl": {
+            "flags": {
+              "index": ""
+            }
+          },
+          "verify": {
+            "flags": {
+              "bundle": "",
+              "pubkey": "",
+              "re-derive": ""
+            }
+          },
+          "version": {
+            "flags": {}
+          }
+        }
+      }
     }
   ]
 }

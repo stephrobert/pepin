@@ -23,6 +23,44 @@ belongs in `git log`.
 
 ### Added
 
+- **`exempted`: a fifth, first-class assessment status, and dated exemptions.**
+  `scan --exceptions <file.yaml>` reads a versioned exemption policy — `control`,
+  `justification`, `expires_at`, `owner`, `approved_by`, all five mandatory and all
+  validated at load time. A `fail` covered by a valid entry becomes `exempted`, never
+  `pass`: the finding stays in `--format json`, in the SARIF and in the severity
+  counts, `summary.conforme` stays false, and the verdict reads `NON-COMPLIANT under
+  waiver`. **A new exit code, `4`**, means "every remaining critical/high deviation is
+  covered by a dated, attributed exemption" — non-zero, so nothing passes in silence,
+  and distinct, so a pipeline that accepts it has to write the number down. An expired
+  exemption stops applying and says so; one naming a control or subject that does not
+  exist is reported as an orphan; both fail a `--strict` gate. The bundle seals
+  `exemptions.json`, so the dossier digest depends on what it set aside, and
+  `verify --re-derive` replays the sealed policy at the sealed instant.
+  *A status and an exit code are both surfaces a pipeline must know how to read.*
+
+- **Every attribute of the normalized inventory carries its provenance.** Beside
+  `attributes`, a parallel `provenance` index says, for each attribute, where the
+  value came from — `api` with the request **actually served**, `terraform-plan` with
+  the plan resource type, or `derived` for a descriptor literal or a locally computed
+  value — and whether the source really carried the field. It is a parallel index and
+  not a wrapper around each value: the 59 Rego rules read `attributes.<name>`
+  unchanged, so no verdict can move (measured on nine fixtures × two formats × two
+  languages: identical findings, statuses and exit codes). `--format assessment` now
+  exposes, for every control with a deciding attribute, that attribute and its
+  attestation in `evidence.attribute` / `evidence.source`. This makes visible, without
+  changing it, that two controls cross their attribute gate thanks to a descriptor
+  constant rather than a measurement.
+
+- **The normalized inventory is a versioned internal contract.**
+  `pepin-inventory/v1`, frozen in `cmd/testdata/frozen/inventory.json` with its
+  envelope, its resource shape and the full vocabulary of resource types and common
+  attributes derived from the descriptors and collectors. The version travels with
+  every evidence bundle (`manifest.inventory_schema`), and a new reference page states
+  what is guaranteed and what is not. **Bundle format `/v2`** (manifest carries the
+  inventory schema and the exemption summary), **CLI surface v3** (`--exceptions`,
+  exit code 4).
+
+
 - **Wave 3 of the documentation: the control catalogue is generated, and the
   project explains itself.** One generated page per control under `docs/controls/`
   (what it concludes, from which source, with which reason when it cannot), a

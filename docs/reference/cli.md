@@ -22,7 +22,7 @@ by running the binary. A public flag that is missing here fails
 | `pepin provider list` | _(no flag of its own)_ |
 | `pepin provider new` | _(no flag of its own)_ |
 | `pepin provider validate` | _(no flag of its own)_ |
-| `pepin scan` | `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
+| `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
 | `pepin scsl` | `--index` |
 | `pepin verify` | `--bundle`, `--pubkey`, `--re-derive` |
 | `pepin version` | _(no flag of its own)_ |
@@ -37,10 +37,11 @@ independently:
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v2** |
+| `cli` | verbs, flags and exit codes | **v3** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
-| `bundle` | shape of the evidence bundle (files, roles, manifest) | **v1** |
+| `bundle` | shape of the evidence bundle (files, roles, manifest) | **v2** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v1** |
 <!-- /pepin:gen surface-versions -->
 
 A version rises on **any** shape change, additions included: the number means "the surface has
@@ -111,6 +112,7 @@ Usage:
   pepin scan <provider> [export.json] [flags]
 
 Flags:
+      --exceptions file                  exemptions YAML file (control, justification, expires_at, owner, approved_by) — a covered deviation becomes exempted, never compliant
   -f, --format string                    output format: table | json | assessment | oscal | sarif (default "table")
   -h, --help                             help for scan
       --kubeconfig string                path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (use READ-ONLY, short-lived access — never cluster-admin)
@@ -352,6 +354,7 @@ output should pin `PEPIN_LANG`, or split on the space.
 | **1** | `non_conformite` | at least one critical or high deviation |
 | **2** | `erreur` | technical error: the scan could not conclude |
 | **3** | `strict` | nothing was measured (without `--strict`), or medium/low deviations remain with `--strict` |
+| **4** | `derogation` | every remaining critical/high deviation is covered by a dated, attributed exemption (`--exceptions`) |
 <!-- /pepin:gen cli-exit-codes -->
 
 The full semantics, one scenario at a time, with the commands that produce each code:

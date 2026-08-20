@@ -1,6 +1,6 @@
 > [🇬🇧 English](assessment-model.md) · 🇫🇷 Français
 
-# Le modèle d'assessment : `pass`, `fail`, `not-applicable`, `not-evaluated`
+# Le modèle d'assessment : `pass`, `fail`, `not-applicable`, `not-evaluated`, `exempted`
 
 Un scanner de posture ne vaut que son affirmation la plus faible. Chez Pépin, l'affirmation la
 plus faible est le `pass` : cette page porte donc surtout sur ce qui doit être vrai avant que
@@ -10,7 +10,7 @@ Chaque scan produit un **assessment** : un résultat typé par contrôle, portan
 normatives exactes et la provenance du run. Il se lit avec `--format assessment`, ou scellé
 dans un bundle `--seal`.
 
-## Les quatre statuts, en une phrase chacun
+## Les cinq statuts, en une phrase chacun
 
 | Statut | Ce que Pépin affirme |
 |---|---|
@@ -18,9 +18,12 @@ dans un bundle `--seal`.
 | `fail` | *J'ai regardé et j'ai trouvé un écart, sur ce sujet, avec cette preuve.* |
 | `not-applicable` | *Ce contrôle ne peut pas exister ici, et voici la justification consignée.* |
 | `not-evaluated` | *Je n'ai pas pu décider, et voici exactement ce qui m'a manqué.* |
+| `exempted` | *J'ai trouvé un écart, et quelqu'un l'a assumé : voici qui, pourquoi et jusqu'à quand.* |
 
-Il n'y a pas de cinquième statut, et surtout **pas de statut silencieux**. Un contrôle
-implémenté pour le fournisseur scanné revient toujours avec l'un de ces quatre.
+Les quatre premiers sont ce que Pépin **mesure** ; le cinquième est ce qu'une organisation
+**décide**, et il n'est jamais une conformité. Il n'y a pas de sixième statut, et surtout
+**pas de statut silencieux** : un contrôle implémenté pour le fournisseur scanné revient
+toujours avec l'un de ces cinq.
 
 ## La décision, exactement telle que le code la prend
 
@@ -202,13 +205,14 @@ ressources, pas une liste à cocher de contrôles.
 {
   "control": "objectstorage_bucket_public_access",
   "evidence": {
+    "attribute": "acl",
     "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
     "proves": [
       "",
       "",
       ""
     ],
-    "source": "terraform-plan"
+    "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
     "category": "security",
@@ -387,6 +391,117 @@ aussi faux : rien n'a été observé de cassé non plus.
 Si vous voulez une porte qui refuse l'incertitude, utilisez `--strict` et lisez les codes de
 sortie ci-dessous.
 
+## `exempted` : écarté, jamais conforme
+
+Les quatre statuts ci-dessus sont ce que Pépin *mesure*. `exempted` est ce qu'une organisation
+*décide* : ce contrôle échoue, quelqu'un assume le risque, voici qui, pourquoi et jusqu'à quand.
+
+Un CSPM utilisé en production doit permettre des exceptions. Sans elles, une équipe désactive
+le contrôle, ou cesse de lire l'outil : deux issues pires que l'écart. Ce qu'un CSPM ne doit
+jamais permettre, c'est la forme muette (`ignore: true`), qui est un faux vert sous un autre nom.
+
+### Condition préalable
+
+Un résultat `fail` dont le couple `(contrôle, sujet)` est couvert par une entrée **valide** du
+fichier de dérogations passé à `scan --exceptions`. Valide signifie que les cinq champs
+obligatoires sont présents et que la date d'échéance n'est pas dépassée à l'instant
+d'évaluation.
+
+Seul un `fail` peut devenir `exempted`. Un `not-evaluated` ne le peut pas : déroger à un
+contrôle que personne n'a su mesurer reviendrait à cacher une absence de mesure derrière une
+exception, c'est-à-dire le même faux vert avec une étape de plus.
+
+### À quoi cela ressemble
+
+<!-- pepin:gen assessment-exempted -->
+```json
+{
+  "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
+  "evidence": {
+    "observed": "SSH (port 22) accepté depuis/vers Internet.",
+    "proves": [
+      "",
+      "",
+      ""
+    ],
+    "source": "export"
+  },
+  "labels": {
+    "category": "security",
+    "exemption_approved_by": "security@example.org",
+    "exemption_expires_at": "2099-12-31",
+    "exemption_owner": "platform-security",
+    "provider": "scaleway"
+  },
+  "references": [
+    {
+      "framework": "scsl",
+      "id": "CLD-NET-1"
+    },
+    {
+      "framework": "scsl",
+      "id": "CLD-IAM-6"
+    },
+    {
+      "framework": "scsl",
+      "id": "CLD-NET-6"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "4.4"
+    },
+    {
+      "framework": "cis-v8",
+      "id": "12.2"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.20"
+    },
+    {
+      "framework": "iso-27001",
+      "id": "A.8.22"
+    },
+    {
+      "framework": "secnumcloud-3.2",
+      "id": "13.2"
+    }
+  ],
+  "remediation": "Restreindre la règle à des sources/destinations et ports légitimes (CIDR d'administration, bastion, VPN) ; ne jamais exposer un service sensible à 0.0.0.0/0.",
+  "severity": "high",
+  "status": "exempted",
+  "subject": "sg-bastion",
+  "title": "SSH (port 22) ouvert à Internet",
+  "waiver": {
+    "justification": "Bastion administre, acces restreint par IP source en amont",
+    "until": "2099-12-31"
+  }
+}
+```
+<!-- /pepin:gen assessment-exempted -->
+
+La dérogation voyage avec le résultat (justification, échéance, responsable, approbateur),
+parce qu'un dossier qui ne dit pas ce qu'il a écarté, ni sous quelle autorité, n'est pas
+opposable.
+
+### Conséquence
+
+`exempted` est un statut de premier rang, et distinct de `pass` partout :
+
+- **Dans l'assessment**, la chaîne de statut est `exempted` ; le rendu OSCAL le traite, comme
+  tout statut autre que `pass`, en `not-satisfied`.
+- **Dans le rapport**, rien ne disparaît. Le finding reste dans `--format json`, dans le SARIF
+  et dans le décompte par sévérité ; `summary.conforme` reste faux. Une dérogation retire un
+  écart de la **porte**, jamais du dossier.
+- **Au terminal**, un bloc `EXEMPTIONS APPLIED` liste chaque dérogation avec son responsable,
+  son approbateur et sa date. Une exemption discrète est une exemption que personne ne revoit.
+- **Dans le verdict**, le bandeau annonce `NON CONFORME sous dérogation`. Jamais conforme.
+- **Dans le code de sortie**, un **4** dédié : voir [codes de sortie](../reference/exit-codes.md).
+
+Une dérogation expirée cesse de s'appliquer et le dit ; une dérogation qui nomme un contrôle ou
+un sujet inexistant est signalée comme orpheline. Les deux sont imprimées sur la sortie
+d'erreur, et les deux font échouer une porte `--strict`.
+
 ## Les scénarios, rangés
 
 | Scénario | Statut | D'où vient le motif |
@@ -405,7 +520,8 @@ scan n'est jamais globalement « fiable » ou non, chaque contrôle porte sa pro
 ## Répartition des statuts sur un scan réel
 
 Le scan du plan volontairement non conforme du
-[démarrage rapide](../getting-started/quickstart.fr.md) produit les quatre statuts à la fois :
+[démarrage rapide](../getting-started/quickstart.fr.md) produit les quatre statuts MESURÉS à la
+fois (`exempted` n'apparaît qu'avec un fichier de dérogations) :
 
 <!-- pepin:gen assessment-counts -->
 | Statut | Nombre |
@@ -430,6 +546,8 @@ rien mesuré. Pépin rend **3** dans ce cas, et le fait **sans exiger `--strict`
 | Rien n'a été mesuré (inventaire vide) : **sans avoir à demander `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Écarts medium/low seulement, sans `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Écarts medium/low seulement, avec `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| Tout écart critical/high est couvert par une dérogation valide | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
+| La même dérogation, échue : elle ne s'applique plus | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->
 
 Les contrôles de gouvernance sont exclus de ce décompte à dessein.

@@ -18,6 +18,16 @@ const (
 	// exitStrict : porte --strict : couverture nulle hors gouvernance, ou écarts
 	// medium/low restants, que le code de sortie normal ignore volontairement.
 	exitStrict = 3
+	// exitDerogation : tout écart critical/high restant est couvert par une
+	// dérogation datée, justifiée et attribuée.
+	//
+	// Un code DÉDIÉ, et le choix se défend des deux côtés. Rendre 0 ferait d'une
+	// exemption un faux vert silencieux, exactement ce que le statut `exempted`
+	// existe pour empêcher. Rendre 1 rendrait la dérogation inutile — et une
+	// équipe qui ne peut pas déroger désactive le contrôle, ce qui est pire. 4
+	// est donc non nul (rien ne passe en silence) et distinct (un pipeline qui
+	// veut l'accepter doit l'écrire, donc le savoir).
+	exitDerogation = 4
 )
 
 // cliSurfaceVersion est la version de FORME de la CLI : ses verbes, leurs flags,
@@ -28,7 +38,13 @@ const (
 //
 // v2 : ajout du drapeau persistant `--lang` (fr | en). Ajout pur : aucun verbe,
 // aucun autre drapeau ni aucun code de sortie ne bouge.
-const cliSurfaceVersion = 2
+//
+// v3 : ajout de `scan --exceptions` (dérogations datées et attribuées) et du code
+// de sortie 4 (tout écart restant est couvert par une dérogation). Ajout pur là
+// encore : aucun code existant ne change de sens, mais un code de plus change ce
+// qu'un pipeline doit savoir interpréter — d'où l'incrément et sa ligne de
+// CHANGELOG.
+const cliSurfaceVersion = 3
 
 // findingsSurfaceVersion est la version de FORME de `--format json`
 // ({"findings": [...], "summary": {...}}), la sortie qu'un pipeline parse le

@@ -302,6 +302,8 @@ echo $?   # 1
 | Nothing was measured (empty inventory): **without having to ask for `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Medium/low deviations only, without `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Medium/low deviations only, with `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| Every critical/high deviation is covered by a valid exemption | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
+| The same exemption, lapsed: it no longer applies | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->
 
 ## The same run, as an assessment
@@ -361,7 +363,7 @@ everything else is the captured document.)*
 - `scope.included` lists the resource types actually evaluated. A control about a type absent
   from that list cannot have been measured, and the assessment says so.
 
-### The four statuses, on this one run
+### The four measured statuses, on this one run
 
 <!-- pepin:gen assessment-counts -->
 | Status | Count |
@@ -372,7 +374,9 @@ everything else is the captured document.)*
 | `not-evaluated` | 9 |
 <!-- /pepin:gen assessment-counts -->
 
-A single account-free scan produces all four. Each is documented in
+A single account-free scan produces all four. The fifth status, `exempted`, is a decision
+rather than a measurement: it appears only when `--exceptions` supplies a waiver. Each is
+documented in
 [the assessment model](../concepts/assessment-model.md); here is one of each, verbatim.
 
 **`fail`** — a deviation, with its subject and evidence:
@@ -382,13 +386,14 @@ A single account-free scan produces all four. Each is documented in
 {
   "control": "objectstorage_bucket_public_access",
   "evidence": {
+    "attribute": "acl",
     "observed": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL).",
     "proves": [
       "",
       "",
       ""
     ],
-    "source": "terraform-plan"
+    "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
     "category": "security",

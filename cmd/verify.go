@@ -9,11 +9,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/commonrules"
+	"github.com/stephrobert/pepin/internal/exempt"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/referentiel"
@@ -157,6 +159,15 @@ func reDerive(ctx context.Context, dir string) error {
 	if err != nil {
 		return fmt.Errorf(tr("re-dérivation : %w", "re-derivation: %w"), err)
 	}
+	// Les dérogations SCELLÉES sont rejouées : sans elles, un bundle parfaitement
+	// fidèle divergerait pour la seule raison que le vérificateur n'a pas le fichier
+	// de l'opérateur. Elles sont rejouées à l'instant d'évaluation du bundle, pas à
+	// celui du vérificateur — une dérogation valide au scan ne doit pas « expirer »
+	// entre-temps et faire crier à la falsification.
+	sealedPolicy, err := sealedExemptions(dir)
+	if err != nil {
+		return err
+	}
 	sealedJSON, _ := json.Marshal(assess.Canonical(sealed).Results)
 
 	// Un bundle porte la LANGUE du scan qui l'a produit ; le vérificateur, lui, tourne
@@ -166,7 +177,7 @@ func reDerive(ctx context.Context, dir string) error {
 	// qu'un vérificateur puisse rendre. On rejoue donc dans les deux langues : ce qui est
 	// comparé (statuts, sujets, références, provenance) est identique, seule la
 	// formulation change, et une seule concordance suffit à établir la fidélité.
-	got, matched := reDeriveInEitherLanguage(name, findings, input, sealed.Run, string(sealedJSON))
+	got, matched := reDeriveInEitherLanguage(name, findings, input, sealed.Run, string(sealedJSON), sealedPolicy)
 	if !matched {
 		return errors.New(tr(
 			"re-dérivation DIVERGE de l'assessment scellé : le bundle n'atteste PAS fidèlement input.json (résultat fabriqué ou config différente)",
@@ -196,7 +207,7 @@ func reDerive(ctx context.Context, dir string) error {
 // l'autre, et rend le premier qui coïncide avec les résultats scellés. Le second retour
 // dit si l'une des deux a coïncidé ; à défaut, le premier essai est rendu pour que
 // l'appelant dispose d'un assessment non nul.
-func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any, run assessment.Run, sealedJSON string) (assessment.Assessment, bool) {
+func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any, run assessment.Run, sealedJSON string, pol exempt.Policy) (assessment.Assessment, bool) {
 	restore := i18n.Current()
 	defer i18n.Set(restore)
 
@@ -211,6 +222,12 @@ func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any
 		localizeFindings(f)
 		got := assess.Build(name, referentiel.All(), f, resourceTypesOf(input),
 			providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), run)
+		got = assess.WithProvenance(got, assess.ProvenanceOf(input), controlTypes())
+		at, terr := time.Parse(time.RFC3339, run.Timestamp)
+		if terr != nil {
+			at = time.Now().UTC()
+		}
+		got, _ = exempt.Apply(got, pol, at, subjectsOf(input), knownControls())
 		b, _ := json.Marshal(assess.Canonical(got).Results)
 		if string(b) == sealedJSON {
 			return got, true
@@ -220,6 +237,28 @@ func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any
 		}
 	}
 	return first, false
+}
+
+// sealedExemptions relit la politique de dérogations scellée dans le bundle.
+// Absente, elle vaut politique vide : un bundle produit sans dérogations se
+// re-dérive exactement comme avant.
+//
+// Le fichier est un artefact du bundle, donc couvert par checksums.txt et par la
+// signature : une politique ajoutée après coup pour blanchir un écart casse
+// l'intégrité avant même d'être rejouée.
+func sealedExemptions(dir string) (exempt.Policy, error) {
+	raw, err := os.ReadFile(filepath.Join(dir, "exemptions.json")) // #nosec G304 -- dossier de bundle de l'opérateur.
+	if err != nil {
+		if os.IsNotExist(err) {
+			return exempt.Policy{}, nil
+		}
+		return exempt.Policy{}, fmt.Errorf(tr("lecture de exemptions.json : %w", "reading exemptions.json: %w"), err)
+	}
+	var rep exempt.Report
+	if err := json.Unmarshal(raw, &rep); err != nil {
+		return exempt.Policy{}, fmt.Errorf(tr("exemptions.json invalide : %w", "invalid exemptions.json: %w"), err)
+	}
+	return exempt.Policy{Exemptions: rep.Exemptions}, nil
 }
 
 // short abrège une empreinte pour l'affichage.

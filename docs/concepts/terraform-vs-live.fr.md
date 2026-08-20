@@ -68,13 +68,14 @@ de deviner :
 {
   "control": "compute_instance_has_security_group",
   "evidence": {
+    "attribute": "security_group_ids",
     "observed": "attribut « security_group_ids » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
     "proves": [
       "",
       "",
       ""
     ],
-    "source": "terraform-plan"
+    "source": "security_group_ids=terraform-plan:scaleway_instance_server observed=0/1"
   },
   "references": [
     {

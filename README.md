@@ -72,8 +72,9 @@ terraform plan -out tfplan && terraform show -json tfplan > plan.json
 
 Output formats: `--format table|json|assessment|oscal|sarif`.
 Exit codes: `0` compliant · `1` non-compliance · `2` error · `3` nothing measured
-or, with `--strict`, remaining medium/low gaps (CI-friendly). A scan that collected
-no resource never returns `0`: an empty result is not a compliant one.
+or, with `--strict`, remaining medium/low gaps · `4` every critical/high deviation is
+covered by a valid exemption (CI-friendly). A scan that collected no resource never
+returns `0`: an empty result is not a compliant one, and an exempted one is not either.
 
 ## Language
 
@@ -108,7 +109,7 @@ control is the one that governs.
 - [Understanding a scan](docs/getting-started/understanding-a-scan.md) — one real run,
   read line by line, down to the exit code.
 - [The assessment model](docs/concepts/assessment-model.md) — what `pass`, `fail`,
-  `not-applicable` and `not-evaluated` actually assert.
+  `not-applicable`, `not-evaluated` and `exempted` actually assert.
 - [Coverage matrix](docs/coverage.md) — what is measurable, per provider and per source.
   **Generated** from the reference and the provider descriptors, and verified in CI.
 - [Control catalogue](docs/controls/index.md) — one generated page per control: what it
@@ -121,7 +122,8 @@ control is the one that governs.
   [Exoscale](docs/providers/exoscale.md) — authentication, API calls, minimal
   read-only permissions, coverage.
 - Reference: [CLI](docs/reference/cli.md) · [Exit codes](docs/reference/exit-codes.md) ·
-  [Output formats](docs/reference/output-formats.md).
+  [Output formats](docs/reference/output-formats.md) ·
+  [Normalized inventory](docs/reference/inventory.md).
 - Guides: [Remediation](docs/guides/remediation.md) ·
   [Evidence bundles](docs/guides/evidence-bundles.md) ·
   [GitHub Actions](docs/guides/github-actions.md) · [GitLab CI](docs/guides/gitlab-ci.md).

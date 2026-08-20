@@ -11,6 +11,8 @@ type blockStrings struct {
 	colProofs, colFigure                              string
 	exitCompliant, exitNonCompliance, exitError       string
 	exitNothing, exitMediumPlain, exitMediumStrict    string
+	colAttributes                                     string
+	exitExempted, exitExpired                         string
 	orWord, none, totalWord, figControls, figDeclared string
 	noTypeWord                                        string
 	noDeviationFor, noResultFor, quotedPlaceholder    string
@@ -31,6 +33,9 @@ func blockText(lang string) blockStrings {
 			exitNothing:       "Rien n'a été mesuré (inventaire vide) : **sans avoir à demander `--strict`**",
 			exitMediumPlain:   "Écarts medium/low seulement, sans `--strict`",
 			exitMediumStrict:  "Écarts medium/low seulement, avec `--strict`",
+			exitExempted:      "Tout écart critical/high est couvert par une dérogation valide",
+			exitExpired:       "La même dérogation, échue : elle ne s'applique plus",
+			colAttributes:     "Attributs communs",
 			orWord:            "ou",
 			none:              "_Aucun._",
 			totalWord:         "Total",
@@ -55,6 +60,9 @@ func blockText(lang string) blockStrings {
 		exitNothing:       "Nothing was measured (empty inventory): **without having to ask for `--strict`**",
 		exitMediumPlain:   "Medium/low deviations only, without `--strict`",
 		exitMediumStrict:  "Medium/low deviations only, with `--strict`",
+		exitExempted:      "Every critical/high deviation is covered by a valid exemption",
+		exitExpired:       "The same exemption, lapsed: it no longer applies",
+		colAttributes:     "Common attributes",
 		orWord:            "or",
 		none:              "_None._",
 		totalWord:         "Total",
