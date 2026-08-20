@@ -199,6 +199,15 @@ l'une ni l'autre appartient au `git log`.
   exclusifs**, parce que deux fichiers de politique sont deux fichiers qui divergeront.
   Surface CLI v4.
 
+- **La détection de secrets porte un niveau de confiance.** Chaque finding de
+  `compute_instance_no_secrets_in_user_data` publie `labels.confidence` : `high` pour un
+  bloc PEM de clé privée, `medium` pour un préfixe reconnu au format attendu (`ghp_`,
+  `AKIA`, `SCW`, `EXO`, `glpat-`, JWT), `low` pour une heuristique générique
+  (`password=…`, `api_key=…`). Le seuil de signalement par défaut est `low` : tout est
+  signalé, exactement comme avant. La valeur détectée n'apparaît toujours jamais, quel
+  que soit le niveau, et cette propriété est désormais testée aux trois niveaux, sur le
+  message et sur la remédiation, dans les deux langues.
+
 - **L'inventaire évalué porte sa configuration.** L'enveloppe gagne `config`, la
   configuration effective des contrôles, à côté de `evaluated_at` — l'`input.json` d'un
   bundle scellé rejoue donc sous les réglages de son propre jour, et

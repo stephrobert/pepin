@@ -329,6 +329,15 @@ exemption rather than by disabling the control.
 This control therefore takes no part in any "backup compliant" claim. Its wording says so, in
 both languages, and the reference records it in the control description.
 
+### Secret detection has confidence levels, not certainty
+
+Generic heuristics (`password=…`, `api_key=…`) cannot tell `password=changeme123456` from a
+real secret. Each finding carries `labels.confidence` (`high` | `medium` | `low`) so a
+pipeline can triage, and the reporting threshold is configurable. Raising it is a relaxation:
+"no cleartext secret" cannot be proven once you have chosen not to look at part of what was
+found, so the CLD-CMP-9 mapping is dropped and the report says so. The detected value never
+appears, at any level.
+
 ### A relaxed setting removes the mapping, not the measurement
 
 A control whose configuration falls outside its normative constraint keeps its status: it was

@@ -184,6 +184,15 @@ belongs in `git log`.
   and an existing file keep working; the two flags are **mutually exclusive**, because
   two policy files are two files that will drift. CLI surface v4.
 
+- **Secret detection carries a confidence level.** Every finding of
+  `compute_instance_no_secrets_in_user_data` publishes `labels.confidence`: `high` for a
+  PEM private-key block, `medium` for a recognized prefix in the expected format
+  (`ghp_`, `AKIA`, `SCW`, `EXO`, `glpat-`, JWT), `low` for a generic heuristic
+  (`password=…`, `api_key=…`). The default reporting threshold is `low` — everything is
+  reported, exactly as before. The detected value still never appears, at any level, and
+  that property is now tested at all three levels, on the message and the remediation,
+  in both languages.
+
 - **The evaluated inventory carries its configuration.** The envelope gains `config`,
   the effective control configuration, next to `evaluated_at` — so a sealed bundle's
   `input.json` replays under the settings of its own day, and `verify --re-derive` stays

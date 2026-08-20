@@ -334,6 +334,16 @@ dérogation datée plutôt qu'en désactivant le contrôle.
 Ce contrôle ne participe donc à aucune affirmation « sauvegarde conforme ». Son libellé le dit,
 dans les deux langues, et le référentiel le consigne dans la description du contrôle.
 
+### La détection de secrets a des niveaux de confiance, pas des certitudes
+
+Les heuristiques génériques (`password=…`, `api_key=…`) ne distinguent pas
+`password=changeme123456` d'un vrai secret. Chaque finding porte `labels.confidence`
+(`high` | `medium` | `low`) pour qu'un pipeline puisse trier, et le seuil de signalement est
+configurable. Le relever est un assouplissement : « aucun secret en clair » ne se prouve plus
+dès lors qu'on a choisi de ne pas regarder une partie de ce qui a été trouvé, donc la
+correspondance CLD-CMP-9 tombe et le rapport le dit. La valeur détectée, elle, n'apparaît
+jamais, quel que soit le niveau.
+
 ### Un réglage assoupli retire la correspondance, pas la mesure
 
 Un contrôle dont la configuration sort de sa contrainte normative garde son statut : il a bel
