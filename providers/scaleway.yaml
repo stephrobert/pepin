@@ -30,6 +30,42 @@ s3:
   endpoint: "https://s3.{region}.scw.cloud"
   sse_kms: true   # SSE-KMS via Key Manager (KEK client associée au bucket) → CLD-CHF-4 observable
 
+# PERMISSIONS MINIMALES, unité de collecte par unité de collecte.
+#
+# Pourquoi ici et pas seulement dans la page du fournisseur : le scan doit pouvoir
+# NOMMER la permission qui manque quand un endpoint refuse, et la page doit être
+# DÉRIVÉE de la même donnée. Deux listes tenues en parallèle divergent, et celle
+# qui diverge est toujours celle qu'on lit.
+#
+# `etat: verifie` engage : la permission est confirmée dans la source citée, un
+# document officiel du fournisseur. `a_verifier` dit l'inverse, explicitement —
+# un CSPM qui devine les droits qu'il exige est un CSPM qui pousse à en donner
+# trop. AUCUNE de ces lignes n'a été confirmée par un scan réel avec un rôle
+# réduit : ce dépôt ne détient aucun identifiant cloud, par construction.
+permissions:
+  - unit: access_key
+    grant: "IAMReadOnly (Organization scope)"
+    etat: verifie
+    source: "scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx"
+  - unit: iam_user
+    grant: "IAMReadOnly (Organization scope)"
+    etat: verifie
+    source: "scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx"
+  - unit: security_group_rule
+    grant: "InstancesReadOnly (Project scope)"
+    etat: verifie
+    source: "scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx"
+  - unit: compute_instance
+    grant: "InstancesReadOnly (Project scope)"
+    etat: verifie
+    source: "scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx"
+  - unit: object_storage_bucket
+    grant: "ObjectStorageReadOnly (Project scope)"
+    etat: a_verifier
+    source: "scaleway/docs-content — pages/object-storage/reference-content/s3-iam-permissions-equivalence.mdx"
+    note: "Couvre ListBuckets, GetBucketAcl, GetBucketVersioning, GetBucketTagging et GetObjectLockConfiguration. GetBucketPolicy et GetBucketEncryption n'apparaissent dans AUCUN jeu de permissions en lecture seule de la table d'équivalence : le droit qui les accorde n'a pas pu être établi, et il n'est pas deviné. Les deux appels sont best effort — un 403 coûte de la couverture, jamais de la justesse."
+    note_en: "Covers ListBuckets, GetBucketAcl, GetBucketVersioning, GetBucketTagging and GetObjectLockConfiguration. GetBucketPolicy and GetBucketEncryption appear in NO read-only permission set of the equivalence table: the right that grants them could not be established, and it is not guessed. Both calls are best-effort - a 403 costs coverage, never correctness."
+
 collecte:
   # Spec de collecte Scaleway PILOTÉE PAR YAML (moteur internal/collect).
   # Auth : en-tête X-Auth-Token = clé secrète (injectée au runtime). Variables de

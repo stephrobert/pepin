@@ -23,6 +23,17 @@ belongs in `git log`.
 
 ### Added
 
+- **Minimum permissions are declared in the descriptor, not only in prose.** Each
+  provider descriptor now carries a `permissions:` block, one entry per collection
+  unit: the grant in the provider's native vocabulary, the official source that
+  states it, and whether it is **confirmed** or still **to verify**. The provider
+  pages render that block, so the table a reader follows and the grant the scan names
+  in a `not-evaluated` reason cannot diverge. Four gates refuse a silent omission: a
+  collection unit with no declared grant, an orphan entry, a missing state or source,
+  and an unverified grant with no written reservation. Nothing here is confirmed by a
+  scan run with a deliberately reduced role — this repository holds no cloud
+  credentials — and every page says so.
+
 - **Collection completeness is recorded, and it moves the verdict.** Every collector
   — the declarative engine, the object-storage collector, the inline EIM policy chain
   and the managed-Kubernetes one — now records, unit by unit, whether it read

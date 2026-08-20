@@ -101,6 +101,41 @@ existe pour empêcher.
 
 ## Permissions minimales pour un scan live
 
+Dérivé du descripteur du fournisseur, si bien que ce tableau et ce que rapporte le scan ne
+peuvent pas diverger : quand un appel est refusé, le relevé de capacités et le motif du
+`not-evaluated` nomment le droit listé ici. **Confirmé** signifie que le droit est énoncé dans
+la source officielle citée en regard, pas qu'un scan a été lancé avec un rôle délibérément
+réduit. Ce dépôt ne détient aucun identifiant cloud et aucun contrôle automatisé n'atteint une
+API de fournisseur.
+
+<!-- pepin:gen provider-outscale-permissions -->
+| Unité de collecte | Droit minimal | Confirmé | Source |
+|---|---|:-:|---|
+| `security_group_rule` | `api:Read* (EIM) — ReadSecurityGroups` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `compute_instance` | `api:Read* (EIM) — ReadVms` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `access_key` | `api:Read* (EIM) — ReadAccounts, ReadAccessKeys` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `api_access_rule` | `api:Read* (EIM) — ReadApiAccessRules` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `api_access_summary` | `api:Read* (EIM) — ReadApiAccessRules` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `api_access_policy` | `api:Read* (EIM) — ReadApiAccessPolicy` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `blockstorage_volume` | `api:Read* (EIM) — ReadVolumes` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `blockstorage_snapshot` | `api:Read* (EIM) — ReadSnapshots` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `iam_policy` | `api:Read* (EIM) — ReadPolicies, ReadPolicyVersion` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `iam_policy_inline` | `api:Read* (EIM) — ReadUsers, ReadUserPolicies, ReadUserPolicy, ReadUserGroups, ReadUserGroupPolicies` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `network` | `api:Read* (EIM) — ReadNets` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `network_peering` | `api:Read* (EIM) — ReadNetPeerings` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `subnet` | `api:Read* (EIM) — ReadSubnets` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `load_balancer` | `api:Read* (EIM) — ReadLoadBalancers` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `compute_image` | `api:Read* (EIM) — ReadImages` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `object_storage_bucket` | — | non | docs.outscale.com/en/userguide/EIM-Policy-Elements.html + EIM API reference |
+| `kubernetes_cluster` | — | non | docs.outscale.com/en/userguide/ (OKS + EIM) |
+
+**Réserves, dites plutôt que masquées.**
+
+- **`security_group_rule`, `compute_instance`, `access_key`, `api_access_rule`, `api_access_summary`, `api_access_policy`, `blockstorage_volume`, `blockstorage_snapshot`, `iam_policy`, `iam_policy_inline`, `network`, `network_peering`, `subnet`, `load_balancer`, `compute_image`** — La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue.
+- **`object_storage_bucket`** — Aucun code de service de stockage objet n'apparaît dans les éléments de politique EIM. Avec les clés du propriétaire du compte, l'accès OOS vient avec le compte ; comment l'accorder à un utilisateur EIM n'est PAS vérifié. Par politique de bucket, les actions de lecture documentées sont s3:ListBucket, s3:HeadBucket, s3:GetBucketAcl, s3:GetBucketPolicy, s3:GetBucketTagging, s3:GetBucketVersioning, s3:GetEncryptionConfiguration, s3:GetBucketObjectLockConfiguration — sans action pour LISTER les buckets d'un compte, qui est pourtant le premier appel.
+- **`kubernetes_cluster`** — Le modèle de permission de GET /api/v2/clusters/all n'est PAS vérifié. Un appel refusé dégrade proprement : les contrôles Kubernetes reviennent « non évalués ».
+<!-- /pepin:gen provider-outscale-permissions -->
+
 Le vocabulaire d'Outscale est une **politique EIM** : `Effect`, `Action` sous la forme
 `<service>:<MéthodeAPI>`, et `Resource`. Refus par défaut, le refus explicite l'emporte.
 
@@ -124,12 +159,10 @@ Vérifié dans `docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automat
 politique) et `EIM-Policy-Elements.html` (la syntaxe `service:MéthodeAPI` et les codes de
 service `api`, `ec2`, `elasticloadbalancing`, `iam`, `directconnect`).
 
-Énumérer les actions plutôt que d'employer `api:Read*` donne la liste suivante, **déduite de la
-syntaxe documentée et non recopiée d'une source** :
-`ReadSecurityGroups`, `ReadVms`, `ReadImages`, `ReadNets`, `ReadNetPeerings`, `ReadSubnets`,
-`ReadVolumes`, `ReadSnapshots`, `ReadAccounts`, `ReadUsers`, `ReadAccessKeys`, `ReadPolicies`,
-`ReadPolicyVersion`, `ReadUserPolicies`, `ReadUserPolicy`, `ReadUserGroups`,
-`ReadUserGroupPolicies`, `ReadApiAccessRules`, `ReadApiAccessPolicy`, `ReadLoadBalancers`.
+L'action dont chaque unité de collecte a besoin est listée unité par unité dans le tableau
+ci-dessus. Ces noms d'actions sont **déduits de la syntaxe documentée `service:MéthodeAPI` et
+non recopiés d'un catalogue d'actions** : c'est pourquoi chaque ligne OAPI est marquée non
+confirmée, alors même que la politique `api:Read*` est, elle, vérifiée telle que publiée.
 
 **Ce qui n'a pas pu être vérifié, et qui compte.**
 
@@ -144,15 +177,17 @@ syntaxe documentée et non recopiée d'une source** :
 - **OKS.** Le modèle de permission de `GET /api/v2/clusters/all` n'est **pas vérifié** ; la
   documentation indique seulement qu'OKS est « partiellement compatible avec les utilisateurs
   EIM », et les deux rôles OKS documentés portent sur les volumes et les snapshots, pas sur les
-  clusters. Un appel refusé se dégrade proprement : un avertissement sur la sortie d'erreur, et
-  les contrôles Kubernetes reviennent en `not-evaluated`.
+  clusters. Un appel refusé se dégrade proprement : l'unité est consignée incomplète, le relevé
+  de capacités le dit, les contrôles Kubernetes reviennent en `not-evaluated` en la nommant, et
+  le scan rend `3`.
 - **Les clés du compte racine.** `ReadAccessKeys` sans nom d'utilisateur renvoie les clés de
   l'identité appelante : auditer les clés du compte racine exige donc des identifiants
   propriétaires du compte. C'est consigné dans le descripteur comme une limite d'API ; nous ne
   l'avons pas retrouvé tel quel dans la documentation officielle.
 - **Les règles d'accès à l'API.** Si le compte restreint l'accès à l'API par IP source,
-  l'adresse du scanner doit y figurer, sinon toute la collecte échoue, avec le code de sortie 2,
-  pas un faux vert.
+  l'adresse du scanner doit y figurer. Sinon, chaque unité est consignée refusée, rien n'est
+  mesuré, et le scan rend `3` avec un relevé de capacités qui liste ce qu'il n'a pas pu lire :
+  jamais un faux vert.
 
 ## Ressources Terraform reconnues
 

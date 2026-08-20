@@ -29,6 +29,59 @@ s3:
   endpoint: "https://sos-{zone}.exo.io"
   region: "{zone}"
 
+# PERMISSIONS MINIMALES, unité de collecte par unité de collecte.
+#
+# Pourquoi ici et pas seulement dans la page du fournisseur : le scan doit pouvoir
+# NOMMER la permission qui manque quand un endpoint refuse, et la page doit être
+# DÉRIVÉE de la même donnée. Deux listes tenues en parallèle divergent, et celle
+# qui diverge est toujours celle qu'on lit.
+#
+# `etat: verifie` engage : le nom d'opération est confirmé dans le catalogue IAM
+# officiel du service cité. AUCUNE de ces lignes n'a été confirmée par un scan
+# réel avec un rôle réduit : ce dépôt ne détient aucun identifiant cloud, par
+# construction.
+#
+# Piège documenté par Exoscale : si AUCUNE règle ne correspond, la requête est
+# refusée quelle que soit la stratégie par défaut du service. Chaque bloc de
+# service doit donc porter une règle qui matche réellement.
+permissions:
+  - unit: security_group_rule
+    grant: "compute:list-security-groups"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+  - unit: network
+    grant: "compute:list-private-networks"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+  - unit: compute_instance
+    grant: "compute:list-instances, compute:get-instance"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+  - unit: iam_user
+    grant: "iam:list-users"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+  - unit: kubernetes_cluster
+    grant: "compute:list-sks-clusters"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+  - unit: iam_role
+    grant: "iam:list-iam-roles"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+  - unit: blockstorage_volume
+    grant: "compute:list-block-storage-volumes"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+  - unit: blockstorage_snapshot
+    grant: "compute:list-block-storage-snapshots"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+  - unit: object_storage_bucket
+    grant: "sos:list-buckets, sos:get-bucket-acl, sos:get-bucket-versioning, sos:get-bucket-policy, sos:get-bucket-tagging, sos:get-object-lock-configuration, sos:get-bucket-encryption"
+    etat: verifie
+    source: "Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar"
+
 collecte:
   # Collecte live Exoscale PILOTÉE PAR YAML (moteur internal/collect, auth
   # EXO2-HMAC). API Compute v2 (REST GET). Ancré sur le contrat OpenAPI v2

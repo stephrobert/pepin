@@ -53,7 +53,7 @@ import (
 // Quand il s'affiche, il montre TOUT : les unités qui ont répondu autant que celles
 // qui ont échoué. Le contraste est l'information — « trois lues sur quatre » se
 // comprend, « une a échoué » laisse le lecteur deviner l'étendue de ce qui manque.
-func renderCapabilities(w io.Writer, coll model.Collection, degraded map[string]model.CollectionUnit, live bool) {
+func renderCapabilities(w io.Writer, coll model.Collection, degraded map[string]model.CollectionUnit, grants map[string]string, live bool) {
 	if coll.Empty() {
 		return
 	}
@@ -73,6 +73,12 @@ func renderCapabilities(w io.Writer, coll model.Collection, degraded map[string]
 			continue
 		}
 		_, _ = fmt.Fprintf(w, "  ✗ %s — %s\n", u.Unit, assess.OutcomeLabel(u.Error))
+		// Le DROIT manquant, nommé, quand le descripteur le déclare et que l'échec
+		// vient bien des droits. C'est l'action que l'utilisateur peut entreprendre :
+		// une classe d'échec dit ce qui s'est passé, un droit dit quoi corriger.
+		if g := grants[u.Unit]; g != "" && u.Error == model.OutcomePermissionDenied {
+			_, _ = fmt.Fprintf(w, "    %s\n", fmt.Sprintf(tr("droit requis : %s", "required grant: %s"), g))
+		}
 		// Le détail brut de l'API, sous la ligne qui le résume : la classe dit quoi
 		// faire, le détail dit à qui le demander.
 		if u.Detail != "" {

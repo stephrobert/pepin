@@ -76,7 +76,7 @@ func DegradedControls(coll model.Collection, controlType map[string]string, scop
 // provenance : elle lit un statut et n'en écrit qu'un seul, toujours dans le sens
 // de la prudence. Elle rend aussi le nombre de « pass » retirés, qui est
 // exactement ce qu'une collecte incomplète a coûté en certitude.
-func Degrade(a assessment.Assessment, degraded map[string]model.CollectionUnit) (assessment.Assessment, int) {
+func Degrade(a assessment.Assessment, degraded map[string]model.CollectionUnit, grants map[string]string) (assessment.Assessment, int) {
 	if len(degraded) == 0 {
 		return a, 0
 	}
@@ -90,14 +90,14 @@ func Degrade(a assessment.Assessment, degraded map[string]model.CollectionUnit) 
 		switch res[i].Status {
 		case assessment.Pass:
 			res[i].Status = assessment.NotEvaluated
-			res[i].Evidence.Observed = IncompleteReason(unit)
+			res[i].Evidence.Observed = IncompleteReason(unit, grants[unit.Unit])
 			withdrawn++
 		case assessment.NotEvaluated:
 			// Le statut ne bouge pas ; la RAISON, si. « Aucune ressource de type
 			// iam_policy dans l'inventaire évalué » est trompeur quand la vérité est
 			// « l'API a refusé de les lister » : le premier suggère un tenant vide, le
 			// second un compte de scan à corriger.
-			res[i].Evidence.Observed = IncompleteReason(unit)
+			res[i].Evidence.Observed = IncompleteReason(unit, grants[unit.Unit])
 		default:
 			// fail, not-applicable, exempted : inchangés (cf. l'en-tête du fichier).
 		}
@@ -111,11 +111,19 @@ func Degrade(a assessment.Assessment, degraded map[string]model.CollectionUnit) 
 // « non évalué » qui ne dit pas sur quoi il bute n'apprend rien à qui doit le
 // corriger, et c'est très exactement la critique que cette vague adresse aux
 // CSPM qui rendent des rapports rassurants.
-func IncompleteReason(u model.CollectionUnit) string {
-	return fmt.Sprintf(i18n.T(
+func IncompleteReason(u model.CollectionUnit, grant string) string {
+	reason := fmt.Sprintf(i18n.T(
 		"collecte incomplète de « %s » : %s — aucune conclusion possible sur ce périmètre",
 		"incomplete collection of \"%s\": %s — no conclusion is possible on this scope"),
 		u.Unit, OutcomeLabel(u.Error))
+	// Le DROIT manquant, quand le descripteur le déclare et que l'échec vient bien
+	// des droits. Le nommer sur un timeout enverrait corriger une politique qui n'a
+	// rien à se reprocher — un CSPM qui fait élargir les privilèges au hasard fait
+	// plus de mal que le contrôle qu'il n'a pas pu rendre.
+	if grant != "" && u.Error == model.OutcomePermissionDenied {
+		reason += fmt.Sprintf(i18n.T(" (droit requis : %s)", " (required grant: %s)"), grant)
+	}
+	return reason
 }
 
 // OutcomeLabel traduit une classe d'échec de collecte. La CLASSE est un

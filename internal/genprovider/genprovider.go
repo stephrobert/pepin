@@ -61,10 +61,34 @@ type Descriptor struct {
 	OKS struct {
 		Endpoint string `yaml:"endpoint"` // API Kubernetes managé (host distinct, {region} substitué) ; vide = pas de collecte OKS
 	} `yaml:"oks"`
+	Permissions      []Permission `yaml:"permissions"`       // droits minimaux d'un compte de scan, par unité de collecte
 	Collecte         collect.Spec `yaml:"collecte"`          // source : API live
 	MappingTerraform tfmap.Spec   `yaml:"mapping_terraform"` // source : plan Terraform
 	Contrat          Contrat      `yaml:"contrat"`           // ancrage API + applicabilité SCSL
 	Souverainete     Souverainete `yaml:"souverainete"`      // métadonnées de souveraineté du fournisseur (CLD-GVN-4)
+}
+
+// Permission dit ce qu'un compte de scan doit détenir pour lire UNE unité de
+// collecte, et si ce droit est CONFIRMÉ ou seulement supposé.
+//
+// Les droits du compte qui exécute un CSPM sont une surface de sécurité : un
+// compte qui ne voit pas quelque chose ne doit jamais permettre de conclure que
+// cette chose n'existe pas. Deux conséquences, et elles tirent dans le même sens :
+// le scan doit NOMMER le droit qui lui manque quand un endpoint refuse, et la
+// documentation ne doit jamais exiger plus que le nécessaire — un outil qui
+// devine les droits qu'il réclame pousse à en donner trop.
+//
+// D'où `Etat`, sur le modèle du contrat d'API : `verifie` engage la source citée,
+// `a_verifier` dit explicitement que le droit n'a pas pu être établi. Aucune de
+// ces lignes n'est confirmée par un scan réel à rôle réduit — le dépôt ne détient
+// aucun identifiant cloud —, et la documentation générée le dit à chaque page.
+type Permission struct {
+	Unit   string `yaml:"unit"`   // unité de collecte (type de ressource normalisé, ou chaîne d'appels nommée)
+	Grant  string `yaml:"grant"`  // le droit, dans le vocabulaire natif du fournisseur
+	Etat   string `yaml:"etat"`   // verifie | a_verifier
+	Source string `yaml:"source"` // document officiel qui confirme (ou dont l'absence motive `a_verifier`)
+	Note   string `yaml:"note"`   // réserve ou précision, en français
+	NoteEn string `yaml:"note_en"`
 }
 
 // Souverainete porte les FAITS de souveraineté du fournisseur (siège, contrôle

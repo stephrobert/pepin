@@ -25,6 +25,42 @@ credentials:
   env:
     kubeconfig: KUBECONFIG
 
+# PERMISSIONS MINIMALES, unité de collecte par unité de collecte.
+#
+# La portée est ici un CLUSTER, pas un tenant cloud : la permission est une règle
+# RBAC, portée par le kubeconfig fourni. Utiliser un accès en LECTURE SEULE à TTL
+# court — jamais cluster-admin : les droits du jeton de scan sont une surface de
+# sécurité à part entière.
+#
+# `etat: a_verifier` pour toutes : le verbe RBAC est DÉDUIT du chemin d'API que la
+# spec appelle, il n'a pas été confirmé contre un cluster réel avec un rôle réduit.
+# La déduction est directe et sans surprise, mais déduite reste déduite.
+permissions:
+  - unit: k8s_namespace
+    grant: "RBAC — list namespaces"
+    etat: a_verifier
+    source: "deduced from the API path called by the `collecte` spec of this descriptor"
+    note: "Le verbe RBAC se déduit du chemin d'API ; il n'a pas été confirmé contre un cluster avec un rôle délibérément réduit."
+    note_en: "The RBAC verb is deduced from the API path; it has not been confirmed against a cluster with a deliberately reduced role."
+  - unit: k8s_cluster_role_binding
+    grant: "RBAC — list clusterrolebindings (rbac.authorization.k8s.io)"
+    etat: a_verifier
+    source: "deduced from the API path called by the `collecte` spec of this descriptor"
+    note: "Le verbe RBAC se déduit du chemin d'API ; il n'a pas été confirmé contre un cluster avec un rôle délibérément réduit."
+    note_en: "The RBAC verb is deduced from the API path; it has not been confirmed against a cluster with a deliberately reduced role."
+  - unit: k8s_crd
+    grant: "RBAC — list customresourcedefinitions (apiextensions.k8s.io)"
+    etat: a_verifier
+    source: "deduced from the API path called by the `collecte` spec of this descriptor"
+    note: "Le verbe RBAC se déduit du chemin d'API ; il n'a pas été confirmé contre un cluster avec un rôle délibérément réduit."
+    note_en: "The RBAC verb is deduced from the API path; it has not been confirmed against a cluster with a deliberately reduced role."
+  - unit: k8s_network_policy
+    grant: "RBAC — list networkpolicies (networking.k8s.io)"
+    etat: a_verifier
+    source: "deduced from the API path called by the `collecte` spec of this descriptor"
+    note: "Le verbe RBAC se déduit du chemin d'API ; il n'a pas été confirmé contre un cluster avec un rôle délibérément réduit."
+    note_en: "The RBAC verb is deduced from the API path; it has not been confirmed against a cluster with a deliberately reduced role."
+
 collecte:
   # {server} est injecté depuis le kubeconfig (pas du descripteur).
   base_url: "{server}"

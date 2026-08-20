@@ -258,6 +258,7 @@ d'erreur :
 Relevé de capacités du collecteur
   ✓ compute_instance
   ✗ security_group_rule — privilège insuffisant du compte de scan
+    droit requis : InstancesReadOnly (Project scope)
     HTTP 403 - GET https://api.scaleway.com/instance/v1/zones/fr-par-1/security_groups - insufficient permissions
 Résultat : 6 contrôle(s) ne pourront pas être évalués sur ce périmètre.
   · network_securitygroup_allow_ingress_from_internet_to_all_ports

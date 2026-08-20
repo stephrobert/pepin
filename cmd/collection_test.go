@@ -136,11 +136,51 @@ func TestTheCapabilityReportSaysWhatCouldNotBeObserved(t *testing.T) {
 		"insufficient privilege",
 		"HTTP 403",
 		"cannot be evaluated",
+		// Le DROIT manquant, nommé : c'est la seule ligne sur laquelle l'utilisateur
+		// peut agir. Une classe d'échec dit ce qui s'est passé, un droit dit quoi
+		// corriger — et le nom vient du descripteur, pas d'une supposition.
+		"InstancesReadOnly",
 	} {
 		if !strings.Contains(stderr, want) {
 			t.Errorf("le relevé de capacités ne dit pas %q :\n%s", want, stderr)
 		}
 	}
+	// La contrepartie : le relevé montre aussi ce qui a RÉPONDU. « une a échoué »
+	// laisse deviner l'étendue de ce qui manque, « trois lues sur quatre » se comprend.
+	if !strings.Contains(stderr, "✓ object_storage_bucket") {
+		t.Errorf("le relevé doit montrer les unités qui ont répondu :\n%s", stderr)
+	}
+}
+
+// TestADegradedControlNamesTheMissingGrant : l'exigence de l'issue #45 lue à la
+// lettre — le contrôle non évalué nomme la permission qui manque. Le droit vient du
+// descripteur du fournisseur, donc de la même donnée que la page de documentation :
+// deux listes tenues en parallèle divergent, et celle qui diverge est celle qu'on lit.
+func TestADegradedControlNamesTheMissingGrant(t *testing.T) {
+	bin := buildPepin(t)
+	stdout, _, _ := runScan(t, bin, "scan", "scaleway", withIncompleteUnit(t), "--format", "assessment")
+
+	var doc struct {
+		Results []struct {
+			Control  string `json:"control"`
+			Evidence struct {
+				Observed string `json:"observed"`
+			} `json:"evidence"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &doc); err != nil {
+		t.Fatalf("assessment illisible : %v", err)
+	}
+	for _, r := range doc.Results {
+		if r.Control != "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22" {
+			continue
+		}
+		if !strings.Contains(r.Evidence.Observed, "InstancesReadOnly") {
+			t.Fatalf("le motif doit nommer le droit manquant, obtenu %q", r.Evidence.Observed)
+		}
+		return
+	}
+	t.Fatal("le contrôle témoin est absent de l'assessment")
 }
 
 // TestTheCollectionStateIsAParsableSurface : un pipeline qui accepte le code d'une

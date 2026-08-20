@@ -24,6 +24,18 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Les permissions minimales sont déclarées au descripteur, pas seulement en prose.**
+  Chaque descripteur de fournisseur porte désormais un bloc `permissions:`, une entrée
+  par unité de collecte : le droit dans le vocabulaire natif du fournisseur, la source
+  officielle qui l'énonce, et s'il est **confirmé** ou encore **à vérifier**. Les pages
+  de fournisseurs rendent ce bloc, si bien que le tableau que suit un lecteur et le
+  droit que le scan nomme dans un motif de `not-evaluated` ne peuvent pas diverger.
+  Quatre portes refusent l'omission silencieuse : une unité de collecte sans droit
+  déclaré, une entrée orpheline, un état ou une source manquants, un droit non vérifié
+  sans réserve écrite. Rien de tout cela n'est confirmé par un scan lancé avec un rôle
+  délibérément réduit — ce dépôt ne détient aucun identifiant cloud — et chaque page
+  le dit.
+
 - **La complétude de la collecte est enregistrée, et elle déplace le verdict.** Chaque
   collecteur — le moteur déclaratif, le stockage objet, la chaîne des politiques EIM
   inline et le Kubernetes managé — consigne désormais, unité par unité, s'il a lu tout

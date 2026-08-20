@@ -44,7 +44,7 @@ func TestAnIncompleteCollectionWithdrawsThePassAndOnlyThePass(t *testing.T) {
 	// `untouched` n'est pas dans la carte : il ne doit pas bouger.
 	delete(degraded, "other_control")
 
-	out, withdrawn := Degrade(in, degraded)
+	out, withdrawn := Degrade(in, degraded, map[string]string{"iam_policy_inline": "api:Read*"})
 	if withdrawn != 1 {
 		t.Errorf("un seul « pass » devait être retiré, %d l'ont été", withdrawn)
 	}
@@ -76,7 +76,7 @@ func TestADegradedControlSaysWhatItBumpedInto(t *testing.T) {
 			Evidence: assessment.Evidence{Observed: "aucune ressource de type « iam_policy » dans l'inventaire évalué"}},
 	}}
 	unit := degradedIAM["iam_policy_no_wildcard_resource"]
-	out, _ := Degrade(in, map[string]model.CollectionUnit{"ne_control": unit})
+	out, _ := Degrade(in, map[string]model.CollectionUnit{"ne_control": unit}, nil)
 
 	reason := out.Results[0].Evidence.Observed
 	if strings.Contains(reason, "aucune ressource") {
@@ -132,7 +132,7 @@ func TestACompleteCollectionDegradesNothing(t *testing.T) {
 	}
 
 	in := assessment.Assessment{Results: []assessment.Result{{Control: "c", Status: assessment.Pass}}}
-	out, withdrawn := Degrade(in, got)
+	out, withdrawn := Degrade(in, got, nil)
 	if withdrawn != 0 || out.Results[0].Status != assessment.Pass {
 		t.Errorf("aucun statut ne devait bouger, obtenu %q (%d retraits)", out.Results[0].Status, withdrawn)
 	}

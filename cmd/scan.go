@@ -126,7 +126,10 @@ var scanCmd = &cobra.Command{
 		coll := collectionOf(input)
 		naReasons := providerNAReasons(name)
 		degraded := assess.DegradedControls(coll, controlTypes(), scanScope(name, naReasons))
-		renderCapabilities(os.Stderr, coll, degraded, scanLive)
+		// Les droits minimaux déclarés au descripteur : ce qui permet de NOMMER la
+		// permission manquante plutôt que de laisser l'utilisateur la chercher.
+		grants := genprovider.Grants(name)
+		renderCapabilities(os.Stderr, coll, degraded, grants, scanLive)
 
 		// Toutes les règles sont communes ; le provider ne fournit que la
 		// collecte (la source). On peut ajouter des règles externes via --policy-dir.
@@ -162,7 +165,7 @@ var scanCmd = &cobra.Command{
 		// STRICTEMENT directionnelle : elle ne produit qu'une transition,
 		// `pass → not-evaluated`, et remplace la raison d'un « non évalué » par la
 		// vraie. Aucun `fail` ne disparaît : un écart observé reste observé.
-		asmt, _ = assess.Degrade(asmt, degraded)
+		asmt, _ = assess.Degrade(asmt, degraded, grants)
 		// Les dérogations, en passe postérieure elles aussi : elles ne peuvent toucher
 		// qu'un `fail`, et ne produisent jamais un `pass`. L'instant de référence est
 		// celui du scan (pas l'horloge), pour qu'un bundle rejoué rende le même verdict.

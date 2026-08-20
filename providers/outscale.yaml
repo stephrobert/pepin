@@ -39,6 +39,126 @@ eim:
 oks:
   endpoint: "https://api.{region}.oks.outscale.com"
 
+# PERMISSIONS MINIMALES, unité de collecte par unité de collecte.
+#
+# Pourquoi ici et pas seulement dans la page du fournisseur : le scan doit pouvoir
+# NOMMER la permission qui manque quand un endpoint refuse, et la page doit être
+# DÉRIVÉE de la même donnée. Deux listes tenues en parallèle divergent, et celle
+# qui diverge est toujours celle qu'on lit.
+#
+# `etat: verifie` engage : la permission est confirmée dans la source citée, un
+# document officiel du fournisseur. `a_verifier` dit l'inverse, explicitement.
+# AUCUNE de ces lignes n'a été confirmée par un scan réel avec un rôle réduit :
+# ce dépôt ne détient aucun identifiant cloud, par construction.
+#
+# La politique EIM en lecture seule publiée par Outscale — `api:Read*` sur `*` —
+# couvre TOUS les appels OAPI ci-dessous. Les actions sont énumérées pour dire
+# lesquelles chaque unité exige, mais leur nom exact est INFÉRÉ de la syntaxe
+# documentée `<service>:<APIMethod>`, pas recopié d'un catalogue d'actions.
+permissions:
+  - unit: security_group_rule
+    grant: "api:Read* (EIM) — ReadSecurityGroups"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: compute_instance
+    grant: "api:Read* (EIM) — ReadVms"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: access_key
+    grant: "api:Read* (EIM) — ReadAccounts, ReadAccessKeys"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: api_access_rule
+    grant: "api:Read* (EIM) — ReadApiAccessRules"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: api_access_summary
+    grant: "api:Read* (EIM) — ReadApiAccessRules"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: api_access_policy
+    grant: "api:Read* (EIM) — ReadApiAccessPolicy"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: blockstorage_volume
+    grant: "api:Read* (EIM) — ReadVolumes"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: blockstorage_snapshot
+    grant: "api:Read* (EIM) — ReadSnapshots"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: iam_policy
+    grant: "api:Read* (EIM) — ReadPolicies, ReadPolicyVersion"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: iam_policy_inline
+    grant: "api:Read* (EIM) — ReadUsers, ReadUserPolicies, ReadUserPolicy, ReadUserGroups, ReadUserGroupPolicies"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: network
+    grant: "api:Read* (EIM) — ReadNets"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: network_peering
+    grant: "api:Read* (EIM) — ReadNetPeerings"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: subnet
+    grant: "api:Read* (EIM) — ReadSubnets"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: load_balancer
+    grant: "api:Read* (EIM) — ReadLoadBalancers"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: compute_image
+    grant: "api:Read* (EIM) — ReadImages"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: object_storage_bucket
+    grant: ""
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/EIM-Policy-Elements.html + EIM API reference"
+    note: "Aucun code de service de stockage objet n'apparaît dans les éléments de politique EIM. Avec les clés du propriétaire du compte, l'accès OOS vient avec le compte ; comment l'accorder à un utilisateur EIM n'est PAS vérifié. Par politique de bucket, les actions de lecture documentées sont s3:ListBucket, s3:HeadBucket, s3:GetBucketAcl, s3:GetBucketPolicy, s3:GetBucketTagging, s3:GetBucketVersioning, s3:GetEncryptionConfiguration, s3:GetBucketObjectLockConfiguration — sans action pour LISTER les buckets d'un compte, qui est pourtant le premier appel."
+    note_en: "No object-storage service code appears in the EIM policy elements. With the account owner keys, OOS access comes with the account; how to grant it to an EIM user is NOT verified. Through a bucket policy the documented read actions are s3:ListBucket, s3:HeadBucket, s3:GetBucketAcl, s3:GetBucketPolicy, s3:GetBucketTagging, s3:GetBucketVersioning, s3:GetEncryptionConfiguration, s3:GetBucketObjectLockConfiguration - with no action for LISTING an account buckets, which is the first call made."
+  - unit: kubernetes_cluster
+    grant: ""
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/ (OKS + EIM)"
+    note: "Le modèle de permission de GET /api/v2/clusters/all n'est PAS vérifié. Un appel refusé dégrade proprement : les contrôles Kubernetes reviennent « non évalués »."
+    note_en: "The permission model of GET /api/v2/clusters/all is NOT verified. A refused call degrades cleanly: the Kubernetes controls come back \"not evaluated\"."
+
 collecte:
   # Collecte live Outscale PILOTÉE PAR YAML (moteur internal/collect, SigV4).
   # API OAPI : POST /api/v1/<Action> avec body JSON ; réponses en PascalCase.
