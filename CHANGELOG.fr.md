@@ -24,6 +24,31 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **La complétude de la collecte est enregistrée, et elle déplace le verdict.** Chaque
+  collecteur — le moteur déclaratif, le stockage objet, la chaîne des politiques EIM
+  inline et le Kubernetes managé — consigne désormais, unité par unité, s'il a lu tout
+  ce que l'API avait à rendre. Un endpoint refusé n'arrête plus le scan et ne disparaît
+  plus dans un avertissement : l'inventaire porte un bloc `collection` (`attempted`,
+  `complete`, une classe d'erreur stable, le `detail` du fournisseur), il est scellé
+  dans le bundle de preuve, et il est publié par `--format json`. **Tout contrôle qui
+  lit un type de ressource alimenté par une unité incomplète devient `not-evaluated`**,
+  avec cette unité nommée comme motif — c'est l'assessment qui tranche, jamais une règle
+  — et le scan rend **`3`, jamais `0`**. La transition est strictement directionnelle :
+  un `pass` est retiré, un `fail` est conservé (un écart observé reste observé), un
+  `not-applicable` est conservé (il vient du contrat, pas de la collecte). *Un verdict
+  peut désormais bouger sur un tenant inchangé : un scan dont les identifiants ne
+  peuvent pas lire une partie du périmètre rendait `0`, il rend `3` désormais.*
+
+- **Un relevé de capacités, imprimé avant tout verdict.** Un scan live annonce ce qu'il
+  a pu et n'a pas pu observer, unité par unité, avec la classe de chaque échec et le
+  nombre de contrôles que cela coûte — ce nombre venant de la même fonction que celle
+  qui dégrade l'assessment, si bien que le relevé ne peut pas promettre ce que le
+  rapport ne tiendra pas. Hors collecte live, il n'apparaît que s'il a quelque chose à
+  dire. Les types de ressources qu'un plan Terraform porte et qu'aucune spec ne projette
+  y figurent aussi : ce n'est pas une incomplétude — aucun contrôle ne les lit, donc
+  aucun verdict n'en dépend, et ils ne bloquent aucune porte — mais ils ne sont plus
+  silencieux.
+
 - **`exempted` : un cinquième statut d'assessment de premier rang, et des dérogations
   datées.** `scan --exceptions <fichier.yaml>` lit une politique de dérogations
   versionnée : `control`, `justification`, `expires_at`, `owner`, `approved_by`, les
@@ -123,6 +148,21 @@ l'une ni l'autre appartient au `git log`.
   Les deux README s'ouvrent dessus.
 
 ### Modifié
+
+- **Le code de sortie `3` s'élargit de « rien n'a été mesuré » à « le scan n'établit
+  pas la conformité ».** Il se déclenche désormais aussi quand la collecte n'a pas pu
+  lire une partie du périmètre visé. Délibérément pas de cinquième code : un code propre
+  à l'incomplétude ne pourrait jamais primer sur `1` — masquer un écart critique réel au
+  motif que le reste manque serait le faux vert que cette vague existe pour empêcher —
+  il ne s'exprimerait donc que là où `3` s'exprime déjà. Ce qui distingue les situations
+  reste lisible dans le relevé de capacités, dans le motif de chaque contrôle et dans la
+  clé `collection`. *Un code de sortie est une surface que tout pipeline analyse.*
+
+- **Schéma d'inventaire `pepin-inventory/v2`.** L'enveloppe gagne `collection`. Ajout
+  pur — aucun champ existant ne bouge — mais un consommateur qui rejouerait un
+  inventaire sans lire `collection` conclurait plus fermement que Pépin ne l'a fait, ce
+  qui est exactement ce que ce champ existe pour empêcher. La version voyage dans
+  `manifest.inventory_schema`.
 
 - **La prose d'un finding change avec la langue, ses clés non.** Codes (`CLD-*`),
   identifiants de check, sévérités, statuts, sujets et codes de sortie sont

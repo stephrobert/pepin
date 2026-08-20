@@ -56,7 +56,7 @@ raises a version number and gets a CHANGELOG line.
 ```json
 {
   "format": "pepin-assessment-bundle/v2",
-  "inventory_schema": "pepin-inventory/v1",
+  "inventory_schema": "pepin-inventory/v2",
   "disclaimer": "This report assesses the configuration of a tenant (customer-side scope). The normative mappings (SecNumCloud, ISO, CIS) are indicative: they are not a proof of qualification or certification, which applies to the cloud service provider.",
   "generated": "<timestamp>",
   "tool": {

@@ -30,7 +30,7 @@ verdict. Voir [Codes de sortie](exit-codes.fr.md).
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v2** |
-| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v1** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v2** |
 <!-- /pepin:gen surface-versions -->
 
 « Gelé » signifie qu'un test échoue quand la forme bouge sans que sa version ait suivi : les
@@ -112,11 +112,21 @@ Forme gelée : `{"findings": [...], "summary": {...}}`.
 agnostique, commun à tous les fournisseurs. Les deux sont stables d'une langue à l'autre ;
 `title`, `message` et `remediation` sont traduits.
 
+Deux clés additives apparaissent quand elles ont quelque chose à dire, et toutes deux existent
+pour qu'un pipeline lise ce qu'il accepte au lieu de le déduire :
+
+- `exemptions` : présente quand `--exceptions` a été donné (voir ci-dessous) ;
+- `collection` : présente quand Pépin a **mesuré** l'inventaire — l'état de chaque unité de
+  collecte, et les types de ressources que la source portait sans qu'aucune spec ne les
+  projette. Sa forme est décrite dans
+  [l'inventaire normalisé](inventory.fr.md#létat-de-collecte).
+
 **Ce que ce format ne sait pas dire** : il liste des écarts, donc un tableau `findings` vide
 signifie « aucun écart trouvé », ce qui recouvre aussi bien « le tenant est propre » que « rien
 n'a été collecté ». Le booléen `summary.conforme` ne dit rien non plus de la couverture. Si
 cette distinction compte, et pour une porte de conformité elle compte, lire le code de sortie
-(3 signifie que rien n'a été mesuré) ou utiliser le format assessment.
+(3 signifie que le scan n'établit pas la conformité : rien de mesuré, ou un périmètre lu en
+partie seulement), lire `collection`, ou utiliser le format assessment.
 
 ### `exemptions` : présent seulement avec `--exceptions`
 

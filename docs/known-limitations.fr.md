@@ -208,9 +208,26 @@ configuration effective, utilisez `--live`.
 ### `--live` voit exactement ce que voient vos identifiants
 
 Une permission manquante au rôle en lecture seule se traduit par un `not-evaluated`, pas par une
-erreur. C'est le bon mode de défaillance, mais cela signifie qu'un scan sous-privilégié produit
-un rapport *plus silencieux*, pas plus bruyant. Regardez le nombre de `not-evaluated`, pas
-seulement le nombre d'écarts.
+erreur. C'est le bon mode de défaillance, et depuis la v0.3.0 c'est aussi un mode **bruyant** :
+le scan enregistre chaque unité de collecte qu'il n'a pas pu lire, imprime un relevé de
+capacités avant tout verdict, nomme l'unité manquante comme motif de chaque contrôle touché, et
+ne rend pas `0`. Un scan sous-privilégié ne produit donc plus un rapport plus silencieux qu'un
+scan privilégié : il produit un rapport qui dit ce qu'il n'a pas pu voir. Voir
+[le code de sortie 3](reference/exit-codes.fr.md#3--le-scan-nétablit-pas-la-conformité).
+
+Ce qui reste vrai : Pépin ne peut pas vous dire ce qu'un identifiant *plus large* aurait trouvé.
+Il rend compte de la surface qu'on lui a donnée, et de l'absence de cette surface, jamais de ce
+qui s'étend au-delà.
+
+### Les permissions minimales sont documentées, pas mesurées
+
+Chaque page de fournisseur liste les appels d'API que fait un scan et les permissions de lecture
+qu'ils exigent. Ces listes sont **dérivées des descripteurs de collecte** — les endpoints que la
+spec déclare — et confrontées à la documentation IAM publique du fournisseur. Elles n'ont pas
+été confirmées en lançant un scan avec un rôle délibérément réduit : ce dépôt ne détient aucun
+identifiant cloud, par construction, et aucun contrôle automatisé n'atteint une API de
+fournisseur. Chaque page distingue les lignes confirmées par la documentation de celles qui
+restent non vérifiées.
 
 ### Les faits de souveraineté sont déclarés, pas vérifiés
 

@@ -135,14 +135,14 @@ func (g GenericProvider) Description() string { return g.desc.Description }
 
 // Collect résout les identifiants, construit l'auth et exécute la collecte (spec
 // `collecte` + stockage objet) via le kit commun.
-func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) ([]model.Resource, error) {
+func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) (model.Inventory, error) {
 	creds, err := g.resolveCreds(cfg)
 	if err != nil {
-		return nil, err
+		return model.Inventory{}, err
 	}
 	auth, err := g.buildAuth(creds)
 	if err != nil {
-		return nil, err
+		return model.Inventory{}, err
 	}
 	vars := map[string]string{}
 	for _, k := range []string{"region", "zone", "org", "host"} {
@@ -171,11 +171,11 @@ func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) ([]mo
 	if g.desc.Auth.Type == "kubeconfig" {
 		path := collectkit.FirstNonEmpty(cfg.Options["kubeconfig"], creds["kubeconfig"])
 		if path == "" {
-			return nil, fmt.Errorf(i18n.T("provider %s : chemin du kubeconfig requis (--kubeconfig ou KUBECONFIG)", "provider %s: a kubeconfig path is required (--kubeconfig or KUBECONFIG)"), g.desc.Name)
+			return model.Inventory{}, fmt.Errorf(i18n.T("provider %s : chemin du kubeconfig requis (--kubeconfig ou KUBECONFIG)", "provider %s: a kubeconfig path is required (--kubeconfig or KUBECONFIG)"), g.desc.Name)
 		}
 		kc, err := kubeauth.Load(path, 30*time.Second)
 		if err != nil {
-			return nil, err
+			return model.Inventory{}, err
 		}
 		vars["server"] = kc.Server
 		hc = kc.Client
@@ -200,7 +200,7 @@ func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) ([]mo
 }
 
 // MapTerraform projette un plan Terraform via la spec de mapping déclarative.
-func (g GenericProvider) MapTerraform(resources []tfparse.Resource) ([]model.Resource, error) {
+func (g GenericProvider) MapTerraform(resources []tfparse.Resource) (model.Inventory, error) {
 	spec := g.desc.MappingTerraform
 	spec.Provider = g.desc.Name
 	return tfmap.Apply(spec, resources), nil

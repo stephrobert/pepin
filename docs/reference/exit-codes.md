@@ -12,7 +12,7 @@ meaning is a breaking change with its own CHANGELOG line.
 | **0** | `conforme` | no critical/high deviation, and at least one control actually measured |
 | **1** | `non_conformite` | at least one critical or high deviation |
 | **2** | `erreur` | technical error: the scan could not conclude |
-| **3** | `strict` | nothing was measured (without `--strict`), or medium/low deviations remain with `--strict` |
+| **3** | `strict` | the scan does not establish compliance: nothing was measured, or the collection could not read the whole scope (both without `--strict`), or medium/low deviations remain with `--strict` |
 | **4** | `derogation` | every remaining critical/high deviation is covered by a dated, attributed exemption (`--exceptions`) |
 <!-- /pepin:gen cli-exit-codes -->
 
@@ -35,6 +35,7 @@ last column is the one the process returned.
 | Nothing was measured (empty inventory): **without having to ask for `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Medium/low deviations only, without `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Medium/low deviations only, with `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| No deviation, but one collection unit could not be read | `./pepin scan scaleway partial-inventory.json` | **3** |
 | Every critical/high deviation is covered by a valid exemption | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
 | The same exemption, lapsed: it no longer applies | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->
@@ -116,9 +117,11 @@ $ echo $?
 The banner goes to standard error, and so does the error message. **2 is never a posture
 verdict.** No `allow_failure`, no `continue-on-error`, no `|| true` should ever cover it.
 
-## `3` — nothing measured, or the strict gate
+## `3` — the scan does not establish compliance
 
-Two situations share this code, and both mean "do not read this run as a green light".
+Three situations share this code, and all three mean "do not read this run as a green
+light": nothing was measured, the collection could not read the whole scope, or the strict
+gate caught remaining medium/low deviations.
 
 ### Nothing was measured — and `--strict` is not required
 
@@ -194,6 +197,107 @@ $ echo $?
 
 `--strict` therefore adds one behaviour only: medium/low deviations become blocking. It does
 not create the "nothing measured" gate, which exists without it.
+
+### The collection could not read the whole scope
+
+A collection unit that answered `403`, timed out, or was cut short mid-pagination leaves part
+of the scope unread. The inventory below carries that state — this is the shape a live scan
+produces, and the shape a sealed bundle's `input.json` replays:
+
+<!-- pepin:gen fixture-partial-inventory -->
+```json
+{
+  "provider": "scaleway",
+  "resources": [
+    {
+      "provider": "scaleway",
+      "type": "compute_instance",
+      "id": "srv-demo",
+      "name": "srv-demo",
+      "region": "fr-par",
+      "attributes": {
+        "vm_id": "srv-demo",
+        "security_group_ids": ["sg-front"],
+        "tags": [
+          {"key": "CostCenter", "value": "R-42"},
+          {"key": "Project", "value": "pepin"},
+          {"key": "Env", "value": "prod"},
+          {"key": "Owner", "value": "platform"}
+        ]
+      }
+    }
+  ],
+  "collection": {
+    "units": [
+      {
+        "unit": "compute_instance",
+        "types": ["compute_instance"],
+        "attempted": true,
+        "complete": true
+      },
+      {
+        "unit": "security_group_rule",
+        "types": ["security_group_rule"],
+        "attempted": true,
+        "complete": false,
+        "error": "permission_denied",
+        "detail": "HTTP 403 - GET https://api.scaleway.com/instance/v1/zones/fr-par-1/security_groups - insufficient permissions"
+      }
+    ]
+  }
+}
+```
+<!-- /pepin:gen fixture-partial-inventory -->
+
+The scan announces what it could and could not observe **before** any verdict, on standard
+error:
+
+<!-- pepin:gen capability-report -->
+```text
+Collector capability report
+  ✓ compute_instance
+  ✗ security_group_rule — insufficient privilege on the scanning account
+    HTTP 403 - GET https://api.scaleway.com/instance/v1/zones/fr-par-1/security_groups - insufficient permissions
+Result: 6 control(s) cannot be evaluated on this scope.
+  · network_securitygroup_allow_ingress_from_internet_to_all_ports
+  · network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports
+  · network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports
+  · network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
+  · network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389
+  · network_securitygroup_unrestricted_egress
+```
+<!-- /pepin:gen capability-report -->
+
+Every control that reads a resource type fed by the failed unit becomes `not-evaluated`, with
+the missing unit named, and the run does not return `0`:
+
+<!-- pepin:gen exit-run-partial -->
+```console
+$ ./pepin scan scaleway partial-inventory.json
+[…]
+ Summary
+
+ Verdict: INCOMPLETE — 6 control(s) are not evaluable because the collection is incomplete, 0 medium/low deviation(s) on what could be read
+
+ 🔴 CRITICAL 0   🟠 HIGH 0   🟡 MEDIUM 0   🔵 LOW 0
+──────────────────────────────────────────────────────────────────────────────
+$ echo $?
+3
+```
+<!-- /pepin:gen exit-run-partial -->
+
+The reasoning is the one that gives an empty inventory its `3`: a control that could not be
+evaluated says nothing about the posture, and a gate that turns green on a scope nobody read
+is the false green this tool exists to prevent. A `fail` observed on the part that *was* read
+still returns **1** — an observed deviation stays observed, and incompleteness never erases it.
+
+**Why not a fifth code.** A code for incompleteness could never take precedence over `1`:
+hiding a real critical deviation because the rest was missing would be exactly the false green
+we are fighting. It would therefore only ever fire where `3` already fires, and two codes for
+one position in the order of precedence is a duplicate, not a distinction — it would cost every
+consumer a re-read of its `case $?` for no new decision. What separates the situations stays
+readable where it is useful: the capability report names the unit and the class of failure,
+every affected control carries its reason, and `--format json` publishes a `collection` key.
 
 ## `4` — every remaining deviation is under a waiver
 
@@ -315,9 +419,11 @@ When several situations apply at once, the codes are decided in this order:
 1. **2** — a technical error: nothing else is a verdict.
 2. **1** — at least one critical/high deviation **not** covered by a valid exemption.
 3. **3** — nothing was measured (governance aside).
-4. **4** — at least one exemption was applied.
-5. **3** — `--strict` and medium/low deviations remain, or the exemption file is stale.
-6. **0** — none of the above.
+4. **3** — the collection was incomplete: at least one control lost its `pass` because the
+   data it needed could not be read.
+5. **4** — at least one exemption was applied.
+6. **3** — `--strict` and medium/low deviations remain, or the exemption file is stale.
+7. **0** — none of the above.
 
 ## What does not change the exit code
 
@@ -338,7 +444,7 @@ code=$?
 case "$code" in
   0) echo "compliant" ;;
   1) echo "non-compliance: at least one critical/high deviation" ; exit 1 ;;
-  3) echo "nothing measured, or medium/low deviations under --strict" ; exit 1 ;;
+  3) echo "the scan does not establish compliance: nothing measured, incomplete collection, or medium/low under --strict" ; exit 1 ;;
   4) echo "deviations remain, all under a dated exemption" ; exit 1 ;;
   2) echo "technical error: the scan could not conclude" ; exit 2 ;;
   *) echo "unexpected code $code" ; exit 2 ;;

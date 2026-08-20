@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
 )
@@ -41,12 +42,18 @@ func CollectClusters(ctx context.Context, hc *http.Client, provider, endpoint, r
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
+	// La requête telle qu'elle a été RÉELLEMENT émise, lue après réponse : une
+	// provenance ne nomme jamais un appel qui n'a pas eu lieu (cf. model.Provenance).
+	called := req.Method + " " + req.URL.Scheme + "://" + req.URL.Host + req.URL.Path
 	body, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
 	if rerr != nil {
 		return nil, fmt.Errorf(i18n.T("lecture de la reponse OKS : %w", "reading the OKS response: %w"), rerr)
 	}
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("OKS HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		// Erreur TYPÉE : c'est le statut qui range l'échec dans sa classe (droits
+		// insuffisants, service indisponible), et c'est cette classe que l'état de
+		// collecte publie.
+		return nil, &collect.HTTPError{Status: resp.StatusCode, Call: called, Body: strings.TrimSpace(string(body))}
 	}
 	var doc struct {
 		Clusters []map[string]any `json:"Clusters"`
@@ -56,7 +63,7 @@ func CollectClusters(ctx context.Context, hc *http.Client, provider, endpoint, r
 	}
 	out := make([]model.Resource, 0, len(doc.Clusters))
 	for _, c := range doc.Clusters {
-		out = append(out, mapCluster(provider, region, c))
+		out = append(out, mapCluster(provider, region, called, c))
 	}
 	return out, nil
 }
@@ -71,33 +78,66 @@ func ClusterAttributes() []string {
 // mapCluster projette un cluster OKS (champs natifs de l'API v2) vers le modèle normalisé.
 // Un attribut ABSENT n'est pas posé : les règles le traitent alors comme conforme par
 // défaut (object.get(..., true)), donc pas de faux échec.
-func mapCluster(provider, region string, c map[string]any) model.Resource {
+//
+// Chaque attribut est ATTESTÉ : d'où il vient (`called`, la requête réellement émise),
+// quel champ natif a été lu, et si la réponse le portait. L'attestation est posée même
+// quand le champ est absent — « on a cherché `cp_multi_az`, la réponse ne l'avait pas »
+// n'est pas « on n'a jamais regardé ». Ce collecteur était l'un des deux qui n'attestaient
+// rien du tout.
+func mapCluster(provider, region, called string, c map[string]any) model.Resource {
 	name, _ := c["name"].(string)
 	id, _ := c["id"].(string)
 	attrs := map[string]any{"name": name}
+	var prov model.Provenance
+	attest := func(attr, path string, observed, derived bool) {
+		prov.Attest(attr, model.Attestation{
+			Origin: model.OriginAPI, Source: called, Path: path,
+			Observed: observed, Derived: derived,
+		})
+	}
+	attest("name", "name", true, false)
+	// Les affectations restent LITTÉRALES (`attrs["nom"] = …`), une par attribut.
+	// Une boucle serait plus courte, mais la documentation de couverture DÉRIVE la
+	// liste des attributs de ce collecteur en lisant ce fichier
+	// (internal/docgen/descriptors.go) : la factoriser rendrait la page de couverture
+	// silencieusement fausse, c'est-à-dire exactement le genre de panne qui se mesure
+	// elle-même au lieu de mesurer son sujet.
+	//
 	// admin_whitelist : []string de CIDR autorisés à joindre l'API server (K8S-1).
-	if v, ok := c["admin_whitelist"]; ok {
+	v, ok := c["admin_whitelist"]
+	if ok {
 		attrs["admin_whitelist"] = v
 	}
+	attest("admin_whitelist", "admin_whitelist", ok, false)
 	// cp_multi_az -> control_plane_multi_az (K8S-2, HA du plan de contrôle).
-	if v, ok := c["cp_multi_az"]; ok {
+	v, ok = c["cp_multi_az"]
+	if ok {
 		attrs["control_plane_multi_az"] = v
 	}
+	attest("control_plane_multi_az", "cp_multi_az", ok, false)
 	// disable_api_termination -> deletion_protection (K8S-3).
-	if v, ok := c["disable_api_termination"]; ok {
+	v, ok = c["disable_api_termination"]
+	if ok {
 		attrs["deletion_protection"] = v
 	}
-	if v, ok := c["version"]; ok {
+	attest("deletion_protection", "disable_api_termination", ok, false)
+	v, ok = c["version"]
+	if ok {
 		attrs["version"] = v
 	}
+	attest("version", "version", ok, false)
 	// auto_upgrade DÉRIVÉ de auto_maintenances.minor_upgrade_maintenance.enabled (K8S-3).
+	const autoPath = "auto_maintenances.minor_upgrade_maintenance.enabled"
+	found := false
 	if am, ok := c["auto_maintenances"].(map[string]any); ok {
 		if mu, ok := am["minor_upgrade_maintenance"].(map[string]any); ok {
 			if en, ok := mu["enabled"]; ok {
 				attrs["auto_upgrade"] = en
+				found = true
 			}
 		}
 	}
+	attest("auto_upgrade", autoPath, found, found)
 	return model.Resource{
 		Provider:   provider,
 		Type:       "kubernetes_cluster",
@@ -105,5 +145,6 @@ func mapCluster(provider, region string, c map[string]any) model.Resource {
 		Name:       name,
 		Region:     region,
 		Attributes: attrs,
+		Provenance: prov,
 	}
 }

@@ -199,6 +199,226 @@
           ]
         }
       }
+    },
+    {
+      "schema_version": 2,
+      "content": {
+        "envelope": {
+          "collection": {
+            "units": [
+              {
+                "attempted": "boolean",
+                "complete": "boolean",
+                "detail": "string",
+                "error": "string",
+                "types": [
+                  "string"
+                ],
+                "unit": "string"
+              }
+            ],
+            "unmapped": [
+              {
+                "count": "number",
+                "type": "string"
+              }
+            ]
+          },
+          "provider": "string",
+          "resources": [
+            {
+              "attributes": {
+                "*": "any"
+              },
+              "id": "string",
+              "name": "string",
+              "provenance": {
+                "*": {
+                  "derived": "boolean",
+                  "observed": "boolean",
+                  "origin": "string",
+                  "path": "string",
+                  "source": "string"
+                }
+              },
+              "provider": "string",
+              "region": "string",
+              "type": "string"
+            }
+          ]
+        },
+        "format": "pepin-inventory/v2",
+        "types": {
+          "access_key": [
+            "access_key_id",
+            "expiration_date",
+            "owner_user",
+            "scope",
+            "state"
+          ],
+          "api_access_policy": [
+            "id",
+            "max_access_key_expiration_seconds",
+            "require_trusted_env"
+          ],
+          "api_access_rule": [
+            "api_access_rule_id",
+            "ca_ids",
+            "cns",
+            "ip_ranges"
+          ],
+          "api_access_summary": [
+            "id",
+            "rule_count"
+          ],
+          "blockstorage_snapshot": [
+            "creation_date",
+            "global_permission",
+            "snapshot_id",
+            "volume_id"
+          ],
+          "blockstorage_volume": [
+            "encrypted",
+            "state",
+            "tags",
+            "volume_id"
+          ],
+          "compute_image": [
+            "image_id",
+            "public",
+            "state",
+            "tags"
+          ],
+          "compute_instance": [
+            "deletion_protection",
+            "nic_public_ips",
+            "public_ip",
+            "security_group_ids",
+            "state",
+            "tags",
+            "user_data",
+            "vm_id"
+          ],
+          "governance_provider": [
+            "capital_control",
+            "eu_established",
+            "extraterritorial_exposure",
+            "jurisdiction",
+            "secnumcloud"
+          ],
+          "iam_policy": [
+            "manages_iam",
+            "owner_group",
+            "owner_user",
+            "policy_id",
+            "policy_name",
+            "scope",
+            "statements"
+          ],
+          "iam_role": [
+            "admin_privileges",
+            "editable",
+            "manages_iam",
+            "max_session_ttl",
+            "name",
+            "policy_has_expiration",
+            "role_id",
+            "source_ip_restricted"
+          ],
+          "iam_user": [
+            "mfa_enabled",
+            "user_id",
+            "username"
+          ],
+          "k8s_cluster_role_binding": [
+            "name",
+            "role_ref",
+            "subjects"
+          ],
+          "k8s_crd": [
+            "name"
+          ],
+          "k8s_namespace": [
+            "labels",
+            "name"
+          ],
+          "k8s_network_policy": [
+            "name",
+            "namespace"
+          ],
+          "kubernetes_cluster": [
+            "admin_whitelist",
+            "audit_enabled",
+            "auto_upgrade",
+            "control_plane_multi_az",
+            "deletion_protection",
+            "name",
+            "version"
+          ],
+          "load_balancer": [
+            "access_log",
+            "listeners",
+            "load_balancer_name",
+            "load_balancer_type",
+            "tags"
+          ],
+          "managed_database": [
+            "database_id",
+            "disable_backup",
+            "encryption_at_rest",
+            "ip_filter"
+          ],
+          "network": [
+            "cidr",
+            "description",
+            "name",
+            "network_id",
+            "state",
+            "tags"
+          ],
+          "network_peering": [
+            "accepter_account",
+            "peering_id",
+            "source_account",
+            "state"
+          ],
+          "object_storage_bucket": [
+            "acl",
+            "acl_grants",
+            "default_encryption_enabled",
+            "kms_key_id",
+            "name",
+            "object_lock_enabled",
+            "policy_public",
+            "public_via_acl",
+            "sse_kms_enabled",
+            "tags",
+            "versioning"
+          ],
+          "security_group": [
+            "inbound_default_policy",
+            "security_group_id"
+          ],
+          "security_group_rule": [
+            "action",
+            "cidrs",
+            "description",
+            "direction",
+            "port_from",
+            "port_to",
+            "protocol",
+            "security_group_id",
+            "security_group_name"
+          ],
+          "subnet": [
+            "map_public_ip_on_launch",
+            "network_id",
+            "state",
+            "subnet_id",
+            "tags"
+          ]
+        }
+      }
     }
   ]
 }

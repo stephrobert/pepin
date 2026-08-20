@@ -30,9 +30,17 @@ type Provider interface {
 	Name() string
 	// Description est un libellé court pour l'aide en ligne.
 	Description() string
-	// Collect interroge l'API du fournisseur et projette ses ressources dans
-	// le modèle commun. Non appelé en mode hors-ligne (scan d'un export).
-	Collect(ctx context.Context, cfg Config) ([]model.Resource, error)
+	// Collect interroge l'API du fournisseur et projette ses ressources dans le
+	// modèle commun. Non appelé en mode hors-ligne (scan d'un export).
+	//
+	// Il rend un model.Inventory, donc les ressources ET l'état de collecte : ce
+	// qui a été lu et ce qui ne l'a pas été. Rendre la seule liste de ressources
+	// rendait indiscernables « ce service n'a aucune ressource » et « ce service
+	// n'a pas répondu » — deux situations dont l'une autorise un « conforme » et
+	// l'autre l'interdit. L'erreur, elle, reste réservée à ce qui empêche le scan
+	// de commencer (identifiants inutilisables) ; un endpoint refusé n'est pas une
+	// erreur de scan, c'est un périmètre non lu, et il s'enregistre.
+	Collect(ctx context.Context, cfg Config) (model.Inventory, error)
 }
 
 // TerraformMapper projette des ressources d'un plan Terraform (types `<provider>_*`)
@@ -40,7 +48,10 @@ type Provider interface {
 // supporte pas l'audit Terraform ne l'implémente pas. Les attributs produits
 // restent ancrés sur le contrat natif du SDK (cf. règles correspondantes).
 type TerraformMapper interface {
-	MapTerraform(resources []tfparse.Resource) ([]model.Resource, error)
+	// MapTerraform rend, comme Collect, l'inventaire ET son état : un plan porte
+	// des types de ressources qu'aucune spec ne projette, et les taire laisserait
+	// croire que le plan a été audité en entier.
+	MapTerraform(resources []tfparse.Resource) (model.Inventory, error)
 }
 
 // GovernanceProvider expose une ressource synthétique `governance_provider`

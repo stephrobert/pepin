@@ -208,8 +208,24 @@ that reason. Use `--live` for the effective configuration.
 ### `--live` sees exactly what your credentials see
 
 A permission missing from the read-only role turns into `not-evaluated`, not into an error.
-That is the safe failure mode — but it means an under-privileged scan produces a *quieter*
-report, not a louder one. Check the `not-evaluated` count, not just the deviation count.
+That is the safe failure mode, and since v0.3.0 it is also a **loud** one: the scan records
+every collection unit it could not read, prints a capability report before any verdict, names
+the missing unit as the reason of each affected control, and does not return `0`. An
+under-privileged scan therefore no longer produces a quieter report than a privileged one — it
+produces a report that says what it could not see. See
+[exit code 3](reference/exit-codes.md#3--the-scan-does-not-establish-compliance).
+
+What remains true: Pépin cannot tell you what a *broader* credential would have found. It
+reports the surface it was given, and the absence of that surface, never what lies beyond it.
+
+### The minimum permissions are documented, not measured
+
+Each provider page lists the API calls a scan makes and the read permissions they need. Those
+lists are **derived from the collection descriptors** — the endpoints the spec declares — and
+checked against the provider's public IAM documentation. They have not been confirmed by
+running a scan with a deliberately reduced role: this repository holds no cloud credentials, by
+design, and no automated check reaches a provider API. Each page marks which lines are
+confirmed by documentation and which remain unverified.
 
 ### Sovereignty facts are declared, not verified
 

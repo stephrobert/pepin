@@ -12,7 +12,7 @@ changer leur signification est une rupture qui a sa propre ligne de CHANGELOG.
 | **0** | `conforme` | aucun écart critical/high, et au moins un contrôle réellement mesuré |
 | **1** | `non_conformite` | au moins un écart critical ou high |
 | **2** | `erreur` | erreur technique : le scan n'a pas pu conclure |
-| **3** | `strict` | rien n'a été mesuré (sans `--strict`), ou écarts medium/low restants avec `--strict` |
+| **3** | `strict` | le scan n'établit pas la conformité : rien n'a été mesuré, ou la collecte n'a pas pu lire tout le périmètre (les deux sans `--strict`), ou écarts medium/low restants avec `--strict` |
 | **4** | `derogation` | tout écart critical/high restant est couvert par une dérogation datée et attribuée (`--exceptions`) |
 <!-- /pepin:gen cli-exit-codes -->
 
@@ -35,6 +35,7 @@ la dernière colonne est celui que le processus a rendu.
 | Rien n'a été mesuré (inventaire vide) : **sans avoir à demander `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Écarts medium/low seulement, sans `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Écarts medium/low seulement, avec `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| Aucun écart, mais une unité de collecte n'a pas pu être lue | `./pepin scan scaleway partial-inventory.json` | **3** |
 | Tout écart critical/high est couvert par une dérogation valide | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
 | La même dérogation, échue : elle ne s'applique plus | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->
@@ -117,10 +118,11 @@ Le bandeau part sur la sortie d'erreur, et le message d'erreur aussi. **2 n'est 
 verdict de posture.** Aucun `allow_failure`, aucun `continue-on-error`, aucun `|| true` ne doit
 le couvrir.
 
-## `3` : rien de mesuré, ou la porte stricte
+## `3` : le scan n'établit pas la conformité
 
-Deux situations partagent ce code, et toutes deux signifient « ne lisez pas cette exécution
-comme un feu vert ».
+Trois situations partagent ce code, et toutes trois signifient « ne lisez pas cette exécution
+comme un feu vert » : rien n'a été mesuré, la collecte n'a pas pu lire tout le périmètre, ou
+la porte stricte a rattrapé des écarts medium/low.
 
 ### Rien n'a été mesuré, et `--strict` n'est pas nécessaire
 
@@ -196,6 +198,109 @@ $ echo $?
 
 `--strict` n'ajoute donc qu'un seul comportement : les écarts medium/low deviennent bloquants.
 Il ne crée pas la porte « rien n'a été mesuré », qui existe sans lui.
+
+### La collecte n'a pas pu lire tout le périmètre
+
+Une unité de collecte qui répond `403`, qui dépasse son délai ou dont la pagination s'interrompt
+laisse une part du périmètre non lue. L'inventaire ci-dessous porte cet état — c'est la forme
+que produit une collecte live, et celle que rejoue l'`input.json` d'un bundle scellé :
+
+<!-- pepin:gen fixture-partial-inventory -->
+```json
+{
+  "provider": "scaleway",
+  "resources": [
+    {
+      "provider": "scaleway",
+      "type": "compute_instance",
+      "id": "srv-demo",
+      "name": "srv-demo",
+      "region": "fr-par",
+      "attributes": {
+        "vm_id": "srv-demo",
+        "security_group_ids": ["sg-front"],
+        "tags": [
+          {"key": "CostCenter", "value": "R-42"},
+          {"key": "Project", "value": "pepin"},
+          {"key": "Env", "value": "prod"},
+          {"key": "Owner", "value": "platform"}
+        ]
+      }
+    }
+  ],
+  "collection": {
+    "units": [
+      {
+        "unit": "compute_instance",
+        "types": ["compute_instance"],
+        "attempted": true,
+        "complete": true
+      },
+      {
+        "unit": "security_group_rule",
+        "types": ["security_group_rule"],
+        "attempted": true,
+        "complete": false,
+        "error": "permission_denied",
+        "detail": "HTTP 403 - GET https://api.scaleway.com/instance/v1/zones/fr-par-1/security_groups - insufficient permissions"
+      }
+    ]
+  }
+}
+```
+<!-- /pepin:gen fixture-partial-inventory -->
+
+Le scan annonce ce qu'il a pu et n'a pas pu observer **avant** tout verdict, sur la sortie
+d'erreur :
+
+<!-- pepin:gen capability-report -->
+```text
+Relevé de capacités du collecteur
+  ✓ compute_instance
+  ✗ security_group_rule — privilège insuffisant du compte de scan
+    HTTP 403 - GET https://api.scaleway.com/instance/v1/zones/fr-par-1/security_groups - insufficient permissions
+Résultat : 6 contrôle(s) ne pourront pas être évalués sur ce périmètre.
+  · network_securitygroup_allow_ingress_from_internet_to_all_ports
+  · network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports
+  · network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports
+  · network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
+  · network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389
+  · network_securitygroup_unrestricted_egress
+```
+<!-- /pepin:gen capability-report -->
+
+Chaque contrôle qui lit un type de ressource alimenté par l'unité en échec devient
+`not-evaluated`, avec l'unité manquante nommée, et l'exécution ne rend pas `0` :
+
+<!-- pepin:gen exit-run-partial -->
+```console
+$ ./pepin scan scaleway partial-inventory.json
+[…]
+ Summary
+
+ Verdict : INCOMPLET — 6 contrôle(s) non évaluables faute d'une collecte complète, 0 écart(s) medium/low sur ce qui a pu être lu
+
+ 🔴 CRITICAL 0   🟠 HIGH 0   🟡 MEDIUM 0   🔵 LOW 0
+──────────────────────────────────────────────────────────────────────────────
+$ echo $?
+3
+```
+<!-- /pepin:gen exit-run-partial -->
+
+Le raisonnement est celui qui vaut à un inventaire vide son `3` : un contrôle qui n'a pas pu
+être évalué ne dit rien de la posture, et une porte qui verdit sur un périmètre que personne
+n'a regardé est le faux vert que cet outil existe pour empêcher. Un `fail` observé sur la part
+qui, elle, a été lue rend toujours **1** : un écart observé reste observé, et l'incomplétude ne
+l'efface jamais.
+
+**Pourquoi pas un cinquième code.** Un code propre à l'incomplétude ne pourrait jamais primer
+sur `1` : masquer un écart critique réel au motif que le reste manque serait exactement le faux
+vert que l'on combat. Il ne s'exprimerait donc que là où `3` s'exprime déjà, et deux codes pour
+une seule position dans l'ordre de priorité sont un doublon, pas une distinction — au prix
+d'une relecture de son `case $?` pour chaque consommateur, sans nouvelle décision à la clé. Ce
+qui sépare les situations reste lisible là où c'est utile : le relevé de capacités nomme
+l'unité et la classe d'échec, chaque contrôle touché porte son motif, et `--format json` publie
+une clé `collection`.
 
 ## `4` : tout écart restant est sous dérogation
 
@@ -319,9 +424,11 @@ Quand plusieurs situations se présentent en même temps, les codes se décident
 1. **2** : une erreur technique, rien d'autre n'est un verdict.
 2. **1** : au moins un écart critical/high **non** couvert par une dérogation valide.
 3. **3** : rien n'a été mesuré (hors gouvernance).
-4. **4** : au moins une dérogation a été appliquée.
-5. **3** : `--strict` et des écarts medium/low subsistent, ou le fichier de dérogations est périmé.
-6. **0** : aucun des cas ci-dessus.
+4. **3** : la collecte était incomplète, et au moins un contrôle y a perdu son `pass` faute
+   d'avoir pu lire la donnée dont il dépend.
+5. **4** : au moins une dérogation a été appliquée.
+6. **3** : `--strict` et des écarts medium/low subsistent, ou le fichier de dérogations est périmé.
+7. **0** : aucun des cas ci-dessus.
 
 ## Ce qui ne change pas le code de sortie
 
@@ -342,7 +449,7 @@ code=$?
 case "$code" in
   0) echo "conforme" ;;
   1) echo "non-conformité : au moins un écart critical/high" ; exit 1 ;;
-  3) echo "rien mesuré, ou écarts medium/low sous --strict" ; exit 1 ;;
+  3) echo "le scan n'établit pas la conformité : rien mesuré, collecte incomplète, ou medium/low sous --strict" ; exit 1 ;;
   4) echo "des écarts subsistent, tous sous dérogation datée" ; exit 1 ;;
   2) echo "erreur technique : le scan n'a pas pu conclure" ; exit 2 ;;
   *) echo "code inattendu $code" ; exit 2 ;;

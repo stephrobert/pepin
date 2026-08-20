@@ -66,6 +66,55 @@ const (
     }
   ]
 }`
+	// L'inventaire du code de sortie 3 par INCOMPLÉTUDE : les règles de groupe de
+	// sécurité n'ont pas pu être listées (403), le reste a répondu. Sans son bloc
+	// `collection`, ce même inventaire rendrait 0 — c'est ce contraste qui fait la
+	// démonstration, et c'est pourquoi la ressource présente est parfaitement
+	// conforme.
+	//
+	// Un inventaire porteur de son état de collecte n'est pas un artifice de
+	// documentation : c'est exactement la forme que prend l'input.json d'un bundle
+	// scellé, celle que `verify --re-derive` relit.
+	partialInventory = `{
+  "provider": "scaleway",
+  "resources": [
+    {
+      "provider": "scaleway",
+      "type": "compute_instance",
+      "id": "srv-demo",
+      "name": "srv-demo",
+      "region": "fr-par",
+      "attributes": {
+        "vm_id": "srv-demo",
+        "security_group_ids": ["sg-front"],
+        "tags": [
+          {"key": "CostCenter", "value": "R-42"},
+          {"key": "Project", "value": "pepin"},
+          {"key": "Env", "value": "prod"},
+          {"key": "Owner", "value": "platform"}
+        ]
+      }
+    }
+  ],
+  "collection": {
+    "units": [
+      {
+        "unit": "compute_instance",
+        "types": ["compute_instance"],
+        "attempted": true,
+        "complete": true
+      },
+      {
+        "unit": "security_group_rule",
+        "types": ["security_group_rule"],
+        "attempted": true,
+        "complete": false,
+        "error": "permission_denied",
+        "detail": "HTTP 403 - GET https://api.scaleway.com/instance/v1/zones/fr-par-1/security_groups - insufficient permissions"
+      }
+    ]
+  }
+}`
 	// La dérogation qui couvre cet écart : datée, justifiée, attribuée. C'est le
 	// fichier exact que la page fait écrire au lecteur.
 	exceptionsFile = `exceptions:
@@ -105,6 +154,10 @@ type captures struct {
 	empty           Capture
 	tagless         Capture
 	taglessStr      Capture
+	// partial : le scan dont une unité de collecte a échoué. Il n'a AUCUN écart et
+	// rendrait 0 sans son état de collecte — la capture prouve donc la porte, pas
+	// seulement la prose qui la décrit.
+	partial Capture
 	// Dérogations : le même inventaire, avec une exemption valide puis échue, et
 	// l'assessment qui montre le statut `exempted`.
 	exempted        Capture
@@ -143,7 +196,7 @@ type captures struct {
 // divergerait à chaque build sans qu'aucun comportement n'ait bougé.
 func (c *captures) all() []*Capture {
 	out := []*Capture{&c.vulnerable, &c.fixed, &c.assessment, &c.assessmentFixed, &c.missingFile, &c.empty,
-		&c.tagless, &c.taglessStr, &c.exempted, &c.exemptedExpired, &c.exemptedAsmt,
+		&c.tagless, &c.taglessStr, &c.partial, &c.exempted, &c.exemptedExpired, &c.exemptedAsmt,
 		&c.providers, &c.jsonReport, &c.sarif, &c.oscal,
 		&c.driftLive, &c.outscalePlanJSON,
 		&c.bundle.seal, &c.bundle.verify, &c.bundle.reDerive, &c.bundle.tampered,
@@ -174,12 +227,14 @@ func captureAll(root, bin, lang string) (captures, error) {
 	emptyPath := filepath.Join(tmp, "empty-inventory.json")
 	taglessPath := filepath.Join(tmp, "tagless-inventory.json")
 	bastionPath := filepath.Join(tmp, "bastion-inventory.json")
+	partialPath := filepath.Join(tmp, "partial-inventory.json")
 	exceptionsPath := filepath.Join(tmp, "exceptions.yaml")
 	expiredPath := filepath.Join(tmp, "exceptions-expired.yaml")
 	for path, body := range map[string]string{
 		emptyPath:      emptyInventory + "\n",
 		taglessPath:    taglessInventory + "\n",
 		bastionPath:    bastionInventory + "\n",
+		partialPath:    partialInventory + "\n",
 		exceptionsPath: exceptionsFile,
 		expiredPath:    strings.ReplaceAll(exceptionsFile, "2099-12-31", "2020-01-01"),
 	} {
@@ -202,6 +257,7 @@ func captureAll(root, bin, lang string) (captures, error) {
 		{&c.empty, []string{"scan", "scaleway", emptyPath}, []string{"scan", "scaleway", "empty-inventory.json"}},
 		{&c.tagless, []string{"scan", "scaleway", taglessPath}, []string{"scan", "scaleway", "tagless-inventory.json"}},
 		{&c.taglessStr, []string{"scan", "scaleway", taglessPath, "--strict"}, []string{"scan", "scaleway", "tagless-inventory.json", "--strict"}},
+		{&c.partial, []string{"scan", "scaleway", partialPath}, []string{"scan", "scaleway", "partial-inventory.json"}},
 		{&c.exempted, []string{"scan", "scaleway", bastionPath, "--exceptions", exceptionsPath},
 			[]string{"scan", "scaleway", "bastion-inventory.json", "--exceptions", "exceptions.yaml"}},
 		{&c.exemptedExpired, []string{"scan", "scaleway", bastionPath, "--exceptions", expiredPath},
@@ -409,6 +465,7 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"provider-list":             Fence("text", c.providers.Stdout),
 		"fixture-empty-inventory":   Fence("json", emptyInventory),
 		"fixture-tagless-inventory": Fence("json", taglessInventory),
+		"fixture-partial-inventory": Fence("json", partialInventory),
 		"exit-codes":                exitCodeTable(t, c),
 		"exit-run-clean":            consoleRun(c.fixed, Tail(c.fixed.Stdout, 6)),
 		"exit-run-nonconformity":    consoleRun(c.vulnerable, Tail(c.vulnerable.Stdout, 6)),
@@ -416,6 +473,8 @@ func buildBlocks(lang string, m Matrix, c captures, rem []RemediationCoverage) m
 		"exit-run-nothing":          consoleRun(c.empty, Tail(c.empty.Stdout, 6)),
 		"exit-run-strict":           consoleRun(c.taglessStr, Tail(c.taglessStr.Stdout, 6)),
 		"exit-run-medium-plain":     consoleRun(c.tagless, Tail(c.tagless.Stdout, 6)),
+		"exit-run-partial":          consoleRun(c.partial, Tail(c.partial.Stdout, 6)),
+		"capability-report":         Fence("text", capabilityReportOf(c.partial.Stderr)),
 		"fixture-bastion-inventory": Fence("json", bastionInventory),
 		"fixture-exceptions":        Fence("yaml", strings.TrimRight(exceptionsFile, "\n")),
 		"exit-run-exempted":         consoleRun(c.exempted, Tail(c.exempted.Stdout, 14)),
@@ -571,6 +630,7 @@ func exitCodeTable(t blockStrings, c captures) string {
 		{t.exitNothing, c.empty},
 		{t.exitMediumPlain, c.tagless},
 		{t.exitMediumStrict, c.taglessStr},
+		{t.exitPartial, c.partial},
 		{t.exitExempted, c.exempted},
 		{t.exitExpired, c.exemptedExpired},
 	}
@@ -580,6 +640,39 @@ func exitCodeTable(t blockStrings, c captures) string {
 		_, _ = fmt.Fprintf(&b, "| %s | `%s` | **%d** |\n", r.situation, r.cap.Command(), r.cap.Exit)
 	}
 	return b.String()
+}
+
+// capabilityReportOf isole le relevé de capacités d'un flux d'erreur capturé. Le
+// relevé y voisine avec le bandeau et l'avertissement de portée ; on découpe entre
+// la ligne qui l'ouvre et la ligne qui l'annonce close, sans rien réécrire.
+//
+// Le repérage se fait sur les MARQUEURS du relevé (les puces ✓, ✗, ·) plutôt que
+// sur son titre traduit : la page est bilingue, et une sélection qui dépendrait de
+// la langue rendrait un bloc vide dans l'une des deux — c'est-à-dire une page qui
+// ne dit plus rien sans que rien ne casse.
+func capabilityReportOf(stderr string) string {
+	lines := strings.Split(strings.TrimRight(stderr, "\n"), "\n")
+	start, end := -1, -1
+	for i, l := range lines {
+		t := strings.TrimSpace(l)
+		if strings.HasPrefix(t, "✓ ") || strings.HasPrefix(t, "✗ ") {
+			if start < 0 {
+				start = i - 1 // la ligne de titre, juste au-dessus
+			}
+			end = i
+			continue
+		}
+		if start >= 0 && (strings.HasPrefix(t, "· ") || t != "" && end == i-1) {
+			end = i
+		}
+	}
+	if start < 0 {
+		return ""
+	}
+	if start > 0 && strings.TrimSpace(lines[start]) == "" {
+		start++
+	}
+	return strings.Join(lines[start:end+1], "\n")
 }
 
 // assessmentRunBlock rend l'enveloppe de provenance d'un scan réel. Les champs VOLATILES

@@ -30,7 +30,7 @@ See [Exit codes](exit-codes.md).
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v2** |
-| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v1** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v2** |
 <!-- /pepin:gen surface-versions -->
 
 "Frozen" means a test fails when the shape moves and its version has not: field paths and JSON
@@ -112,11 +112,21 @@ Frozen shape: `{"findings": [...], "summary": {...}}`.
 identifier, common to every provider. Both are stable across languages; `title`, `message` and
 `remediation` are translated.
 
+Two additive keys appear when they have something to say, and both exist so a pipeline can
+read what it is accepting rather than infer it:
+
+- `exemptions` — present when `--exceptions` was given: which deviations were waived, by whom,
+  and until when.
+- `collection` — present when Pépin **measured** the inventory: the state of each collection
+  unit, and the resource types the source carried that no spec projects. Its shape is described
+  in [the normalized inventory](inventory.md#the-collection-state).
+
 **What this format cannot tell you**: it lists deviations, so an empty `findings` array means
 "no deviation found", which covers both "the tenant is clean" and "nothing was collected". The
 `summary.conforme` boolean says nothing about coverage either. If that distinction matters —
-and for a compliance gate it does — read the exit code (3 means nothing was measured) or use
-the assessment format.
+and for a compliance gate it does — read the exit code (3 means the scan does not establish
+compliance: nothing measured, or a scope only partially read), read `collection`, or use the
+assessment format.
 
 ### `exemptions` — present only under `--exceptions`
 

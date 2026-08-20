@@ -117,6 +117,17 @@ var scanCmd = &cobra.Command{
 			}
 		}
 
+		// L'ÉTAT DE COLLECTE et le relevé de capacités, AVANT toute évaluation. Le
+		// relevé dit ce que ce scan a pu observer et ce qu'il n'a pas pu, et il le dit
+		// en premier : personne ne doit lire un verdict sans savoir sur quoi il porte.
+		// Le nombre de contrôles qu'il annonce vient de la MÊME fonction que celle qui
+		// dégradera l'assessment — deux calculs divergeraient, et le relevé promettrait
+		// alors un rapport que le rapport ne tiendrait pas.
+		coll := collectionOf(input)
+		naReasons := providerNAReasons(name)
+		degraded := assess.DegradedControls(coll, controlTypes(), scanScope(name, naReasons))
+		renderCapabilities(os.Stderr, coll, degraded, scanLive)
+
 		// Toutes les règles sont communes ; le provider ne fournit que la
 		// collecte (la source). On peut ajouter des règles externes via --policy-dir.
 		sources := []fs.FS{commonrules.FS()}
@@ -143,10 +154,15 @@ var scanCmd = &cobra.Command{
 		// rewrites Code to the SCSL id: typed statuses (fail/pass/not-evaluated), exact
 		// normative references, and run provenance (tool/ruleset digests, target, timestamp).
 		rtypes := resourceTypesOf(input)
-		asmt := assess.Build(name, referentiel.All(), findings, rtypes, providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), buildRun(name, rtypes))
+		asmt := assess.Build(name, referentiel.All(), findings, rtypes, naReasons, providerVerified(name), controlTypes(), attrsByTypeOf(input), buildRun(name, rtypes))
 		// La provenance des attributs décisifs, en PASSE POSTÉRIEURE : elle enrichit la
 		// preuve (d'où vient la donnée, a-t-elle été observée) et ne touche aucun statut.
 		asmt = assess.WithProvenance(asmt, assess.ProvenanceOf(input), controlTypes())
+		// L'incomplétude de la collecte, en passe postérieure elle aussi, et
+		// STRICTEMENT directionnelle : elle ne produit qu'une transition,
+		// `pass → not-evaluated`, et remplace la raison d'un « non évalué » par la
+		// vraie. Aucun `fail` ne disparaît : un écart observé reste observé.
+		asmt, _ = assess.Degrade(asmt, degraded)
 		// Les dérogations, en passe postérieure elles aussi : elles ne peuvent toucher
 		// qu'un `fail`, et ne produisent jamais un `pass`. L'instant de référence est
 		// celui du scan (pas l'horloge), pour qu'un bundle rejoué rende le même verdict.
@@ -195,11 +211,11 @@ var scanCmd = &cobra.Command{
 		enrichFromReferentiel(findings)
 		res := scoring.Summarize(findings)
 		gate := scoring.Summarize(open)
-		opts.SummaryHeadline = verdictHeadline(res, gate, asmt, exReport, asmt.Run.Source)
+		opts.SummaryHeadline = verdictHeadline(res, gate, asmt, exReport, asmt.Run.Source, len(degraded))
 
 		switch scanFormat {
 		case "json":
-			if err := renderJSON(findings, res, exReport); err != nil {
+			if err := renderJSON(findings, res, exReport, coll); err != nil {
 				return err
 			}
 		case "assessment":
@@ -232,6 +248,28 @@ var scanCmd = &cobra.Command{
 		// inventaire tronqué rendraient une porte de CI verte sur un périmètre jamais regardé.
 		// Le bandeau annonce déjà « INDÉTERMINÉ » dans ce cas — le code de sortie doit le suivre.
 		if evaluatedNonGov(asmt) == 0 {
+			os.Exit(exitStrict)
+		}
+		// Périmètre PARTIELLEMENT lu : jamais 0 non plus. Le code 3 est réutilisé, et
+		// ce choix se défend — il n'y a pas de cinquième code.
+		//
+		// Ce que 3 signifie déjà : « ne lisez pas ce scan comme un feu vert ». La
+		// couverture nulle et la porte --strict le partagent, et une collecte
+		// incomplète dit exactement la même chose : le périmètre promis n'a pas été
+		// mesuré en entier, donc la conformité n'est pas établie. Un code de plus aurait
+		// coûté à CHAQUE consommateur une relecture de son `case $?` pour distinguer
+		// deux nuances de la même conclusion.
+		//
+		// Ce qu'un cinquième code n'aurait de toute façon pas pu faire : il ne peut
+		// jamais primer sur 1 (masquer un écart critique réellement observé au motif
+		// que le reste manque serait le faux vert que cette vague combat), donc il ne
+		// s'exprime que là où 3 s'exprime déjà. Deux codes pour une seule position dans
+		// l'ordre de précédence, ce n'est pas une distinction, c'est un doublon.
+		//
+		// Ce qui distingue les cas reste LISIBLE, là où c'est utile : le relevé de
+		// capacités nomme l'unité et la classe d'échec, chaque contrôle touché porte sa
+		// raison, et `--format json` publie `collection`.
+		if len(degraded) > 0 {
 			os.Exit(exitStrict)
 		}
 		// Une dérogation a écarté un écart : le scan ne peut PAS rendre 0. Un code
@@ -702,6 +740,59 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 	return out
 }
 
+// collectionOf relit l'état de collecte de l'inventaire évalué. Il accepte les deux
+// formes que le scan manipule : la forme typée (collecte live, plan Terraform) et la
+// forme générique d'un export JSON relu — dont l'input.json d'un bundle scellé, pour
+// que `verify --re-derive` rejoue la même dégradation et donc le même verdict.
+//
+// Un export sans `collection` rend un état VIDE, et un état vide ne dégrade rien : un
+// inventaire reçu d'un tiers n'a pas été collecté par Pépin, qui n'a donc rien à en
+// attester — ni dans un sens, ni dans l'autre. C'est la même règle que pour la
+// provenance des attributs, et pour la même raison.
+func collectionOf(input any) model.Collection {
+	var coll model.Collection
+	m, ok := input.(map[string]any)
+	if !ok {
+		return coll
+	}
+	switch c := m["collection"].(type) {
+	case model.Collection:
+		return c
+	case map[string]any:
+		// Défensif : le document vient possiblement d'un tiers. Une entrée mal formée
+		// est ignorée, jamais une panique.
+		b, err := json.Marshal(c)
+		if err != nil {
+			return coll
+		}
+		if err := json.Unmarshal(b, &coll); err != nil {
+			return model.Collection{}
+		}
+	}
+	return coll
+}
+
+// scanScope rend les contrôles que CE scan pouvait espérer conclure : déclarés pour le
+// fournisseur au référentiel, et non déclarés non applicables par son contrat. C'est
+// le dénominateur honnête du relevé de capacités — annoncer « 40 contrôles non
+// évaluables » en comptant ceux qui n'auraient rien conclu de toute façon gonflerait
+// le chiffre sans rien apprendre.
+func scanScope(provider string, naReasons map[string]string) map[string]bool {
+	out := map[string]bool{}
+	for code, c := range referentiel.All() {
+		if naReasons[code] != "" {
+			continue
+		}
+		for _, p := range c.Fournisseurs {
+			if p == provider {
+				out[code] = true
+				break
+			}
+		}
+	}
+	return out
+}
+
 // providerNAReasons collecte, pour chaque contrôle non applicable au provider scanné, sa
 // justification opposable (contrat du provider : mécanisme inexistant, ou type de ressource
 // absent de l'API). Un contrôle sans justification n'est PAS marqué non applicable.
@@ -823,6 +914,18 @@ func configDigest() string {
 // Terraform (--terraform, projeté par le mapper du provider), ou export
 // d'inventaire JSON déjà normalisé.
 func loadInput(ctx context.Context, p provider.Provider, path string) (any, error) {
+	// withCollection pose l'état de collecte À CÔTÉ des ressources, dans
+	// l'enveloppe. Il voyage donc avec l'inventaire — jusque dans l'input.json d'un
+	// bundle scellé, ce qui fait que `verify --re-derive` rejoue la MÊME dégradation
+	// et donc le même verdict. Un état de collecte laissé en mémoire aurait été un
+	// avertissement de plus, pas un enregistrement.
+	withCollection := func(inv model.Inventory) any {
+		out := map[string]any{"provider": p.Name(), "resources": inv.Resources}
+		if !inv.Collection.Empty() {
+			out["collection"] = inv.Collection
+		}
+		return out
+	}
 	if scanLive {
 		cfg := provider.Config{Profile: scanProfile, Region: scanRegion}
 		// Une seule map, alimentée par toutes les options : deux affectations successives
@@ -837,11 +940,11 @@ func loadInput(ctx context.Context, p provider.Provider, path string) (any, erro
 		if len(opts) > 0 {
 			cfg.Options = opts
 		}
-		resources, err := p.Collect(ctx, cfg)
+		inv, err := p.Collect(ctx, cfg)
 		if err != nil {
 			return nil, err
 		}
-		return map[string]any{"provider": p.Name(), "resources": resources}, nil
+		return withCollection(inv), nil
 	}
 	if scanTF {
 		mapper, ok := p.(provider.TerraformMapper)
@@ -853,11 +956,11 @@ func loadInput(ctx context.Context, p provider.Provider, path string) (any, erro
 		if err != nil {
 			return nil, err
 		}
-		mapped, err := mapper.MapTerraform(resources)
+		inv, err := mapper.MapTerraform(resources)
 		if err != nil {
 			return nil, err
 		}
-		return map[string]any{"provider": p.Name(), "resources": mapped}, nil
+		return withCollection(inv), nil
 	}
 
 	// #nosec G304 -- path est l'export choisi par l'utilisateur en argument CLI, lu en seule lecture ; pas de traversée à craindre.
@@ -945,7 +1048,7 @@ func docURL(f finding.Finding) string {
 // un scan où RIEN n'a été évalué (collecte vide, gardes de capacité) ne doit jamais s'afficher
 // « CONFORME », et un verdict sur un plan Terraform est qualifié « périmètre déclaré » (état
 // planifié, pas configuration effective). Le code de sortie reste piloté par res.Conforme.
-func verdictHeadline(res scoring.Result, gate scoring.Result, asmt assessment.Assessment, ex exempt.Report, source string) string {
+func verdictHeadline(res scoring.Result, gate scoring.Result, asmt assessment.Assessment, ex exempt.Report, source string, degraded int) string {
 	// `evaluated` ne compte QUE des contrôles mesurés sur des ressources collectées : les
 	// contrôles de gouvernance passent sur des faits AUTO-DÉCLARÉS (souveraineté) et ne doivent
 	// pas empêcher INDÉTERMINÉ sur un inventaire par ailleurs vide (sinon un tenant vidé de ses
@@ -996,6 +1099,17 @@ func verdictHeadline(res scoring.Result, gate scoring.Result, asmt assessment.As
 			gate.Critical+gate.High, exempted)
 	case !res.Conforme:
 		return tr("Verdict : NON CONFORME", "Verdict: NON-COMPLIANT")
+	case degraded > 0:
+		// Aucun écart critique/haut, mais la collecte n'a pas tout lu : « conforme »
+		// serait une affirmation sur un périmètre que personne n'a regardé. C'est très
+		// exactement le faux vert que cette vague existe pour empêcher. Ce cas passe
+		// AVANT celui des écarts medium/low, parce que l'incomplétude qualifie aussi
+		// leur décompte : sur un périmètre partiellement lu, « 1 écart medium » ne veut
+		// pas dire « un seul ».
+		return fmt.Sprintf(tr(
+			"Verdict : INCOMPLET — %d contrôle(s) non évaluables faute d'une collecte complète, %d écart(s) medium/low sur ce qui a pu être lu",
+			"Verdict: INCOMPLETE — %d control(s) are not evaluable because the collection is incomplete, %d medium/low deviation(s) on what could be read"),
+			degraded, res.Medium+res.Low)
 	case res.Medium+res.Low > 0:
 		// Pas d'écart critique/haut, MAIS des écarts medium/low subsistent : ne pas laisser lire « conforme ».
 		return fmt.Sprintf(tr(
@@ -1050,8 +1164,15 @@ func pepinBanner() []string {
 	return lines
 }
 
-func renderJSON(findings []finding.Finding, res scoring.Result, ex exempt.Report) error {
+func renderJSON(findings []finding.Finding, res scoring.Result, ex exempt.Report, coll model.Collection) error {
 	out := map[string]any{"findings": findings, "summary": res}
+	// L'état de collecte est une SURFACE ANALYSABLE, au même titre que les
+	// dérogations : un pipeline qui accepte le code de sortie d'une collecte
+	// incomplète doit pouvoir lire QUELLE unité a manqué et pourquoi. Ajout
+	// additif, absent quand rien n'a été collecté par Pépin (export reçu).
+	if !coll.Empty() {
+		out["collection"] = coll
+	}
 	// Les dérogations sont une SURFACE ANALYSABLE : un pipeline qui accepte le code
 	// de sortie des dérogations doit pouvoir lire lesquelles, par qui et jusqu'à
 	// quand. Absent quand aucune politique n'a été fournie.

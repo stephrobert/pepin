@@ -25,4 +25,8 @@ type Resource struct {
 type Posture struct {
 	Provider  string     `json:"provider"`
 	Resources []Resource `json:"resources"`
+	// Collection est l'état de ce que la collecte a pu lire. Présent quand Pépin a
+	// MESURÉ l'inventaire (collecte live, plan Terraform), absent quand il l'a
+	// REÇU (export d'un tiers) : on n'atteste pas une collecte qu'on n'a pas faite.
+	Collection *Collection `json:"collection,omitempty"`
 }

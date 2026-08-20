@@ -161,11 +161,17 @@ source du contrat dans l'en-tête de chaque règle.
 ## 6. Codes de sortie (portes de CI)
 
 `0` conforme · `1` non-conformité (≥ 1 finding critical/high) · `2` erreur
-technique · `3` rien de mesuré (inventaire vide, ou écarts medium/low avec
-`--strict`) · `4` tout écart critical/high est couvert par une dérogation valide.
-`3` et `4` ne sont PAS des `0` : ni le vide ni la dérogation ne valent conformité.
-Ne pas changer cette sémantique sans mettre à jour README, `docs/reference/exit-codes.md`
-(généré) et les tests.
+technique · `3` **le scan n'établit pas la conformité** : rien de mesuré (inventaire
+vide), collecte incomplète (une unité n'a pas pu être lue, cf. `model.Collection`),
+ou écarts medium/low avec `--strict` · `4` tout écart critical/high est couvert par
+une dérogation valide. `3` et `4` ne sont PAS des `0` : ni le vide, ni le partiel, ni
+la dérogation ne valent conformité. **Il n'y a délibérément pas de cinquième code**
+pour l'incomplétude : elle ne peut jamais primer sur `1` (un écart observé reste un
+écart), donc elle n'occuperait que la place que `3` occupe déjà. Ce qui distingue les
+cas est LISIBLE ailleurs — relevé de capacités, motif de chaque `not-evaluated`, clé
+`collection` de `--format json`.
+Ne pas changer cette sémantique sans mettre à jour README, README.fr,
+`docs/reference/exit-codes.md` (généré, + `.fr.md`) et les tests.
 
 ## 7. Commits & branches
 

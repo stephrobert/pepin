@@ -36,7 +36,7 @@ resources:
 		t.Fatalf("Parse : %v", err)
 	}
 
-	res := Apply(spec, []tfparse.Resource{
+	inv := Apply(spec, []tfparse.Resource{
 		{Type: "exoscale_sks_cluster", Address: "exoscale_sks_cluster.k", Values: map[string]any{
 			"name": "k1", "zone": "ch-gva-2", "service_level": "starter", "auto_upgrade": false,
 		}},
@@ -45,9 +45,16 @@ resources:
 		}},
 		{Type: "exoscale_ignored", Address: "x", Values: map[string]any{"foo": "bar"}},
 	})
+	res := inv.Resources
 
 	if len(res) != 2 {
 		t.Fatalf("attendu 2 ressources (type inconnu ignoré), obtenu %d", len(res))
+	}
+	// Le type non projeté n'est plus ignoré EN SILENCE : il est enregistré, parce
+	// qu'il porte le préfixe du fournisseur — donc parce qu'un lecteur pourrait
+	// croire que Pépin l'a audité.
+	if len(inv.Collection.Unmapped) != 1 || inv.Collection.Unmapped[0].Type != "exoscale_ignored" {
+		t.Errorf("le type non projeté doit être enregistré, obtenu %+v", inv.Collection.Unmapped)
 	}
 
 	sks := res[0]

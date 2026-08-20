@@ -89,6 +89,7 @@ func CollectInlinePolicies(ctx context.Context, hc *http.Client, provider, baseU
 					"scope":       "inline",
 					"statements":  collect.IAMPolicyStatements(doc.PolicyDocument),
 				},
+				Provenance: inlineProvenance(baseURL+"/ReadUserPolicy", "PolicyDocument", "owner_user"),
 			})
 		}
 	}
@@ -125,10 +126,41 @@ func collectGroupPolicies(ctx context.Context, hc *http.Client, provider, baseUR
 					"scope":       "inline_group",
 					"statements":  collect.IAMPolicyStatements(pol.Body),
 				},
+				Provenance: inlineProvenance(baseURL+"/ReadUserGroupPolicies", "Policies.Body", "owner_group"),
 			})
 		}
 	}
 	return out, nil
+}
+
+// inlineProvenance atteste les attributs d'une politique inline.
+//
+// Ce collecteur ne portait AUCUNE attestation : les attributs d'une politique
+// inline étaient, dans l'inventaire, indiscernables d'un littéral de descripteur.
+// C'est d'autant moins acceptable ici que la politique inline est exactement la
+// donnée dont l'absence a produit l'incident fondateur de cette vague.
+//
+// `call` est l'endpoint qui a rendu le document ; `docPath` le champ natif qui le
+// portait ; `owner` l'attribut de rattachement (utilisateur ou groupe). Trois
+// attributs sont DÉRIVÉS et le disent : l'identifiant composé, la portée
+// (littéral du collecteur, aucun champ d'API ne la porte) et les statements,
+// analysés depuis le document plutôt que recopiés.
+func inlineProvenance(call, docPath, owner string) model.Provenance {
+	var p model.Provenance
+	api := func(attr, path string, derived bool) {
+		p.Attest(attr, model.Attestation{
+			Origin: model.OriginAPI, Source: call, Path: path, Observed: true, Derived: derived,
+		})
+	}
+	api("policy_name", "Name", false)
+	api(owner, "", true)
+	api("policy_id", "", true)
+	api("statements", docPath, true)
+	// `scope` ne vient d'aucun champ : c'est le collecteur qui sait que cette chaîne
+	// d'appels rend des politiques inline. Une valeur produite localement s'atteste
+	// comme telle, jamais comme une mesure.
+	p.Attest("scope", model.Attestation{Origin: model.OriginDerived, Source: "collector:eimpolicy", Derived: true})
+	return p
 }
 
 // inlinePolicy = schéma InlinePolicy du contrat.
@@ -264,7 +296,11 @@ func post(ctx context.Context, hc *http.Client, auth collect.Auth, url, body str
 		return fmt.Errorf(i18n.T("lecture de la reponse EIM : %w", "reading the EIM response: %w"), rerr)
 	}
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(raw)))
+		// Erreur TYPÉE : le statut range l'échec dans sa classe, et l'état de collecte
+		// publie cette classe. C'est ce collecteur-ci qui a motivé l'invariant — un 403
+		// sur ReadUserPolicies faisait échouer tout le scan, ou pire, laissait conclure.
+		called := req.Method + " " + req.URL.Scheme + "://" + req.URL.Host + req.URL.Path
+		return &collect.HTTPError{Status: resp.StatusCode, Call: called, Body: strings.TrimSpace(string(raw))}
 	}
 	return json.Unmarshal(raw, into)
 }

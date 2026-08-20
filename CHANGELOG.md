@@ -23,6 +23,30 @@ belongs in `git log`.
 
 ### Added
 
+- **Collection completeness is recorded, and it moves the verdict.** Every collector
+  — the declarative engine, the object-storage collector, the inline EIM policy chain
+  and the managed-Kubernetes one — now records, unit by unit, whether it read
+  everything the API had to return. A refused endpoint no longer stops the scan and no
+  longer disappears into a warning: the inventory carries a `collection` block
+  (`attempted`, `complete`, a stable `error` class, the provider's own `detail`), it is
+  sealed in the evidence bundle, and it is published in `--format json`. **Every
+  control that reads a resource type fed by an incomplete unit becomes
+  `not-evaluated`** with that unit named as its reason — the assessment decides, never
+  a rule — and the scan returns **`3`, never `0`**. The transition is strictly
+  directional: a `pass` is withdrawn, a `fail` is kept (an observed deviation stays
+  observed), a `not-applicable` is kept (it comes from the contract, not from the
+  collection). *A verdict can now move on an unchanged tenant: a scan whose credentials
+  cannot read part of the scope used to return `0`, and returns `3` from now on.*
+
+- **A capability report, printed before any verdict.** A live scan announces what it
+  could and could not observe, unit by unit, with the class of each failure and the
+  number of controls it costs — the count coming from the same function that degrades
+  the assessment, so the report cannot promise what the report does not hold. Outside
+  live scans it appears only when there is something to say. Resource types a Terraform
+  plan carries and no spec projects are listed too: they are not incompleteness — no
+  control reads them, so no verdict depends on them, and they do not gate — but they
+  are no longer silent.
+
 - **`exempted`: a fifth, first-class assessment status, and dated exemptions.**
   `scan --exceptions <file.yaml>` reads a versioned exemption policy — `control`,
   `justification`, `expires_at`, `owner`, `approved_by`, all five mandatory and all
@@ -116,6 +140,20 @@ belongs in `git log`.
   and the usage rules in `docs/brand.md`. Both READMEs open on it.
 
 ### Changed
+
+- **Exit code `3` widens from "nothing measured" to "the scan does not establish
+  compliance".** It now also fires when the collection could not read part of the
+  intended scope. Deliberately no fifth code: an incompleteness code could never take
+  precedence over `1` — hiding a real critical deviation because the rest was missing
+  would be the false green this wave exists to prevent — so it would only ever fire
+  where `3` already fires. What distinguishes the situations stays readable in the
+  capability report, in each control's reason and in the `collection` key.
+  *An exit code is a surface every pipeline parses.*
+
+- **Inventory schema `pepin-inventory/v2`.** The envelope gains `collection`. Pure
+  addition — no existing field moves — but a consumer that replays an inventory without
+  reading `collection` would conclude more firmly than Pépin did, which is exactly what
+  the field exists to prevent. The version travels in `manifest.inventory_schema`.
 
 - **A finding's prose changes with the language, its keys do not.** Codes
   (`CLD-*`), check identifiers, severities, statuses, subjects and exit codes are
