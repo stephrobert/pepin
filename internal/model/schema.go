@@ -17,7 +17,11 @@ import (
 //
 //   - L'enveloppe : un objet portant `provider` (chaîne) et `resources` (tableau).
 //     Le scan y ajoute `evaluated_at` (RFC3339 UTC), l'instant d'évaluation unique
-//     auquel les règles sensibles au temps s'ancrent.
+//     auquel les règles sensibles au temps s'ancrent, et `config`, la
+//     configuration effective des contrôles à laquelle les règles réglables
+//     s'ancrent. Les deux sont ÉCRITS UNE FOIS : un input.json rejoué garde les
+//     siens, sans quoi le rejeu appliquerait l'horloge et la politique du jour à
+//     un dossier d'hier.
 //   - La ressource : `provider`, `type`, `id`, `name`, `attributes` toujours
 //     présents ; `region` et `provenance` présents quand ils sont renseignés.
 //   - `attributes` est une carte PLATE de nom d'attribut vers valeur JSON. Un nom
@@ -68,7 +72,18 @@ import (
 // déclare (fichier, ligne, module). Présente sur un plan Terraform quand les
 // sources HCL ont pu être lues, ABSENTE partout ailleurs — une collecte live ne
 // sait pas d'où vient une ressource, et rien n'y est inventé.
-const InventoryFormat = "pepin-inventory/v3"
+// v4 : deux ajouts, tous deux PURS.
+//   - L'enveloppe porte `config`, la configuration EFFECTIVE des contrôles sous
+//     laquelle l'inventaire a été évalué (réglages d'étiquetage, de fraîcheur de
+//     snapshot, de détection de secrets). Elle voyage AVEC l'inventaire pour la
+//     même raison que `evaluated_at` : un input.json rejoué doit rendre le même
+//     verdict, or un verdict dépend désormais aussi des réglages. Un consommateur
+//     qui l'ignore lirait un résultat sans savoir sous quelle exigence il a été
+//     rendu — ce que ce champ existe précisément pour empêcher.
+//   - Une `blockstorage_snapshot` porte `state`, l'état natif qui dit si la
+//     snapshot est terminée (Outscale Snapshot.State, Exoscale
+//     block-storage-snapshot.state).
+const InventoryFormat = "pepin-inventory/v4"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

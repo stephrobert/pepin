@@ -96,7 +96,7 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | Contrôle | Sévérité | SCSL | Actif pour | Preuves |
 |---|---|---|---|---|
 | [`blockstorage_snapshot_not_public`](blockstorage_snapshot_not_public.fr.md) Instantané ou image partagé publiquement | high | `CLD-STO-2` | `outscale` | 0 / 1 |
-| [`blockstorage_volume_snapshots_exist`](blockstorage_volume_snapshots_exist.fr.md) Absence de sauvegarde récente | high | `CLD-STO-3` | `exoscale`, `outscale` | 1 / 2 |
+| [`blockstorage_volume_snapshots_exist`](blockstorage_volume_snapshots_exist.fr.md) Absence de snapshot récente et terminée | high | `CLD-STO-3` | `exoscale`, `outscale` | 1 / 2 |
 | [`compute_image_not_public`](compute_image_not_public.fr.md) Image machine partagée publiquement | high | `CLD-STO-2` | `outscale` | 0 / 1 |
 | [`database_backup_enabled`](database_backup_enabled.fr.md) Sauvegardes automatiques d'une base managée désactivées | high | `CLD-STO-3` | `scaleway` | 0 / 1 |
 | [`objectstorage_bucket_object_lock_enabled`](objectstorage_bucket_object_lock_enabled.fr.md) Object Lock (immutabilité) désactivé sur le stockage objet | low | `CLD-STO-8` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |

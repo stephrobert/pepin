@@ -58,7 +58,7 @@ et un changement de cette forme incrémente un numéro de version et reçoit sa 
 ```json
 {
   "format": "pepin-assessment-bundle/v3",
-  "inventory_schema": "pepin-inventory/v3",
+  "inventory_schema": "pepin-inventory/v4",
   "disclaimer": "Ce rapport évalue la configuration d'un tenant (périmètre commanditaire). Les correspondances normatives (SecNumCloud, ISO, CIS) sont indicatives : elles ne constituent pas une preuve de qualification/certification, laquelle porte sur le prestataire de service cloud.",
   "generated": "<timestamp>",
   "tool": {

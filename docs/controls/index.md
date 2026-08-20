@@ -96,7 +96,7 @@ overview per provider and per source, see the [coverage matrix](../coverage.md).
 | Control | Severity | SCSL | Active for | Proofs |
 |---|---|---|---|---|
 | [`blockstorage_snapshot_not_public`](blockstorage_snapshot_not_public.md) Snapshot or image shared publicly | high | `CLD-STO-2` | `outscale` | 0 / 1 |
-| [`blockstorage_volume_snapshots_exist`](blockstorage_volume_snapshots_exist.md) No recent backup | high | `CLD-STO-3` | `exoscale`, `outscale` | 1 / 2 |
+| [`blockstorage_volume_snapshots_exist`](blockstorage_volume_snapshots_exist.md) No recent, completed snapshot | high | `CLD-STO-3` | `exoscale`, `outscale` | 1 / 2 |
 | [`compute_image_not_public`](compute_image_not_public.md) Machine image shared publicly | high | `CLD-STO-2` | `outscale` | 0 / 1 |
 | [`database_backup_enabled`](database_backup_enabled.md) Automatic backups disabled on a managed database | high | `CLD-STO-3` | `scaleway` | 0 / 1 |
 | [`objectstorage_bucket_object_lock_enabled`](objectstorage_bucket_object_lock_enabled.md) Object Lock (immutability) disabled on object storage | low | `CLD-STO-8` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |

@@ -278,7 +278,7 @@ pepin scan outscale --terraform examples/outscale/terraform/plan.json
   │ CLD-STO-2  │ Machine image shared publicly                    │ HIGH     │ outscale │ 1 │
   │ CLD-GVN-1  │ Incomplete inventory and tagging                 │ MEDIUM   │ outscale │ 1 │
   │ CLD-NET-3  │ Subnet assigning a public IP by default          │ MEDIUM   │ outscale │ 1 │
-  │ CLD-NET-5  │ Undocumented network (mapping not maintained)    │ LOW      │ outscale │ 1 │
+  │ CLD-NET-5  │ Network without mapping tags                     │ LOW      │ outscale │ 1 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
  Summary

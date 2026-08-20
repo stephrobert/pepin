@@ -214,6 +214,18 @@ belongs in `git log`.
   `kubernetes_cluster` — which closes a false-negative on paid services that were outside
   it. The shipped profile is documented as a **recommendation, not a standard**.
 
+- **The snapshot freshness control says what it measures, and what it does not prove.**
+  `blockstorage_volume_snapshots_exist` now checks the snapshot's **native state** as well
+  as its date: a snapshot in `error`, `pending` or `creating` no longer counts as a backup.
+  The window is configurable (7 days by default). The title becomes "No recent, completed
+  snapshot", and the description states plainly what the control does not prove —
+  restorability, application completeness, retention, the existence of a backup policy.
+  The code is unchanged, for the same reason as above. Anchored on Outscale
+  `Snapshot.State` and Exoscale `block-storage-snapshot.state`, both projected by the
+  collectors from this version on. The normalized inventory therefore gains an attribute,
+  which is a contract change: inventory schema v4, whose note also records the `config`
+  envelope key added above.
+
 - **`--strict` also refuses a dropped normative mapping.** It already refused zero
   coverage, remaining medium/low deviations and a stale exemptions file; it now returns
   `3` when a relaxed setting cost a control its mapping. No new exit code: incompleteness

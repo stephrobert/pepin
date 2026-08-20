@@ -1054,21 +1054,42 @@ controles:
 
   - code: blockstorage_volume_snapshots_exist
     famille: stockage
-    titre: Absence de sauvegarde récente
-    titre_en: No recent backup
+    titre: Absence de snapshot récente et terminée
+    titre_en: No recent, completed snapshot
     severite: high
     description: >
-      Un volume de données en usage n'a pas d'instantané/sauvegarde récent : la
-      restauration après incident n'est pas garantie.
+      CE QUI EST MESURÉ : un volume en usage a-t-il, dans la fenêtre configurée
+      (par défaut 7 jours, `controls.snapshots.max_age_days`), au moins une
+      snapshot dont l'état natif la dit TERMINÉE ? L'état est vérifié, pas
+      seulement la date : une snapshot en erreur ou en cours ne restaure rien.
+      CE QUE LE CONTRÔLE NE PROUVE PAS : ni que la snapshot soit restaurable
+      (aucune restauration n'est tentée), ni qu'elle soit complète au sens
+      applicatif, ni qu'une rétention soit respectée, ni qu'une politique de
+      sauvegarde existe. Un volume sauvegardé autrement (sauvegarde applicative,
+      réplication, service du fournisseur) sera signalé ici : c'est un faux
+      positif assumé, à traiter par une dérogation datée, jamais en désactivant
+      le contrôle. Ce contrôle ne participe donc pas à une affirmation
+      « sauvegarde conforme ».
     description_en: >
-      A data volume in use has no recent snapshot or backup: restoring after
-      an incident is not guaranteed.
+      WHAT IS MEASURED: does a volume in use have, within the configured window
+      (7 days by default, `controls.snapshots.max_age_days`), at least one
+      snapshot whose native state says it is COMPLETED? The state is checked, not
+      just the date: a failed or in-progress snapshot restores nothing.
+      WHAT THIS CONTROL DOES NOT PROVE: neither that the snapshot is restorable
+      (no restore is attempted), nor that it is complete in the application
+      sense, nor that a retention is honoured, nor that a backup policy exists. A
+      volume backed up by other means (application backup, replication, provider
+      service) will be reported here: an accepted false positive, to be handled
+      with a dated exemption rather than by disabling the control. This control
+      therefore takes no part in a "backup compliant" claim.
     remediation: >
-      Mettre en place une politique de sauvegarde régulière avec test de
-      restauration ; chiffrer et appliquer une rétention documentée.
+      Mettre en place un snapshot régulier automatisé et tester la restauration
+      périodiquement. Si le volume est sauvegardé autrement, poser une dérogation
+      datée et justifiée plutôt que de désactiver le contrôle.
     remediation_en: >
-      Set up a regular backup policy with restore testing; encrypt the backups
-      and apply a documented retention.
+      Set up an automated, regular snapshot schedule and test the restore
+      periodically. If the volume is backed up by other means, file a dated,
+      justified exemption rather than disabling the control.
     scsl: [CLD-STO-3]
     frameworks:
       secnumcloud_3_2: ["12.5"]

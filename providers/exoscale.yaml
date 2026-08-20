@@ -223,6 +223,7 @@ collecte:
         snapshot_id: id
         volume_id: block-storage-volume.id
         creation_date: created-at
+        state: state
 
 mapping_terraform:
   # Mapping Terraform Exoscale → modèle normalisé commun, DÉCLARATIF (moteur
@@ -376,6 +377,11 @@ contrat:
         snapshot_id: id
         volume_id: block-storage-volume.id (ref vers le volume cible)
         creation_date: created-at (ISO 8601 → recence, CLD-STO-3)
+        state: 'state ∈ partially-destroyed | destroying | creating | created | promoting | error |
+          destroyed | allocated (schéma block-storage-snapshot, openapi-v2.exoscale.com). « created »
+          désigne la snapshot TERMINÉE, donc exploitable. Lu par blockstorage_volume_snapshots_exist
+          (CLD-STO-3), qui vérifie l''état et pas seulement la date.'
+
         global_permission: 'NON APPLICABLE : les snapshots block storage Exoscale ne sont ni exportables ni partageables publiquement
           (doc officielle storage/block-storage/operation/snapshot) → blockstorage_snapshot_not_public (CLD-STO-2) sans objet.'
     object_storage_bucket:

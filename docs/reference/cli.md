@@ -41,7 +41,7 @@ independently:
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
-| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v3** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v4** |
 <!-- /pepin:gen surface-versions -->
 
 A version rises on **any** shape change, additions included: the number means "the surface has

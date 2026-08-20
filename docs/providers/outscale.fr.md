@@ -284,7 +284,7 @@ pepin scan outscale --terraform examples/outscale/terraform/plan.json
   │ CLD-STO-2  │ Image machine partagée publiquement              │ HIGH     │ outscale │ 1 │
   │ CLD-GVN-1  │ Inventaire et étiquetage incomplets              │ MEDIUM   │ outscale │ 1 │
   │ CLD-NET-3  │ Sous-réseau attribuant une IP publique par défa… │ MEDIUM   │ outscale │ 1 │
-  │ CLD-NET-5  │ Réseau non documenté (cartographie non tenue)    │ LOW      │ outscale │ 1 │
+  │ CLD-NET-5  │ Réseau sans étiquettes de cartographie           │ LOW      │ outscale │ 1 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
  Summary

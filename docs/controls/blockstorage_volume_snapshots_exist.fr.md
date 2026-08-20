@@ -4,7 +4,7 @@
 
 # `blockstorage_volume_snapshots_exist`
 
-**Absence de sauvegarde récente**
+**Absence de snapshot récente et terminée**
 
 [Retour au catalogue](index.fr.md)
 
@@ -22,7 +22,7 @@
 
 ## Le risque
 
-Un volume de données en usage n'a pas d'instantané/sauvegarde récent : la restauration après incident n'est pas garantie.
+CE QUI EST MESURÉ : un volume en usage a-t-il, dans la fenêtre configurée (par défaut 7 jours, `controls.snapshots.max_age_days`), au moins une snapshot dont l'état natif la dit TERMINÉE ? L'état est vérifié, pas seulement la date : une snapshot en erreur ou en cours ne restaure rien. CE QUE LE CONTRÔLE NE PROUVE PAS : ni que la snapshot soit restaurable (aucune restauration n'est tentée), ni qu'elle soit complète au sens applicatif, ni qu'une rétention soit respectée, ni qu'une politique de sauvegarde existe. Un volume sauvegardé autrement (sauvegarde applicative, réplication, service du fournisseur) sera signalé ici : c'est un faux positif assumé, à traiter par une dérogation datée, jamais en désactivant le contrôle. Ce contrôle ne participe donc pas à une affirmation « sauvegarde conforme ».
 
 Cette description vient du référentiel : c'est le texte que le rapport cite, dans la
 langue du lecteur.
@@ -84,7 +84,7 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 
 ## Comment corriger
 
-Mettre en place une politique de sauvegarde régulière avec test de restauration ; chiffrer et appliquer une rétention documentée.
+Mettre en place un snapshot régulier automatisé et tester la restauration périodiquement. Si le volume est sauvegardé autrement, poser une dérogation datée et justifiée plutôt que de désactiver le contrôle.
 
 | Fournisseur | Montage déployable |
 |---|---|

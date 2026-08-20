@@ -318,6 +318,22 @@ Un résultat décrit un instant. Pépin n'a ni agent, ni mode veille, ni histori
 continue est un problème d'ordonnancement que vous résolvez en CI, et les bundles scellés sont
 ce que vous conservez.
 
+### Une snapshot récente n'est pas une politique de sauvegarde
+
+`blockstorage_volume_snapshots_exist` mesure une chose : un volume en usage a-t-il, dans la
+fenêtre configurée (7 jours par défaut), au moins une snapshot dont l'état natif la dit
+terminée ? L'état est vérifié, pas seulement la date.
+
+Il ne prouve pas que la snapshot soit **restaurable** — aucune restauration n'est tentée —,
+qu'elle soit **complète** au sens applicatif, qu'une **rétention** soit respectée (une seule
+snapshot satisfait le contrôle), ni qu'une **politique de sauvegarde** existe. Symétriquement,
+un volume sauvegardé autrement — sauvegarde applicative, réplication, service de backup du
+fournisseur, outil externe — est signalé ici : un faux positif assumé, à traiter par une
+dérogation datée plutôt qu'en désactivant le contrôle.
+
+Ce contrôle ne participe donc à aucune affirmation « sauvegarde conforme ». Son libellé le dit,
+dans les deux langues, et le référentiel le consigne dans la description du contrôle.
+
 ### Un réglage assoupli retire la correspondance, pas la mesure
 
 Un contrôle dont la configuration sort de sa contrainte normative garde son statut : il a bel

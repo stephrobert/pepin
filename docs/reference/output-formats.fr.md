@@ -30,7 +30,7 @@ verdict. Voir [Codes de sortie](exit-codes.fr.md).
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
-| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v3** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v4** |
 <!-- /pepin:gen surface-versions -->
 
 « Gelé » signifie qu'un test échoue quand la forme bouge sans que sa version ait suivi : les

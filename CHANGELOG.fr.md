@@ -232,6 +232,19 @@ l'une ni l'autre appartient au `git log`.
   étaient exclus. Le profil livré est documenté comme une **recommandation, pas comme une
   norme**.
 
+- **Le contrôle de fraîcheur des snapshots dit ce qu'il mesure, et ce qu'il ne prouve
+  pas.** `blockstorage_volume_snapshots_exist` vérifie désormais l'**état natif** de la
+  snapshot en plus de sa date : une snapshot en `error`, `pending` ou `creating` ne compte
+  plus comme une sauvegarde. Le délai est configurable (7 jours par défaut). Le titre
+  devient « Absence de snapshot récente et terminée », et la description énonce
+  franchement ce que le contrôle ne prouve pas — restaurabilité, complétude applicative,
+  rétention, existence d'une politique de sauvegarde. Le code est inchangé, pour la même
+  raison que ci-dessus. Ancré sur Outscale `Snapshot.State` et Exoscale
+  `block-storage-snapshot.state`, désormais projetés par les collecteurs. L'inventaire
+  normalisé gagne donc un attribut, ce qui est un changement de contrat : schéma
+  d'inventaire v4, dont la note consigne aussi la clé d'enveloppe `config` ajoutée
+  plus haut.
+
 - **`--strict` refuse aussi une correspondance normative tombée.** Il refusait déjà une
   couverture nulle, des écarts medium/low restants et un fichier de dérogations périmé ;
   il rend maintenant `3` quand un réglage assoupli a coûté sa correspondance à un
