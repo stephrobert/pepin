@@ -16,6 +16,7 @@ import (
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/commonrules"
 	"github.com/stephrobert/pepin/internal/exempt"
+	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/referentiel"
@@ -220,9 +221,23 @@ func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any
 		i18n.Set(lang)
 		f := cloneFindings(findings)
 		localizeFindings(f)
+		// L'origine Terraform des findings : elle est DÉRIVÉE de l'inventaire scellé,
+		// donc elle se reconstruit. L'oublier ferait diverger la re-dérivation d'un
+		// bundle parfaitement fidèle — la pire panne possible pour un vérificateur,
+		// qui crierait à la falsification sur un dossier honnête.
+		withTerraformOrigin(f, originsOf(input))
+		naReasons := providerNAReasons(name)
 		got := assess.Build(name, referentiel.All(), f, resourceTypesOf(input),
-			providerNAReasons(name), providerVerified(name), controlTypes(), attrsByTypeOf(input), run)
+			naReasons, providerVerified(name), controlTypes(), attrsByTypeOf(input), run)
 		got = assess.WithProvenance(got, assess.ProvenanceOf(input), controlTypes())
+		// La dégradation par incomplétude de collecte se REJOUE elle aussi : l'état de
+		// collecte voyage dans input.json précisément pour cela. Sans ce rejeu, le
+		// vérificateur reconstruirait un assessment PLUS AFFIRMATIF que celui qui a été
+		// scellé, et déclarerait falsifié un bundle qui disait la vérité.
+		coll := collectionOf(input)
+		got, _ = assess.Degrade(got,
+			assess.DegradedControls(coll, controlTypes(), scanScope(name, naReasons)),
+			genprovider.Grants(name))
 		at, terr := time.Parse(time.RFC3339, run.Timestamp)
 		if terr != nil {
 			at = time.Now().UTC()

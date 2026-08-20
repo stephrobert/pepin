@@ -41,7 +41,7 @@ independently:
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v2** |
-| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v1** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v3** |
 <!-- /pepin:gen surface-versions -->
 
 A version rises on **any** shape change, additions included: the number means "the surface has
@@ -353,7 +353,7 @@ output should pin `PEPIN_LANG`, or split on the space.
 | **0** | `conforme` | no critical/high deviation, and at least one control actually measured |
 | **1** | `non_conformite` | at least one critical or high deviation |
 | **2** | `erreur` | technical error: the scan could not conclude |
-| **3** | `strict` | nothing was measured (without `--strict`), or medium/low deviations remain with `--strict` |
+| **3** | `strict` | the scan does not establish compliance: nothing was measured, or the collection could not read the whole scope (both without `--strict`), or medium/low deviations remain with `--strict` |
 | **4** | `derogation` | every remaining critical/high deviation is covered by a dated, attributed exemption (`--exceptions`) |
 <!-- /pepin:gen cli-exit-codes -->
 

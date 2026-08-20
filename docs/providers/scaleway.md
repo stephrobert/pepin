@@ -83,6 +83,26 @@ Terraform mapping. A live scan of a Scaleway tenant says nothing about VPCs or K
 
 ## Minimal permissions for a live scan
 
+Derived from the provider descriptor, so this table and what the scan reports cannot diverge:
+when a call is refused, the capability report and the `not-evaluated` reason name the very
+grant listed here. **Confirmed** means the grant is stated in the official source cited beside
+it — not that a scan was run with a deliberately reduced role. This repository holds no cloud
+credentials and no automated check reaches a provider API.
+
+<!-- pepin:gen provider-scaleway-permissions -->
+| Collection unit | Minimum grant | Confirmed | Source |
+|---|---|:-:|---|
+| `access_key` | `IAMReadOnly (Organization scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
+| `iam_user` | `IAMReadOnly (Organization scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
+| `security_group_rule` | `InstancesReadOnly (Project scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
+| `compute_instance` | `InstancesReadOnly (Project scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
+| `object_storage_bucket` | `ObjectStorageReadOnly (Project scope)` | no | scaleway/docs-content — pages/object-storage/reference-content/s3-iam-permissions-equivalence.mdx |
+
+**Reservations, stated rather than papered over.**
+
+- **`object_storage_bucket`** — Covers ListBuckets, GetBucketAcl, GetBucketVersioning, GetBucketTagging and GetObjectLockConfiguration. GetBucketPolicy and GetBucketEncryption appear in NO read-only permission set of the equivalence table: the right that grants them could not be established, and it is not guessed. Both calls are best-effort - a 403 costs coverage, never correctness.
+<!-- /pepin:gen provider-scaleway-permissions -->
+
 Scaleway's vocabulary is an **IAM policy** made of rules, each carrying **permission sets** and
 a scope. Create a dedicated Application, give it an API key, and attach a policy with two
 rules:
@@ -93,18 +113,10 @@ rules:
 | Project | `InstancesReadOnly` | security groups, their rules, servers |
 | Project | `ObjectStorageReadOnly` | `ListBuckets`, `GetBucketAcl`, `GetBucketVersioning`, `GetBucketTagging`, `GetObjectLockConfiguration` |
 
-Verified in Scaleway's own documentation sources: the permission-set catalogue
-(`pages/iam/reference-content/permission-sets.mdx`) and the S3-action equivalence table
-(`pages/object-storage/reference-content/s3-iam-permissions-equivalence.mdx`) of
-`scaleway/docs-content`.
-
-**Two gaps, stated rather than papered over.** `GetBucketPolicy` and `GetBucketEncryption`
-appear in **no** read-only permission set of the equivalence table we could find; the only set
-naming bucket policies (`ObjectStorageBucketPolicyFullAccess`) is not read-only. We did not
-verify which read-only permission grants them, and we do not guess. In practice the two calls
-are best-effort, so a `403` costs coverage (`objectstorage_bucket_public_access` may lose its
-policy signal, `objectstorage_bucket_kms_encryption` returns `not-evaluated`) and never
-correctness.
+The gap the table above records for `object_storage_bucket` has a practical consequence worth
+naming: `GetBucketPolicy` and `GetBucketEncryption` are best-effort calls, so a `403` on them
+costs coverage — `objectstorage_bucket_public_access` may lose its policy signal and
+`objectstorage_bucket_kms_encryption` returns `not-evaluated` — and never correctness.
 
 `ObjectStorageBucketsRead` alone is **not** sufficient: its equivalence table does not include
 `GetObjectLockConfiguration`.

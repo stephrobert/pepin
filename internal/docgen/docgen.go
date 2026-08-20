@@ -130,7 +130,7 @@ func Generate(root, bin string) (map[string]string, error) {
 	}
 	for _, page := range injectedPages {
 		lang := langOf(page)
-		blocks := buildBlocks(lang, matrixByLang[lang], captureByLang[lang], rem)
+		blocks := buildBlocks(root, lang, matrixByLang[lang], captureByLang[lang], rem)
 		raw, rerr := os.ReadFile(filepath.Join(root, page)) // #nosec G304 -- chemin d'une liste constante du paquet.
 		if rerr != nil {
 			return nil, fmt.Errorf("lecture de %s : %w", page, rerr)

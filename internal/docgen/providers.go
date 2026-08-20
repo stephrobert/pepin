@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/stephrobert/pepin/internal/genprovider"
+	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 // documentedProviders : les fournisseurs de plan de contrôle cloud qui ont leur page.
@@ -36,6 +37,7 @@ func providerBlocks(lang string, m Matrix, scans map[string]*Capture) map[string
 		out["provider-"+name+"-identity"] = providerIdentityTable(t, desc)
 		out["provider-"+name+"-credentials"] = providerCredentialsTable(t, desc)
 		out["provider-"+name+"-live"] = providerLiveTable(t, desc)
+		out["provider-"+name+"-permissions"] = providerPermissionsTable(t, i18n.Lang(lang), desc)
 		out["provider-"+name+"-terraform"] = providerTerraformTable(t, desc)
 		out["provider-"+name+"-coverage"] = providerCoverageTable(t, m, name)
 		out["provider-"+name+"-na"] = providerNATable(t, m, name)
@@ -265,12 +267,69 @@ func boolLabel(t providerStrings, v *bool) string {
 	return t.no
 }
 
+// providerPermissionsTable rend les droits minimaux d'un compte de scan, unité de
+// collecte par unité de collecte, DÉRIVÉS du descripteur.
+//
+// Le point qui compte est la colonne « Confirmé ». Un CSPM qui exige des droits
+// sans dire lesquels il a vérifiés pousse son utilisateur à en donner trop « pour
+// que ça marche » — et les droits du compte qui exécute un scanner sont une
+// surface de sécurité à part entière. Une ligne `a_verifier` est donc une
+// information, pas une lacune honteuse : elle dit exactement où s'arrête ce que
+// le projet peut prouver.
+//
+// Aucune de ces lignes n'est confirmée par un scan réel à rôle réduit : ce dépôt
+// ne détient aucun identifiant cloud et aucun contrôle automatisé n'atteint une
+// API de fournisseur. Ce que « confirmé » engage, c'est la documentation
+// officielle citée en regard.
+func providerPermissionsTable(t providerStrings, l i18n.Lang, d genprovider.Descriptor) string {
+	perms := d.Permissions
+	if len(perms) == 0 {
+		return t.none
+	}
+	var b strings.Builder
+	b.WriteString("| " + t.colUnit + " | " + t.colGrant + " | " + t.colConfirmed + " | " + t.colSource + " |\n|---|---|:-:|---|\n")
+	// Les réserves sont GROUPÉES par texte : chez un fournisseur dont une seule
+	// politique couvre tous ses endpoints, la même phrase vaudrait pour quinze
+	// unités, et quinze fois la même phrase est une liste que plus personne ne lit.
+	var order []string
+	units := map[string][]string{}
+	for _, p := range perms {
+		mark := t.no
+		if p.Etat == "verifie" {
+			mark = t.yes
+		}
+		grant := p.Grant
+		if grant == "" {
+			grant = t.unset
+		} else {
+			grant = "`" + grant + "`"
+		}
+		_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s | %s |\n", p.Unit, grant, mark, oneLine(p.Source))
+		note := oneLine(genprovider.PermissionNoteIn(l, p))
+		if note == "" {
+			continue
+		}
+		if _, seen := units[note]; !seen {
+			order = append(order, note)
+		}
+		units[note] = append(units[note], "`"+p.Unit+"`")
+	}
+	if len(order) > 0 {
+		b.WriteString("\n" + t.reservations + "\n\n")
+		for _, note := range order {
+			_, _ = fmt.Fprintf(&b, "- **%s** — %s\n", strings.Join(units[note], ", "), note)
+		}
+	}
+	return b.String()
+}
+
 // providerStrings porte les libellés des régions des pages de fournisseurs.
 type providerStrings struct {
 	colField, colValue, colLogicalKey, colEnvVar, colDefault   string
 	colNormalizedType, colCall, colNote, colTFResource         string
 	colExploded, colSource, colControl, colJustification       string
 	colOnlyVia, colReason                                      string
+	colUnit, colGrant, colConfirmed, reservations              string
 	fieldDescription, fieldScope, fieldRegionKey, fieldAuth    string
 	fieldJurisdiction, fieldEUEstablished, fieldCapital        string
 	fieldSecNumCloud, fieldExtraterritorial, fieldSources      string
@@ -287,6 +346,8 @@ func providerText(lang string) providerStrings {
 			colTFResource: "Ressource Terraform", colExploded: "Bloc éclaté",
 			colSource: "Source", colControl: "Contrôle", colJustification: "Justification consignée au contrat",
 			colOnlyVia: "Observable uniquement via", colReason: "Motif du côté aveugle",
+			colUnit: "Unité de collecte", colGrant: "Droit minimal", colConfirmed: "Confirmé",
+			reservations:     "**Réserves, dites plutôt que masquées.**",
 			fieldDescription: "Description", fieldScope: "Portée", fieldRegionKey: "Clé de région (`--region`)",
 			fieldAuth: "Authentification de l'API", fieldJurisdiction: "Juridiction du siège",
 			fieldEUEstablished: "Établi dans l'UE", fieldCapital: "Contrôle capitalistique",
@@ -308,6 +369,8 @@ func providerText(lang string) providerStrings {
 		colTFResource: "Terraform resource", colExploded: "Exploded block",
 		colSource: "Source", colControl: "Control", colJustification: "Justification recorded in the contract",
 		colOnlyVia: "Observable only through", colReason: "Reason on the blind side",
+		colUnit: "Collection unit", colGrant: "Minimum grant", colConfirmed: "Confirmed",
+		reservations:     "**Reservations, stated rather than papered over.**",
 		fieldDescription: "Description", fieldScope: "Scope", fieldRegionKey: "Region key (`--region`)",
 		fieldAuth: "API authentication", fieldJurisdiction: "Jurisdiction of the head office",
 		fieldEUEstablished: "Established in the EU", fieldCapital: "Capital control",

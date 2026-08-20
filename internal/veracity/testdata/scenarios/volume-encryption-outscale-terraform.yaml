@@ -1,0 +1,26 @@
+# Chiffrement des volumes block chez Outscale : le contrat du fournisseur déclare
+# le contrôle NON APPLICABLE, parce que le chiffrement au repos s'y fait dans
+# l'invité (LUKS/cryptsetup) et qu'aucun champ d'API ne l'expose.
+#
+# Ce que ce scénario protège : un N/A non prouvé est un contrôle qu'on croit
+# couvert. Si le contrat perdait sa ligne, ou si la justification disparaissait,
+# le statut basculerait sans que personne ne le voie — et le tableau de couverture
+# afficherait un contrôle traité là où plus rien ne l'est.
+control: blockstorage_volume_encryption
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: not-applicable
+    why: "un volume existe dans le plan, et le contrat declare le mecanisme inexistant cote API"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_volume.data
+              type: outscale_volume
+              name: data
+              values:
+                volume_id: vol-1
+                size: 20

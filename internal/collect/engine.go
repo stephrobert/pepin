@@ -91,19 +91,42 @@ type Spec struct {
 	Resources []ResourceSpec `yaml:"resources"`
 }
 
-// Collect exécute toute la spec et retourne les ressources normalisées. `vars`
-// substitue les variables de chemin `{clef}` (ex. {zone}, {org}).
-func Collect(ctx context.Context, hc *http.Client, spec Spec, auth Auth, vars map[string]string) ([]model.Resource, error) {
+// Collect exécute toute la spec et retourne l'inventaire normalisé AVEC son état
+// de collecte. `vars` substitue les variables de chemin `{clef}` (ex. {zone}, {org}).
+//
+// Un échec sur UNE ressource n'interrompt plus la collecte : il est ENREGISTRÉ,
+// et les autres endpoints continuent d'être lus.
+//
+// L'arbitrage, parce qu'il n'est pas évident. Interrompre tout le scan au
+// premier 403 est « sûr » — aucun faux vert n'en sort — mais c'est un outil
+// inutilisable : un compte de lecture à qui il manque UN droit ne peut alors
+// plus rien auditer du tout, et la réaction rationnelle de l'utilisateur est de
+// donner à ce compte des droits plus larges. Un CSPM qui pousse à élargir les
+// privilèges du compte qui l'exécute travaille contre son propre objet.
+// Poursuivre en enregistrant l'échec donne les deux : ce qui a pu être lu est
+// mesuré, ce qui n'a pas pu l'être n'est jamais conclu.
+//
+// Ce qui reste une ERREUR DURE : tout ce qui précède le premier appel (auth
+// impossible à construire, URL invalide). Ce n'est pas un périmètre non lu,
+// c'est un scan qui n'a pas commencé.
+func Collect(ctx context.Context, hc *http.Client, spec Spec, auth Auth, vars map[string]string) (model.Inventory, error) {
 	spec.BaseURL = subst(spec.BaseURL, vars) // base_url peut contenir {zone}/{region}
-	var out []model.Resource
+	var inv model.Inventory
 	for _, r := range spec.Resources {
 		rs, err := collectResource(ctx, hc, spec, auth, r, vars)
+		// Les ressources déjà lues sont GARDÉES, même quand l'appel suivant échoue.
+		// Un écart observé sur une réponse partielle reste un écart observé : le
+		// taire ferait disparaître une non-conformité vraie. L'inverse — conclure
+		// « conforme » sur ce qui n'a pas été lu — est empêché par l'unité marquée
+		// incomplète, pas par l'oubli des ressources déjà vues.
+		inv.Resources = append(inv.Resources, rs...)
+		unit := model.CollectionUnit{Unit: r.Type, Types: []string{r.Type}, Attempted: true, Complete: err == nil}
 		if err != nil {
-			return nil, fmt.Errorf("collecte %s : %w", r.Type, err)
+			unit.Error, unit.Detail = Classify(err)
 		}
-		out = append(out, rs...)
+		inv.Collection.Record(unit)
 	}
-	return out, nil
+	return inv, nil
 }
 
 // subst remplace les variables de chemin {clef} par leur valeur.
@@ -119,10 +142,17 @@ func collectResource(ctx context.Context, hc *http.Client, spec Spec, auth Auth,
 		return collectForEach(ctx, hc, spec, auth, r, vars)
 	}
 	items, called, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, r.Path, vars), r.Items, r.Paging, r.Method, subst(r.Body, vars))
-	if err != nil {
-		return nil, err
-	}
 	src := Source{Origin: model.OriginAPI, Ref: called}
+	if err != nil {
+		// Une réponse PARTIELLE (pages 1..n lues, page n+1 refusée) rend quand même
+		// ce qu'elle a lu. Sauf pour un agrégat : compter des items sur une liste
+		// tronquée produirait un NOMBRE FAUX, et un nombre faux est pire qu'un
+		// nombre absent — c'est exactement ce qu'une règle comparerait à un seuil.
+		if r.Aggregate != "" {
+			return nil, err
+		}
+		return mapItems(spec, r, items, vars, src), err
+	}
 	if r.Aggregate != "" {
 		attrs := map[string]any{r.Aggregate: int64(len(items))}
 		// L'agrégat est CALCULÉ sur une réponse réelle : origine `api`, valeur dérivée.
@@ -159,8 +189,11 @@ func resourceURL(spec Spec, r ResourceSpec, path string, vars map[string]string)
 func collectForEach(ctx context.Context, hc *http.Client, spec Spec, auth Auth, r ResourceSpec, vars map[string]string) ([]model.Resource, error) {
 	fe := r.ForEach
 	parents, _, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, fe.Path, vars), fe.Items, fe.Paging, fe.Method, subst(fe.Body, vars))
-	if err != nil {
-		return nil, fmt.Errorf("liste parente %s : %w", fe.Path, err)
+	// La liste parente peut elle aussi être partielle : on collecte les enfants des
+	// parents connus, et l'erreur remonte pour marquer l'unité incomplète.
+	parentErr := err
+	if parentErr != nil {
+		parentErr = fmt.Errorf(i18n.T("liste parente %s : %w", "parent list %s: %w"), fe.Path, parentErr)
 	}
 	var out []model.Resource
 	for _, p := range parents {
@@ -168,14 +201,20 @@ func collectForEach(ctx context.Context, hc *http.Client, spec Spec, auth Auth, 
 		v2 := mergeVars(vars, fe.As, pm)
 		items, called, err := fetchItems(ctx, hc, auth, resourceURL(spec, r, r.Path, v2), r.Items, r.Paging, r.Method, subst(r.Body, v2))
 		if err != nil {
-			return nil, err
+			// Un enfant refusé n'annule pas les enfants déjà lus : on garde ce qui a
+			// été mesuré et l'unité entière est déclarée incomplète.
+			for i := range items {
+				items[i] = withParent(items[i], pm)
+			}
+			out = append(out, mapItems(spec, r, items, v2, Source{Origin: model.OriginAPI, Ref: called})...)
+			return out, err
 		}
 		for i := range items {
 			items[i] = withParent(items[i], pm)
 		}
 		out = append(out, mapItems(spec, r, items, v2, Source{Origin: model.OriginAPI, Ref: called})...)
 	}
-	return out, nil
+	return out, parentErr
 }
 
 // fetchItems récupère (avec pagination) le tableau d'items d'un endpoint (URL complète).
@@ -199,7 +238,10 @@ func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsP
 			called = endpoint
 		}
 		if err != nil {
-			return nil, called, err
+			// Les pages déjà lues sont rendues AVEC l'erreur : c'est le cas de la
+			// « réponse partielle ». Les jeter perdrait des écarts réellement observés,
+			// alors que l'erreur, elle, suffit à interdire toute conclusion positive.
+			return items, called, err
 		}
 		batch := extractItems(doc, itemsPath)
 		items = append(items, batch...)
@@ -232,7 +274,19 @@ func fetchItems(ctx context.Context, hc *http.Client, auth Auth, fullURL, itemsP
 			return items, called, nil
 		}
 	}
-	return nil, called, fmt.Errorf(i18n.T("pagination : borne de %d pages atteinte sur %s — collecte tronquée (vérifier la config de pagination)", "pagination: reached the %d-page bound on %s — truncated collection (check the pagination config)"), max, fullURL)
+	// Une troncature est une erreur TYPÉE : elle se distingue d'un appel refusé,
+	// et l'état de collecte doit pouvoir dire laquelle des deux s'est produite.
+	return items, called, &TruncatedError{Call: firstNonEmpty(called, fullURL), MaxPages: max}
+}
+
+// firstNonEmpty rend la première chaîne non vide.
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // withBodyPaging fusionne les paramètres de pagination dans le body JSON d'un POST.
@@ -542,7 +596,10 @@ func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Pa
 		return nil, called, fmt.Errorf(i18n.T("lecture de la reponse de %s : %w", "reading the response from %s: %w"), u.Host, rerr)
 	}
 	if resp.StatusCode >= 300 {
-		return nil, called, fmt.Errorf("HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+		// Erreur TYPÉE : le statut est ce qui range l'échec dans sa classe (droits
+		// insuffisants, service indisponible…). Le relire dans un message serait une
+		// correspondance de chaînes, qui casse au premier changement de formulation.
+		return nil, called, &HTTPError{Status: resp.StatusCode, Call: called, Body: strings.TrimSpace(string(respBody))}
 	}
 	var doc any
 	if err := json.Unmarshal(respBody, &doc); err != nil {

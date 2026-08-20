@@ -240,7 +240,9 @@ insensiblement à la casse. L'écart est bien trouvé :
   "labels": {
     "category": "security",
     "check": "compute_image_not_public",
-    "provider": "outscale"
+    "provider": "outscale",
+    "tf_file": "main.tf",
+    "tf_line": "32"
   },
   "message": "Image machine « ami-12345678 » partagée publiquement (lancement autorisé à tous).",
   "remediation": "Retirer le partage public de l'image ; la réserver aux comptes légitimes.",
@@ -329,6 +331,38 @@ nomme l'attribut ou le type de ressource qui lui a manqué.
 messages et preuves ne le sont pas. Un pipeline qui compare le *texte* d'un rapport doit
 épingler `PEPIN_LANG`
 ([Formats de sortie](../reference/output-formats.fr.md#formats-et-langue)).
+
+## D'où vient un finding
+
+Un finding issu d'un plan Terraform porte l'**origine** de la ressource qui l'a produit : le
+module, et — quand les sources `.tf` sont posées à côté du plan — le fichier et la ligne du bloc
+`resource`. `--format json` la met dans `labels.tf_file`, `labels.tf_line` et
+`labels.tf_module` ; le SARIF la met dans le `physicalLocation` du résultat, ce qui fait qu'une
+forge annote la ligne fautive plutôt que le fichier de plan.
+
+```json
+"labels": {
+  "check": "objectstorage_bucket_public_access",
+  "provider": "scaleway",
+  "tf_file": "main.tf",
+  "tf_line": "81",
+  "tf_module": "module.storage"
+}
+```
+
+Trois choses que ce mécanisme ne fait délibérément **pas** :
+
+- **Il n'invente jamais.** `terraform show -json` ne porte ni fichier ni ligne : vérifié dans la
+  source de Terraform elle-même, où la représentation `configuration` d'une ressource contient
+  `address`, `type`, `name`, `expressions`, et rien sur le document. Le fichier et la ligne sont
+  lus dans les `.tf` posés à côté du plan ; quand ils n'y sont pas, ou quand le même en-tête
+  `resource "type" "nom"` apparaît deux fois dans le répertoire cherché, l'origine est
+  simplement absente. Une ligne fausse envoie corriger le mauvais endroit, et on la croit.
+- **Il ne s'applique pas à une collecte live.** L'information n'y existe pas. Aucun label n'est
+  posé, rien n'échoue, et les formats analysables ne portent tout simplement pas les champs.
+- **Il ne suit pas un module distant.** Un module dont la `source` est un registre ou un dépôt
+  git n'a aucun répertoire dans l'arbre de travail : ses ressources gardent leur `module`, et
+  n'ont ni fichier ni ligne. Une origine partielle est rendue partielle.
 
 ## Le flux de travail qui utilise les deux
 

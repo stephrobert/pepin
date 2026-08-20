@@ -1,0 +1,63 @@
+# SSH ouvert à Internet, sur un plan Terraform Scaleway.
+#
+# Le chemin traverse tfparse, le mapping déclaratif du descripteur (bloc répété
+# `inbound_rule[*]` éclaté en règles normalisées, transforms `default:accept` et
+# `default:0.0.0.0/0` compris), les règles Rego, puis l'assessment.
+control: network_securitygroup_allow_ingress_from_internet_to_tcp_port_22
+provider: scaleway
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "regle entrante TCP/22 depuis 0.0.0.0/0 : SSH ouvert a tout Internet"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_instance_security_group.web
+              type: scaleway_instance_security_group
+              name: web
+              values:
+                id: sg-web
+                name: web
+                inbound_rule:
+                  - action: accept
+                    protocol: TCP
+                    port: 22
+                    ip_range: 0.0.0.0/0
+
+  - expect: pass
+    why: "meme regle, restreinte au reseau d'administration : la configuration est reellement correcte"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_instance_security_group.web
+              type: scaleway_instance_security_group
+              name: web
+              values:
+                id: sg-web
+                name: web
+                inbound_rule:
+                  - action: accept
+                    protocol: TCP
+                    port: 22
+                    ip_range: 10.42.0.0/16
+
+  - expect: not-evaluated
+    why: "le plan ne declare aucune regle de groupe de securite : rien a lire, donc rien a conclure"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_instance_server.web
+              type: scaleway_instance_server
+              name: web
+              values:
+                id: srv-1
+                name: web
+                security_group:
+                  id: sg-web

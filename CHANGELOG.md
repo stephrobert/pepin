@@ -23,6 +23,73 @@ belongs in `git log`.
 
 ### Added
 
+- **A veracity contract, and a debt counter rather than a green matrix.** For each
+  control × provider × source path, `internal/veracity` derives the verdicts that
+  path can actually reach — three where it can conclude, one where it cannot lift
+  the `pass` lock, one where the provider contract declares it not applicable — and
+  compares them to committed scenarios that run **against the binary**, over the
+  whole chain: canned API responses served to the descriptor's real collection spec,
+  or a minimal Terraform plan passed to its real mapper. What is not proven is
+  recorded in `internal/veracity/testdata/debt.txt`, a gate in both directions: an
+  unproven obligation missing from the ledger fails the build, so **a control added
+  without its scenarios cannot land**, and a line no longer owed fails it too. The
+  counts are published in `docs/known-limitations.md`. Today: 178 paths, 5 fully
+  proven, 458 obligations, 445 outstanding. A matrix of seven hundred
+  template-generated cases would be green and would prove nothing.
+
+- **A degradation suite with one guarantee: never a `pass`.** A refused endpoint, a
+  refused child join, a partial response, an unavailable service, an unreadable
+  response, a Terraform attribute still unknown at plan time — each produced for
+  real against a live server or a real plan, and checked on **every** control that
+  reads the affected type rather than on a chosen witness.
+
+- **A Terraform finding carries its origin: file, line, module.** `--format json`
+  gains `labels.tf_file`, `labels.tf_line` and `labels.tf_module`; the SARIF result
+  gains a `physicalLocation` with a `region`, which is what makes a forge annotate the
+  guilty `resource` block instead of the plan file. The module is read off the resource
+  address; the file and the line are **measured** in the `.tf` sources beside the plan,
+  because `terraform show -json` carries neither — verified in Terraform's own source,
+  where a resource's configuration representation holds `address`, `type`, `name` and
+  `expressions` and nothing about the document. When the sources are absent, the module
+  is remote, or the same block header appears twice, the origin is simply absent: a
+  wrong line sends someone to fix the wrong place, and it is believed. On a live
+  collection the notion does not exist and no label is set.
+
+- **Minimum permissions are declared in the descriptor, not only in prose.** Each
+  provider descriptor now carries a `permissions:` block, one entry per collection
+  unit: the grant in the provider's native vocabulary, the official source that
+  states it, and whether it is **confirmed** or still **to verify**. The provider
+  pages render that block, so the table a reader follows and the grant the scan names
+  in a `not-evaluated` reason cannot diverge. Four gates refuse a silent omission: a
+  collection unit with no declared grant, an orphan entry, a missing state or source,
+  and an unverified grant with no written reservation. Nothing here is confirmed by a
+  scan run with a deliberately reduced role — this repository holds no cloud
+  credentials — and every page says so.
+
+- **Collection completeness is recorded, and it moves the verdict.** Every collector
+  — the declarative engine, the object-storage collector, the inline EIM policy chain
+  and the managed-Kubernetes one — now records, unit by unit, whether it read
+  everything the API had to return. A refused endpoint no longer stops the scan and no
+  longer disappears into a warning: the inventory carries a `collection` block
+  (`attempted`, `complete`, a stable `error` class, the provider's own `detail`), it is
+  sealed in the evidence bundle, and it is published in `--format json`. **Every
+  control that reads a resource type fed by an incomplete unit becomes
+  `not-evaluated`** with that unit named as its reason — the assessment decides, never
+  a rule — and the scan returns **`3`, never `0`**. The transition is strictly
+  directional: a `pass` is withdrawn, a `fail` is kept (an observed deviation stays
+  observed), a `not-applicable` is kept (it comes from the contract, not from the
+  collection). *A verdict can now move on an unchanged tenant: a scan whose credentials
+  cannot read part of the scope used to return `0`, and returns `3` from now on.*
+
+- **A capability report, printed before any verdict.** A live scan announces what it
+  could and could not observe, unit by unit, with the class of each failure and the
+  number of controls it costs — the count coming from the same function that degrades
+  the assessment, so the report cannot promise what the report does not hold. Outside
+  live scans it appears only when there is something to say. Resource types a Terraform
+  plan carries and no spec projects are listed too: they are not incompleteness — no
+  control reads them, so no verdict depends on them, and they do not gate — but they
+  are no longer silent.
+
 - **`exempted`: a fifth, first-class assessment status, and dated exemptions.**
   `scan --exceptions <file.yaml>` reads a versioned exemption policy — `control`,
   `justification`, `expires_at`, `owner`, `approved_by`, all five mandatory and all
@@ -116,6 +183,23 @@ belongs in `git log`.
   and the usage rules in `docs/brand.md`. Both READMEs open on it.
 
 ### Changed
+
+- **Inventory schema `pepin-inventory/v3`.** A resource gains `source` (`file`, `line`,
+  `module`), present only where it could be measured. Pure addition.
+
+- **Exit code `3` widens from "nothing measured" to "the scan does not establish
+  compliance".** It now also fires when the collection could not read part of the
+  intended scope. Deliberately no fifth code: an incompleteness code could never take
+  precedence over `1` — hiding a real critical deviation because the rest was missing
+  would be the false green this wave exists to prevent — so it would only ever fire
+  where `3` already fires. What distinguishes the situations stays readable in the
+  capability report, in each control's reason and in the `collection` key.
+  *An exit code is a surface every pipeline parses.*
+
+- **Inventory schema `pepin-inventory/v2`.** The envelope gains `collection`. Pure
+  addition — no existing field moves — but a consumer that replays an inventory without
+  reading `collection` would conclude more firmly than Pépin did, which is exactly what
+  the field exists to prevent. The version travels in `manifest.inventory_schema`.
 
 - **A finding's prose changes with the language, its keys do not.** Codes
   (`CLD-*`), check identifiers, severities, statuses, subjects and exit codes are

@@ -81,6 +81,26 @@ the descriptor's own collection spec.
 
 ## Minimal permissions for a live scan
 
+Derived from the provider descriptor, so this table and what the scan reports cannot diverge:
+when a call is refused, the capability report and the `not-evaluated` reason name the very
+grant listed here. **Confirmed** means the grant is stated in the official source cited beside
+it — not that a scan was run with a deliberately reduced role. This repository holds no cloud
+credentials and no automated check reaches a provider API.
+
+<!-- pepin:gen provider-exoscale-permissions -->
+| Collection unit | Minimum grant | Confirmed | Source |
+|---|---|:-:|---|
+| `security_group_rule` | `compute:list-security-groups` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+| `network` | `compute:list-private-networks` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+| `compute_instance` | `compute:list-instances, compute:get-instance` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+| `iam_user` | `iam:list-users` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+| `kubernetes_cluster` | `compute:list-sks-clusters` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+| `iam_role` | `iam:list-iam-roles` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+| `blockstorage_volume` | `compute:list-block-storage-volumes` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+| `blockstorage_snapshot` | `compute:list-block-storage-snapshots` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+| `object_storage_bucket` | `sos:list-buckets, sos:get-bucket-acl, sos:get-bucket-versioning, sos:get-bucket-policy, sos:get-bucket-tagging, sos:get-object-lock-configuration, sos:get-bucket-encryption` | yes | Exoscale IAM: compute / iam / sos operation catalogues + CEL policy grammar |
+<!-- /pepin:gen provider-exoscale-permissions -->
+
 Exoscale's vocabulary is an **IAM Role** carrying a policy, and an **API Key bound to that
 role** (`exo iam role create`, then `exo iam api-key create <key> <role>`; a key cannot be
 reassigned to another role afterwards).

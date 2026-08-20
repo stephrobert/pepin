@@ -235,7 +235,9 @@ a shared helper (`truthy` in `internal/commonrules/rules/lib.rego`) that accepts
   "labels": {
     "category": "security",
     "check": "compute_image_not_public",
-    "provider": "outscale"
+    "provider": "outscale",
+    "tf_file": "main.tf",
+    "tf_line": "32"
   },
   "message": "Machine image \"ami-12345678\" shared publicly (anyone is allowed to launch it).",
   "remediation": "Remove the image's public sharing; reserve it for legitimate accounts.",
@@ -323,6 +325,38 @@ attribute or the resource type it lacked.
 **3. The language.** Codes, statuses and severities are stable across languages; titles,
 messages and evidence are not. A pipeline that diffs report *text* must pin `PEPIN_LANG`
 ([Output formats](../reference/output-formats.md#formats-and-language)).
+
+## Where a finding comes from
+
+A finding from a Terraform plan carries the **origin** of the resource that produced it: the
+module, and — when the `.tf` sources sit beside the plan — the file and the line of the
+`resource` block. `--format json` puts it in `labels.tf_file`, `labels.tf_line` and
+`labels.tf_module`; SARIF puts it in the result's `physicalLocation`, which is what makes a
+forge annotate the guilty line rather than the plan file.
+
+```json
+"labels": {
+  "check": "objectstorage_bucket_public_access",
+  "provider": "scaleway",
+  "tf_file": "main.tf",
+  "tf_line": "81",
+  "tf_module": "module.storage"
+}
+```
+
+Three things this deliberately does **not** do:
+
+- **It never invents.** `terraform show -json` carries no file and no line — verified in
+  Terraform's own source, where the configuration representation of a resource holds `address`,
+  `type`, `name`, `expressions` and nothing about the document. The file and the line are read
+  from the `.tf` files next to the plan; when they are not there, or when the same
+  `resource "type" "name"` header appears twice in the searched directory, the origin is simply
+  absent. A wrong line sends someone to fix the wrong place, and it is believed.
+- **It does not apply to a live collection.** There, the information does not exist. No label is
+  set, nothing fails, and the parsable formats simply do not carry the fields.
+- **It does not follow a remote module.** A module whose `source` is a registry or a git
+  repository has no directory in the working tree: its resources keep their `module`, and have
+  neither file nor line. A partial origin is rendered partial.
 
 ## The workflow that uses both
 

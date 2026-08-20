@@ -134,3 +134,45 @@ func NonCloudProviders() map[string]bool {
 	}
 	return out
 }
+
+// PermissionFor retourne le droit minimal déclaré pour une unité de collecte d'un
+// fournisseur, et faux si le descripteur n'en déclare aucun. Un droit non déclaré
+// n'est PAS un droit inexistant : c'est une absence de déclaration, et elle se lit
+// comme telle plutôt que comme une exigence inventée.
+func PermissionFor(providerName, unit string) (Permission, bool) {
+	for _, p := range registry[providerName].Permissions {
+		if p.Unit == unit {
+			return p, true
+		}
+	}
+	return Permission{}, false
+}
+
+// Permissions rend les droits minimaux déclarés par un fournisseur, dans l'ordre
+// du descripteur (l'ordre est celui qu'un lecteur suit : il n'est pas retrié).
+func Permissions(providerName string) []Permission {
+	src := registry[providerName].Permissions
+	return append([]Permission(nil), src...)
+}
+
+// Grants rend, par unité de collecte, le droit minimal déclaré. C'est ce que le
+// scan utilise pour NOMMER la permission qui manque quand un endpoint refuse.
+func Grants(providerName string) map[string]string {
+	out := map[string]string{}
+	for _, p := range registry[providerName].Permissions {
+		if p.Grant != "" {
+			out[p.Unit] = p.Grant
+		}
+	}
+	return out
+}
+
+// PermissionNoteIn rend la réserve attachée à un droit, dans la langue demandée.
+// Bilingue comme les justifications du contrat, et pour la même raison : elle est
+// lue par quelqu'un qui doit décider quels droits accorder.
+func PermissionNoteIn(l i18n.Lang, p Permission) string {
+	if strings.TrimSpace(p.Note) == "" && strings.TrimSpace(p.NoteEn) == "" {
+		return ""
+	}
+	return i18n.PickIn(l, p.Note, p.NoteEn)
+}

@@ -24,6 +24,79 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Un contrat de véracité, et un compteur de dette plutôt qu'une matrice verte.**
+  Pour chaque chemin contrôle × fournisseur × source, `internal/veracity` dérive les
+  verdicts que ce chemin peut réellement atteindre — trois quand il sait conclure, un
+  quand il ne peut pas lever le verrou du `pass`, un quand le contrat du fournisseur
+  le déclare non applicable — et les compare aux scénarios committés, qui s'exécutent
+  **contre le binaire**, sur toute la chaîne : des réponses d'API canned servies à la
+  spec de collecte RÉELLE du descripteur, ou un plan Terraform minimal passé à son
+  mapper réel. Ce qui n'est pas prouvé est consigné dans
+  `internal/veracity/testdata/debt.txt`, une porte dans les deux sens : une
+  obligation non prouvée absente du registre fait échouer la construction — **un
+  contrôle ajouté sans ses scénarios ne peut donc pas passer** — et une ligne qui
+  n'est plus due la fait échouer aussi. Les compteurs sont publiés dans
+  `docs/known-limitations.fr.md`. Aujourd'hui : 178 chemins, 5 entièrement prouvés,
+  458 obligations, 445 restantes. Une matrice de sept cents cas engendrés par gabarit
+  serait verte et ne prouverait rien.
+
+- **Une suite de dégradation avec une seule garantie : jamais un `pass`.** Un
+  endpoint refusé, une jointure enfant refusée, une réponse partielle, un service
+  indisponible, une réponse illisible, un attribut Terraform encore inconnu au stade
+  du plan — chacun produit pour de vrai contre un serveur vivant ou un plan réel, et
+  vérifié sur **tous** les contrôles qui lisent le type touché, pas sur un témoin
+  choisi.
+
+- **Un finding Terraform porte son origine : fichier, ligne, module.** `--format json`
+  gagne `labels.tf_file`, `labels.tf_line` et `labels.tf_module` ; le résultat SARIF
+  gagne un `physicalLocation` avec sa `region`, ce qui fait qu'une forge annote le bloc
+  `resource` fautif plutôt que le fichier de plan. Le module se lit dans l'adresse de
+  la ressource ; le fichier et la ligne sont **mesurés** dans les sources `.tf` posées à
+  côté du plan, parce que `terraform show -json` ne porte ni l'un ni l'autre — vérifié
+  dans la source de Terraform elle-même, où la représentation `configuration` d'une
+  ressource contient `address`, `type`, `name`, `expressions`, et rien sur le document.
+  Quand les sources sont absentes, que le module est distant ou que le même en-tête de
+  bloc apparaît deux fois, l'origine est simplement absente : une ligne fausse envoie
+  corriger le mauvais endroit, et on la croit. Sur une collecte live, la notion n'existe
+  pas et aucun label n'est posé.
+
+- **Les permissions minimales sont déclarées au descripteur, pas seulement en prose.**
+  Chaque descripteur de fournisseur porte désormais un bloc `permissions:`, une entrée
+  par unité de collecte : le droit dans le vocabulaire natif du fournisseur, la source
+  officielle qui l'énonce, et s'il est **confirmé** ou encore **à vérifier**. Les pages
+  de fournisseurs rendent ce bloc, si bien que le tableau que suit un lecteur et le
+  droit que le scan nomme dans un motif de `not-evaluated` ne peuvent pas diverger.
+  Quatre portes refusent l'omission silencieuse : une unité de collecte sans droit
+  déclaré, une entrée orpheline, un état ou une source manquants, un droit non vérifié
+  sans réserve écrite. Rien de tout cela n'est confirmé par un scan lancé avec un rôle
+  délibérément réduit — ce dépôt ne détient aucun identifiant cloud — et chaque page
+  le dit.
+
+- **La complétude de la collecte est enregistrée, et elle déplace le verdict.** Chaque
+  collecteur — le moteur déclaratif, le stockage objet, la chaîne des politiques EIM
+  inline et le Kubernetes managé — consigne désormais, unité par unité, s'il a lu tout
+  ce que l'API avait à rendre. Un endpoint refusé n'arrête plus le scan et ne disparaît
+  plus dans un avertissement : l'inventaire porte un bloc `collection` (`attempted`,
+  `complete`, une classe d'erreur stable, le `detail` du fournisseur), il est scellé
+  dans le bundle de preuve, et il est publié par `--format json`. **Tout contrôle qui
+  lit un type de ressource alimenté par une unité incomplète devient `not-evaluated`**,
+  avec cette unité nommée comme motif — c'est l'assessment qui tranche, jamais une règle
+  — et le scan rend **`3`, jamais `0`**. La transition est strictement directionnelle :
+  un `pass` est retiré, un `fail` est conservé (un écart observé reste observé), un
+  `not-applicable` est conservé (il vient du contrat, pas de la collecte). *Un verdict
+  peut désormais bouger sur un tenant inchangé : un scan dont les identifiants ne
+  peuvent pas lire une partie du périmètre rendait `0`, il rend `3` désormais.*
+
+- **Un relevé de capacités, imprimé avant tout verdict.** Un scan live annonce ce qu'il
+  a pu et n'a pas pu observer, unité par unité, avec la classe de chaque échec et le
+  nombre de contrôles que cela coûte — ce nombre venant de la même fonction que celle
+  qui dégrade l'assessment, si bien que le relevé ne peut pas promettre ce que le
+  rapport ne tiendra pas. Hors collecte live, il n'apparaît que s'il a quelque chose à
+  dire. Les types de ressources qu'un plan Terraform porte et qu'aucune spec ne projette
+  y figurent aussi : ce n'est pas une incomplétude — aucun contrôle ne les lit, donc
+  aucun verdict n'en dépend, et ils ne bloquent aucune porte — mais ils ne sont plus
+  silencieux.
+
 - **`exempted` : un cinquième statut d'assessment de premier rang, et des dérogations
   datées.** `scan --exceptions <fichier.yaml>` lit une politique de dérogations
   versionnée : `control`, `justification`, `expires_at`, `owner`, `approved_by`, les
@@ -123,6 +196,24 @@ l'une ni l'autre appartient au `git log`.
   Les deux README s'ouvrent dessus.
 
 ### Modifié
+
+- **Schéma d'inventaire `pepin-inventory/v3`.** Une ressource gagne `source` (`file`,
+  `line`, `module`), présent seulement là où il a pu être mesuré. Ajout pur.
+
+- **Le code de sortie `3` s'élargit de « rien n'a été mesuré » à « le scan n'établit
+  pas la conformité ».** Il se déclenche désormais aussi quand la collecte n'a pas pu
+  lire une partie du périmètre visé. Délibérément pas de cinquième code : un code propre
+  à l'incomplétude ne pourrait jamais primer sur `1` — masquer un écart critique réel au
+  motif que le reste manque serait le faux vert que cette vague existe pour empêcher —
+  il ne s'exprimerait donc que là où `3` s'exprime déjà. Ce qui distingue les situations
+  reste lisible dans le relevé de capacités, dans le motif de chaque contrôle et dans la
+  clé `collection`. *Un code de sortie est une surface que tout pipeline analyse.*
+
+- **Schéma d'inventaire `pepin-inventory/v2`.** L'enveloppe gagne `collection`. Ajout
+  pur — aucun champ existant ne bouge — mais un consommateur qui rejouerait un
+  inventaire sans lire `collection` conclurait plus fermement que Pépin ne l'a fait, ce
+  qui est exactement ce que ce champ existe pour empêcher. La version voyage dans
+  `manifest.inventory_schema`.
 
 - **La prose d'un finding change avec la langue, ses clés non.** Codes (`CLD-*`),
   identifiants de check, sévérités, statuts, sujets et codes de sortie sont

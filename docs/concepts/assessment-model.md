@@ -216,7 +216,9 @@ resources, not a checklist of controls.
   },
   "labels": {
     "category": "security",
-    "provider": "scaleway"
+    "provider": "scaleway",
+    "tf_file": "main.tf",
+    "tf_line": "81"
   },
   "references": [
     {
@@ -544,6 +546,7 @@ measured nothing. Pépin returns **3** for it, and does so **without requiring `
 | Nothing was measured (empty inventory): **without having to ask for `--strict`** | `./pepin scan scaleway empty-inventory.json` | **3** |
 | Medium/low deviations only, without `--strict` | `./pepin scan scaleway tagless-inventory.json` | **0** |
 | Medium/low deviations only, with `--strict` | `./pepin scan scaleway tagless-inventory.json --strict` | **3** |
+| No deviation, but one collection unit could not be read | `./pepin scan scaleway partial-inventory.json` | **3** |
 | Every critical/high deviation is covered by a valid exemption | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml` | **4** |
 | The same exemption, lapsed: it no longer applies | `./pepin scan scaleway bastion-inventory.json --exceptions exceptions-expired.yaml` | **1** |
 <!-- /pepin:gen exit-codes -->

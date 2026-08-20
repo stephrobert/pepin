@@ -161,11 +161,17 @@ source du contrat dans l'en-tête de chaque règle.
 ## 6. Codes de sortie (portes de CI)
 
 `0` conforme · `1` non-conformité (≥ 1 finding critical/high) · `2` erreur
-technique · `3` rien de mesuré (inventaire vide, ou écarts medium/low avec
-`--strict`) · `4` tout écart critical/high est couvert par une dérogation valide.
-`3` et `4` ne sont PAS des `0` : ni le vide ni la dérogation ne valent conformité.
-Ne pas changer cette sémantique sans mettre à jour README, `docs/reference/exit-codes.md`
-(généré) et les tests.
+technique · `3` **le scan n'établit pas la conformité** : rien de mesuré (inventaire
+vide), collecte incomplète (une unité n'a pas pu être lue, cf. `model.Collection`),
+ou écarts medium/low avec `--strict` · `4` tout écart critical/high est couvert par
+une dérogation valide. `3` et `4` ne sont PAS des `0` : ni le vide, ni le partiel, ni
+la dérogation ne valent conformité. **Il n'y a délibérément pas de cinquième code**
+pour l'incomplétude : elle ne peut jamais primer sur `1` (un écart observé reste un
+écart), donc elle n'occuperait que la place que `3` occupe déjà. Ce qui distingue les
+cas est LISIBLE ailleurs — relevé de capacités, motif de chaque `not-evaluated`, clé
+`collection` de `--format json`.
+Ne pas changer cette sémantique sans mettre à jour README, README.fr,
+`docs/reference/exit-codes.md` (généré, + `.fr.md`) et les tests.
 
 ## 7. Commits & branches
 
@@ -220,9 +226,19 @@ Les artefacts pilotent tout : `catalogue.yaml` (QUOI), `contrats/<provider>.yaml
    pepin.rules`, `labels.provider: provider_of(r)`, plus `labels.message_en` et
    `labels.remediation_en`, cf. §1.2) + test `*_test.rego` (✓ et ✗).
    Passer l'entrée du catalogue en `statut: implemente`.
-6. **Valider.** `mise run validate` (codes↔règles↔SCSL gelé↔catalogue) **puis**
+6. **Contrat de véracité.** Un test Rego ne prouve qu'un maillon. Écrire les
+   scénarios de bout en bout dans `internal/veracity/testdata/scenarios/` : un
+   fichier par chemin contrôle × fournisseur × source, prouvant les verdicts que
+   ce chemin peut atteindre (`fail`/`pass`/`not-evaluated` s'il sait conclure,
+   `not-applicable` si le contrat le déclare tel). Un scénario `live` dont le type
+   est produit par la spec `collecte` entre par `api:` — des réponses canned
+   servies au collecteur RÉEL —, jamais par `inventory:` : c'est le collecteur qui
+   a laissé passer l'incident fondateur, pas la règle. Ce qui n'est pas prouvé se
+   CONSIGNE (`mise run veracity-update`), jamais ne se masque ; le registre est une
+   porte dans les deux sens, et un contrôle ajouté sans ses scénarios casse la CI.
+7. **Valider.** `mise run validate` (codes↔règles↔SCSL gelé↔catalogue) **puis**
    `mise run test` + `mise run audit` au vert. Aucun commit si l'un échoue (§1, §7).
-7. **Documenter.** `mise run gen-docs`, et committer ce qu'il régénère : la matrice
+8. **Documenter.** `mise run gen-docs`, et committer ce qu'il régénère : la matrice
    de couverture et les sorties capturées sont GÉNÉRÉES depuis le binaire et le
    référentiel, et `TestGeneratedDocsAreUpToDate` casse la CI si elles dérivent.
    Puis relire ce que le changement rend FAUX ailleurs — `docs/known-limitations.md`

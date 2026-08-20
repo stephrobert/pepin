@@ -184,6 +184,43 @@ sa preuve. Les autres fournisseurs rejoindront cette garde en atteignant 100 %.
 **Conséquence pour vous :** chaque finding vous dit quoi faire, en prose. Tous les findings ne
 sont pas accompagnés d'un module Terraform testé qui le prouve.
 
+## Le contrat de véracité, et ce qu'il doit encore
+
+Pour un scanner de posture, l'unité qui compte n'est pas `fixture → Rego → FAIL attendu`. C'est
+la chaîne entière : **réponse d'API ou plan → collecteur → normalisation → garde de capacité →
+Rego → assessment → verdict**. L'incident des politiques EIM inline l'a prouvé : une policy
+accordant `Action: "*"` échappait à *tous* les contrôles `iam_policy_*`, la règle Rego n'était
+pas fausse, et la donnée n'arrivait simplement jamais jusqu'à elle. Un test Rego parfait serait
+resté vert pendant que le scanner produisait un faux vert.
+
+Un scénario de véracité s'exécute donc contre le **binaire**, sur toute la chaîne, et lit le
+statut que publie l'assessment. Chaque chemin — contrôle × fournisseur × source — doit prouver
+les verdicts qu'il peut réellement atteindre : trois pour un chemin qui sait conclure (`fail`,
+`pass`, `not-evaluated`), un pour un chemin qui ne peut pas lever le verrou du `pass`, un pour
+un chemin que le contrat du fournisseur déclare non applicable.
+
+Ce qui n'est pas encore prouvé est **compté**, pas masqué :
+
+<!-- pepin:gen veracity-debt -->
+| Chiffre | Nombre |
+|---|---:|
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 178 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 5 |
+| Verdicts à prouver au total | 458 |
+| Verdicts restant à prouver | 445 |
+<!-- /pepin:gen veracity-debt -->
+
+Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est
+une porte dans les deux sens : une obligation non prouvée qui n'y figure *pas* fait échouer la
+construction — un contrôle ajouté sans ses scénarios ne peut donc pas passer — et une ligne qui
+n'est plus due la fait échouer aussi.
+
+**Pourquoi une dette comptée plutôt qu'une matrice verte.** Quatre scénarios par chemin
+feraient quelque sept cents cas. Personne ne peut *éprouver* sept cents cas — c'est-à-dire les
+casser un par un pour vérifier qu'ils rougissent —, et une matrice engendrée par gabarit serait
+exactement le faux vert que ce scanner existe pour combattre : un test qui passe parce que ses
+cas sont creux ne mesure que lui-même.
+
 ## Limites de l'outil lui-même
 
 ### Un bundle de preuve non caviardé est un artefact sensible
@@ -208,9 +245,26 @@ configuration effective, utilisez `--live`.
 ### `--live` voit exactement ce que voient vos identifiants
 
 Une permission manquante au rôle en lecture seule se traduit par un `not-evaluated`, pas par une
-erreur. C'est le bon mode de défaillance, mais cela signifie qu'un scan sous-privilégié produit
-un rapport *plus silencieux*, pas plus bruyant. Regardez le nombre de `not-evaluated`, pas
-seulement le nombre d'écarts.
+erreur. C'est le bon mode de défaillance, et depuis la v0.3.0 c'est aussi un mode **bruyant** :
+le scan enregistre chaque unité de collecte qu'il n'a pas pu lire, imprime un relevé de
+capacités avant tout verdict, nomme l'unité manquante comme motif de chaque contrôle touché, et
+ne rend pas `0`. Un scan sous-privilégié ne produit donc plus un rapport plus silencieux qu'un
+scan privilégié : il produit un rapport qui dit ce qu'il n'a pas pu voir. Voir
+[le code de sortie 3](reference/exit-codes.fr.md#3--le-scan-nétablit-pas-la-conformité).
+
+Ce qui reste vrai : Pépin ne peut pas vous dire ce qu'un identifiant *plus large* aurait trouvé.
+Il rend compte de la surface qu'on lui a donnée, et de l'absence de cette surface, jamais de ce
+qui s'étend au-delà.
+
+### Les permissions minimales sont documentées, pas mesurées
+
+Chaque page de fournisseur liste les appels d'API que fait un scan et les permissions de lecture
+qu'ils exigent. Ces listes sont **dérivées des descripteurs de collecte** — les endpoints que la
+spec déclare — et confrontées à la documentation IAM publique du fournisseur. Elles n'ont pas
+été confirmées en lançant un scan avec un rôle délibérément réduit : ce dépôt ne détient aucun
+identifiant cloud, par construction, et aucun contrôle automatisé n'atteint une API de
+fournisseur. Chaque page distingue les lignes confirmées par la documentation de celles qui
+restent non vérifiées.
 
 ### Les faits de souveraineté sont déclarés, pas vérifiés
 
@@ -240,6 +294,23 @@ descripteur projette l'attribut décisif, et le contrat est vérifié », pas «
 champ lors d'une exécution mesurée ». Si les deux divergeaient sur votre tenant, le scan le
 dirait par un `not-evaluated` accompagné de son motif, jamais par un vert silencieux ; mais la
 matrice, elle, est une déclaration du descripteur, pas une preuve.
+
+### Le fichier et la ligne d'un finding exigent les sources `.tf` à côté du plan
+
+`terraform show -json` ne porte ni fichier ni ligne : la représentation `configuration` d'une
+ressource contient `address`, `type`, `name` et `expressions`, et rien sur le document dont elle
+provient. Pépin *mesure* donc l'origine dans les `.tf` posés à côté du plan. Trois conséquences,
+et aucune n'est contournée :
+
+- Un plan produit ailleurs et transmis seul obtient un **module**, sans fichier ni ligne.
+- Un module tiré d'un registre ou d'un dépôt git n'a aucun répertoire dans l'arbre de travail :
+  ses ressources gardent leur module, et rien de plus.
+- Un en-tête `resource "type" "nom"` écrit sur plusieurs lignes, ou déclaré dans un fichier
+  `.tf.json`, n'est pas trouvé ; l'origine est alors absente plutôt qu'approximative.
+
+Aucun drapeau ne permet de désigner un autre arbre de sources, et c'est délibéré : résoudre un
+en-tête de bloc contre un arbre d'où le plan ne vient pas produirait une ligne plausible et
+fausse, ce qui est pire que pas de ligne du tout.
 
 ### Rien n'est mesuré entre deux runs
 

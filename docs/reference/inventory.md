@@ -12,7 +12,7 @@ with the same regard as the CLI surface.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v1
+pepin-inventory/v3
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -25,7 +25,8 @@ that meets a version it does not know must stop rather than guess.
 {
   "provider": "scaleway",
   "evaluated_at": "2026-08-19T10:11:12Z",
-  "resources": [ … ]
+  "resources": [ … ],
+  "collection": { "units": [ … ], "unmapped": [ … ] }
 }
 ```
 
@@ -34,6 +35,42 @@ that meets a version it does not know must stop rather than guess.
 - `evaluated_at` — the single instant of evaluation, RFC3339 UTC, added by `scan`. Time-sensitive
   rules anchor on it rather than on the clock, so replaying a sealed `input.json` yields the
   same verdict. It is **never** overwritten on a replay.
+- `collection` — the state of what the collection could read, present when Pépin **measured**
+  the inventory (live collection, Terraform plan) and absent when it **received** it (a
+  third-party export). See the next section.
+
+## The collection state
+
+```json
+{
+  "units": [
+    { "unit": "compute_instance", "types": ["compute_instance"], "attempted": true, "complete": true },
+    { "unit": "iam_policy_inline", "types": ["iam_policy"], "attempted": true, "complete": false,
+      "error": "permission_denied", "detail": "HTTP 403 · POST https://api…/ReadUserPolicies · AccessDenied" }
+  ],
+  "unmapped": [ { "type": "outscale_public_ip", "count": 2 } ]
+}
+```
+
+A **unit** is one endpoint, or one chain of endpoints, feeding one or more normalized resource
+types. `complete` is true when the unit returned everything the API had to return: a unit that
+returned zero resources without error is complete — "there is nothing" is a measurement — while
+a unit that returned a hundred resources out of a thousand before a `403` is not.
+
+`error` is a stable class, not a message: `permission_denied`, `not_found`, `rate_limited`,
+`timeout`, `truncated`, `unreadable`, `unavailable`. A pipeline must be able to tell "the
+scanning account cannot see this" (fix the account policy) from "the service did not answer"
+(retry). `detail` carries the provider's own response, untranslated — it is data, not Pépin
+prose.
+
+Every control that reads a type fed by an incomplete unit becomes `not-evaluated`, with that
+unit named as the reason, and the scan does not return `0`. That decision belongs to the
+assessment, never to a rule: a per-rule guard is a guard someone forgets to write on the
+fiftieth rule.
+
+`unmapped` lists resource types the source carried that no spec projects. It is **not**
+incompleteness and it does not gate: no control reads those types, so no verdict depends on
+them. It is there so that "Pépin saw ten resources and can read six of them" is never silent.
 
 ## The resource
 
@@ -50,7 +87,12 @@ that meets a version it does not know must stop rather than guess.
 ```
 
 - `provider`, `type`, `id`, `name`, `attributes` are always present.
-- `region` and `provenance` are present when they carry something.
+- `region`, `provenance` and `source` are present when they carry something.
+- `source` is the **origin in the infrastructure code**: `file`, `line` and `module`. It exists
+  only for the Terraform source, and only as far as it can be measured — the module is read off
+  the resource address, the file and the line are found in the `.tf` sources beside the plan.
+  A live collection carries none of it, and none is invented. See
+  [Terraform plan vs live collection](../concepts/terraform-vs-live.md#where-a-finding-comes-from).
 - `attributes` is a **flat** map from attribute name to JSON value. This is what the Rego rules
   read, and it is why one rule can be common to every cloud.
 - `provenance` is indexed by the **same** attribute names, never nested inside a value. See

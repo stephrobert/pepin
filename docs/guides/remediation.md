@@ -61,7 +61,9 @@ Before, on `examples/scaleway/terraform/plan.json`:
   },
   "labels": {
     "category": "security",
-    "provider": "scaleway"
+    "provider": "scaleway",
+    "tf_file": "main.tf",
+    "tf_line": "81"
   },
   "references": [
     {

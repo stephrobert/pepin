@@ -12,7 +12,7 @@ gelée, avec les mêmes égards que la surface CLI.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v1
+pepin-inventory/v3
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -25,7 +25,8 @@ consommateur qui rencontre une version qu'il ne connaît pas doit s'arrêter plu
 {
   "provider": "scaleway",
   "evaluated_at": "2026-08-19T10:11:12Z",
-  "resources": [ … ]
+  "resources": [ … ],
+  "collection": { "units": [ … ], "unmapped": [ … ] }
 }
 ```
 
@@ -34,6 +35,44 @@ consommateur qui rencontre une version qu'il ne connaît pas doit s'arrêter plu
 - `evaluated_at` : l'instant d'évaluation unique, RFC3339 UTC, posé par `scan`. Les règles
   sensibles au temps s'y ancrent plutôt qu'à l'horloge, si bien que rejouer un `input.json`
   scellé rend le même verdict. Il n'est **jamais** écrasé lors d'un rejeu.
+- `collection` : l'état de ce que la collecte a pu lire. Présent quand Pépin a **mesuré**
+  l'inventaire (collecte live, plan Terraform), absent quand il l'a **reçu** (export d'un
+  tiers). Voir la section suivante.
+
+## L'état de collecte
+
+```json
+{
+  "units": [
+    { "unit": "compute_instance", "types": ["compute_instance"], "attempted": true, "complete": true },
+    { "unit": "iam_policy_inline", "types": ["iam_policy"], "attempted": true, "complete": false,
+      "error": "permission_denied", "detail": "HTTP 403 · POST https://api…/ReadUserPolicies · AccessDenied" }
+  ],
+  "unmapped": [ { "type": "outscale_public_ip", "count": 2 } ]
+}
+```
+
+Une **unité** est un endpoint, ou une chaîne d'endpoints, qui alimente un ou plusieurs types de
+ressources normalisés. `complete` est vrai quand l'unité a rendu tout ce que l'API avait à
+rendre : une unité qui a rendu zéro ressource sans erreur est complète — « il n'y a rien » est
+une mesure — alors qu'une unité qui a rendu cent ressources sur mille avant un `403` ne l'est
+pas.
+
+`error` est une classe stable, pas un message : `permission_denied`, `not_found`,
+`rate_limited`, `timeout`, `truncated`, `unreadable`, `unavailable`. Un pipeline doit pouvoir
+distinguer « le compte de scan ne voit pas cette surface » (à corriger sur la politique du
+compte) de « le service n'a pas répondu » (à réessayer). `detail` porte la réponse du
+fournisseur telle quelle, non traduite : c'est une donnée, pas de la prose de Pépin.
+
+Tout contrôle qui lit un type alimenté par une unité incomplète devient `not-evaluated`, avec
+cette unité nommée comme motif, et le scan ne rend pas `0`. Cette décision appartient à
+l'assessment, jamais à une règle : une garde par règle est une garde qu'on oublie d'écrire à la
+cinquantième.
+
+`unmapped` liste les types de ressources que la source portait et qu'aucune spec ne projette.
+Ce n'est **pas** une incomplétude et cela ne bloque aucune porte : aucun contrôle ne lit ces
+types, donc aucun verdict n'en dépend. Cette liste existe pour que « Pépin a vu dix ressources
+et sait en lire six » ne soit jamais silencieux.
 
 ## La ressource
 
@@ -50,7 +89,13 @@ consommateur qui rencontre une version qu'il ne connaît pas doit s'arrêter plu
 ```
 
 - `provider`, `type`, `id`, `name`, `attributes` sont toujours présents.
-- `region` et `provenance` sont présents quand ils portent quelque chose.
+- `region`, `provenance` et `source` sont présents quand ils portent quelque chose.
+- `source` est l'**origine dans le code d'infrastructure** : `file`, `line` et `module`. Elle
+  n'existe que pour la source Terraform, et seulement dans la mesure où elle se mesure — le
+  module se lit dans l'adresse de la ressource, le fichier et la ligne se trouvent dans les
+  sources `.tf` posées à côté du plan. Une collecte live n'en porte rien, et rien n'y est
+  inventé. Voir
+  [Plan Terraform et collecte live](../concepts/terraform-vs-live.fr.md#doù-vient-un-finding).
 - `attributes` est une carte **plate** de nom d'attribut vers valeur JSON. C'est ce que lisent
   les règles Rego, et c'est pourquoi une même règle vaut pour tous les clouds.
 - `provenance` est indexée par les **mêmes** noms d'attributs, jamais imbriquée dans une

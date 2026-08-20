@@ -61,10 +61,34 @@ type Descriptor struct {
 	OKS struct {
 		Endpoint string `yaml:"endpoint"` // API Kubernetes managé (host distinct, {region} substitué) ; vide = pas de collecte OKS
 	} `yaml:"oks"`
+	Permissions      []Permission `yaml:"permissions"`       // droits minimaux d'un compte de scan, par unité de collecte
 	Collecte         collect.Spec `yaml:"collecte"`          // source : API live
 	MappingTerraform tfmap.Spec   `yaml:"mapping_terraform"` // source : plan Terraform
 	Contrat          Contrat      `yaml:"contrat"`           // ancrage API + applicabilité SCSL
 	Souverainete     Souverainete `yaml:"souverainete"`      // métadonnées de souveraineté du fournisseur (CLD-GVN-4)
+}
+
+// Permission dit ce qu'un compte de scan doit détenir pour lire UNE unité de
+// collecte, et si ce droit est CONFIRMÉ ou seulement supposé.
+//
+// Les droits du compte qui exécute un CSPM sont une surface de sécurité : un
+// compte qui ne voit pas quelque chose ne doit jamais permettre de conclure que
+// cette chose n'existe pas. Deux conséquences, et elles tirent dans le même sens :
+// le scan doit NOMMER le droit qui lui manque quand un endpoint refuse, et la
+// documentation ne doit jamais exiger plus que le nécessaire — un outil qui
+// devine les droits qu'il réclame pousse à en donner trop.
+//
+// D'où `Etat`, sur le modèle du contrat d'API : `verifie` engage la source citée,
+// `a_verifier` dit explicitement que le droit n'a pas pu être établi. Aucune de
+// ces lignes n'est confirmée par un scan réel à rôle réduit — le dépôt ne détient
+// aucun identifiant cloud —, et la documentation générée le dit à chaque page.
+type Permission struct {
+	Unit   string `yaml:"unit"`   // unité de collecte (type de ressource normalisé, ou chaîne d'appels nommée)
+	Grant  string `yaml:"grant"`  // le droit, dans le vocabulaire natif du fournisseur
+	Etat   string `yaml:"etat"`   // verifie | a_verifier
+	Source string `yaml:"source"` // document officiel qui confirme (ou dont l'absence motive `a_verifier`)
+	Note   string `yaml:"note"`   // réserve ou précision, en français
+	NoteEn string `yaml:"note_en"`
 }
 
 // Souverainete porte les FAITS de souveraineté du fournisseur (siège, contrôle
@@ -135,14 +159,14 @@ func (g GenericProvider) Description() string { return g.desc.Description }
 
 // Collect résout les identifiants, construit l'auth et exécute la collecte (spec
 // `collecte` + stockage objet) via le kit commun.
-func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) ([]model.Resource, error) {
+func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) (model.Inventory, error) {
 	creds, err := g.resolveCreds(cfg)
 	if err != nil {
-		return nil, err
+		return model.Inventory{}, err
 	}
 	auth, err := g.buildAuth(creds)
 	if err != nil {
-		return nil, err
+		return model.Inventory{}, err
 	}
 	vars := map[string]string{}
 	for _, k := range []string{"region", "zone", "org", "host"} {
@@ -171,11 +195,11 @@ func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) ([]mo
 	if g.desc.Auth.Type == "kubeconfig" {
 		path := collectkit.FirstNonEmpty(cfg.Options["kubeconfig"], creds["kubeconfig"])
 		if path == "" {
-			return nil, fmt.Errorf(i18n.T("provider %s : chemin du kubeconfig requis (--kubeconfig ou KUBECONFIG)", "provider %s: a kubeconfig path is required (--kubeconfig or KUBECONFIG)"), g.desc.Name)
+			return model.Inventory{}, fmt.Errorf(i18n.T("provider %s : chemin du kubeconfig requis (--kubeconfig ou KUBECONFIG)", "provider %s: a kubeconfig path is required (--kubeconfig or KUBECONFIG)"), g.desc.Name)
 		}
 		kc, err := kubeauth.Load(path, 30*time.Second)
 		if err != nil {
-			return nil, err
+			return model.Inventory{}, err
 		}
 		vars["server"] = kc.Server
 		hc = kc.Client
@@ -200,7 +224,7 @@ func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) ([]mo
 }
 
 // MapTerraform projette un plan Terraform via la spec de mapping déclarative.
-func (g GenericProvider) MapTerraform(resources []tfparse.Resource) ([]model.Resource, error) {
+func (g GenericProvider) MapTerraform(resources []tfparse.Resource) (model.Inventory, error) {
 	spec := g.desc.MappingTerraform
 	spec.Provider = g.desc.Name
 	return tfmap.Apply(spec, resources), nil
@@ -367,6 +391,18 @@ func DescriptorsDigest() string { return descriptorsDigest }
 // registry conserve les descripteurs chargés, pour exposer l'applicabilité des
 // contrôles (contrats) à la roadmap `pepin scsl`.
 var registry = map[string]Descriptor{}
+
+// Descriptors rend une COPIE des descripteurs chargés, indexés par nom. Exposé
+// pour que les vérifications qui rejouent la collecte réelle (contrat de
+// véracité) empruntent la spec du dépôt plutôt qu'une spec réécrite pour le test —
+// un harnais qui décrirait lui-même ce qu'il éprouve ne mesurerait que lui-même.
+func Descriptors() map[string]Descriptor {
+	out := make(map[string]Descriptor, len(registry))
+	for name, d := range registry {
+		out[name] = d
+	}
+	return out
+}
 
 // subst remplace les variables {clef} par leur valeur.
 func subst(s string, vars map[string]string) string {

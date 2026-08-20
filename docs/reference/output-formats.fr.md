@@ -30,7 +30,7 @@ verdict. Voir [Codes de sortie](exit-codes.fr.md).
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v2** |
-| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v1** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v3** |
 <!-- /pepin:gen surface-versions -->
 
 « Gelé » signifie qu'un test échoue quand la forme bouge sans que sa version ait suivi : les
@@ -97,7 +97,9 @@ Forme gelée : `{"findings": [...], "summary": {...}}`.
   "labels": {
     "category": "security",
     "check": "objectstorage_bucket_public_access",
-    "provider": "scaleway"
+    "provider": "scaleway",
+    "tf_file": "main.tf",
+    "tf_line": "81"
   },
   "message": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
   "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
@@ -112,11 +114,21 @@ Forme gelée : `{"findings": [...], "summary": {...}}`.
 agnostique, commun à tous les fournisseurs. Les deux sont stables d'une langue à l'autre ;
 `title`, `message` et `remediation` sont traduits.
 
+Deux clés additives apparaissent quand elles ont quelque chose à dire, et toutes deux existent
+pour qu'un pipeline lise ce qu'il accepte au lieu de le déduire :
+
+- `exemptions` : présente quand `--exceptions` a été donné (voir ci-dessous) ;
+- `collection` : présente quand Pépin a **mesuré** l'inventaire — l'état de chaque unité de
+  collecte, et les types de ressources que la source portait sans qu'aucune spec ne les
+  projette. Sa forme est décrite dans
+  [l'inventaire normalisé](inventory.fr.md#létat-de-collecte).
+
 **Ce que ce format ne sait pas dire** : il liste des écarts, donc un tableau `findings` vide
 signifie « aucun écart trouvé », ce qui recouvre aussi bien « le tenant est propre » que « rien
 n'a été collecté ». Le booléen `summary.conforme` ne dit rien non plus de la couverture. Si
 cette distinction compte, et pour une porte de conformité elle compte, lire le code de sortie
-(3 signifie que rien n'a été mesuré) ou utiliser le format assessment.
+(3 signifie que le scan n'établit pas la conformité : rien de mesuré, ou un périmètre lu en
+partie seulement), lire `collection`, ou utiliser le format assessment.
 
 ### `exemptions` : présent seulement avec `--exceptions`
 
@@ -183,7 +195,9 @@ Un résultat :
   },
   "labels": {
     "category": "security",
-    "provider": "scaleway"
+    "provider": "scaleway",
+    "tf_file": "main.tf",
+    "tf_line": "81"
   },
   "references": [
     {
@@ -318,26 +332,26 @@ SARIF 2.1.0, le format que lit l'onglet Code Scanning de GitHub. C'est celui à 
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/sarif-2.1/schema/sarif-schema-2.1.0.json",
-  "version": "2.1.0",
   "runs": [
     {
-      "tool": {
-        "driver": {
-          "name": "pepin",
-          "version": "<version>",
-          "rules": [
+      "results": [
+        {
+          "level": "error",
+          "locations": [
             {
-              "id": "CLD-CHF-2",
-              "shortDescription": {
-                "text": "CLD-CHF-2 (scaleway)"
-              },
-              "helpUri": "https://stephane-robert.info/scsl/CLD-CHF-2"
-            },
-            {
-              "id": "CLD-CMP-9",
-              "shortDescription": {
-                "text": "CLD-CMP-9 (scaleway)"
-              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.tf"
+                },
+                "region": {
+                  "startLine": 81
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique)."
+          },
 […]
 ```
 <!-- /pepin:gen format-sarif-head -->
@@ -352,7 +366,10 @@ Un résultat :
     {
       "physicalLocation": {
         "artifactLocation": {
-          "uri": "examples/scaleway/terraform/plan.json"
+          "uri": "main.tf"
+        },
+        "region": {
+          "startLine": 81
         }
       }
     }
@@ -367,10 +384,14 @@ Un résultat :
 
 Deux choses à savoir avant de le brancher :
 
-- **Les localisations désignent le fichier scanné, pas une ligne.** L'`artifactLocation.uri`
-  est l'entrée que Pépin a lue (ici le plan Terraform) ; aucune `region` n'est émise, parce
-  qu'une ressource normalisée ne porte pas la ligne du fichier `.tf` dont elle vient. Les
-  alertes se posent donc sur le fichier, pas sur l'attribut fautif.
+- **Les localisations désignent le bloc `.tf` quand Pépin a pu le mesurer.** Sur un plan
+  Terraform dont les sources sont posées à côté, `artifactLocation.uri` est le fichier `.tf` et
+  `region.startLine` la ligne du bloc `resource` : une alerte Code Scanning se pose sur la
+  déclaration à corriger. Quand l'origine n'a pas pu être établie — un plan transmis sans ses
+  sources, un module tiré d'un registre, un en-tête de bloc ambigu — la localisation retombe sur
+  le fichier scanné, sans `region`, et rien n'est deviné. Sur une collecte live, la notion
+  n'existe pas du tout ; voir
+  [d'où vient un finding](../concepts/terraform-vs-live.fr.md#doù-vient-un-finding).
 - **`level`** est dérivé de la sévérité : `error` pour `critical` et `high`, `warning` pour
   `medium`, `note` pour `low`.
 

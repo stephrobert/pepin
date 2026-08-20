@@ -46,7 +46,8 @@ resources:
 	}
 
 	auth := HeaderAuth{Header: "X-Auth-Token", Value: "secret-xyz"}
-	res, err := Collect(context.Background(), srv.Client(), spec, auth, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, auth, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -104,7 +105,8 @@ resources:
 	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
 		t.Fatalf("spec : %v", err)
 	}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -142,7 +144,8 @@ func TestCollectPaging(t *testing.T) {
 		Type: "thing", Path: "/x", Items: "items", ID: "id", Map: map[string]string{"id": "id"},
 		Paging: &Paging{Style: "page", Param: "page", SizeParam: "page_size", Size: 2},
 	}}}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -194,7 +197,8 @@ resources:
 	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
 		t.Fatalf("spec : %v", err)
 	}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, map[string]string{"zone": "fr-par-1"})
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, map[string]string{"zone": "fr-par-1"})
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -250,7 +254,8 @@ resources:
 	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
 		t.Fatalf("spec : %v", err)
 	}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -297,7 +302,8 @@ resources:
 	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
 		t.Fatalf("spec : %v", err)
 	}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -355,7 +361,8 @@ resources:
 	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
 		t.Fatalf("spec : %v", err)
 	}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -400,7 +407,8 @@ resources:
 	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
 		t.Fatalf("spec : %v", err)
 	}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -437,7 +445,8 @@ func TestCollectArrayIndexAndKV(t *testing.T) {
 		Map:        map[string]string{"vm_id": "id", "public_ip": "public_ips.0.address", "tags": "tags"},
 		Transforms: map[string]any{"tags": "kv"},
 	}}}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}
@@ -689,7 +698,8 @@ resources:
 	if err := yaml.Unmarshal([]byte(specYAML), &spec); err != nil {
 		t.Fatalf("spec : %v", err)
 	}
-	res, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	inv, err := Collect(context.Background(), srv.Client(), spec, nil, nil)
+	res := inv.Resources
 	if err != nil {
 		t.Fatalf("Collect : %v", err)
 	}

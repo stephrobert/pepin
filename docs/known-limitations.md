@@ -184,6 +184,42 @@ proof. The other providers join that guard as they reach 100 %. Run
 **Consequence for you:** every finding tells you what to do, in prose. Not every finding comes
 with a tested Terraform module proving it.
 
+## The veracity contract, and what it still owes
+
+For a posture scanner the unit that matters is not `fixture → Rego → expected FAIL`. It is the
+whole chain: **API response or plan → collector → normalization → capability guard → Rego →
+assessment → verdict**. The inline EIM policy incident proved why: a policy granting `Action:
+"*"` escaped *every* `iam_policy_*` control, the Rego rule was not wrong, and the data simply
+never reached it. A perfect Rego test would have stayed green while the scanner produced a
+false green.
+
+A veracity scenario therefore runs against the **binary**, on the whole chain, and reads the
+status the assessment publishes. Each path — control × provider × source — must prove the
+verdicts it can actually reach: three for a path that can conclude (`fail`, `pass`,
+`not-evaluated`), one for a path that cannot lift the `pass` lock, one for a path the provider
+contract declares not applicable.
+
+What is not yet proven is **counted**, not hidden:
+
+<!-- pepin:gen veracity-debt -->
+| Figure | Count |
+|---|---:|
+| Control x provider x source paths on which Pépin concludes | 178 |
+| Paths whose every reachable verdict is proven end to end | 5 |
+| Verdicts to prove in total | 458 |
+| Verdicts left to prove | 445 |
+<!-- /pepin:gen veracity-debt -->
+
+The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a
+gate in both directions: an unproven obligation that is *not* written there fails the build — so
+a control added without its scenarios cannot land — and a line that is no longer owed fails it
+too.
+
+**Why a counted debt rather than a green matrix.** Four scenarios for every path would be some
+seven hundred cases. Nobody can *test* seven hundred cases — that is, break each one to check it
+turns red — and a matrix generated from a template would be exactly the false green this
+scanner exists to fight: a test that passes because its cases are hollow measures only itself.
+
 ## Limitations of the tool itself
 
 ### An unredacted evidence bundle is a sensitive artifact
@@ -208,8 +244,24 @@ that reason. Use `--live` for the effective configuration.
 ### `--live` sees exactly what your credentials see
 
 A permission missing from the read-only role turns into `not-evaluated`, not into an error.
-That is the safe failure mode — but it means an under-privileged scan produces a *quieter*
-report, not a louder one. Check the `not-evaluated` count, not just the deviation count.
+That is the safe failure mode, and since v0.3.0 it is also a **loud** one: the scan records
+every collection unit it could not read, prints a capability report before any verdict, names
+the missing unit as the reason of each affected control, and does not return `0`. An
+under-privileged scan therefore no longer produces a quieter report than a privileged one — it
+produces a report that says what it could not see. See
+[exit code 3](reference/exit-codes.md#3--the-scan-does-not-establish-compliance).
+
+What remains true: Pépin cannot tell you what a *broader* credential would have found. It
+reports the surface it was given, and the absence of that surface, never what lies beyond it.
+
+### The minimum permissions are documented, not measured
+
+Each provider page lists the API calls a scan makes and the read permissions they need. Those
+lists are **derived from the collection descriptors** — the endpoints the spec declares — and
+checked against the provider's public IAM documentation. They have not been confirmed by
+running a scan with a deliberately reduced role: this repository holds no cloud credentials, by
+design, and no automated check reaches a provider API. Each page marks which lines are
+confirmed by documentation and which remain unverified.
 
 ### Sovereignty facts are declared, not verified
 
@@ -238,6 +290,23 @@ descriptor projects the deciding attribute, and the contract is verified", not "
 this field during a measured run". Should the two diverge on your tenant, the scan says so with
 a `not-evaluated` and its reason, never with a silent green — but the matrix itself is a
 statement of intent by the descriptor, not evidence.
+
+### A finding's file and line need the `.tf` sources beside the plan
+
+`terraform show -json` carries no file and no line — the configuration representation of a
+resource holds `address`, `type`, `name` and `expressions`, and nothing about the document it
+came from. Pépin therefore *measures* the origin in the `.tf` files sitting next to the plan.
+Three consequences, and none of them is worked around:
+
+- A plan produced elsewhere and handed over alone gets a **module** and no file or line.
+- A module pulled from a registry or a git repository has no directory in the working tree: its
+  resources keep their module, and nothing more.
+- A `resource "type" "name"` header written across several lines, or declared in a `.tf.json`
+  file, is not found; the origin is absent rather than approximate.
+
+There is no flag to point at a different source tree, and that is deliberate: resolving a block
+header against a tree the plan did not come from would produce a plausible and wrong line, which
+is worse than no line at all.
 
 ### Nothing is measured between two runs
 

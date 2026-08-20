@@ -8,6 +8,7 @@ package tfmap
 
 import (
 	"fmt"
+	"strings"
 
 	yaml "go.yaml.in/yaml/v3"
 
@@ -49,10 +50,31 @@ func Parse(raw []byte) (Spec, error) {
 // Apply transpose les ressources du plan vers le modèle commun selon la spec.
 // Plusieurs ResourceSpec peuvent viser le même tf_type (ex. SG : inbound_rule +
 // outbound_rule). Une spec avec `items` éclate un bloc répété en N ressources.
-// Les types non déclarés sont ignorés.
-func Apply(spec Spec, resources []tfparse.Resource) []model.Resource {
-	var out []model.Resource
+//
+// Les types non déclarés ne sont plus ignorés EN SILENCE : ceux qui appartiennent
+// au fournisseur scanné sont enregistrés dans l'état de collecte. Ils n'y sont pas
+// une incomplétude — aucun contrôle ne les lit, donc aucun verdict n'en dépend —
+// mais un plan qui contient dix ressources dont Pépin n'en projette que six ne
+// doit pas laisser croire qu'il a été audité en entier.
+//
+// Le filtre sur le PRÉFIXE du fournisseur est délibéré : un plan porte
+// légitimement des `random_password`, `tls_private_key` ou `null_resource` que
+// Pépin n'a jamais prétendu auditer, et les signaler ferait du relevé une liste
+// que personne ne lit.
+func Apply(spec Spec, resources []tfparse.Resource) model.Inventory {
+	var inv model.Inventory
+	declared := map[string]bool{}
+	for _, rs := range spec.Resources {
+		declared[rs.TFType] = true
+	}
+	prefix := spec.Provider + "_"
 	for _, res := range resources {
+		if !declared[res.Type] {
+			if strings.HasPrefix(res.Type, prefix) {
+				inv.Collection.RecordUnmapped(res.Type, 1)
+			}
+			continue
+		}
 		for _, rs := range spec.Resources {
 			if rs.TFType != res.Type {
 				continue
@@ -84,9 +106,28 @@ func Apply(spec Spec, resources []tfparse.Resource) []model.Resource {
 				if n, ok := res.Values["name"].(string); ok && n != "" {
 					name = n
 				}
-				out = append(out, model.Resource{Provider: spec.Provider, Type: rs.Type, ID: id, Name: name, Region: region, Attributes: attrs, Provenance: prov})
+				inv.Resources = append(inv.Resources, model.Resource{
+					Provider: spec.Provider, Type: rs.Type, ID: id, Name: name, Region: region,
+					Attributes: attrs, Provenance: prov,
+					// L'origine voyage avec la ressource : une spec `items` éclate un bloc
+					// répété en N ressources normalisées, qui viennent toutes du MÊME bloc
+					// HCL. Leur donner la même origine est fidèle — c'est bien ce bloc qu'il
+					// faut corriger.
+					Source: sourceRefOf(res.Origin),
+				})
 			}
 		}
 	}
-	return out
+	return inv
+}
+
+// sourceRefOf transpose l'origine d'une ressource du plan vers le modèle commun.
+// Une origine vide reste ABSENTE (pointeur nil) : porter un objet à trois champs
+// vides dans chaque ressource d'un inventaire live donnerait l'apparence d'une
+// information qui n'existe pas.
+func sourceRefOf(o tfparse.Origin) *model.SourceRef {
+	if o.Empty() {
+		return nil
+	}
+	return &model.SourceRef{File: o.File, Line: o.Line, Module: o.Module}
 }

@@ -57,7 +57,18 @@ import (
 // (`/vN`). Il VOYAGE avec le bundle de preuve (manifest.inventory_schema) : un
 // consommateur qui rencontre une version qu'il ne connaît pas doit s'arrêter
 // plutôt que deviner la forme de ce qu'il lit.
-const InventoryFormat = "pepin-inventory/v1"
+// v2 : l'enveloppe porte `collection`, l'état de ce que la collecte a pu lire
+// (unités tentées, complètes ou non, avec la classe de leur échec ; types de la
+// source qu'aucune spec ne projette). Ajout PUR — aucun champ existant ne bouge —
+// mais un ajout que le contrat doit annoncer : un consommateur qui rejoue un
+// inventaire sans lire `collection` conclurait plus fermement que Pépin ne l'a
+// fait, ce qui est précisément l'erreur que le champ existe pour empêcher.
+//
+// v3 : la ressource porte `source`, l'origine du code d'infrastructure qui la
+// déclare (fichier, ligne, module). Présente sur un plan Terraform quand les
+// sources HCL ont pu être lues, ABSENTE partout ailleurs — une collecte live ne
+// sait pas d'où vient une ressource, et rien n'y est inventé.
+const InventoryFormat = "pepin-inventory/v3"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

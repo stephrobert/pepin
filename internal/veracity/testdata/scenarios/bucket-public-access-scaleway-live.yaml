@@ -1,0 +1,63 @@
+# Bucket de stockage objet exposé publiquement, sur une collecte live Scaleway.
+#
+# Point d'entrée `inventory:` — et il est ASSUMÉ. Le stockage objet n'est pas
+# collecté par la spec `collecte` du descripteur : il l'est par un collecteur Go
+# partagé qui parle S3 (`internal/objectstorage`), et le harnais n'a pas de
+# serveur S3 à lui opposer. Ce scénario éprouve donc la chaîne à partir de
+# l'inventaire normalisé, pas le collecteur lui-même. C'est une entrée plus basse,
+# elle est dite, et la porte TestNoScenarioEntersLowerThanItCould l'autorise
+# précisément parce qu'aucune entrée plus fidèle n'existe pour ce type.
+#
+# Le troisième cas est le plus important des trois, et il vient d'un défaut réel :
+# un 403 sur GetBucketAcl laisse l'attribut d'ACL absent. Le verrou par attribut
+# doit alors rendre « non évalué » — sans lui, un `policy_public: false` collecté
+# seul suffisait à conclure « conforme » sur une ACL que personne n'avait lue.
+control: objectstorage_bucket_public_access
+provider: scaleway
+source: live
+
+scenarios:
+  - expect: fail
+    why: "l'ACL du bucket accorde la lecture a AllUsers : exposition publique"
+    inventory:
+      resources:
+        - provider: scaleway
+          type: object_storage_bucket
+          id: backups-prod
+          name: backups-prod
+          region: fr-par
+          attributes:
+            name: backups-prod
+            public_via_acl: true
+            acl_grants:
+              - grantee: http://acs.amazonaws.com/groups/global/AllUsers
+                permission: READ
+            policy_public: false
+
+  - expect: pass
+    why: "le meme bucket, ACL privee et aucune policy publique"
+    inventory:
+      resources:
+        - provider: scaleway
+          type: object_storage_bucket
+          id: backups-prod
+          name: backups-prod
+          region: fr-par
+          attributes:
+            name: backups-prod
+            public_via_acl: false
+            acl_grants: []
+            policy_public: false
+
+  - expect: not-evaluated
+    why: "GetBucketAcl a ete refuse : aucun signal d'ACL n'a ete lu, et la policy seule ne prouve rien"
+    inventory:
+      resources:
+        - provider: scaleway
+          type: object_storage_bucket
+          id: backups-prod
+          name: backups-prod
+          region: fr-par
+          attributes:
+            name: backups-prod
+            policy_public: false
