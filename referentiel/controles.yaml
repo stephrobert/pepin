@@ -589,22 +589,32 @@ controles:
 
   - code: network_documented
     famille: reseau
-    titre: Réseau non documenté (cartographie non tenue)
-    titre_en: Undocumented network (mapping not maintained)
+    titre: Réseau sans étiquettes de cartographie
+    titre_en: Network without mapping tags
     severite: low
     description: >
-      Un réseau (VPC / Net / réseau privé) n'a pas de nom ou d'étiquettes de
-      gouvernance : la cartographie réseau (inventaire, propriétaire, projet) n'est
-      pas tenue à jour, ce qui nuit à la revue et à la réponse aux incidents.
+      CE QUI EST VÉRIFIÉ : chaque réseau (VPC / Net / réseau privé) porte les
+      étiquettes de gouvernance qui le documentent — par défaut propriétaire,
+      projet et environnement. Une étiquette hors sujet ne documente rien : la
+      présence d'un tag quelconque ne suffit pas. La comparaison est insensible à
+      la casse et aux séparateurs, et le profil d'étiquetage est configurable
+      (`controls.tagging.network_required_tags`) ; le profil livré est une
+      recommandation, pas une norme. Sans étiquettes collectées, le contrôle rend
+      « non évalué » plutôt que de conclure.
     description_en: >
-      A network (VPC / Net / private network) has no name and no governance
-      tags: the network mapping (inventory, owner, project) is not kept up to
-      date, which hurts review and incident response.
+      WHAT IS CHECKED: every network (VPC / Net / private network) carries the
+      governance tags that document it - by default owner, project and
+      environment. An off-topic tag documents nothing: the mere presence of some
+      tag is not enough. The comparison ignores case and separators, and the
+      tagging profile is configurable (`controls.tagging.network_required_tags`);
+      the shipped profile is a recommendation, not a standard. Without collected
+      tags the control returns "not evaluated" rather than concluding.
     remediation: >
-      Nommer et étiqueter chaque réseau (propriétaire, projet, environnement) ;
-      tenir à jour la cartographie réseau et la réviser périodiquement.
+      Étiqueter chaque réseau avec son propriétaire, son projet et son
+      environnement ; tenir à jour la cartographie réseau et la réviser
+      périodiquement.
     remediation_en: >
-      Name and tag every network (owner, project, environment); keep the
+      Tag every network with its owner, project and environment; keep the
       network mapping up to date and review it periodically.
     scsl: [CLD-NET-5]
     frameworks:

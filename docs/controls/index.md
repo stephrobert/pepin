@@ -64,7 +64,7 @@ overview per provider and per source, see the [coverage matrix](../coverage.md).
 | [`compute_instance_public_ip_with_open_securitygroup`](compute_instance_public_ip_with_open_securitygroup.md) Instance publicly exposed without restrictive filtering | critical | `CLD-NET-3` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 | [`database_service_not_open_to_internet`](database_service_not_open_to_internet.md) Managed database reachable from the internet | high | `CLD-NET-1` | `scaleway` | 0 / 1 |
 | [`k8s_namespace_network_policy_defined`](k8s_namespace_network_policy_defined.md) Namespace without a NetworkPolicy (flat network) | high | `CLD-K8S-6` | `kubernetes` | 0 / 1 |
-| [`network_documented`](network_documented.md) Undocumented network (mapping not maintained) | low | `CLD-NET-5` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`network_documented`](network_documented.md) Network without mapping tags | low | `CLD-NET-5` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 | [`network_flow_matrix_documented`](network_flow_matrix_documented.md) Inbound flow without a justification in the flow matrix | medium | `CLD-NET-5` | `exoscale` | 1 / 1 |
 | [`network_peering_cross_organization`](network_peering_cross_organization.md) Network peering towards another information system | high | `CLD-NET-7` | `outscale` | 0 / 1 |
 | [`network_securitygroup_allow_ingress_from_internet_to_all_ports`](network_securitygroup_allow_ingress_from_internet_to_all_ports.md) All inbound traffic allowed from the internet (any/any) | critical | `CLD-NET-2` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |

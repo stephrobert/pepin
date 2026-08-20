@@ -110,6 +110,12 @@ var requiredAttr = map[string][]string{
 	"network_securitygroup_default_deny": {"inbound_default_policy"},
 	"network_flow_matrix_documented":     {"description"},
 
+	// La cartographie réseau se juge sur les ÉTIQUETTES du réseau. Sans elles, la
+	// règle se tait (garde de capacité) et le contrôle s'affichait « conforme » : le
+	// faux vert exact que l'issue #47 décrit, un contrôle qui valide une conformité
+	// qu'il n'a pas mesurée.
+	"network_documented": {"tags"},
+
 	// Sur un plan Terraform, `state` arrive en after_unknown et aucun
 	// blockstorage_snapshot n'existe : le contrôle ne peut PAS y être évalué,
 	// et s'affichait pourtant vert sur l'exemple livré dans le dépôt.

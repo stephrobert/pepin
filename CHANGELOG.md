@@ -194,6 +194,16 @@ belongs in `git log`.
 
 ### Changed
 
+- **`network_documented` now checks what it announces.** The rule promised owner, project
+  and environment, and evaluated `count(tags) > 0`: a single `foo=bar` was enough to
+  declare a network documented — a compliance asserted without being measured. It now
+  requires the tags that actually document (default `Owner, Project, Env`, configurable),
+  and it stays silent when the `tags` attribute was not collected, where it used to report
+  a deviation. The **code is unchanged**: it travels in SARIF `ruleId`s, archived
+  assessments and exemption files, where a rename would turn a valid exemption into an
+  orphan overnight and bring back the deviation it covered. Title and description are
+  rewritten in both languages.
+
 - **`--strict` also refuses a dropped normative mapping.** It already refused zero
   coverage, remaining medium/low deviations and a stale exemptions file; it now returns
   `3` when a relaxed setting cost a control its mapping. No new exit code: incompleteness

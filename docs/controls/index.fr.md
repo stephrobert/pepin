@@ -64,7 +64,7 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | [`compute_instance_public_ip_with_open_securitygroup`](compute_instance_public_ip_with_open_securitygroup.fr.md) Machine exposée publiquement sans filtrage restrictif | critical | `CLD-NET-3` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 | [`database_service_not_open_to_internet`](database_service_not_open_to_internet.fr.md) Base de données managée joignable depuis Internet | high | `CLD-NET-1` | `scaleway` | 0 / 1 |
 | [`k8s_namespace_network_policy_defined`](k8s_namespace_network_policy_defined.fr.md) Namespace sans NetworkPolicy (réseau plat) | high | `CLD-K8S-6` | `kubernetes` | 0 / 1 |
-| [`network_documented`](network_documented.fr.md) Réseau non documenté (cartographie non tenue) | low | `CLD-NET-5` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
+| [`network_documented`](network_documented.fr.md) Réseau sans étiquettes de cartographie | low | `CLD-NET-5` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |
 | [`network_flow_matrix_documented`](network_flow_matrix_documented.fr.md) Flux entrant sans justification dans la matrice des flux | medium | `CLD-NET-5` | `exoscale` | 1 / 1 |
 | [`network_peering_cross_organization`](network_peering_cross_organization.fr.md) Appairage réseau vers un autre système d'information | high | `CLD-NET-7` | `outscale` | 0 / 1 |
 | [`network_securitygroup_allow_ingress_from_internet_to_all_ports`](network_securitygroup_allow_ingress_from_internet_to_all_ports.fr.md) Tout le trafic entrant autorisé depuis Internet (any/any) | critical | `CLD-NET-2` | `exoscale`, `outscale`, `scaleway` | 1 / 3 |

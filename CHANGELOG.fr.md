@@ -209,6 +209,17 @@ l'une ni l'autre appartient au `git log`.
 
 ### Modifié
 
+- **`network_documented` vérifie enfin ce qu'il annonce.** La règle promettait
+  propriétaire, projet et environnement, et évaluait `count(tags) > 0` : un unique
+  `foo=bar` suffisait à déclarer un réseau documenté — une conformité affirmée sans avoir
+  été mesurée. Elle exige désormais les étiquettes qui documentent réellement (par défaut
+  `Owner, Project, Env`, configurables), et elle se tait quand l'attribut `tags` n'a pas
+  été collecté, là où elle signalait un écart. Le **code est inchangé** : il voyage dans
+  les `ruleId` SARIF, les assessments archivés et les fichiers de dérogations, où un
+  renommage transformerait du jour au lendemain une dérogation valide en dérogation
+  orpheline et ferait réapparaître l'écart qu'elle couvrait. Titre et description sont
+  réécrits dans les deux langues.
+
 - **`--strict` refuse aussi une correspondance normative tombée.** Il refusait déjà une
   couverture nulle, des écarts medium/low restants et un fichier de dérogations périmé ;
   il rend maintenant `3` quand un réglage assoupli a coûté sa correspondance à un
