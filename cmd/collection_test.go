@@ -230,3 +230,25 @@ func TestACompleteScanCarriesNoCapabilityReport(t *testing.T) {
 		t.Errorf("un scan sans anomalie de collecte ne doit pas imprimer de relevé :\n%s", stderr)
 	}
 }
+
+// TestASealedDegradedBundleReDerivesFaithfully : l'incomplétude est SCELLÉE, donc
+// elle doit se REJOUER. C'est la propriété la plus facile à casser sans le voir :
+// un vérificateur qui reconstruirait l'assessment sans appliquer la dégradation
+// obtiendrait un document PLUS AFFIRMATIF que celui qui a été scellé, et
+// déclarerait falsifié un bundle qui disait la vérité. Pour un outil dont l'objet
+// est l'opposabilité, c'est la pire panne possible.
+func TestASealedDegradedBundleReDerivesFaithfully(t *testing.T) {
+	bin := buildPepin(t)
+	dir := t.TempDir()
+	inventory := withIncompleteUnit(t)
+
+	_, stderr, code := runScan(t, bin, "scan", "scaleway", inventory, "--seal", dir)
+	if code == exitErreur {
+		t.Fatalf("scellement impossible : %s", stderr)
+	}
+	stdout, stderr, code := runScan(t, bin, "verify", dir, "--re-derive")
+	if code != 0 {
+		t.Fatalf("un bundle FIDÈLE dont la collecte était incomplète doit se re-dériver : code %d\n%s\n%s",
+			code, stdout, stderr)
+	}
+}
