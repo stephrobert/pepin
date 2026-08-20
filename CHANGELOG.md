@@ -204,6 +204,16 @@ belongs in `git log`.
   orphan overnight and bring back the deviation it covered. Title and description are
   rewritten in both languages.
 
+- **The mandatory tagging policy is configurable, and the comparison is
+  convention-agnostic.** `governance_resource_required_tags` no longer demands four frozen
+  literals. The comparison ignores case and separators (`cost-center` = `CostCenter`), and
+  aliases widen each logical name (`team` for `Owner`, `environment` for `Env`), so an
+  organisation writing `cost-center, application, environment, team` is no longer reported
+  as ungoverned. The targeted resource types are explicit and justified, and four billable
+  types join the scope — `blockstorage_snapshot`, `compute_image`, `managed_database`,
+  `kubernetes_cluster` — which closes a false-negative on paid services that were outside
+  it. The shipped profile is documented as a **recommendation, not a standard**.
+
 - **`--strict` also refuses a dropped normative mapping.** It already refused zero
   coverage, remaining medium/low deviations and a stale exemptions file; it now returns
   `3` when a relaxed setting cost a control its mapping. No new exit code: incompleteness

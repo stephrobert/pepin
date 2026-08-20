@@ -22,7 +22,7 @@
 
 ## The risk
 
-Some resources do not carry the governance tags (owner, project, environment): the inventory and the accountability are not maintained.
+WHAT IS CHECKED: a billable resource carries the required governance tags - by default cost centre, project, environment and owner. What is required are the QUESTIONS an inventory must answer (who pays, for what, at which stage, who is accountable), never exact words: the comparison ignores case and separators (`cost-center` = `CostCenter`), and the profile, its aliases and the targeted resource types are configurable (`controls.tagging`). The shipped profile is a RECOMMENDATION, not a standard. Without collected tags the control returns "not evaluated".
 
 This description comes from the reference: it is the text the report quotes, in the
 reader's language.
@@ -87,7 +87,7 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 
 ## How to remediate
 
-Enforce mandatory tags (owner, project, environment); check their presence at creation time.
+Add the missing governance tags; check their presence at creation time. If your convention differs, declare it in the policy file rather than disabling the control.
 
 | Provider | Deployable setup |
 |---|---|

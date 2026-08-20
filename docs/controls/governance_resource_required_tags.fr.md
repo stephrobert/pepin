@@ -22,7 +22,7 @@
 
 ## Le risque
 
-Des ressources n'ont pas les étiquettes de gouvernance (propriétaire, projet, environnement) : l'inventaire et la responsabilité ne sont pas tenus.
+CE QUI EST VÉRIFIÉ : une ressource facturable porte les étiquettes de gouvernance exigées — par défaut centre de coût, projet, environnement et propriétaire. Ce qui est exigé, ce sont les QUESTIONS auxquelles un inventaire doit répondre (qui paye, pour quoi, à quel stade, qui répond), jamais des mots précis : la comparaison est insensible à la casse et aux séparateurs (`cost-center` ≡ `CostCenter`), et le profil, les alias et les types de ressources visés sont configurables (`controls.tagging`). Le profil livré est une RECOMMANDATION, pas une norme. Sans étiquettes collectées, le contrôle rend « non évalué ».
 
 Cette description vient du référentiel : c'est le texte que le rapport cite, dans la
 langue du lecteur.
@@ -88,7 +88,7 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 
 ## Comment corriger
 
-Imposer des étiquettes obligatoires (propriétaire, projet, environnement) ; contrôler leur présence à la création.
+Ajouter les étiquettes de gouvernance manquantes ; contrôler leur présence à la création. Si votre convention diffère, la déclarer dans le fichier de politique plutôt que de désactiver le contrôle.
 
 | Fournisseur | Montage déployable |
 |---|---|

@@ -218,9 +218,6 @@ sensitive_udp_ports := {
 	5353, # mDNS
 }
 
-# required_tags — étiquettes de gouvernance obligatoires.
-required_tags := ["CostCenter", "Project", "Env", "Owner"]
-
 # provider_of — provider d'une ressource (pour `labels.provider` des règles
 # communes ; tiré de la ressource, jamais codé en dur).
 provider_of(r) := object.get(r, "provider", "")

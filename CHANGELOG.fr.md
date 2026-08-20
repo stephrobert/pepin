@@ -220,6 +220,18 @@ l'une ni l'autre appartient au `git log`.
   orpheline et ferait réapparaître l'écart qu'elle couvrait. Titre et description sont
   réécrits dans les deux langues.
 
+- **La politique d'étiquetage obligatoire est configurable, et la comparaison est
+  indifférente aux conventions.** `governance_resource_required_tags` n'exige plus quatre
+  littéraux figés. La comparaison est insensible à la casse et aux séparateurs
+  (`cost-center` ≡ `CostCenter`), et les alias élargissent chaque nom logique (`team`
+  pour `Owner`, `environment` pour `Env`) : une organisation qui écrit `cost-center,
+  application, environment, team` n'est plus signalée comme non gouvernée. Les types de
+  ressources visés sont explicites et justifiés, et quatre types facturables entrent dans
+  le périmètre — `blockstorage_snapshot`, `compute_image`, `managed_database`,
+  `kubernetes_cluster` —, ce qui comble un faux négatif sur des services payants qui en
+  étaient exclus. Le profil livré est documenté comme une **recommandation, pas comme une
+  norme**.
+
 - **`--strict` refuse aussi une correspondance normative tombée.** Il refusait déjà une
   couverture nulle, des écarts medium/low restants et un fichier de dérogations périmé ;
   il rend maintenant `3` quand un réglage assoupli a coûté sa correspondance à un
