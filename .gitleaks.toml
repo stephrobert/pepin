@@ -17,6 +17,14 @@ regexes = [
   # compute_blockstorage_test.rego: fixtures asserting the secret detector fires.
   '''eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3In0\.abcdefghij''',
   '''0123456789abcdef0123''',
+  # Filler value that scripts/tenant-plan.py injects into third-party stacks so a
+  # `terraform plan` resolves (see placeholder(), the "password" branch). It is OUR
+  # constant, it opens nothing, and it appears in no upstream repository. It reads
+  # as "Placeholder-Password" in leet, which is exactly why a pattern-based scanner
+  # takes it for a secret: such a check answers "does this look like a secret",
+  # never "is this one". The reducer now strips it from every plan, so it survives
+  # only in the branch history that produced this note.
+  '''Pl4ceholder-Passw0rd''',
 ]
 paths = [
   # Regenerable cache of third-party provider docs (full of example keys) — gitignored too.

@@ -208,6 +208,66 @@ func TestNoReferenceTenantPlanCarriesMoreThanPepinReads(t *testing.T) {
 	}
 }
 
+// TestNoReferenceTenantPlanCarriesAnAttributeNobodyReads : la même garde que
+// ci-dessus, mais descendue jusqu'à l'ATTRIBUT.
+//
+// S'arrêter aux sections laissait passer l'essentiel : un `helm_release` gardait
+// tout son blob de valeurs Helm, un `kubectl_manifest` son `yaml_body`, un
+// `kubernetes_secret` son contenu. Rien de tout cela n'est lu par une règle
+// commune — internal/tfmap.Apply ne projette que les champs nommés par un
+// `map`/`region`/`items` — et le corpus republiait donc la configuration
+// applicative de tiers sans qu'aucun verdict n'en dépende. C'est ce qui a fait
+// prendre à gitleaks une valeur de remplissage pour un secret.
+//
+// La liste blanche est DÉRIVÉE des descripteurs : un mapping qui se met à lire un
+// champ de plus le rend légitime sans que personne n'ait à toucher cette porte.
+func TestNoReferenceTenantPlanCarriesAnAttributeNobodyReads(t *testing.T) {
+	for _, ten := range load(t) {
+		t.Run(ten.Name, func(t *testing.T) {
+			extra, err := tenants.CheckPlanAttributes(repoRoot, ten.PlanPath())
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+			if len(extra) > 0 {
+				t.Errorf("le plan porte %d attribut(s) qu'aucun mapping ne lit : %s\n"+
+					"  Les retirer : python3 scripts/tenant-plan.py reduce <plan> <plan>.\n"+
+					"  Un attribut que Pépin ne lit pas ne décide d'aucun verdict, et republie la configuration d'un tiers.",
+					len(extra), strings.Join(extra, ", "))
+			}
+		})
+	}
+}
+
+// TestTheAttributeAllowlistIsDerivedAndNotEmpty : la porte anti-harnais-en-panne.
+// Une liste blanche vide déclarerait tout attribut illégitime ; une liste blanche
+// qui rendrait tout légitime ne mesurerait plus rien. On vérifie qu'elle nomme des
+// champs réels, et qu'elle en refuse un qui n'existe dans aucun mapping.
+func TestTheAttributeAllowlistIsDerivedAndNotEmpty(t *testing.T) {
+	allow, err := tenants.MappedFields(repoRoot)
+	if err != nil {
+		t.Fatalf("MappedFields : %v", err)
+	}
+	if len(allow) < 5 {
+		t.Fatalf("%d tf_type mappés : les descripteurs en déclarent beaucoup plus, le calcul ne mesure plus rien", len(allow))
+	}
+	sg, ok := allow["scaleway_instance_security_group"]
+	if !ok {
+		t.Fatal("scaleway_instance_security_group absent de la liste blanche")
+	}
+	// `inbound_rule` est la racine du bloc répété (`items: inbound_rule[*]`) ; `name`
+	// est lu par Apply sur chaque ressource. Les deux doivent passer.
+	for _, field := range []string{"inbound_rule", "name"} {
+		if !sg[field] {
+			t.Errorf("%q devrait être gardé : un mapping le lit", field)
+		}
+	}
+	// Et un champ qu'aucun mapping ne nomme doit être refusé, sinon la garde
+	// laisserait repasser exactement le blob qu'elle vient de retirer.
+	if sg["values"] {
+		t.Error("« values » ne devrait pas être gardé : aucun mapping ne le lit")
+	}
+}
+
 // TestEveryPostureIsTheOneMeasured : la posture annoncée est celle que le scan
 // constate. Un tenant annoncé « durci » qui rendrait un écart critical/high
 // mentirait sur ce qu'il prouve, et le corpus perdrait son contre-témoin.

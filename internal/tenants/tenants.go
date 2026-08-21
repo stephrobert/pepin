@@ -243,6 +243,131 @@ func CheckPlanShape(path string) ([]string, error) {
 	return extra, nil
 }
 
+// rootField rend le premier segment d'un chemin de projection : `audit.0.endpoint`
+// donne `audit`, `_parent.id` donne `id`. C'est la racine qu'un plan doit porter
+// pour que internal/tfmap.Apply puisse descendre dedans.
+func rootField(path string) string {
+	path = strings.TrimSpace(path)
+	path = strings.TrimPrefix(path, "_parent.")
+	if i := strings.IndexAny(path, ".["); i >= 0 {
+		path = path[:i]
+	}
+	return path
+}
+
+// MappedFields rend, par tf_type, les champs Terraform que les descripteurs lisent
+// RÉELLEMENT — c'est-à-dire exactement ce que internal/tfmap.Apply consulte : les
+// racines des chemins de `map` (`||` est un repli, `_parent.` désigne la ressource
+// porteuse), le champ `region`, le bloc répété de `items`, et le `name` qu'Apply lit
+// sur chaque ressource pour nommer la ressource normalisée.
+//
+// La même liste est calculée côté écriture par scripts/tenant-plan.py. Les deux
+// existent à dessein : le script RÉDUIT, ce test REFUSE. Si elles divergent, c'est
+// la porte qui rougit, et c'est le bon sens de la panne — un plan trop bavard se
+// voit, un plan trop pauvre ferait bouger un verdict et casserait `expected.txt`.
+func MappedFields(root string) (map[string]map[string]bool, error) {
+	entries, err := os.ReadDir(filepath.Join(root, "providers"))
+	if err != nil {
+		return nil, fmt.Errorf("lecture des descripteurs : %w", err)
+	}
+	out := map[string]map[string]bool{}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
+			continue
+		}
+		desc, lerr := genprovider.Load(os.DirFS(root), "providers/"+e.Name())
+		if lerr != nil {
+			return nil, fmt.Errorf("descripteur %s : %w", e.Name(), lerr)
+		}
+		for _, r := range desc.MappingTerraform.Resources {
+			if r.TFType == "" {
+				continue
+			}
+			if out[r.TFType] == nil {
+				// Apply lit `name` sur chaque ressource pour nommer la ressource normalisée.
+				out[r.TFType] = map[string]bool{"name": true}
+			}
+			keep := out[r.TFType]
+			if r.Region != "" {
+				keep[r.Region] = true
+			}
+			if r.Items != "" {
+				keep[rootField(r.Items)] = true
+			}
+			for _, path := range r.Map {
+				for _, alt := range strings.Split(path, "||") {
+					if f := rootField(alt); f != "" {
+						keep[f] = true
+					}
+				}
+			}
+		}
+	}
+	return out, nil
+}
+
+// CheckPlanAttributes refuse un plan qui porte un ATTRIBUT qu'aucun mapping ne lit.
+//
+// CheckPlanShape s'arrête aux sections ; cette garde-ci descend jusqu'au champ, et
+// c'est là que se jouait le défaut : un `helm_release` embarquait tout son blob de
+// valeurs Helm, un `kubectl_manifest` son `yaml_body`, un `kubernetes_secret` son
+// contenu — aucun n'est lu par une règle commune, et tous étaient republiés depuis
+// la configuration applicative d'un tiers.
+//
+// Rend les entrées `tf_type.attribut` en trop, triées.
+func CheckPlanAttributes(root, path string) ([]string, error) {
+	allow, err := MappedFields(root)
+	if err != nil {
+		return nil, err
+	}
+	if len(allow) == 0 {
+		return nil, fmt.Errorf("aucun mapping_terraform lu depuis %s : la garde ne mesure rien", root)
+	}
+	raw, err := os.ReadFile(path) // #nosec G304 -- fixture du dépôt.
+	if err != nil {
+		return nil, fmt.Errorf("lecture de %s : %w", path, err)
+	}
+	// `planned_values` ou `values` : les deux formes qu'un plan porte selon la
+	// commande qui l'a produit, exactement comme les lit internal/tfparse.
+	var doc struct {
+		PlannedValues *planModuleWrap `json:"planned_values"`
+		Values        *planModuleWrap `json:"values"`
+	}
+	if uerr := json.Unmarshal(raw, &doc); uerr != nil {
+		return nil, fmt.Errorf("plan %s illisible : %w", path, uerr)
+	}
+	wrap := doc.PlannedValues
+	if wrap == nil {
+		wrap = doc.Values
+	}
+	if wrap == nil {
+		return nil, nil
+	}
+	seen := map[string]bool{}
+	walkAttributes(wrap.RootModule, allow, seen)
+	var extra []string
+	for k := range seen {
+		extra = append(extra, k)
+	}
+	sort.Strings(extra)
+	return extra, nil
+}
+
+// walkAttributes collecte les `tf_type.attribut` qu'aucun mapping ne lit.
+func walkAttributes(m planModule, allow map[string]map[string]bool, out map[string]bool) {
+	for _, r := range m.Resources {
+		keep := allow[r.Type]
+		for k := range r.Values {
+			if !keep[k] {
+				out[r.Type+"."+k] = true
+			}
+		}
+	}
+	for _, c := range m.ChildModules {
+		walkAttributes(c, allow, out)
+	}
+}
+
 // PresentTypes rend les types NORMALISÉS que le plan d'un tenant produit, en
 // empruntant le mapping Terraform du descripteur du fournisseur.
 //
@@ -290,6 +415,10 @@ type planModuleWrap struct {
 type planModule struct {
 	Resources []struct {
 		Type string `json:"type"`
+		// Values sert à CheckPlanAttributes : la garde descend jusqu'au champ, là où
+		// walkModule ne regarde que le type. Brut, parce qu'on ne juge ici que la
+		// PRÉSENCE d'un attribut, jamais sa valeur.
+		Values map[string]json.RawMessage `json:"values"`
 	} `json:"resources"`
 	ChildModules []planModule `json:"child_modules"`
 }

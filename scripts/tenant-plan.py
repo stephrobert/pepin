@@ -25,11 +25,35 @@ appels de modules — cf. internal/tfparse.ParsePlan. Tout le reste est ignoré 
 le produit, et c'est précisément là qu'un plan pris sur un tenant réel porterait
 ses identifiants. Committer un plan brut serait l'erreur que l'audit de livraison
 a déjà vue passer une fois, sur un UUID d'instance oublié dans une fixture.
+
+# La réduction est une LISTE BLANCHE, et elle descend jusqu'à l'ATTRIBUT
+
+Découper au niveau des sections ne suffit pas. Une ressource tierce embarque des
+attributs que Pépin ne projette jamais — le blob de valeurs Helm d'un
+`helm_release`, le `yaml_body` d'un `kubectl_manifest`, un `kubernetes_secret`
+entier — et les garder revient à republier la configuration applicative d'un
+tiers pour rien. Un mot de passe n'y est pas une donnée de posture : AUCUNE règle
+commune ne lit un champ de credential.
+
+Le filtre est donc une liste blanche, et elle est DÉRIVÉE des descripteurs
+(`providers/*.yaml`), jamais écrite à la main : un attribut n'est gardé que si un
+`mapping_terraform` le lit réellement (`map`, `region`, `items`, plus le `name`
+que internal/tfmap.Apply lit sur chaque ressource). Le sens de la question compte —
+« est-ce que Pépin lit ce champ ? » a une réponse vérifiable dans le dépôt, là où
+« est-ce que ce champ est un secret ? » n'en a jamais eu. Un tf_type qu'aucun
+descripteur ne mappe ne garde AUCUNE valeur : internal/tfmap.Apply l'ignore, seul
+son type est compté.
+
+Corollaire assumé : `user_data` EST gardé, parce qu'une règle commune y cherche
+des secrets. C'est le seul champ de texte libre de la liste blanche, et il se
+relit à la main avant de committer un tenant.
 """
 import json
 import pathlib
 import re
 import sys
+
+import yaml
 
 VAR_RE = re.compile(r'variable\s+"([^"]+)"\s*\{', re.M)
 
@@ -107,21 +131,78 @@ def cmd_placeholders(d):
     print(f"{len(out)} variable(s) bouchonnée(s)")
 
 
-def reduce_module(m):
+# Les noms d'attributs qui portent un secret par vocation. Ils ne servent qu'en
+# SECOND rideau, sous la liste blanche : un champ qui passe la liste blanche est
+# déjà un champ qu'une règle lit, et aucun de ceux-là n'en est un. Le filet couvre
+# le cas d'un attribut mappé qui NICHE une valeur de credential.
+SECRET_KEY_RE = re.compile(
+    r"pass(word|wd)?$|secret|token|credential|private_key|api_key|access_key", re.I)
+
+
+def root_field(path):
+    """Premier segment d'un chemin de projection : `audit.0.endpoint` -> `audit`."""
+    path = path.strip()
+    if path.startswith("_parent."):
+        path = path[len("_parent."):]
+    return path.split(".", 1)[0].split("[", 1)[0]
+
+
+def mapped_fields(root):
+    """Champs Terraform réellement lus, par tf_type, DÉRIVÉS des descripteurs.
+
+    Ce que internal/tfmap.Apply lit d'une ressource du plan, et rien d'autre :
+    les racines des chemins de `map` (`||` = repli, `_parent.` = la ressource
+    porteuse), le champ `region`, le bloc répété de `items`, et le `name` qu'Apply
+    lit sur chaque ressource pour nommer la ressource normalisée.
+    """
+    allow = {}
+    for f in sorted((pathlib.Path(root) / "providers").glob("*.yaml")):
+        desc = yaml.safe_load(f.read_text()) or {}
+        for r in (desc.get("mapping_terraform") or {}).get("resources") or []:
+            tf = r.get("tf_type")
+            if not tf:
+                continue
+            keep = allow.setdefault(tf, {"name"})
+            if r.get("region"):
+                keep.add(r["region"])
+            if r.get("items"):
+                keep.add(root_field(r["items"]))
+            for path in (r.get("map") or {}).values():
+                for alt in str(path).split("||"):
+                    if field := root_field(alt):
+                        keep.add(field)
+    return allow
+
+
+def scrub(v):
+    """Annule, en profondeur, les clés dont le NOM dit qu'elles portent un secret."""
+    if isinstance(v, dict):
+        return {k: (None if SECRET_KEY_RE.search(k) else scrub(x)) for k, x in v.items()}
+    if isinstance(v, list):
+        return [scrub(x) for x in v]
+    return v
+
+
+def reduce_module(m, allow):
     out = {}
     res = []
     for r in m.get("resources") or []:
         rr = {k: r[k] for k in ("address", "type", "name") if k in r}
-        vals = dict(r.get("values") or {})
+        vals = r.get("values") or {}
         sens = r.get("sensitive_values") or {}
-        for k in list(vals):
-            if sens.get(k) is True:
-                vals[k] = None
-        rr["values"] = vals
+        # La LISTE BLANCHE : un tf_type qu'aucun descripteur ne mappe ne garde
+        # aucune valeur, et un attribut qu'aucun `map` ne lit non plus.
+        keep = allow.get(r.get("type")) or set()
+        kept = {}
+        for k in sorted(vals):
+            if k not in keep:
+                continue
+            kept[k] = None if (sens.get(k) is True or SECRET_KEY_RE.search(k)) else scrub(vals[k])
+        rr["values"] = kept
         res.append(rr)
     if res:
         out["resources"] = res
-    ch = [c for c in (reduce_module(x) for x in (m.get("child_modules") or [])) if c]
+    ch = [c for c in (reduce_module(x, allow) for x in (m.get("child_modules") or [])) if c]
     if ch:
         out["child_modules"] = ch
     if "address" in m:
@@ -144,10 +225,14 @@ def reduce_config(m):
 
 def cmd_reduce(src, dst):
     doc = json.loads(pathlib.Path(src).read_text())
+    allow = mapped_fields(pathlib.Path(__file__).resolve().parent.parent)
+    if not allow:
+        print("aucun mapping_terraform lu : la liste blanche ne mesure rien", file=sys.stderr)
+        return 1
     out = {k: doc[k] for k in ("format_version", "terraform_version") if k in doc}
     pv = doc.get("planned_values") or doc.get("values")
     if pv:
-        out["planned_values"] = {"root_module": reduce_module(pv.get("root_module") or {})}
+        out["planned_values"] = {"root_module": reduce_module(pv.get("root_module") or {}, allow)}
     cfg = reduce_config((doc.get("configuration") or {}).get("root_module") or {})
     if cfg:
         out["configuration"] = {"root_module": cfg}
