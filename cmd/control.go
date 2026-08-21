@@ -241,7 +241,14 @@ func provenSummary(p quality.PathProof) string {
 // dernière validation live.
 func explainProof(out interface{ Write([]byte) (int, error) }, code string, snap quality.Snapshot) {
 	proof := snap.ByControl[code]
-	_, _ = fmt.Fprintln(out, titre.Render(tr("ce qui l'éprouve", "what tests it")))
+	// Ces artefacts sont indexés par CONTRÔLE, pas par chemin : un scénario écrit
+	// pour un fournisseur éprouve la règle commune, qui est la même pour tous. Le
+	// titre le dit, parce qu'avec `--provider` la liste citerait sinon des tenants
+	// d'un autre fournisseur sans prévenir — et un lecteur y lirait une couverture
+	// qu'il n'a pas demandée.
+	_, _ = fmt.Fprintln(out, titre.Render(tr(
+		"ce qui l'éprouve (tous fournisseurs confondus)",
+		"what tests it (across all providers)")))
 	_, _ = fmt.Fprintf(out, "  %s %s\n", muted.Render(tr("tests Rego :", "Rego tests:")), orNone(proof.RegoTests))
 	_, _ = fmt.Fprintf(out, "  %s %s\n", muted.Render(tr("scénarios de véracité :", "veracity scenarios:")), orNone(proof.Scenarios))
 	_, _ = fmt.Fprintf(out, "  %s %s\n", muted.Render(tr("tenants de référence :", "reference tenants:")), orNone(proof.Tenants))
