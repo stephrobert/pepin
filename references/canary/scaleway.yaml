@@ -1,0 +1,48 @@
+# Relevé de canari — GÉNÉRÉ par tools/release/canary.sh.
+#
+# Une requête NON AUTHENTIFIÉE par endpoint déclaré, contre le vrai plan de
+# contrôle du fournisseur. Ce qui se mesure est le REFUS : un endpoint qui
+# répond existe et se résout ; un 404 dit qu'il a bougé.
+#
+# Ce relevé ne porte aucun identifiant : le canari n'en a jamais eu.
+provider: scaleway
+recorded: 2026-08-21
+pepin_version: "v0.3.0-2-g1ee97f5"
+authenticated: false
+summary:
+  answered: 5
+  moved: 0
+  unreachable: 0
+units:
+  - unit: access_key
+    verdict: answered
+    status: 401
+    method: GET
+    host: api.scaleway.com
+    path: "/iam/v1alpha1/api-keys"
+    classified: permission_denied
+  - unit: compute_instance
+    verdict: answered
+    status: 401
+    method: GET
+    host: api.scaleway.com
+    path: "/instance/v1/zones/fr-par-1/servers"
+    classified: permission_denied
+  - unit: iam_user
+    verdict: answered
+    status: 401
+    method: GET
+    host: api.scaleway.com
+    path: "/iam/v1alpha1/users"
+    classified: permission_denied
+  - unit: object_storage_bucket
+    verdict: answered
+    status: 403
+    classified: permission_denied
+  - unit: security_group_rule
+    verdict: answered
+    status: 401
+    method: GET
+    host: api.scaleway.com
+    path: "/instance/v1/zones/fr-par-1/security_groups"
+    classified: permission_denied

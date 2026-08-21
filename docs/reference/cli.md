@@ -18,6 +18,8 @@ by running the binary. A public flag that is missing here fails
 <!-- pepin:gen cli-verbs -->
 | Command | Flags |
 |---|---|
+| `pepin control` | _(no flag of its own)_ |
+| `pepin control explain` | `--provider` |
 | `pepin provider` | _(no flag of its own)_ |
 | `pepin provider list` | _(no flag of its own)_ |
 | `pepin provider new` | _(no flag of its own)_ |
@@ -37,7 +39,7 @@ independently:
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v4** |
+| `cli` | verbs, flags and exit codes | **v5** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
@@ -82,6 +84,7 @@ Usage:
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
+  control     Inspect the controls of the common reference
   help        Help about any command
   provider    Manage the declarative providers (list, validate, create)
   scan        Assess the posture of a cloud against the policies
@@ -325,6 +328,72 @@ Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
 ```
 <!-- /pepin:gen cli-help-scsl -->
+
+## `pepin control`
+
+<!-- pepin:gen cli-help-control -->
+```text
+Inspect the controls of the common reference
+
+Usage:
+  pepin control [command]
+
+Available Commands:
+  explain     Explain where a control's verdict comes from, and what tests it
+
+Flags:
+  -h, --help   help for control
+
+Global Flags:
+      --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
+
+Use "pepin control [command] --help" for more information about a command.
+```
+<!-- /pepin:gen cli-help-control -->
+
+### `pepin control explain`
+
+Why Pépin is entitled to assert a verdict. A scanner that announces a result without being
+able to say where it comes from asks to be believed; an auditor cannot oppose an assertion,
+they oppose a chain of evidence. For one control — and, with `--provider`, one provider —
+this verb renders that chain: the **API calls** that feed the decision (the `collecte` spec
+of the descriptor, joins included, plus the shared Go collectors for object storage, managed
+Kubernetes and inline policies), the **deciding attributes** whose presence gates a `pass`,
+the exact **conditions for a `pass`** in the order `assess.Build` evaluates them, the **tests**
+that exercise it (Rego tests, veracity scenarios, reference tenants), and the date of the
+**last live validation**.
+
+That last line reads `never`, and it is derived rather than written. The canary records
+(`references/canary/`) query the providers' real control planes but hold **no credential**:
+they attest that an endpoint exists and refuses, never that a *sufficient* right returns `200`
+on a real tenant. Only an **authenticated** record would move that date, and none exists.
+
+The coverage figures come from the same committed snapshot as
+[the detection quality map](../detection-quality.md). Two computations would diverge, and the
+one that diverges is the one people read.
+
+<!-- pepin:gen cli-help-control-explain -->
+```text
+Renders, for a control and a provider, the chain that makes its verdict
+defensible: the API calls that feed the decision, the deciding attributes, the
+exact conditions for a `pass`, the tests that exercise it, and the date of the
+last live validation.
+
+The coverage figures come from the SAME source as the detection quality map
+(docs/detection-quality.md): two computations would diverge, and the one that
+diverges is the one people read.
+
+Usage:
+  pepin control explain <code> [flags]
+
+Flags:
+  -h, --help              help for explain
+      --provider string   limit the explanation to one provider
+
+Global Flags:
+      --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
+```
+<!-- /pepin:gen cli-help-control-explain -->
 
 ## `pepin version`
 

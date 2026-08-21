@@ -98,6 +98,57 @@ case $? in
   *) ko "scsl-drift n'a pas pu tourner" "cloner framework-scsl à côté du dépôt (l'index est requis pour publier)" ;;
 esac
 
+# --- le canari : ce que les vrais plans de contrôle ont répondu, et quand ------
+#
+# La colonne « live » de la matrice est DÉRIVÉE des descripteurs : elle dit ce que
+# Pépin croit savoir collecter, jamais ce qu'il a observé. Le canari est la seule
+# mesure du dépôt qui interroge le vrai plan de contrôle d'un fournisseur, et il
+# le fait SANS identifiant — il envoie des valeurs synthétiques et mesure le refus.
+#
+# Ce contrôle-ci ne détient donc aucun secret : il lit une DATE dans un fichier
+# committé. C'est précisément ce que l'issue #59 demande — le geste est local et
+# manuel, le préflight n'exige que sa fraîcheur.
+#
+# La complétude (chaque fournisseur cloud a son relevé, lisible, substantiel) est
+# vérifiée par internal/canary, donc par `mise run test` ci-dessus : elle ne dépend
+# pas de la date et n'a rien à faire dans une porte qui ne parle qu'au moment d'un
+# tag. Ici, seule la FRAÎCHEUR se juge.
+#
+# 90 jours : la même valeur que canary.MaxAge, et TestThePreflightCitesTheSameFreshnessWindow
+# refuse que les deux divergent.
+CANARY_MAX_AGE_DAYS=90
+canary_dir=references/canary
+if [ ! -d "$canary_dir" ] || ! ls "$canary_dir"/*.yaml >/dev/null 2>&1; then
+  ko "aucun relevé de canari dans $canary_dir" \
+     "lancer tools/release/canary.sh : une release ne promeut pas une capacité live que rien n'a vue répondre"
+else
+  now_s=$(date +%s)
+  stale=""
+  undated=""
+  for rec in "$canary_dir"/*.yaml; do
+    p=$(basename "$rec" .yaml)
+    recorded=$(sed -n 's/^recorded:[[:space:]]*//p' "$rec" | head -1 | tr -d '"'"'"' ')
+    rec_s=$(date -d "$recorded" +%s 2>/dev/null)
+    if [ -z "$recorded" ] || [ -z "$rec_s" ]; then
+      undated="$undated $p"
+      continue
+    fi
+    age_days=$(( (now_s - rec_s) / 86400 ))
+    if [ "$age_days" -gt "$CANARY_MAX_AGE_DAYS" ]; then
+      stale="$stale $p(${age_days}j)"
+    fi
+  done
+  if [ -n "$undated" ]; then
+    ko "relevé de canari sans date lisible :$undated" \
+       "un relevé qu'on ne sait pas dater n'atteste pas sa fraîcheur ; le refaire"
+  elif [ -n "$stale" ]; then
+    ko "relevé de canari plus vieux que $CANARY_MAX_AGE_DAYS jours :$stale" \
+       "relancer tools/release/canary.sh, relire le relevé, le committer"
+  else
+    ok "les relevés de canari ont moins de $CANARY_MAX_AGE_DAYS jours"
+  fi
+fi
+
 # --- les promesses que le README publie, éprouvées en les déclenchant ---------
 #
 # Les codes de sortie et le bundle sont la surface que les CI des consommateurs

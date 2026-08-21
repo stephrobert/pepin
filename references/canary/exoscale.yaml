@@ -1,0 +1,76 @@
+# Relevé de canari — GÉNÉRÉ par tools/release/canary.sh.
+#
+# Une requête NON AUTHENTIFIÉE par endpoint déclaré, contre le vrai plan de
+# contrôle du fournisseur. Ce qui se mesure est le REFUS : un endpoint qui
+# répond existe et se résout ; un 404 dit qu'il a bougé.
+#
+# Ce relevé ne porte aucun identifiant : le canari n'en a jamais eu.
+provider: exoscale
+recorded: 2026-08-21
+pepin_version: "v0.3.0-2-g1ee97f5"
+authenticated: false
+summary:
+  answered: 9
+  moved: 0
+  unreachable: 0
+units:
+  - unit: blockstorage_snapshot
+    verdict: answered
+    status: 403
+    method: GET
+    host: api-ch-dk-2.exoscale.com
+    path: "/v2/block-storage-snapshot"
+    classified: permission_denied
+  - unit: blockstorage_volume
+    verdict: answered
+    status: 403
+    method: GET
+    host: api-ch-dk-2.exoscale.com
+    path: "/v2/block-storage"
+    classified: permission_denied
+  - unit: compute_instance
+    verdict: answered
+    status: 403
+    method: GET
+    host: api-ch-dk-2.exoscale.com
+    path: "/v2/instance"
+    classified: permission_denied
+  - unit: iam_role
+    verdict: answered
+    status: 403
+    method: GET
+    host: api-ch-dk-2.exoscale.com
+    path: "/v2/iam-role"
+    classified: permission_denied
+  - unit: iam_user
+    verdict: answered
+    status: 403
+    method: GET
+    host: api-ch-dk-2.exoscale.com
+    path: "/v2/user"
+    classified: permission_denied
+  - unit: kubernetes_cluster
+    verdict: answered
+    status: 403
+    method: GET
+    host: api-ch-dk-2.exoscale.com
+    path: "/v2/sks-cluster"
+    classified: permission_denied
+  - unit: network
+    verdict: answered
+    status: 403
+    method: GET
+    host: api-ch-dk-2.exoscale.com
+    path: "/v2/private-network"
+    classified: permission_denied
+  - unit: object_storage_bucket
+    verdict: answered
+    status: 403
+    classified: permission_denied
+  - unit: security_group_rule
+    verdict: answered
+    status: 403
+    method: GET
+    host: api-ch-dk-2.exoscale.com
+    path: "/v2/security-group"
+    classified: permission_denied

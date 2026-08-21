@@ -1,0 +1,27 @@
+# Tenant de référence — Scaleway, posture EXPOSÉE.
+#
+# Ce fichier décrit d'où vient la configuration mesurée, et pourquoi elle n'est
+# pas auto-confirmante. Le plan committé est RÉDUIT : cf. references/tenants/README.md.
+provider: scaleway
+source: terraform
+posture: exposed
+title: "Entrepôt DuckLake : base managée et bucket d'objets, écrits pour un lac de données"
+title_en: "DuckLake warehouse: managed database and object bucket, written for a data lake"
+upstream:
+  repo: https://github.com/berndsen-io/ducklake-scaleway
+  commit: 2fa4eb0d2fe961a09176c944e083ee8eade0125b
+  path: terraform
+  licence: MIT
+  retrieved: "2026-08-21"
+why: |
+  Personne, dans ce dépôt, n'a écrit une base de données ni un bucket pour éprouver
+  une règle de Pépin : l'auteur voulait un entrepôt DuckLake qui démarre. Les écarts
+  que Pépin y relève (sauvegardes désactivées, service ouvert, verrou d'objet absent)
+  sont donc des écarts qu'une configuration réelle porte, pas des écarts qu'une
+  fixture a mis là pour être trouvés.
+why_en: |
+  Nobody in that repository wrote a database or a bucket to exercise a Pepin rule:
+  the author wanted a DuckLake warehouse that boots. The deviations Pepin reports
+  there (backups disabled, service reachable, no object lock) are therefore
+  deviations a real configuration carries, not deviations a fixture placed to be
+  found.

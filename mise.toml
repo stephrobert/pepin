@@ -104,6 +104,21 @@ description = "Enregistre les appels HTTP réels d'un collecteur contre l'émula
 depends = ["build"]
 run = "scripts/trace-collector.sh ${PROVIDER:-scaleway} ${OUT:-.trace}"
 
+# Les TENANTS DE RÉFÉRENCE (issue #58) : des configurations tierces, publiées et
+# licenciées, rejouées à chaque build. Une fixture est écrite par l'auteur de la
+# règle, donc elle est AUTO-CONFIRMANTE : elle prouve que la règle se déclenche,
+# jamais qu'elle a raison sur une configuration que personne n'a conçue pour elle.
+# Un faux positif ne se voit que là.
+# La régénération est explicite : un verdict qui bascule sur un amont ÉPINGLÉ est
+# un faux positif ou un faux négatif, et il se dit avant de se réécrire.
+[tasks.tenants-update]
+description = "Régénère les verdicts attendus des tenants de référence (references/tenants/*/*/expected.txt)"
+run = "PEPIN_UPDATE_TENANTS=1 go test ./internal/tenants/ -run 'ExpectedVerdicts' -count=1"
+
+[tasks.tenants-refresh]
+description = "Régénère les PLANS des tenants de référence depuis leur amont épinglé (requiert terraform et le registre)"
+run = "scripts/reference-tenant.sh --all"
+
 [tasks.frozen-update]
 description = "Régénère les fixtures de surface gelée (cmd/testdata/frozen/) après un changement délibéré ; incrémenter ensuite la constante de version de la surface"
 run = "PEPIN_UPDATE_FROZEN=1 go test ./cmd/ -run 'Frozen|Fixture|VersionBump' -count=1"
@@ -158,6 +173,16 @@ ls -lh docs/assets/quickstart.gif docs/assets/quickstart.fr.gif docs/assets/quic
 [tasks.release-check]
 description = "Tout ce qui doit être vrai avant qu'un tag existe : mise run release-check -- vX.Y.Z"
 run = "tools/release/preflight.sh"
+
+# Le CANARI (issue #59) : la seule mesure du dépôt qui interroge le VRAI plan de
+# contrôle d'un fournisseur souverain. Il ne détient AUCUN identifiant — il envoie
+# des valeurs synthétiques et mesure le REFUS —, donc il ne peut pas en écrire un.
+# Un geste de MAINTENEUR, jamais de CI : le relevé est consigné, daté, committé, et
+# le preflight n'exige que sa fraîcheur (canary.MaxAge). La complétude, elle, est
+# une porte de test ordinaire (internal/canary), parce qu'elle ne dépend pas du jour.
+[tasks.canary]
+description = "Interroge les vrais plans de contrôle sans identifiant et consigne le relevé daté (references/canary/)"
+run = "tools/release/canary.sh"
 
 [tasks.secrets]
 description = "Scan de secrets par motif (gitleaks), historique git compris"

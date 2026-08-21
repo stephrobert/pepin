@@ -100,6 +100,62 @@ téléchargée.
 - `gh` doit être authentifié pour que le preflight interroge la CI.
 - Déplacer les entrées de CHANGELOG est de l'écriture, pas de la génération,
   dans les deux langues.
+- **Le scan canari** (ci-dessous) : un geste de mainteneur, lancé localement,
+  dont le résultat est consigné et daté.
+
+## Le canari : ce que les vrais plans de contrôle ont répondu
+
+```bash
+mise run canary                  # les trois fournisseurs cloud
+tools/release/canary.sh scaleway # un seul
+```
+
+La colonne `live` de la matrice de couverture est **dérivée des descripteurs** :
+elle dit ce que Pépin croit savoir collecter, jamais ce qu'il a observé. Une
+release qui promeut une capacité live validée uniquement sur des fixtures et un
+émulateur promeut une croyance.
+
+Le canari est la seule mesure de ce dépôt qui interroge le **vrai** plan de
+contrôle d'un fournisseur souverain — et il ne détient **aucun identifiant**,
+c'est là toute sa force. Il envoie des valeurs **synthétiques** que le
+fournisseur refuse, et ce qui se mesure est le refus : un endpoint qui répond
+401 ou 403 existe, se résout et parle ; un endpoint déplacé répondrait 404,
+c'est-à-dire précisément la régression qu'un descripteur ne peut pas voir venir.
+Le script efface toute variable d'identifiants et pose un `HOME` jetable avant de
+lancer quoi que ce soit : un mainteneur ne peut pas envoyer ses clés par
+accident. C'est une propriété du script, pas une consigne d'usage.
+
+| Il établit | Il n'établit **pas** |
+|---|---|
+| que l'hôte compilé dans le descripteur se résout et répond | les noms et types des champs du contrat natif |
+| que le chemin déclaré existe encore (un 404 dirait le contraire) | ce qu'un tenant contient |
+| la classe qu'un refus reçoit | qu'un droit **suffisant** rende `200` |
+
+Un refus de **signature** n'est pas un refus de **droit**. Le canari ne vaut donc
+**pas** validation live d'un contrôle, et la carte de qualité de détection compte
+zéro de ce côté-là plutôt que d'emprunter ce chiffre-ci.
+
+Les relevés vivent dans `references/canary/<fournisseur>.yaml`, sont committés,
+et ne portent que des faits d'endpoint : unité, méthode, hôte, chemin, statut
+HTTP, et la classe que Pépin a attribuée au refus. Aucune query string n'est
+conservée — c'est le seul endroit où une valeur de tenant pourrait se glisser
+dans une URL. **Relire un relevé avant de le committer** : le canari n'en produit
+pas d'autre, et le vérifier est ce qui permet de l'affirmer.
+
+Les deux moitiés se vérifient à deux endroits différents, à dessein :
+
+- la **complétude** — chaque fournisseur cloud a son relevé, lisible et
+  substantiel — est vérifiée par `internal/canary`, donc par `mise run test` et
+  la CI, parce qu'elle ne dépend pas de la date ;
+- la **fraîcheur** — aucun relevé plus vieux que `canary.MaxAge` (90 jours) — est
+  vérifiée par le preflight, seul moment où la question se pose. Une porte de
+  test qui rougirait avec le temps rougirait un matin sans que rien n'ait changé,
+  et serait désarmée dans la semaine.
+
+Un relevé dont **toutes** les unités sont injoignables est refusé plutôt
+qu'écrit : il décrirait le réseau du mainteneur (proxy, bac à sable, DNS
+captif), pas le fournisseur, et un lecteur ultérieur prendrait ces
+`unreachable` pour une régression du plan de contrôle qui n'a jamais eu lieu.
 
 > **Le preflight est un contrôle local, pas une porte.** Rien ne relie le tag à
 > son exécution : `git tag && git push` publie à lui seul une release complète,

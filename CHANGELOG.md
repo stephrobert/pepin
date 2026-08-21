@@ -19,6 +19,74 @@ second makes their user explain to an auditor a change they did not make, and
 this file is where that explanation starts. A refactor that changes neither
 belongs in `git log`.
 
+## [Unreleased]
+
+### Added
+
+- **Reference tenants: third-party configurations, replayed on every build.** A
+  fixture is written by the author of the rule, so it proves the rule *fires* — never
+  that it is *right* about a configuration nobody designed for it. Six real, published,
+  MIT/Apache-licensed stacks (two per sovereign provider) are now pinned to a commit
+  under `references/tenants/`, scanned through the binary on every build, and compared
+  to the verdicts recorded beside them. Each provider carries an **exposed** tenant and
+  the corresponding **hardened** counter-witness — the only place a false positive
+  shows up. Nothing is provisioned: `terraform plan` creates no cloud resource.
+  `scripts/reference-tenant.sh --all` re-derives the six plans from their upstreams
+  **byte for byte**, so a reviewer can check they are not files Pépin ended up writing
+  to itself. See [Reference tenants](docs/guides/reference-tenants.md).
+- The plan committed for a tenant carries **only what Pépin reads** (`planned_values`
+  and module `source`s), with every value Terraform itself marks `sensitive` nulled.
+  `TestNoReferenceTenantPlanCarriesMoreThanPepinReads` refuses the rest: `variables`,
+  `provider_config`, `prior_state` and `resource_changes` are exactly where a plan
+  taken on a real tenant would carry its credentials.
+
+- **Canary scans at release qualification.** `mise run canary` queries the **real**
+  control plane of each cloud provider and records what it answered in
+  `references/canary/<provider>.yaml`, committed and dated. It holds **no
+  credential** and needs none: it sends synthetic values the provider refuses, and
+  what it measures is the refusal — an endpoint answering 401/403 exists and
+  resolves, a moved one would answer 404, the regression a descriptor cannot see
+  coming. First measurement, 31 endpoints: all answered, none moved. It does **not**
+  establish that a *sufficient* right returns `200`, so it does not count as live
+  validation of a control. Completeness is a test gate (`internal/canary`);
+  **freshness** — no record older than 90 days — is checked by the preflight, which
+  never holds a secret. See [Releasing](RELEASING.md).
+
+- **A generated detection quality map**, [docs/detection-quality.md](docs/detection-quality.md).
+  Rather than announcing "57 controls", it publishes what is verifiable: **63 verdicts proven
+  out of 458**, **23 paths fully proven out of 178**, and the breakdown per verdict — `fail`
+  10/140, `pass` 24/140, `not-evaluated` 18/156, `not-applicable` 11/22. Every figure is
+  derived from the veracity ledger, the reference tenants and the canary records; none is
+  typed in, and `TestTheMapNeverExceedsTheLedger` refuses the map and the ledger to diverge.
+  **Validated live: 0 %** — derived, not written: only an authenticated record would move it,
+  and a canary holds no credential.
+- **`pepin control explain <code> [--provider p]`** — a new CLI verb (**cli surface v5**). For
+  a control and a provider it renders the chain that makes its verdict defensible: the API
+  calls feeding the decision (the `collecte` spec, joins included, plus the shared Go
+  collectors), the deciding attributes, the exact conditions for a `pass` in the order
+  `assess.Build` evaluates them, the tests that exercise it, and the date of the last live
+  validation — which reads `never`, and says why. It reads the **same** committed snapshot as
+  the map: two computations would diverge, and the one that diverges is the one people read.
+
+### Changed
+
+- **The veracity debt drops from 445 to 395 verdicts left to prove**, and fully proven
+  paths go from 5 to 23 out of 178. The reference tenants and the hand-written
+  scenarios feed **one** ledger: two coverage figures would diverge, and the one that
+  diverges is the one people read. A tenant verdict counts only when it is
+  *substantive* — `fail`, `pass` and `not-applicable` always, `not-evaluated` only when
+  the tenant actually carries a resource of the targeted type. Without that filter the
+  same six tenants would have paid 97 obligations instead of 50, half of them with
+  absences.
+- **A tenant plan now keeps only the attributes a mapping actually reads.** The
+  reducer cut at the section level and kept every attribute of every resource, so a
+  `helm_release` carried its whole Helm values blob, a `kubectl_manifest` its
+  `yaml_body`, a `kubernetes_secret` its contents — none of which any common rule
+  reads. Reduction is now an allowlist derived from the descriptors, down to the
+  field, and `TestNoReferenceTenantPlanCarriesAnAttributeNobodyReads` refuses the
+  rest. **No verdict moves**: `internal/tfmap` only ever projected the mapped fields.
+  The corpus drops from 54 KiB to 25 KiB.
+
 ## [0.3.0] - 2026-08-21
 
 ### Added
