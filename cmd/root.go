@@ -43,5 +43,5 @@ func init() {
 	// plus tôt, dans Execute.
 	rootCmd.PersistentFlags().StringVar(&langFlag, "lang", "",
 		"langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)")
-	rootCmd.AddCommand(scanCmd, providerCmd, versionCmd, scslCmd)
+	rootCmd.AddCommand(scanCmd, providerCmd, versionCmd, scslCmd, controlCmd)
 }

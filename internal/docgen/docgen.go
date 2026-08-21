@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/stephrobert/pepin/internal/quality"
 )
 
 // injectedPages : les pages écrites à la main qui portent des régions générées. La page reste
@@ -61,6 +63,14 @@ var injectedPages = []string{
 var generatedPages = []string{
 	"docs/coverage.md",
 	"docs/coverage.fr.md",
+}
+
+// qualityPages : la carte de qualité de détection, dans les deux langues. Elle est
+// entièrement calculée elle aussi, mais depuis l'INSTANTANÉ (internal/quality) et
+// non depuis la matrice seule — d'où sa propre liste.
+var qualityPages = []string{
+	"docs/detection-quality.md",
+	"docs/detection-quality.fr.md",
 }
 
 // fullyGeneratedDirs : les dossiers dont TOUT le contenu Markdown est produit par le
@@ -119,6 +129,21 @@ func Generate(root, bin string) (map[string]string, error) {
 	for _, page := range generatedPages {
 		lang := langOf(page)
 		out[page] = matrixByLang[lang].coveragePage(lang)
+	}
+	// La carte de qualité, et l'instantané dont elle est le rendu. Les DEUX sont
+	// produits ici, donc les deux passent par la porte de fraîcheur : l'instantané
+	// que le binaire embarque ne peut pas décrire un dépôt que le dépôt n'est plus.
+	snap, err := BuildQuality(root, matrixByLang["en"])
+	if err != nil {
+		return nil, err
+	}
+	rawSnap, err := quality.Encode(snap)
+	if err != nil {
+		return nil, err
+	}
+	out[quality.SnapshotFile] = string(rawSnap)
+	for _, page := range qualityPages {
+		out[page] = qualityPage(langOf(page), snap)
 	}
 	// Le catalogue des contrôles : une page par contrôle et par langue, plus son index.
 	// La liste des pages n'est pas énumérée ici — elle EST le référentiel, donc un contrôle

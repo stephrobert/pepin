@@ -463,27 +463,46 @@ func Substantive(code, status string, present map[string]bool) bool {
 // Les compter DEUX fois, ou les recalculer autrement, ferait diverger le registre
 // de la carte — et celui qui diverge est toujours celui qu'on lit.
 func Covered(root string) (map[veracity.Path][]veracity.Verdict, error) {
+	verdicts, _, err := walkCovered(root)
+	return verdicts, err
+}
+
+// CoveredBy rend, par chemin, les NOMS des tenants qui y prouvent un verdict.
+//
+// Même parcours que Covered, au même filtre « substantiel » près : la carte de
+// qualité doit pouvoir nommer l'artefact derrière chaque verdict compté, sans
+// quoi son chiffre est un chiffre qu'on doit croire. Les deux sorties viennent
+// d'UNE seule traversée, pour qu'un tenant compté ici et pas là soit impossible.
+func CoveredBy(root string) (map[veracity.Path][]string, error) {
+	_, names, err := walkCovered(root)
+	return names, err
+}
+
+// walkCovered parcourt les tenants une fois et rend les deux vues.
+func walkCovered(root string) (map[veracity.Path][]veracity.Verdict, map[veracity.Path][]string, error) {
 	list, err := Load(root)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	out := map[veracity.Path][]veracity.Verdict{}
+	verdicts := map[veracity.Path][]veracity.Verdict{}
+	names := map[veracity.Path][]string{}
 	for _, t := range list {
 		expected, lerr := LoadExpected(t.ExpectedPath())
 		if lerr != nil {
-			return nil, lerr
+			return nil, nil, lerr
 		}
 		present, perr := PresentTypes(root, t)
 		if perr != nil {
-			return nil, perr
+			return nil, nil, perr
 		}
 		for code, status := range expected {
 			if !Substantive(code, status, present) {
 				continue
 			}
 			p := t.PathOf(code)
-			out[p] = append(out[p], veracity.Verdict(status))
+			verdicts[p] = append(verdicts[p], veracity.Verdict(status))
+			names[p] = append(names[p], t.Name)
 		}
 	}
-	return out, nil
+	return verdicts, names, nil
 }

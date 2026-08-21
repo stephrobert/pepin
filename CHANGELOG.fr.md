@@ -55,6 +55,23 @@ l'une ni l'autre appartient au `git log`.
   vérifiée par le preflight, qui ne détient jamais de secret. Cf.
   [Publier une release](RELEASING.fr.md).
 
+- **Une carte de qualité de détection générée**,
+  [docs/detection-quality.fr.md](docs/detection-quality.fr.md). Plutôt que d'annoncer
+  « 57 contrôles », elle publie ce qui se vérifie : **63 verdicts prouvés sur 458**,
+  **23 chemins entièrement prouvés sur 178**, et la ventilation par verdict — `fail` 10/140,
+  `pass` 24/140, `not-evaluated` 18/156, `not-applicable` 11/22. Chaque chiffre est dérivé du
+  registre de véracité, des tenants de référence et des relevés de canari ; aucun n'est saisi,
+  et `TestTheMapNeverExceedsTheLedger` refuse que la carte et le registre divergent.
+  **Validé en live : 0 %** — dérivé, pas écrit : seul un relevé authentifié le ferait monter,
+  et un canari ne détient aucun identifiant.
+- **`pepin control explain <code> [--provider p]`** : un nouveau verbe CLI (**surface cli v5**).
+  Pour un contrôle et un fournisseur, il rend la chaîne qui rend son verdict opposable : les
+  appels d'API qui alimentent la décision (la spec `collecte`, jointures comprises, plus les
+  collecteurs Go partagés), les attributs décisifs, les conditions exactes d'un `pass` dans
+  l'ordre où `assess.Build` les évalue, les tests qui l'éprouvent, et la date de la dernière
+  validation live — qui affiche `jamais`, et dit pourquoi. Il lit le **même** instantané
+  committé que la carte : deux calculs divergeraient, et celui qui diverge est celui qu'on lit.
+
 ### Modifié
 
 - **La dette de véracité passe de 445 à 395 verdicts restant à prouver**, et les chemins

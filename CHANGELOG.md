@@ -52,6 +52,22 @@ belongs in `git log`.
   **freshness** — no record older than 90 days — is checked by the preflight, which
   never holds a secret. See [Releasing](RELEASING.md).
 
+- **A generated detection quality map**, [docs/detection-quality.md](docs/detection-quality.md).
+  Rather than announcing "57 controls", it publishes what is verifiable: **63 verdicts proven
+  out of 458**, **23 paths fully proven out of 178**, and the breakdown per verdict — `fail`
+  10/140, `pass` 24/140, `not-evaluated` 18/156, `not-applicable` 11/22. Every figure is
+  derived from the veracity ledger, the reference tenants and the canary records; none is
+  typed in, and `TestTheMapNeverExceedsTheLedger` refuses the map and the ledger to diverge.
+  **Validated live: 0 %** — derived, not written: only an authenticated record would move it,
+  and a canary holds no credential.
+- **`pepin control explain <code> [--provider p]`** — a new CLI verb (**cli surface v5**). For
+  a control and a provider it renders the chain that makes its verdict defensible: the API
+  calls feeding the decision (the `collecte` spec, joins included, plus the shared Go
+  collectors), the deciding attributes, the exact conditions for a `pass` in the order
+  `assess.Build` evaluates them, the tests that exercise it, and the date of the last live
+  validation — which reads `never`, and says why. It reads the **same** committed snapshot as
+  the map: two computations would diverge, and the one that diverges is the one people read.
+
 ### Changed
 
 - **The veracity debt drops from 445 to 395 verdicts left to prove**, and fully proven

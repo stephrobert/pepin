@@ -115,6 +115,11 @@ d'un contrôle qui fait foi.
   `not-applicable`, `not-evaluated` et `exempted` affirment réellement.
 - [Matrice de couverture](docs/coverage.fr.md) : ce qui est mesurable, par fournisseur et par
   source. **Générée** depuis le référentiel et les descripteurs, vérifiée en CI.
+- [Carte de qualité de détection](docs/detection-quality.fr.md) : ce que Pépin sait *prouver*
+  de ses propres verdicts, et ce qu'il ne sait pas. **Générée** depuis le registre de véracité,
+  les tenants de référence et les relevés de canari ; aucun de ses chiffres n'est saisi, et
+  aucun n'est flatteur. `pepin control explain <code>` répond à la même question pour un
+  contrôle donné.
 - [Catalogue des contrôles](docs/controls/index.fr.md) : une page générée par contrôle,
   ce qu'il conclut, depuis quelle source, et comment corriger ce qu'il trouve.
 - [Limites connues](docs/known-limitations.fr.md) : les angles morts, nommés.
