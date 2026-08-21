@@ -19,7 +19,7 @@ second makes their user explain to an auditor a change they did not make, and
 this file is where that explanation starts. A refactor that changes neither
 belongs in `git log`.
 
-## [Unreleased]
+## [0.3.0] - 2026-08-21
 
 ### Added
 
