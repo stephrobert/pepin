@@ -133,6 +133,8 @@ control is the one that governs.
   [Evidence bundles](docs/guides/evidence-bundles.md) ·
   [Tracing real API calls](docs/guides/tracing-api-calls.md) — what a recording proves, and
   what it does not ·
+  [Reference tenants](docs/guides/reference-tenants.md) — third-party configurations replayed
+  on every build, and why a fixture cannot do their job ·
   [GitHub Actions](docs/guides/github-actions.md) · [GitLab CI](docs/guides/gitlab-ci.md).
 - Contributing: [Adding a control](docs/contributing/adding-a-control.md) ·
   [Adding a provider](docs/contributing/adding-a-provider.md) ·

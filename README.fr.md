@@ -134,6 +134,8 @@ d'un contrôle qui fait foi.
   [Le bundle de preuve](docs/guides/evidence-bundles.fr.md) ·
   [Tracer les appels réels](docs/guides/tracing-api-calls.fr.md) : ce qu'un enregistrement
   prouve, et ce qu'il ne prouve pas ·
+  [Les tenants de référence](docs/guides/reference-tenants.fr.md) : des configurations tierces
+  rejouées à chaque build, et pourquoi une fixture ne peut pas faire leur travail ·
   [GitHub Actions](docs/guides/github-actions.fr.md) ·
   [GitLab CI](docs/guides/gitlab-ci.fr.md).
 - Contribution : [Ajouter un contrôle](docs/contributing/adding-a-control.fr.md) ·

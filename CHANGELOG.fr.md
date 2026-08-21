@@ -20,6 +20,40 @@ leur utilisateur à expliquer à un auditeur un changement qu'il n'a pas fait,
 et c'est ici que cette explication commence. Un refactor qui ne change ni
 l'une ni l'autre appartient au `git log`.
 
+## [Non publié]
+
+### Ajouté
+
+- **Les tenants de référence : des configurations tierces, rejouées à chaque build.**
+  Une fixture est écrite par l'auteur de la règle : elle prouve que la règle *se
+  déclenche*, jamais qu'elle a *raison* sur une configuration que personne n'a conçue
+  pour elle. Six stacks réelles, publiées, sous licence MIT ou Apache (deux par
+  fournisseur souverain) sont désormais épinglées à un commit sous
+  `references/tenants/`, scannées à travers le binaire à chaque build, et comparées aux
+  verdicts consignés à côté d'elles. Chaque fournisseur porte un tenant **exposé** et
+  son **contre-témoin durci** — le seul endroit où un faux positif se voit. Rien n'est
+  provisionné : `terraform plan` ne crée aucune ressource cloud.
+  `scripts/reference-tenant.sh --all` re-dérive les six plans depuis leurs amonts **à
+  l'octet près**, pour qu'un relecteur puisse vérifier que ce ne sont pas des fichiers
+  que Pépin a fini par s'écrire à lui-même. Cf.
+  [Les tenants de référence](docs/guides/reference-tenants.fr.md).
+- Le plan committé pour un tenant ne porte **que ce que Pépin lit** (`planned_values` et
+  les `source` de modules), toute valeur que Terraform lui-même marque `sensitive` étant
+  mise à null. `TestNoReferenceTenantPlanCarriesMoreThanPepinReads` refuse le reste :
+  `variables`, `provider_config`, `prior_state` et `resource_changes` sont précisément
+  là où un plan pris sur un tenant réel porterait ses identifiants.
+
+### Modifié
+
+- **La dette de véracité passe de 445 à 395 verdicts restant à prouver**, et les chemins
+  entièrement prouvés de 5 à 23 sur 178. Les tenants de référence et les scénarios
+  écrits à la main alimentent **un seul** registre : deux chiffres de couverture
+  divergeraient, et celui qui diverge est celui qu'on lit. Un verdict de tenant ne
+  compte que s'il est *substantiel* — `fail`, `pass` et `not-applicable` toujours,
+  `not-evaluated` seulement si le tenant porte réellement une ressource du type visé.
+  Sans ce filtre, les mêmes six tenants auraient payé 97 obligations au lieu de 50, la
+  moitié par des absences.
+
 ## [0.3.0] - 2026-08-21
 
 ### Ajouté

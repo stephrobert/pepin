@@ -19,6 +19,38 @@ second makes their user explain to an auditor a change they did not make, and
 this file is where that explanation starts. A refactor that changes neither
 belongs in `git log`.
 
+## [Unreleased]
+
+### Added
+
+- **Reference tenants: third-party configurations, replayed on every build.** A
+  fixture is written by the author of the rule, so it proves the rule *fires* — never
+  that it is *right* about a configuration nobody designed for it. Six real, published,
+  MIT/Apache-licensed stacks (two per sovereign provider) are now pinned to a commit
+  under `references/tenants/`, scanned through the binary on every build, and compared
+  to the verdicts recorded beside them. Each provider carries an **exposed** tenant and
+  the corresponding **hardened** counter-witness — the only place a false positive
+  shows up. Nothing is provisioned: `terraform plan` creates no cloud resource.
+  `scripts/reference-tenant.sh --all` re-derives the six plans from their upstreams
+  **byte for byte**, so a reviewer can check they are not files Pépin ended up writing
+  to itself. See [Reference tenants](docs/guides/reference-tenants.md).
+- The plan committed for a tenant carries **only what Pépin reads** (`planned_values`
+  and module `source`s), with every value Terraform itself marks `sensitive` nulled.
+  `TestNoReferenceTenantPlanCarriesMoreThanPepinReads` refuses the rest: `variables`,
+  `provider_config`, `prior_state` and `resource_changes` are exactly where a plan
+  taken on a real tenant would carry its credentials.
+
+### Changed
+
+- **The veracity debt drops from 445 to 395 verdicts left to prove**, and fully proven
+  paths go from 5 to 23 out of 178. The reference tenants and the hand-written
+  scenarios feed **one** ledger: two coverage figures would diverge, and the one that
+  diverges is the one people read. A tenant verdict counts only when it is
+  *substantive* — `fail`, `pass` and `not-applicable` always, `not-evaluated` only when
+  the tenant actually carries a resource of the targeted type. Without that filter the
+  same six tenants would have paid 97 obligations instead of 50, half of them with
+  absences.
+
 ## [0.3.0] - 2026-08-21
 
 ### Added

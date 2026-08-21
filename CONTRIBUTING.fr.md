@@ -61,6 +61,13 @@ identifiants, endpoint S3, `collecte` (API live), `mapping_terraform`, et le
    masque : le registre est une porte dans les deux sens, et un contrôle ajouté
    sans ses scénarios fait échouer la construction.
 4. Valider par un scan réel, puis activer (`fournisseurs`).
+5. **Relire les tenants de référence** (`references/tenants/`) : des configurations
+   tierces réelles, épinglées à un commit, rejouées à chaque build. Une fixture est
+   écrite par l'auteur de la règle, donc elle est auto-confirmante ; un tenant que
+   personne n'a écrit pour Pépin est l'endroit où un faux positif se voit. Si un
+   verdict y bascule, dire si le produit s'est amélioré ou s'il a régressé **avant**
+   de lancer `mise run tenants-update`. Cf.
+   [Les tenants de référence](docs/guides/reference-tenants.fr.md).
 
 Tout ce que l'utilisateur lit s'écrit **deux fois**, côte à côte, parce que Pépin
 détecte la langue du lecteur. Une règle émet `message`/`remediation` en français

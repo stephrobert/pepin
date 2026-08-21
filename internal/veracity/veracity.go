@@ -194,3 +194,22 @@ func Count(obligations map[Path][]Verdict, covered map[Path][]Verdict) Counts {
 	}
 	return c
 }
+
+// Merge fusionne plusieurs jeux de verdicts prouvés, indexés par chemin.
+//
+// Deux artefacts prouvent aujourd'hui la véracité d'un chemin, et ils ne se
+// remplacent pas : les SCÉNARIOS, écrits pour mettre en scène un cas précis
+// (notamment une réponse d'API canned, seul point d'entrée qui éprouve le
+// collecteur), et les TENANTS DE RÉFÉRENCE, qui rejouent des configurations
+// tierces que personne n'a écrites pour Pépin. Les compter ensemble est ce qui
+// évite d'avoir deux chiffres de couverture — et celui qui diverge est toujours
+// celui qu'on lit.
+func Merge(sets ...map[Path][]Verdict) map[Path][]Verdict {
+	out := map[Path][]Verdict{}
+	for _, set := range sets {
+		for p, verdicts := range set {
+			out[p] = append(out[p], verdicts...)
+		}
+	}
+	return out
+}

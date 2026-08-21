@@ -1,0 +1,20 @@
+# Tenant de référence — Exoscale, posture EXPOSÉE.
+provider: exoscale
+source: terraform
+posture: exposed
+title: "Démonstration de zone Exoscale : SKS, groupes de sécurité et pool de nœuds"
+title_en: "Exoscale zone demo: SKS, security groups and node pool"
+upstream:
+  repo: https://github.com/devops-wien/terraform-exoscale-zone-demo
+  commit: 64c02c180739338db12a4535c10a47fdd9f4166d
+  path: .
+  licence: Apache-2.0
+  retrieved: "2026-08-21"
+why: |
+  Une démonstration de zone écrite pour montrer Exoscale, pas pour être auditée. C'est
+  le seul tenant du corpus qui porte à la fois un cluster Kubernetes managé et des
+  groupes de sécurité : il éprouve onze chemins que rien d'autre n'atteint.
+why_en: |
+  A zone demonstration written to showcase Exoscale, not to be audited. It is the only
+  tenant in the corpus carrying both a managed Kubernetes cluster and security groups:
+  it exercises eleven paths nothing else reaches.
