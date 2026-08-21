@@ -79,17 +79,22 @@ export OSC_REGION="${OSC_REGION:-eu-west-2}"
 export EXOSCALE_API_KEY='EXOCANARYCANARYCANARYCAN'
 export EXOSCALE_API_SECRET='CANARYCANARYCANARYCANARYCANARYCANARYCANA'
 export EXOSCALE_ZONE="${EXOSCALE_ZONE:-ch-dk-2}"
+# --- le binaire mesuré, compilé AVANT que HOME ne bouge ------------------------
+#
+# L'ordre compte. `go build` dérive GOPATH — donc le cache de modules — de HOME :
+# compilé sous le HOME jetable, il retéléchargerait tout le graphe de dépendances
+# à chaque canari, puis échouerait à l'effacer (le cache de modules est posé en
+# lecture seule). La compilation ne lit aucun identifiant de fournisseur ; c'est
+# le SCAN qu'il faut isoler, et lui seul.
+VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo dev)
+go build -trimpath -ldflags "-s -w -X github.com/stephrobert/pepin/cmd.version=$VERSION" \
+   -o ./pepin . || { echo "compilation impossible" >&2; exit 2; }
+
 # HOME jetable : aucun ~/.config/scw/config.yaml ni ~/.osc/config.json ne doit
 # être lu. La résolution d'identifiants lit ces fichiers quand l'environnement
 # est muet, et l'environnement ci-dessus pourrait ne pas couvrir un futur champ.
 CANARY_HOME=$(mktemp -d)
-trap 'rm -rf "$CANARY_HOME"' EXIT
 export HOME="$CANARY_HOME"
-
-# --- le binaire mesuré --------------------------------------------------------
-VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo dev)
-go build -trimpath -ldflags "-s -w -X github.com/stephrobert/pepin/cmd.version=$VERSION" \
-   -o ./pepin . || { echo "compilation impossible" >&2; exit 2; }
 
 PROVIDERS=("$@")
 [ ${#PROVIDERS[@]} -gt 0 ] || PROVIDERS=(scaleway outscale exoscale)

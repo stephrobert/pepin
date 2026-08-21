@@ -117,8 +117,19 @@ def main(argv):
     if not units:
         print("aucune unité de collecte : le canari ne mesure rien", file=sys.stderr)
         return 1
+    rows = [unit_row(u) for u in units]
+    # Un relevé DONT TOUT est injoignable ne parle pas du fournisseur : il parle du
+    # réseau du mainteneur (proxy d'entreprise, bac à sable, DNS captif, coupure).
+    # L'écrire consignerait de faux « unreachable » sous une date, et un futur
+    # lecteur y lirait une régression du plan de contrôle qui n'a jamais eu lieu.
+    # Le canari refuse donc d'écrire, et dit où regarder.
+    if all(r["verdict"] == "unreachable" for r in rows):
+        print(f"les {len(rows)} unités sont injoignables : aucune réponse HTTP n'a été "
+              "obtenue.\nCela mesure le réseau d'où le canari est lancé, pas le "
+              "fournisseur — relevé NON écrit.", file=sys.stderr)
+        return 1
     with open(dest, "w") as f:
-        f.write(render(provider, version, [unit_row(u) for u in units]))
+        f.write(render(provider, version, rows))
     return 0
 
 

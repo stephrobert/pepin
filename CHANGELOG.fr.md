@@ -42,6 +42,18 @@ l'une ni l'autre appartient au `git log`.
   mise à null. `TestNoReferenceTenantPlanCarriesMoreThanPepinReads` refuse le reste :
   `variables`, `provider_config`, `prior_state` et `resource_changes` sont précisément
   là où un plan pris sur un tenant réel porterait ses identifiants.
+- **Les scans canari à la qualification de release.** `mise run canary` interroge le
+  **vrai** plan de contrôle de chaque fournisseur cloud et consigne ce qu'il a répondu
+  dans `references/canary/<fournisseur>.yaml`, committé et daté. Il ne détient **aucun
+  identifiant** et n'en a pas besoin : il envoie des valeurs synthétiques que le
+  fournisseur refuse, et ce qui se mesure est le refus — un endpoint qui répond 401/403
+  existe et se résout, un endpoint déplacé répondrait 404, c'est-à-dire la régression
+  qu'un descripteur ne peut pas voir venir. Première mesure, 31 endpoints : tous ont
+  répondu, aucun n'a bougé. Il n'établit **pas** qu'un droit *suffisant* rende `200`, et
+  ne vaut donc pas validation live d'un contrôle. La complétude est une porte de test
+  (`internal/canary`) ; la **fraîcheur** — aucun relevé de plus de 90 jours — est
+  vérifiée par le preflight, qui ne détient jamais de secret. Cf.
+  [Publier une release](RELEASING.fr.md).
 
 ### Modifié
 
@@ -53,6 +65,15 @@ l'une ni l'autre appartient au `git log`.
   `not-evaluated` seulement si le tenant porte réellement une ressource du type visé.
   Sans ce filtre, les mêmes six tenants auraient payé 97 obligations au lieu de 50, la
   moitié par des absences.
+- **Le plan d'un tenant ne garde plus que les attributs qu'un mapping lit vraiment.**
+  Le réducteur coupait au niveau des sections et gardait tous les attributs de toutes
+  les ressources : un `helm_release` embarquait donc son blob de valeurs Helm entier, un
+  `kubectl_manifest` son `yaml_body`, un `kubernetes_secret` son contenu — rien de tout
+  cela n'est lu par une règle commune. La réduction est désormais une liste blanche
+  dérivée des descripteurs, descendue jusqu'au champ, et
+  `TestNoReferenceTenantPlanCarriesAnAttributeNobodyReads` refuse le reste. **Aucun
+  verdict ne bouge** : `internal/tfmap` n'a jamais projeté que les champs mappés. Le
+  corpus passe de 54 Kio à 25 Kio.
 
 ## [0.3.0] - 2026-08-21
 

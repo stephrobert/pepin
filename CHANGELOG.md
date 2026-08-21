@@ -40,6 +40,18 @@ belongs in `git log`.
   `provider_config`, `prior_state` and `resource_changes` are exactly where a plan
   taken on a real tenant would carry its credentials.
 
+- **Canary scans at release qualification.** `mise run canary` queries the **real**
+  control plane of each cloud provider and records what it answered in
+  `references/canary/<provider>.yaml`, committed and dated. It holds **no
+  credential** and needs none: it sends synthetic values the provider refuses, and
+  what it measures is the refusal — an endpoint answering 401/403 exists and
+  resolves, a moved one would answer 404, the regression a descriptor cannot see
+  coming. First measurement, 31 endpoints: all answered, none moved. It does **not**
+  establish that a *sufficient* right returns `200`, so it does not count as live
+  validation of a control. Completeness is a test gate (`internal/canary`);
+  **freshness** — no record older than 90 days — is checked by the preflight, which
+  never holds a secret. See [Releasing](RELEASING.md).
+
 ### Changed
 
 - **The veracity debt drops from 445 to 395 verdicts left to prove**, and fully proven
@@ -50,6 +62,14 @@ belongs in `git log`.
   the tenant actually carries a resource of the targeted type. Without that filter the
   same six tenants would have paid 97 obligations instead of 50, half of them with
   absences.
+- **A tenant plan now keeps only the attributes a mapping actually reads.** The
+  reducer cut at the section level and kept every attribute of every resource, so a
+  `helm_release` carried its whole Helm values blob, a `kubectl_manifest` its
+  `yaml_body`, a `kubernetes_secret` its contents — none of which any common rule
+  reads. Reduction is now an allowlist derived from the descriptors, down to the
+  field, and `TestNoReferenceTenantPlanCarriesAnAttributeNobodyReads` refuses the
+  rest. **No verdict moves**: `internal/tfmap` only ever projected the mapped fields.
+  The corpus drops from 54 KiB to 25 KiB.
 
 ## [0.3.0] - 2026-08-21
 
