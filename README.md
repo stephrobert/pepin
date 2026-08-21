@@ -131,6 +131,8 @@ control is the one that governs.
   [Configuring controls](docs/guides/control-configuration.md) — the policy file, and what a
   relaxation costs ·
   [Evidence bundles](docs/guides/evidence-bundles.md) ·
+  [Tracing real API calls](docs/guides/tracing-api-calls.md) — what a recording proves, and
+  what it does not ·
   [GitHub Actions](docs/guides/github-actions.md) · [GitLab CI](docs/guides/gitlab-ci.md).
 - Contributing: [Adding a control](docs/contributing/adding-a-control.md) ·
   [Adding a provider](docs/contributing/adding-a-provider.md) ·

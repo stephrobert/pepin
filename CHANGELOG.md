@@ -23,6 +23,26 @@ belongs in `git log`.
 
 ### Added
 
+- **A recorded collection session, and the gate that replays it.** A provider
+  descriptor declares endpoints; nothing proved the collector *emits* them, which is
+  the exact shape of the inline-EIM incident (right rule, data that never arrived, no
+  Rego test able to see it). `mise run trace` now records a real `--live` collection
+  through an intercepting proxy, against a **local emulator** and with **no cloud
+  credential**, and the recording is committed to
+  `internal/genprovider/testdata/transcripts/`. Two gates replay it on every build:
+  `TestTheRecordedCollectionStillHappens` (fewer calls than the recording saw means a
+  datum stopped arriving; more means an endpoint declared but never measured) and
+  `TestEveryDeclaredEndpointIsObservedOrDeclaredUnobserved` (the `non_observes` ledger
+  is exact in both directions). The replay serves the **recorded** responses, never
+  responses derived from the spec under test: a harness answering "what the spec
+  expects" would measure its own copy of the spec and stay green on a wrong `items:`.
+  Measured on the first run: no declared endpoint stays silent, except three Outscale
+  child joins and one Exoscale child join whose parent list is not served by the
+  emulator or came back empty — each now written down with its reason. New guide:
+  [Tracing real API calls](docs/guides/tracing-api-calls.md). No line of Pépin
+  changed, so no collection endpoint became overridable and no exfiltration surface
+  was created.
+
 - **A veracity contract, and a debt counter rather than a green matrix.** For each
   control × provider × source path, `internal/veracity` derives the verdicts that
   path can actually reach — three where it can conclude, one where it cannot lift

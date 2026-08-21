@@ -64,6 +64,19 @@ distinguer « le compte de scan ne voit pas cette surface » (à corriger sur la
 compte) de « le service n'a pas répondu » (à réessayer). `detail` porte la réponse du
 fournisseur telle quelle, non traduite : c'est une donnée, pas de la prose de Pépin.
 
+**Jusqu'où chaque classe est mesurée.** La *correspondance* l'est contre de vraies sockets :
+`internal/collect/status_test.go` pilote un serveur qui refuse vraiment, expire vraiment et
+tronque vraiment une page, et un `403` y ressort bien en `permission_denied`. Une session
+enregistrée contre l'émulateur (`internal/genprovider/testdata/transcripts/`) y ajoute
+`not_found` et `unavailable` observés sur le réseau, y compris à travers l'interface d'erreur du
+SDK AWS sur le chemin du stockage objet. Ce qu'aucun contrôle de ce dépôt n'établit, c'est
+quelle classe un **fournisseur donné** déclenchera : si Outscale répond `403` plutôt que `200`
+accompagné d'un corps `Errors`, si un appel Scaleway limité rend `429` plutôt que `503`.
+L'émulateur ne peut pas trancher non plus, puisqu'il accepte n'importe quel identifiant et ne
+sait donc jamais refuser. Cela reste dû à un scan réel ; voir
+[Limites connues](../known-limitations.fr.md) et
+[Tracer les appels réels](../guides/tracing-api-calls.fr.md).
+
 Tout contrôle qui lit un type alimenté par une unité incomplète devient `not-evaluated`, avec
 cette unité nommée comme motif, et le scan ne rend pas `0`. Cette décision appartient à
 l'assessment, jamais à une règle : une garde par règle est une garde qu'on oublie d'écrire à la

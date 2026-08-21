@@ -273,6 +273,17 @@ func coverageText(lang string) coverageStrings {
 				"« pass » de `internal/assess`. Elle décrit ce que Pépin **peut conclure**, pas le résultat d'un\n" +
 				"scan donné : un contrôle marqué ✅ peut parfaitement rendre `not-evaluated` sur un inventaire\n" +
 				"qui ne contient aucune ressource du type visé.\n\n" +
+				"**Ce que la colonne « live » est, et ce qu'elle n'est pas.** Elle est DÉRIVÉE des\n" +
+				"descripteurs : elle dit quel type de ressource la spec `collecte` déclare produire, pas ce\n" +
+				"qu'un fournisseur a effectivement répondu. Deux choses sont désormais MESURÉES, et pas\n" +
+				"seulement déclarées : que les endpoints annoncés partent réellement sur le réseau, et que\n" +
+				"les jointures parent/enfant tirent. Cela vient d'un enregistrement d'appels réels, rejoué à\n" +
+				"chaque build (`internal/genprovider/testdata/transcripts/`, cf.\n" +
+				"[Tracer les appels réels](guides/tracing-api-calls.fr.md)). Cet enregistrement a été pris\n" +
+				"contre un ÉMULATEUR LOCAL : il prouve ce que Pépin fait, jamais ce que le fournisseur\n" +
+				"répond. Les noms et types de champs du contrat natif, les bornes réelles de pagination et\n" +
+				"le comportement devant un refus de droits restent NON OBSERVÉS ; ils sont dus à un scan\n" +
+				"réel, que ce dépôt ne fait pas puisqu'il ne détient aucun identifiant cloud.\n\n" +
 				"Les titres de contrôles et les justifications proviennent du référentiel et des contrats de\n" +
 				"fournisseurs, qui sont bilingues : cette page cite la version française, la page anglaise\n" +
 				"cite la version anglaise. Le français reste la langue de référence du contenu normatif.",
@@ -308,6 +319,16 @@ func coverageText(lang string) coverageStrings {
 			"`internal/assess`. It describes what Pépin **can conclude**, not the result of any given scan: a\n" +
 			"control marked ✅ may well return `not-evaluated` on an inventory that contains no resource of the\n" +
 			"type it reads.\n\n" +
+			"**What the \"live\" column is, and what it is not.** It is DERIVED from the descriptors: it\n" +
+			"says which resource type the `collecte` spec declares it produces, not what a provider\n" +
+			"actually answered. Two things are now MEASURED rather than merely declared: that the announced\n" +
+			"endpoints really go out on the wire, and that parent/child joins fire. That comes from a\n" +
+			"recording of real calls, replayed on every build (`internal/genprovider/testdata/transcripts/`,\n" +
+			"see [Tracing real API calls](guides/tracing-api-calls.md)). That recording was taken against a\n" +
+			"LOCAL EMULATOR: it proves what Pépin does, never what the provider answers. The field names and\n" +
+			"types of the native contract, the real pagination bounds and the behaviour on a permission\n" +
+			"refusal remain UNOBSERVED; they are owed to a real scan, which this repository does not run\n" +
+			"because it holds no cloud credentials.\n\n" +
 			"Control titles and justifications come from the reference and from the provider contracts, which\n" +
 			"are bilingual: this page quotes their English version, the French page quotes the French one.\n" +
 			"French remains the reference language of the normative content.",

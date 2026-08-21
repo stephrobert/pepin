@@ -92,6 +92,18 @@ run = "python3 scripts/scsl-drift.py --update"
 description = "Régénère le registre de dette du contrat de véracité (internal/veracity/testdata/debt.txt) après avoir ajouté un contrôle ou un scénario"
 run = "PEPIN_UPDATE_VERACITY=1 go test ./internal/veracity/ -run 'DebtLedgerIsExact' -count=1"
 
+# Tracer les appels RÉELS d'un collecteur (issue #84). Le contrat de véracité
+# prouve la chaîne à partir d'une réponse canned ; celle-ci ne prouve rien du
+# CÂBLAGE de la spec `collecte`, c'est-à-dire quels endpoints partent vraiment
+# sur le réseau.
+# L'enregistrement le mesure, la porte `TestTheRecordedCollectionStillHappens` le
+# rejoue en CI sans émulateur ni compte. Contre un ÉMULATEUR LOCAL uniquement :
+# ce qu'un fournisseur RÉPOND reste dû à un scan réel.
+[tasks.trace]
+description = "Enregistre les appels HTTP réels d'un collecteur contre l'émulateur local feint (aucun identifiant cloud)"
+depends = ["build"]
+run = "scripts/trace-collector.sh ${PROVIDER:-scaleway} ${OUT:-.trace}"
+
 [tasks.frozen-update]
 description = "Régénère les fixtures de surface gelée (cmd/testdata/frozen/) après un changement délibéré ; incrémenter ensuite la constante de version de la surface"
 run = "PEPIN_UPDATE_FROZEN=1 go test ./cmd/ -run 'Frozen|Fixture|VersionBump' -count=1"

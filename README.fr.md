@@ -132,6 +132,8 @@ d'un contrôle qui fait foi.
   [Configurer les contrôles](docs/guides/control-configuration.fr.md) — le fichier de
   politique, et ce qu'un assouplissement fait perdre ·
   [Le bundle de preuve](docs/guides/evidence-bundles.fr.md) ·
+  [Tracer les appels réels](docs/guides/tracing-api-calls.fr.md) : ce qu'un enregistrement
+  prouve, et ce qu'il ne prouve pas ·
   [GitHub Actions](docs/guides/github-actions.fr.md) ·
   [GitLab CI](docs/guides/gitlab-ci.fr.md).
 - Contribution : [Ajouter un contrôle](docs/contributing/adding-a-control.fr.md) ·

@@ -1,0 +1,40 @@
+# Enregistrement d'une session de collecte live. C'est une MESURE, pas une
+# reconstitution.
+#
+# CE QUE CE FICHIER EST. La transcription, telle que `feint proxy` l'a écrite,
+# des échanges HTTP émis par `pepin scan scaleway --live`. Chaque ligne est un
+# appel : verbe, hôte, chemin, requête, statut, en-têtes et corps.
+#
+# CONTRE QUOI. `feint serve` 0.10.0, un ÉMULATEUR LOCAL de Scaleway. Aucun
+# identifiant cloud, aucune API réelle : ce dépôt n'en détient aucun. Un
+# émulateur prouve ce que Pépin FAIT ; il ne prouve pas ce que le fournisseur
+# RÉPOND. Les noms et types de champs du contrat natif, les bornes réelles de
+# pagination, le comportement de limitation de débit et le refus par défaut de
+# droits restent dus à un scan réel, qui n'a pas eu lieu.
+#
+# ASSAINISSEMENT. Relu valeur par valeur avant d'entrer au dépôt (98 valeurs
+# distinctes). Tout ce qu'il porte est frappé par l'émulateur au démarrage :
+# organisation 99999999-…, projet 11111111-…, groupe de sécurité 6d5a1abc-…
+# Aucun identifiant de tenant réel, aucune adresse IP réelle, aucun nom de
+# bucket réel. Les en-têtes portant un secret sont REDACTED par le proxy, dont
+# la rédaction est une LISTE BLANCHE. C'est ce qui lui fait masquer aussi
+# `X-Content-Type-Options`, qu'aucune liste noire n'aurait nommé.
+#
+# COMMENT LE REFAIRE : docs/guides/tracing-api-calls.fr.md, ou `mise run trace`.
+provider: scaleway
+outil: "feint 0.10.0, émulateur local (serve) et proxy enregistreur (proxy)"
+enregistre_le: "2026-08-20"
+hote: api.scaleway.com
+
+# Les variables de chemin telles que la session les a résolues. Le rejeu doit
+# employer les mêmes, sans quoi il compare des chemins qui n'ont jamais existé.
+vars:
+  region: fr-par
+  zone: fr-par-1
+  org: "99999999-9999-4999-8999-999999999999"
+
+# Endpoints DÉCLARÉS par providers/scaleway.yaml que cette session n'a PAS
+# exercés, et pourquoi. La porte échoue dans les deux sens : un endpoint qui
+# disparaît d'ici sans être observé est une régression, un endpoint qui y
+# apparaît sans raison écrite est une couverture qu'on s'accorde.
+non_observes: []

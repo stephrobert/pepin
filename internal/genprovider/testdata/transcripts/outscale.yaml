@@ -1,0 +1,28 @@
+# Enregistrement d'une session de collecte live. C'est une MESURE, pas une
+# reconstitution. Voir scaleway.yaml pour ce que ce format engage, et pour ce
+# qu'un émulateur ne prouve pas.
+provider: outscale
+outil: "feint 0.10.0, émulateur local (serve) et proxy enregistreur (proxy)"
+enregistre_le: "2026-08-20"
+hote: api.eu-west-2.outscale.com
+
+vars:
+  region: eu-west-2
+  host: outscale.com
+
+# Trois jointures d'Outscale n'ont pas pu être exercées : leur liste parente
+# n'est pas servie par l'émulateur (404 « OperationNotEmulated »). Ce n'est pas
+# un défaut de Pépin, et ce n'est pas non plus une preuve. C'est un trou de la
+# mesure, et il se lit ici plutôt que de se deviner à une absence.
+non_observes:
+  - endpoint: /ReadSnapshots
+    raison: >-
+      Enfant de la jointure sur /ReadAccounts, que l'émulateur ne sert pas
+      (404). Le filtrage par compte, qui est la raison d'être de cette jointure,
+      reste donc non mesuré.
+  - endpoint: /ReadPolicyVersion
+    raison: >-
+      Enfant de la jointure sur /ReadPolicies, que l'émulateur ne sert pas (404).
+  - endpoint: /ReadImages
+    raison: >-
+      Enfant de la jointure sur /ReadAccounts, que l'émulateur ne sert pas (404).

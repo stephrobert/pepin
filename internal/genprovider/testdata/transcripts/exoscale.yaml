@@ -1,0 +1,25 @@
+# Enregistrement d'une session de collecte live. C'est une MESURE, pas une
+# reconstitution. Voir scaleway.yaml pour ce que ce format engage, et pour ce
+# qu'un émulateur ne prouve pas.
+provider: exoscale
+outil: "feint 0.10.0, émulateur local (serve) et proxy enregistreur (proxy)"
+enregistre_le: "2026-08-20"
+hote: api-ch-dk-2.exoscale.com
+
+# ch-dk-2 est la zone que l'émulateur publie ; le descripteur, lui, retombe par
+# défaut sur ch-gva-2. La transcription porte donc les chemins de ch-dk-2, et le
+# rejeu doit résoudre les mêmes variables : comparer des chemins d'une autre
+# zone reviendrait à mesurer une session qui n'a jamais eu lieu.
+vars:
+  region: ch-dk-2
+  zone: ch-dk-2
+
+non_observes:
+  - endpoint: /instance/{vm.id}
+    raison: >-
+      Enfant de la jointure sur /instance. La liste parente a répondu 200 avec
+      zéro instance : il n'y avait rien à joindre, donc rien n'a été appelé.
+      C'est le comportement attendu, et c'est aussi la limite de cette mesure,
+      car un endpoint enfant n'est atteint que si son parent rend au moins un
+      item. Ce chemin n'est donc PAS observé, et la couverture ne doit pas le
+      compter.
