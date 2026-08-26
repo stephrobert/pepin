@@ -41,7 +41,7 @@
 # VERSION qui doit répondre au tag : release.yml refuse de pousser une image
 # dont le `pepin version` n'est pas le tag publié.
 
-FROM gcr.io/distroless/static-debian12:nonroot@sha256:1b7b9f0f0e0a1d2155f531db587cc48ec26aaf97ab64364225f5bf18a054e66a
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 
 # Prédéfinis par buildx par plateforme ; par défaut, un `docker build` nu marche.
 ARG TARGETOS=linux
