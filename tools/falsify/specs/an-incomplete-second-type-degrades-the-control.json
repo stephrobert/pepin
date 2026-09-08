@@ -1,0 +1,12 @@
+{
+  "package": "./internal/assess/",
+  "mutations": [
+    {
+      "label": "seul le type principal dégrade, comme avant",
+      "file": "internal/assess/collection.go",
+      "find": "\t\ttypes := genprovider.ControlTypes(code)",
+      "replace": "\t\ttypes := genprovider.ControlTypes(code)[:1]",
+      "test": "TestAnIncompleteSecondTypeDegradesTheControl"
+    }
+  ]
+}
