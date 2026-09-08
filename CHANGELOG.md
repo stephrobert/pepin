@@ -70,6 +70,30 @@ belongs in `git log`.
 
 ### Changed
 
+- **Sovereignty is now measured on the resources that host data, and only those.** The
+  EU-location control asserted compliance from a *neighbour*: one resource carrying a
+  region opened a `pass` for every other, including types the rule never examines — an
+  `iam_user` in `fr-par` certified a VM whose own region had never been collected. A
+  region now counts as observed only when every resource of that type carries one.
+  **Verdict change on an unchanged tenant**: a tenant holding no located resource (only
+  networks, subnets, peerings) moves from `pass` to `not-evaluated`, and one whose
+  located resources are partly unlocated does too.
+- **A broken join no longer reads as a deviation.** Deciding data is declared per
+  resource type, so a control that correlates two types degrades when the *link* is
+  missing rather than concluding without it. `volume_id` uncollected on snapshots made
+  every volume look unbacked — a mass false positive, `high` severity, caused by a
+  collection gap. **Verdict change on an unchanged tenant**: those become
+  `not-evaluated` naming the missing field. A volume genuinely without a snapshot, and
+  a tenant with no snapshot at all, still fail.
+- **A deviation inferred from an absence nobody sought is withdrawn.** Some rules
+  conclude from an absence and are right to — on Scaleway a nil `ExpiresAt` *is* "no
+  expiry". But an unmapped field is absent too, and the two were indistinguishable, so
+  `iam_accesskey_expiration_set` raised a `critical` either way. The assessment now
+  reads provenance, which records what was **sought**, and withdraws the deviation when
+  the field was never asked for ([ADR-0017](docs/adr/0017-provenance-atteste-une-recherche.md)).
+  **Verdict change on an unchanged tenant**, one way only: an assertion is withdrawn,
+  never added. An inventory carrying no provenance — a third-party export — is
+  untouched.
 - **The veracity debt drops from 445 to 395 verdicts left to prove**, and fully proven
   paths go from 5 to 23 out of 178. The reference tenants and the hand-written
   scenarios feed **one** ledger: two coverage figures would diverge, and the one that

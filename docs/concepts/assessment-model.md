@@ -322,6 +322,24 @@ Not a deviation, and not a compliance either. It is a documented absence of subj
 Any of: the contract does not confirm the data is collected; no resource of the target type is
 in scope; or the deciding attribute was not collected. The result always says which.
 
+Two further cases produce it — not for want of reaching a conclusion, but because the
+conclusion reached rested on nothing:
+
+- **The correlation is broken.** A control that relates two types loses its conclusion when
+  the link was not collected. `blockstorage_volume_snapshots_exist` matches volumes to their
+  snapshots through `volume_id`: without that field no snapshot can be attributed, and *every*
+  volume would look unbacked. The deviation is then not observed, it is produced by the gap.
+- **The absence is not attested.** Some rules conclude from an absence, and rightly so: on
+  Scaleway, `ExpiresAt` is a pointer, and a nil pointer *is* how the API says "no expiry". But
+  a field never asked of the collector is absent too. [Provenance](../adr/0007-provenance-index-parallele.md)
+  separates the two — it indexes what was **sought**, even when not exposed — and a deviation
+  inferred from an absence nobody sought becomes `not-evaluated`
+  ([ADR-0017](../adr/0017-provenance-atteste-une-recherche.md)).
+
+Both reclassifications run one way only: they withdraw an assertion, never add one. An
+inventory carrying no provenance — an export received from a third party — is left untouched:
+Pépin did not collect it, so it has nothing to attest about it.
+
 <!-- pepin:gen assessment-ne -->
 ```json
 {

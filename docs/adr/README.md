@@ -88,13 +88,13 @@ Avant d'implémenter, établir si A, B et C ont cessé d'être vraies.
 |---|---|
 | Architecture des règles, providers | [0001](0001-regles-communes-providers-collecteurs.md) |
 | Moteur, findings, rendu, scoring | [0002](0002-moteur-partage-scankit.md) |
-| Modèle de données, inventaire | [0003](0003-inventaire-contrat-gele.md), [0007](0007-provenance-index-parallele.md) |
+| Modèle de données, inventaire | [0003](0003-inventaire-contrat-gele.md), [0007](0007-provenance-index-parallele.md), [0017](0017-provenance-atteste-une-recherche.md) |
 | Référentiel, frameworks normatifs | [0004](0004-index-scsl-gele.md), [0009](0009-configuration-lie-mapping.md) |
 | Codes de sortie, portes de CI | [0005](0005-codes-de-sortie.md), [0008](0008-derogation-nest-pas-conformite.md) |
-| Assessment, verdicts, dégradation | [0006](0006-jamais-un-pass-non-prouve.md), [0014](0014-jamais-fabriquer-une-donnee-absente.md) |
+| Assessment, verdicts, dégradation | [0006](0006-jamais-un-pass-non-prouve.md), [0014](0014-jamais-fabriquer-une-donnee-absente.md), [0015](0015-une-regle-qui-ne-peut-conclure-le-dit.md), [0017](0017-provenance-atteste-une-recherche.md) |
 | Tests, preuve, véracité | [0010](0010-dette-de-veracite-comptee.md) |
 | Langue, documentation | [0011](0011-bilinguisme-francais-normatif.md) |
-| Sécurité de la mesure, identifiants | [0012](0012-aucun-identifiant-en-ci.md) |
+| Sécurité de la mesure, identifiants | [0012](0012-aucun-identifiant-en-ci.md), [0016](0016-chaine-dapprovisionnement-verifiable.md) |
 | Compatibilité des consommateurs | [0013](0013-un-code-de-controle-ne-se-renomme-pas.md) |
 
 Chaque ADR porte aussi un `scope:` en tête, pour que cette identification soit

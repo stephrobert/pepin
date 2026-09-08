@@ -74,6 +74,32 @@ l'une ni l'autre appartient au `git log`.
 
 ### Modifié
 
+- **La souveraineté se mesure désormais sur les ressources qui hébergent des données,
+  et sur elles seules.** Le contrôle de localisation UE concluait depuis une *voisine* :
+  une seule ressource portant une région ouvrait le `pass` à toutes les autres, y
+  compris à des types que la règle n'examine jamais — un `iam_user` en `fr-par`
+  certifiait une VM dont la région n'avait jamais été collectée. Une région ne compte
+  comme observée que si chaque ressource du type la porte. **Verdict déplacé sur un
+  tenant inchangé** : un tenant sans ressource localisée (réseaux, sous-réseaux,
+  peering) passe de `pass` à `not-evaluated`, et un tenant partiellement localisé
+  aussi.
+- **Une jointure rompue ne se lit plus comme un écart.** La donnée décisive se déclare
+  par type de ressource, si bien qu'un contrôle corrélant deux types se dégrade quand
+  le *lien* manque, au lieu de conclure sans lui. `volume_id` non collecté sur les
+  snapshots faisait paraître tous les volumes sans sauvegarde — un faux positif de
+  masse, en `high`, causé par une lacune de collecte. **Verdict déplacé sur un tenant
+  inchangé** : ces écarts deviennent `not-evaluated` en nommant le champ manquant. Un
+  volume réellement sans snapshot, et un tenant sans aucune snapshot, échouent
+  toujours.
+- **Un écart déduit d'une absence que personne n'a cherchée est retiré.** Certaines
+  règles concluent d'une absence, et elles ont raison — chez Scaleway un `ExpiresAt`
+  nul *est* « aucune expiration ». Mais un champ non mappé est absent lui aussi, et les
+  deux étaient indiscernables : `iam_accesskey_expiration_set` levait un `critical`
+  dans les deux cas. L'assessment lit désormais la provenance, qui consigne ce qui a
+  été **cherché**, et retire l'écart quand le champ n'a jamais été demandé
+  ([ADR-0017](docs/adr/0017-provenance-atteste-une-recherche.md)). **Verdict déplacé
+  sur un tenant inchangé**, dans un seul sens : une affirmation est retirée, jamais
+  ajoutée. Un inventaire sans provenance — export d'un tiers — n'est pas touché.
 - **La dette de véracité passe de 445 à 395 verdicts restant à prouver**, et les chemins
   entièrement prouvés de 5 à 23 sur 178. Les tenants de référence et les scénarios
   écrits à la main alimentent **un seul** registre : deux chiffres de couverture

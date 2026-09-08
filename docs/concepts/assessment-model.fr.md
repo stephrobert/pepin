@@ -323,6 +323,26 @@ L'une des trois : le contrat ne confirme pas la collecte de la donnée ; aucune 
 visé n'est dans le périmètre ; ou l'attribut décisif n'a pas été collecté. Le résultat dit
 toujours laquelle.
 
+Deux cas de plus le produisent, non pas faute d'avoir conclu, mais parce que la conclusion
+atteinte n'était adossée à rien :
+
+- **La corrélation est rompue.** Un contrôle qui relie deux types perd sa conclusion quand le
+  lien n'a pas été collecté. `blockstorage_volume_snapshots_exist` rapproche les volumes de
+  leurs snapshots par `volume_id` : sans ce champ, aucune snapshot n'est attribuable, et
+  *tous* les volumes paraîtraient sans sauvegarde. L'écart n'est alors pas observé, il est
+  produit par la lacune.
+- **L'absence n'est pas attestée.** Certaines règles concluent d'une absence, et elles ont
+  raison : chez Scaleway, `ExpiresAt` est un pointeur, et un pointeur nul *est* la façon dont
+  l'API dit « aucune expiration ». Mais un champ jamais demandé au collecteur est absent lui
+  aussi. La [provenance](../adr/0007-provenance-index-parallele.md) sépare les deux — elle
+  indexe ce qui a été **cherché**, même non exposé — et un écart déduit d'une absence que
+  personne n'a cherchée devient `not-evaluated`
+  ([ADR-0017](../adr/0017-provenance-atteste-une-recherche.md)).
+
+Ces deux requalifications ne vont que dans un sens : elles retirent une affirmation, jamais
+elles n'en ajoutent. Un inventaire dépourvu de provenance — un export reçu d'un tiers — n'est
+pas touché : Pépin ne l'a pas collecté, il n'a donc rien à en attester.
+
 <!-- pepin:gen assessment-ne -->
 ```json
 {

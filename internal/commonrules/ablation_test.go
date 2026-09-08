@@ -57,11 +57,16 @@ var ablationExceptions = map[string]string{
 	// dit « aucune expiration ». Ici, l'absence de l'attribut EST l'observation, et
 	// exiger sa présence rendrait le contrôle aveugle au cas qu'il existe pour voir.
 	//
-	// La limite subsiste et elle est réelle : l'absence conflate « pointeur nul
-	// observé » et « attribut jamais collecté ». Les distinguer demande de lire la
-	// PROVENANCE, qui indexe les attributs CHERCHÉS même non exposés (ADR-0007) —
-	// une règle n'y a pas accès aujourd'hui. Suivi en #121.
-	"iam_accesskey_expiration_set\x00expiration_date": "contrat Scaleway : ExpiresAt est un *time.Time, un nil signifie « aucune expiration »",
+	// Cette exception RESTE, mais elle ne consigne plus d'ambiguïté : #121 a tranché.
+	// La limite était réelle — au niveau de la RÈGLE, l'absence conflate « pointeur nul
+	// observé » et « attribut jamais collecté » —, et elle reste vraie ici, parce que
+	// cette porte mesure la règle seule. Ce qui a changé est un cran plus haut :
+	// l'assessment lit désormais la PROVENANCE, qui indexe les attributs CHERCHÉS même
+	// non exposés (ADR-0007), et requalifie en `not-evaluated` un écart déduit d'une
+	// absence que personne n'a cherchée (ADR-0017, WithAttestedAbsence). La règle
+	// continue donc de se déclencher, et c'est l'assessment qui sait s'il faut la
+	// croire.
+	"iam_accesskey_expiration_set\x00expiration_date": "contrat Scaleway : ExpiresAt est un *time.Time, un nil signifie « aucune expiration » ; l'absence non attestée est requalifiée par l'assessment (#121, ADR-0017)",
 
 	// Une snapshot sans `volume_id` n'est attribuable à AUCUN volume : le lien est
 	// ce qui la fait compter. Son absence n'est donc pas un repli défavorable mais

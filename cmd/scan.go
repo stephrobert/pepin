@@ -179,6 +179,12 @@ var scanCmd = &cobra.Command{
 		// La provenance des attributs décisifs, en PASSE POSTÉRIEURE : elle enrichit la
 		// preuve (d'où vient la donnée, a-t-elle été observée) et ne touche aucun statut.
 		asmt = assess.WithProvenance(asmt, assess.ProvenanceOf(input), controlTypes())
+		// L'absence ATTESTÉE, en passe postérieure elle aussi (ADR-0017). Elle ne
+		// retire qu'un écart né d'une absence que personne n'a cherchée : un
+		// `critical` déduit d'un champ non mappé n'est pas un écart, c'est une lacune
+		// de collecte. Elle n'en crée jamais, et laisse intact un inventaire sans
+		// provenance.
+		asmt = assess.WithAttestedAbsence(asmt, assess.ProvenanceOf(input))
 		// L'incomplétude de la collecte, en passe postérieure elle aussi, et
 		// STRICTEMENT directionnelle : elle ne produit qu'une transition,
 		// `pass → not-evaluated`, et remplace la raison d'un « non évalué » par la

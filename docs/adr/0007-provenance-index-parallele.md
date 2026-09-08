@@ -55,12 +55,17 @@ l'écart devient *détectable*, ce qui est tout l'objet.
 
 ## Invariants
 
-- La provenance ne modifie jamais un statut.
+- ~~La provenance ne modifie jamais un statut.~~ **RÉVISÉ par l'ADR-0017.** Cet
+  invariant était déjà contredit par le verrou de capacité, qui traite un attribut
+  cherché et non exposé comme une observation. L'ADR-0017 le remplace par : *la
+  provenance ne modifie jamais un statut depuis une RÈGLE ; seul l'assessment la
+  lit, pour distinguer une absence attestée d'une absence jamais cherchée.* Le
+  reste du présent ADR est inchangé.
 - Une source `api` nomme un appel réellement servi.
 - Une origine absente n'est jamais fabriquée.
 
-*Gardes : `TestProvenanceNeverMovesAVerdict`,
-`TestProvenanceNamesTheCallThatActuallyHappened`.*
+*Gardes : `TestProvenanceNeverMovesAVerdict` (passe d'annotation seule, cf.
+ADR-0017), `TestProvenanceNamesTheCallThatActuallyHappened`.*
 
 ## Validation
 
