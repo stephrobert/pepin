@@ -81,6 +81,7 @@ The table below is rendered from that very map — not transcribed from it:
 |---|---|---|
 | `blockstorage_snapshot_not_public` | `blockstorage_snapshot` | `global_permission` |
 | `blockstorage_volume_encryption` | `blockstorage_volume` | `encrypted` |
+| `blockstorage_volume_snapshots_exist` | `blockstorage_snapshot` | `volume_id` |
 | `blockstorage_volume_snapshots_exist` | `blockstorage_volume` | `state` |
 | `compute_image_not_public` | `compute_image` | `public` |
 | `compute_instance_deletion_protection` | `compute_instance` | `deletion_protection` |
@@ -378,8 +379,9 @@ reasons observed:
 <!-- pepin:gen not-evaluated-reasons -->
 | Reason | Count | Witness control |
 |---|---:|---|
-| attribute "…" not collected on the resources of type "…" (capability guard) | 5 | `compute_instance_has_security_group` |
+| attribute "…" not collected on the resources of type "…" (capability guard) | 4 | `compute_instance_has_security_group` |
 | collection of the required data is not confirmed for this provider (contract not "…") | 1 | `network_documented` |
+| deciding attributes not collected: "…" on the resources of type "…", "…" on the resources of type "…", "…" on the resources of type "…" (capability guard) | 1 | `governance_resource_region_in_eu` |
 | no resource of type "…" in the assessed inventory | 3 | `iam_accesskey_expiration_set` |
 <!-- /pepin:gen not-evaluated-reasons -->
 

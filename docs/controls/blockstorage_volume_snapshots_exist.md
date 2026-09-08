@@ -15,7 +15,7 @@
 | Severity | `high` |
 | SCSL requirement (frozen index) | `CLD-STO-3` |
 | Resource type read | `blockstorage_volume` |
-| Deciding attribute | `state` |
+| Deciding attribute | `volume_id` on `blockstorage_snapshot`, `state` on `blockstorage_volume` |
 | State | active |
 | Declared for | `exoscale`, `outscale` |
 | Remediation proofs | 1 / 2 |
@@ -76,7 +76,7 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 ## How to investigate
 
 - Normalized resource type the rule reads: `blockstorage_volume`
-- Attribute the decision depends on: `state`
+- Attribute the decision depends on: `state` / `volume_id`
 - Without that attribute on a resource of the targeted type, the scan returns `not-evaluated` rather than `pass` (`internal/assess`, `requiredAttr` table).
 - What each source projects is readable in the descriptor: [`providers/exoscale.yaml`](../../providers/exoscale.yaml) · [`providers/outscale.yaml`](../../providers/outscale.yaml)
 - The rule that emits this code lives in [`internal/commonrules/rules/`](../../internal/commonrules/rules): it is **common** to every provider, only the source changes.

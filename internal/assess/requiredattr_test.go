@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stephrobert/pepin/internal/genprovider"
 )
 
 // TestRequiredAttrGuardsExist : le contrat annoncé au-dessus de requiredAttr était jusqu'ici
@@ -33,7 +35,13 @@ func TestRequiredAttrGuardsExist(t *testing.T) {
 	}
 	all := corpus.String()
 
-	for code, attrs := range requiredAttr {
+	for code, parType := range requiredAttr {
+		// La déclaration est par type ; la garde porte sur les attributs, tous types
+		// confondus — c'est la règle qui les lit, quel que soit le type qui les porte.
+		var attrs []string
+		for _, liste := range parType {
+			attrs = append(attrs, liste...)
+		}
 		if !strings.Contains(all, `"`+code+`"`) {
 			t.Errorf("requiredAttr référence %q : aucune règle n'émet ce code (entrée périmée)", code)
 			continue
@@ -64,4 +72,41 @@ func TestRequiredAttrGuardsExist(t *testing.T) {
 			t.Errorf("contrôle %q : aucun de ses attributs gatés %v n'est lu par sa règle — le gate ne protège rien", code, attrs)
 		}
 	}
+}
+
+// TestDecidingAttributesDeclareKnownTypes ferme la chaîne de dérivation.
+//
+// `TestControlTypesMatchTheRules` confronte déjà les types déclarés à ceux que le Rego
+// lit. Cette garde-ci ajoute le maillon suivant : un attribut ne peut être déclaré
+// décisif que sur un type que le contrôle lit RÉELLEMENT. Sans elle, une faute de
+// frappe sur un nom de type produirait une exigence qui ne s'applique jamais — un
+// verrou qui a l'air posé et qui ne verrouille rien, ce qui est pire qu'un verrou
+// absent puisqu'on cesse d'y penser.
+//
+// La chaîne complète : Rego → types lus → attributs décisifs par type. Aucun maillon
+// ne se maintient à la main sans être confronté au précédent.
+func TestDecidingAttributesDeclareKnownTypes(t *testing.T) {
+	var verifies int
+	for code, parType := range requiredAttr {
+		lus := map[string]bool{}
+		for _, ty := range genprovider.ControlTypes(code) {
+			lus[ty] = true
+		}
+		for ty := range parType {
+			if ty == "" {
+				continue // le type principal, dérivé du code
+			}
+			verifies++
+			if !lus[ty] {
+				t.Errorf("contrôle %q : attribut décisif déclaré sur le type %q, que ce contrôle ne lit pas.\n"+
+					"  L'exigence ne s'appliquerait jamais : le verrou aurait l'air posé sans rien\n"+
+					"  verrouiller. Déclarer ce type dans extraControlTypes, ou corriger le nom.",
+					code, ty)
+			}
+		}
+	}
+	if verifies == 0 {
+		t.Fatal("aucun type secondaire déclaré : la garde ne mesure rien")
+	}
+	t.Logf("%d type(s) secondaire(s) porteur(s) d'un attribut décisif vérifié(s)", verifies)
 }

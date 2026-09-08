@@ -81,6 +81,7 @@ Le tableau ci-dessous est rendu depuis cette table même, il n'en est pas la cop
 |---|---|---|
 | `blockstorage_snapshot_not_public` | `blockstorage_snapshot` | `global_permission` |
 | `blockstorage_volume_encryption` | `blockstorage_volume` | `encrypted` |
+| `blockstorage_volume_snapshots_exist` | `blockstorage_snapshot` | `volume_id` |
 | `blockstorage_volume_snapshots_exist` | `blockstorage_volume` | `state` |
 | `compute_image_not_public` | `compute_image` | `public` |
 | `compute_instance_deletion_protection` | `compute_instance` | `deletion_protection` |
@@ -379,7 +380,8 @@ voici les motifs distincts observés :
 <!-- pepin:gen not-evaluated-reasons -->
 | Motif | Nombre | Contrôle témoin |
 |---|---:|---|
-| attribut « … » non collecté sur les ressources de type « … » (garde de capacité) | 5 | `compute_instance_has_security_group` |
+| attribut « … » non collecté sur les ressources de type « … » (garde de capacité) | 4 | `compute_instance_has_security_group` |
+| attributs décisifs non collectés : « … » sur les ressources de type « … », « … » sur les ressources de type « … », « … » sur les ressources de type « … » (garde de capacité) | 1 | `governance_resource_region_in_eu` |
 | aucune ressource de type « … » dans l'inventaire évalué | 3 | `iam_accesskey_expiration_set` |
 | collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « … ») | 1 | `network_documented` |
 <!-- /pepin:gen not-evaluated-reasons -->

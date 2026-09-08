@@ -99,10 +99,29 @@ func explainHeader(out interface{ Write([]byte) (int, error) }, ctl referentiel.
 	// Les attributs DÉCISIFS : ceux dont la présence conditionne un « pass ». Sans
 	// eux le scan ne conclut pas — c'est le verrou qui empêche un faux vert quand la
 	// donnée n'a pas été collectée.
-	if attrs := assess.RequiredAttrs()[ctl.Code]; len(attrs) > 0 {
+	// Par TYPE : joindre par « ou » l'union des attributs dirait « state ou volume_id »
+	// là où le contrôle exige les deux, chacun sur son type. Un seul type reste sur
+	// une ligne, sans mention redondante.
+	if parType := assess.DecidingAttrsByType()[ctl.Code]; len(parType) > 0 {
+		types := make([]string, 0, len(parType))
+		for ty := range parType {
+			types = append(types, ty)
+		}
+		sort.Strings(types)
+		clauses := make([]string, 0, len(types))
+		for _, ty := range types {
+			attrs := parType[ty]
+			sort.Strings(attrs)
+			jointure := strings.Join(attrs, tr(" ou ", " or "))
+			if len(types) == 1 {
+				clauses = append(clauses, jointure)
+				continue
+			}
+			clauses = append(clauses, fmt.Sprintf(tr("%s sur %s", "%s on %s"), jointure, ty))
+		}
 		_, _ = fmt.Fprintf(out, "  %s %s\n",
 			muted.Render(tr("attributs décisifs :", "deciding attributes:")),
-			strings.Join(attrs, tr(" ou ", " or ")))
+			strings.Join(clauses, tr(", et ", ", and ")))
 	} else {
 		_, _ = fmt.Fprintf(out, "  %s %s\n",
 			muted.Render(tr("attributs décisifs :", "deciding attributes:")),
