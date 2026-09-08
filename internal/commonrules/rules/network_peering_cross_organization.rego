@@ -17,6 +17,7 @@ deny contains f if {
 	src != ""
 	acc != ""
 	src != acc
+	_peering_state_known(p)
 	not _peering_inactive(p)
 	f := {
 		"code": "network_peering_cross_organization",
@@ -34,4 +35,9 @@ deny contains f if {
 }
 
 # Un appairage non actif (rejeté/expiré/supprimé) ne crée pas de flux.
-_peering_inactive(p) if object.get(p.attributes, "state", "active") in {"rejected", "failed", "expired", "deleted", "pending-acceptance"}
+# `state` ABSENT ne vaut pas « actif » : un attribut non collecté et un attribut
+# collecté à une valeur ne se confondent pas (ADR-0003, ADR-0014). Sans état
+# observé, l'appairage n'est ni actif ni inactif — la règle ne conclut pas.
+_peering_state_known(p) if object.get(p.attributes, "state", "") != ""
+
+_peering_inactive(p) if object.get(p.attributes, "state", "") in {"rejected", "failed", "expired", "deleted", "pending-acceptance"}

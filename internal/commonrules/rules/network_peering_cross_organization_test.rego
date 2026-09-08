@@ -29,3 +29,11 @@ test_peering_unknown_accounts_ok if {
 test_peering_pending_ok if {
 	count({f | some f in deny; f.code == "network_peering_cross_organization"}) == 0 with input as _peer({"peering_id": "pcx-2", "source_account": "111", "accepter_account": "222", "state": "pending-acceptance"})
 }
+
+# ✓ état NON collecté → pas de finding. Un attribut absent ne vaut pas « actif » :
+# « non collecté » et « collecté à une valeur » ne se confondent pas (ADR-0003,
+# ADR-0014). Avant ce test, `state` absent était défaussé sur "active" et
+# contribuait donc à un écart déduit d'une donnée que personne n'avait observée.
+test_peering_state_not_collected_does_not_deny if {
+	count({f | some f in deny; f.code == "network_peering_cross_organization"}) == 0 with input as _peer({"peering_id": "pcx-1", "source_account": "111", "accepter_account": "222"})
+}

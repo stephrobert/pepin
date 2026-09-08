@@ -101,6 +101,10 @@ deny contains f if {
 		"labels": {
 			"provider": p,
 			"category": "compliance",
+			# La règle CONSTATE qu'elle ne sait pas ; l'assessment en fait un
+			# `not-evaluated`. Se taire aurait valu « conforme » — les tables de
+			# classification sont des listes blanches (ADR-0015).
+			"inconclusive": "true",
 			"message_en": sprintf("Resource \"%s\": region \"%s\" is not catalogued for provider \"%s\" — the location cannot be verified, EU compliance is neither established nor ruled out.", [name, reg, p]),
 			"remediation_en": "Check the real location of this region with the provider, then add it to the classification tables (lib.rego); migrate the resource if it sits outside the EU.",
 		},

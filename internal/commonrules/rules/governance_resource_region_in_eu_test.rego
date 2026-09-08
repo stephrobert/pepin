@@ -40,3 +40,20 @@ test_unknown_region_denied_medium if {
 test_empty_region_skipped if {
 	count([f | some f in deny; f.code == "governance_resource_region_in_eu"]) == 0 with input as {"resources": [{"provider": "scaleway", "type": "compute_instance", "id": "i-5", "name": "vm-y", "region": "", "attributes": {}}]}
 }
+
+# ✓ région renseignée mais NON cataloguée → la règle constate son incapacité à
+# conclure et le DIT (ADR-0015). Elle continue d'émettre — se taire vaudrait
+# « conforme », les tables de classification étant des listes blanches — mais
+# l'assessment en fera un `not-evaluated`, jamais un écart.
+test_unknown_region_is_marked_inconclusive if {
+	some f in deny with input as {"resources": [{
+		"provider": "scaleway",
+		"type": "compute_instance",
+		"id": "vm-1",
+		"name": "vm-1",
+		"region": "zz-nowhere-1",
+		"attributes": {},
+	}]}
+	f.code == "governance_resource_region_in_eu"
+	f.labels.inconclusive == "true"
+}
