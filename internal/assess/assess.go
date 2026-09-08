@@ -217,12 +217,20 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 	failedControls := map[string]bool{}
 	var results []assessment.Result
 	for _, f := range findings {
+		// Un finding INCONCLUANT n'est pas un écart : la règle a vu la donnée et n'a
+		// pas pu trancher. Il devient `not-evaluated`, avec sa raison (ADR-0015).
+		// `failedControls` reste marqué : la ligne par sujet est déjà émise, la
+		// branche pass/not-evaluated ne doit pas en ajouter une seconde.
+		status := assessment.Fail
+		if IsInconclusive(f) {
+			status = assessment.NotEvaluated
+		}
 		failedControls[f.Code] = true
 		c := controls[f.Code]
 		results = append(results, assessment.Result{
 			Control:     f.Code,
 			Title:       first(c.TitreIn(i18n.Current()), f.Title),
-			Status:      assessment.Fail,
+			Status:      status,
 			Severity:    first(f.Severity, c.Severite),
 			Subject:     f.Subject,
 			Evidence:    assessment.Evidence{Observed: stripSubject(f.Message), Source: run.Source},

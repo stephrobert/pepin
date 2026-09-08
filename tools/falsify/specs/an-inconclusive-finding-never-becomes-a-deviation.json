@@ -1,0 +1,19 @@
+{
+  "package": "./internal/assess/",
+  "mutations": [
+    {
+      "label": "l'assessment ignore le marqueur d'incertitude et rend un écart",
+      "file": "internal/assess/assess.go",
+      "find": "\t\tif IsInconclusive(f) {\n\t\t\tstatus = assessment.NotEvaluated\n\t\t}",
+      "replace": "\t\tif false && IsInconclusive(f) {\n\t\t\tstatus = assessment.NotEvaluated\n\t\t}",
+      "test": "TestAnInconclusiveFindingIsNotEvaluated"
+    },
+    {
+      "label": "le constat d'incertitude repasse dans les décomptes de sévérité",
+      "file": "internal/assess/inconclusive.go",
+      "find": "\t\tif IsInconclusive(f) {\n\t\t\tinconclusive = append(inconclusive, f)\n\t\t\tcontinue\n\t\t}",
+      "replace": "\t\tif false && IsInconclusive(f) {\n\t\t\tinconclusive = append(inconclusive, f)\n\t\t\tcontinue\n\t\t}",
+      "test": "TestAnInconclusiveFindingNeverProducesExitOne"
+    }
+  ]
+}

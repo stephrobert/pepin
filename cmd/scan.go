@@ -238,9 +238,15 @@ var scanCmd = &cobra.Command{
 		// Le RAPPORT dit tout : aucun écart ne disparaît d'un format analysable parce
 		// qu'il est exempté. Seule la PORTE (le code de sortie) tient compte des
 		// dérogations, et elle le fait vers un code dédié, jamais vers 0.
-		open := openFindings(findings, exemptedKeys(asmt))
+		// Un constat d'INCERTITUDE n'est pas un écart : la règle a lu la donnée et
+		// n'a pas pu conclure. Il reste visible — il a produit sa ligne
+		// `not-evaluated` dans l'assessment — mais il ne pèse dans aucun décompte de
+		// sévérité, donc il ne peut pas rendre 1 (ADR-0015). Le sortir ICI, et non
+		// à la collecte des findings, garde le rapport complet.
+		deviations, _ := assess.SplitInconclusive(findings)
+		open := openFindings(deviations, exemptedKeys(asmt))
 		enrichFromReferentiel(findings)
-		res := scoring.Summarize(findings)
+		res := scoring.Summarize(deviations)
 		gate := scoring.Summarize(open)
 		opts.SummaryHeadline = verdictHeadline(res, gate, asmt, exReport, asmt.Run.Source, len(degraded), len(cfg.Relaxations))
 

@@ -1,0 +1,93 @@
+name: campaigns
+
+# Les campagnes qui CHERCHENT, par opposition aux portes qui vérifient.
+#
+# Une porte répond « ce commit tient-il ». Une campagne répond « que trouve-t-on
+# si l'on cherche assez longtemps ». Les deux sont nécessaires et n'ont pas le
+# même rythme : mettre une campagne sur le chemin d'une pull request la rend
+# assez lente pour qu'on la contourne, et assez bruyante pour qu'on l'ignore.
+#
+# D'où ce fichier, hebdomadaire et déclenchable à la main. Ce qu'il trouve
+# devient une graine versionnée ou une issue — jamais un échec qu'on referme
+# en relançant.
+on:
+  schedule:
+    # Lundi matin : ce qui est trouvé a la semaine pour être traité.
+    - cron: '15 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      fuzztime:
+        description: "Durée de fuzzing par cible"
+        required: false
+        default: '10m'
+
+concurrency:
+  group: campaigns-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Le fuzzing des parseurs d'entrée non fiable. `CLAUDE.md` §5 exige qu'ils
+  # parsent défensivement et ne paniquent jamais ; c'est ici qu'on le cherche
+  # plutôt que de l'espérer. Une entrée qui fait tomber une cible est écrite par
+  # Go dans testdata/fuzz/ : elle doit être committée, et elle garde alors ce
+  # cas pour toujours.
+  fuzz:
+    name: Les parseurs tiennent-ils une entrée hostile
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Campagne de fuzzing
+        env:
+          FUZZTIME: ${{ github.event.inputs.fuzztime || '10m' }}
+        run: |
+          go test ./internal/tfparse/ -run '^$' -fuzz 'FuzzParsePlan'    -fuzztime="$FUZZTIME"
+          go test ./cmd/            -run '^$' -fuzz 'FuzzInventoryWalk' -fuzztime="$FUZZTIME"
+
+      # Une trouvaille est un fichier écrit par Go. Sans cette étape, elle
+      # disparaît avec le runner et la campagne n'aurait servi à rien.
+      - name: Conserver l'entrée qui a fait tomber une cible
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-corpus
+          path: |
+            internal/tfparse/testdata/fuzz/
+            cmd/testdata/fuzz/
+          if-no-files-found: ignore
+
+  # Rejeu de TOUTES les specs de falsification. Chaque spec casse une garde et
+  # exige que le test qui la nomme rougisse : c'est ce qui distingue un test qui
+  # mesure une propriété d'un test qu'on n'a jamais vu échouer.
+  falsify:
+    name: Les gardes rougissent-elles encore quand on les casse
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Le harnais se prouve sur ses propres erreurs historiques AVANT de juger
+      # quoi que ce soit. Un harnais cassé rendrait un vert qui ne veut rien dire.
+      - name: Le harnais se prouve lui-même
+        run: python3 tools/falsify/falsify.py --selftest
+
+      - name: Rejouer toutes les specs
+        run: python3 tools/falsify/falsify.py --all tools/falsify/specs
