@@ -251,3 +251,20 @@ description = "Détecte la dérive de forme entre les ADR et le dépôt"
 # introuvable, un statut incohérent. Il ne voit pas qu'un ADR est devenu faux.
 # Un rapport vide ne dispense pas de relire.
 run = "python3 tools/adr/drift.py"
+
+[tasks.falsify]
+description = "Rejoue une falsification, ou prouve le harnais sur son propre historique : mise run falsify -- --selftest"
+# Porté de feint (Apache-2.0, même auteur). La procédure était une COUTUME : chaque
+# lot rapportait ses mutations dans un tableau de PR, et rien ne rattrapait celui
+# qui n'y pensait pas. Pire, une mutation qui ne compile pas fait échouer TOUS les
+# tests, ce qui ressemble exactement à la garde qui se prouve — erreur commise deux
+# fois dans la même session avant que ce harnais n'arrive. Il la refuse.
+run = "python3 tools/falsify/falsify.py"
+
+[tasks."falsify:selftest"]
+description = "Le harnais de falsification se prouve sur ses propres erreurs historiques"
+run = "python3 tools/falsify/falsify.py --selftest"
+
+[tasks."falsify:all"]
+description = "Rejoue toutes les specs de falsification versionnées"
+run = "python3 tools/falsify/falsify.py --all tools/falsify/specs"
