@@ -326,12 +326,6 @@ jobs:
             exit 1
           }
 
-      - name: Generate checksums
-        working-directory: dist
-        run: |
-          sha256sum pepin-* > checksums.txt
-          cat checksums.txt
-
       - name: Generate SBOM (Syft, CycloneDX)
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -339,6 +333,16 @@ jobs:
           format: cyclonedx-json
           output-file: dist/sbom.cdx.json
           upload-release-assets: false
+
+      # Le SBOM est produit AVANT les sommes, et il y entre. La signature porte sur
+      # checksums.txt : ce qui n'y figure pas n'est couvert par aucun chemin de
+      # vérification documenté. L'attestation SBOM lie le CONTENU aux binaires, elle
+      # ne dit rien du fichier publié — les deux sont nécessaires (ADR-0016).
+      - name: Generate checksums
+        working-directory: dist
+        run: |
+          sha256sum pepin-* sbom.cdx.json > checksums.txt
+          cat checksums.txt
 
       - name: Attest build provenance
         id: attest
