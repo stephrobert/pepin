@@ -1,0 +1,20 @@
+# Tenant de référence — Exoscale, amorçage minimal.
+provider: exoscale
+source: terraform
+posture: exposed
+title: "EU Data Platform, amorçage : le strict minimum posé avant la plateforme"
+title_en: "EU Data Platform, bootstrap: the bare minimum laid down before the platform"
+upstream:
+  repo: https://github.com/datamindedbe/eu-data-platform
+  commit: 119712adeb198c403da3ac7eaa102a1d60f15325
+  path: infra/exoscale-platform/bootstrap
+  licence: MIT
+  retrieved: "2026-08-21"
+why: |
+  Un tenant délibérément pauvre, et c'est sa valeur : il montre ce que Pépin conclut
+  quand il n'y a presque rien à conclure. Un scanner qui rendrait « conforme » sur ce
+  tenant mentirait ; le contrat de véracité protège justement cet énoncé.
+why_en: |
+  A deliberately sparse tenant, and that is its value: it shows what Pepin concludes
+  when there is next to nothing to conclude. A scanner that answered "compliant" on
+  this tenant would be lying; the veracity contract exists to protect that statement.

@@ -1,0 +1,18 @@
+# Tenant de référence — Outscale, posture DURCIE (aucun écart critical/high).
+provider: outscale
+source: terraform
+posture: hardened
+title: "ZTIAC Net avec NAT : sous-réseaux privés derrière une passerelle, sans service exposé"
+title_en: "ZTIAC Net with NAT: private subnets behind a gateway, with no exposed service"
+upstream:
+  repo: https://github.com/chimere-eu/ztiac
+  commit: 093330c7964da5ae33a812389833036b9cfacbc5
+  path: templates/outscale/vpc-with-nat
+  licence: MIT
+  retrieved: "2026-08-21"
+why: |
+  Le même dépôt, un autre gabarit : un réseau sans machine exposée. Il tient la place
+  du contre-témoin Outscale, et il vaut par ce qu'il NE déclenche pas.
+why_en: |
+  Same repository, another template: a network with no exposed machine. It stands as
+  the Outscale counter-witness, and its value is in what it does NOT raise.

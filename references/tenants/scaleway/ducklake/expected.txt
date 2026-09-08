@@ -1,0 +1,37 @@
+# Verdicts rendus par Pépin sur ce tenant de référence — RÉGÉNÉRÉ.
+#   mise run tenants-update
+#
+# Amont : https://github.com/berndsen-io/ducklake-scaleway
+#   commit 2fa4eb0d2fe961a09176c944e083ee8eade0125b · terraform · MIT
+#
+# Une ligne qui bascule est une DÉCISION : soit le produit s'est amélioré,
+# soit il a régressé sur une configuration que personne n'a écrite pour lui.
+# Aucune régénération sans avoir dit laquelle des deux.
+
+blockstorage_snapshot_not_public not-applicable
+blockstorage_volume_encryption not-applicable
+compute_instance_has_security_group not-evaluated
+compute_instance_no_secrets_in_user_data not-evaluated
+compute_instance_public_ip_with_open_securitygroup not-evaluated
+database_backup_enabled fail
+database_encryption_at_rest_enabled not-evaluated
+database_service_not_open_to_internet fail
+governance_provider_sovereignty pass
+governance_resource_region_in_eu not-evaluated
+governance_resource_required_tags not-evaluated
+iam_accesskey_expiration_set not-evaluated
+iam_no_root_access_key not-evaluated
+iam_policy_no_privilege_escalation not-evaluated
+iam_user_mfa_enabled not-evaluated
+network_documented not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_all_ports not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 not-evaluated
+network_securitygroup_default_deny not-evaluated
+network_securitygroup_unrestricted_egress not-evaluated
+objectstorage_bucket_kms_encryption not-evaluated
+objectstorage_bucket_object_lock_enabled fail
+objectstorage_bucket_public_access pass
+objectstorage_bucket_versioning_enabled not-evaluated

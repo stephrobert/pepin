@@ -1,0 +1,41 @@
+# Verdicts rendus par Pépin sur ce tenant de référence — RÉGÉNÉRÉ.
+#   mise run tenants-update
+#
+# Amont : https://github.com/devops-wien/terraform-exoscale-zone-demo
+#   commit 64c02c180739338db12a4535c10a47fdd9f4166d · . · Apache-2.0
+#
+# Une ligne qui bascule est une DÉCISION : soit le produit s'est amélioré,
+# soit il a régressé sur une configuration que personne n'a écrite pour lui.
+# Aucune régénération sans avoir dit laquelle des deux.
+
+blockstorage_snapshot_not_public not-applicable
+blockstorage_volume_encryption not-evaluated
+blockstorage_volume_snapshots_exist not-evaluated
+compute_instance_has_security_group not-evaluated
+compute_instance_no_secrets_in_user_data not-evaluated
+compute_instance_public_ip_with_open_securitygroup not-evaluated
+governance_provider_sovereignty fail
+governance_resource_region_in_eu pass
+governance_resource_required_tags not-evaluated
+iam_role_key_lifetime_bounded not-evaluated
+iam_role_no_admin_privileges not-evaluated
+iam_role_source_ip_restricted not-evaluated
+iam_user_mfa_enabled not-evaluated
+kubernetes_cluster_audit_logging_enabled not-evaluated
+kubernetes_cluster_auto_upgrade_enabled pass
+kubernetes_cluster_control_plane_highly_available fail
+loadbalancer_http_redirect_to_https not-applicable
+loadbalancer_logging_enabled not-applicable
+loadbalancer_ssl_listeners not-applicable
+network_documented not-evaluated
+network_flow_matrix_documented pass
+network_securitygroup_allow_ingress_from_internet_to_all_ports pass
+network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports pass
+network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports pass
+network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 pass
+network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 pass
+network_securitygroup_unrestricted_egress pass
+objectstorage_bucket_kms_encryption not-applicable
+objectstorage_bucket_object_lock_enabled not-evaluated
+objectstorage_bucket_public_access not-evaluated
+objectstorage_bucket_versioning_enabled not-evaluated
