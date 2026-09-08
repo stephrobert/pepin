@@ -1,0 +1,45 @@
+{
+  "provider": "outscale",
+  "resources": [
+    {
+      "provider": "outscale",
+      "type": "load_balancer",
+      "id": "lb-1",
+      "name": "lb-1",
+      "region": "eu-west-2",
+      "attributes": {
+        "load_balancer_name": "lb-1",
+        "load_balancer_type": "internal",
+        "listeners": [
+          {
+            "load_balancer_protocol": "HTTPS",
+            "load_balancer_port": 443
+          }
+        ],
+        "access_log": {
+          "is_enabled": true,
+          "osu_bucket_name": "logs"
+        },
+        "redirect_to_https": true,
+        "tags": [
+          {
+            "key": "CostCenter",
+            "value": "cc-1"
+          },
+          {
+            "key": "Project",
+            "value": "p"
+          },
+          {
+            "key": "Env",
+            "value": "prod"
+          },
+          {
+            "key": "Owner",
+            "value": "team"
+          }
+        ]
+      }
+    }
+  ]
+}

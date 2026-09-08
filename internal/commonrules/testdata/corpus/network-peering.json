@@ -1,0 +1,31 @@
+{
+  "provider": "outscale",
+  "resources": [
+    {
+      "provider": "outscale",
+      "type": "network_peering",
+      "id": "pcx-1",
+      "name": "pcx-1",
+      "region": "eu-west-2",
+      "attributes": {
+        "peering_id": "pcx-1",
+        "source_account": "111111111111",
+        "accepter_account": "111111111111",
+        "state": "active"
+      }
+    },
+    {
+      "provider": "outscale",
+      "type": "network_peering",
+      "id": "pcx-2",
+      "name": "pcx-2",
+      "region": "eu-west-2",
+      "attributes": {
+        "peering_id": "pcx-2",
+        "source_account": "111111111111",
+        "accepter_account": "222222222222",
+        "state": "expired"
+      }
+    }
+  ]
+}

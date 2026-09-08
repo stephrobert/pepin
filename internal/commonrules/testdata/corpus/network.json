@@ -1,0 +1,45 @@
+{
+  "provider": "outscale",
+  "resources": [
+    {
+      "provider": "outscale",
+      "type": "network",
+      "id": "vpc-1",
+      "name": "vpc-1",
+      "region": "eu-west-2",
+      "attributes": {
+        "net_id": "vpc-1",
+        "tags": [
+          {
+            "key": "Owner",
+            "value": "team"
+          },
+          {
+            "key": "Project",
+            "value": "p"
+          },
+          {
+            "key": "Env",
+            "value": "prod"
+          },
+          {
+            "key": "CostCenter",
+            "value": "cc"
+          }
+        ]
+      }
+    },
+    {
+      "provider": "outscale",
+      "type": "subnet",
+      "id": "sub-1",
+      "name": "sub-1",
+      "region": "eu-west-2",
+      "attributes": {
+        "subnet_id": "sub-1",
+        "net_id": "vpc-1",
+        "map_public_ip_on_launch": false
+      }
+    }
+  ]
+}

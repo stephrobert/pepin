@@ -65,10 +65,31 @@ _has_recent_snapshot(vid) if {
 	some s in resources_of_type("blockstorage_snapshot")
 	object.get(s.attributes, "volume_id", "") == vid
 	_snapshot_usable(s)
+	_snapshot_fresh(s)
+}
+
+# _snapshot_fresh — la date est DANS la fenêtre, ou n'a pas été collectée.
+#
+# Le second cas suit exactement le précédent que `_snapshot_usable` a posé pour
+# l'état : quand le collecteur n'a pas projeté `creation_date`, on ne SAIT pas
+# quand la snapshot a été prise. La traiter comme périmée inventait « trop
+# ancienne » à partir d'une absence, et rendait un volume réellement sauvegardé
+# non conforme (ADR-0014). Trouvé par la porte d'ablation, sur le corpus dédié
+# ajouté pour couvrir ce type — aucune fixture ne l'exerçait auparavant.
+_snapshot_fresh(s) if {
 	date := object.get(s.attributes, "creation_date", "")
 	is_string(date)
 	date != ""
 	_eval_now_ns - time.parse_rfc3339_ns(date) <= snapshot_max_age_ns
+}
+
+_snapshot_fresh(s) if not _snapshot_date_collected(s)
+
+_snapshot_date_collected(s) if {
+	"creation_date" in object.keys(s.attributes)
+	d := object.get(s.attributes, "creation_date", "")
+	is_string(d)
+	d != ""
 }
 
 # _snapshot_usable — l'état de la snapshot est ACCEPTÉ. Deux cas, et le second

@@ -62,6 +62,17 @@ var ablationExceptions = map[string]string{
 	// PROVENANCE, qui indexe les attributs CHERCHÉS même non exposés (ADR-0007) —
 	// une règle n'y a pas accès aujourd'hui. Suivi en #121.
 	"iam_accesskey_expiration_set\x00expiration_date": "contrat Scaleway : ExpiresAt est un *time.Time, un nil signifie « aucune expiration »",
+
+	// Une snapshot sans `volume_id` n'est attribuable à AUCUN volume : le lien est
+	// ce qui la fait compter. Son absence n'est donc pas un repli défavorable mais
+	// une donnée structurellement inexploitable.
+	//
+	// La bonne réponse à long terme n'est pas ici mais au verrou de capacité : si
+	// `volume_id` n'est pas collecté sur les snapshots, AUCUNE ne peut être
+	// attribuée et tous les volumes paraissent non sauvegardés — un faux positif
+	// de masse. Exprimer cela demande un verrou par TYPE au sein d'un contrôle
+	// multi-types, que le contrat de décision ne porte pas encore. Suivi en #133.
+	"blockstorage_volume_snapshots_exist\x00volume_id": "le lien vers le volume est structurel : sans lui la snapshot n'est attribuable à rien",
 }
 
 type finding struct {
@@ -84,10 +95,27 @@ func corpus(t *testing.T) map[string]map[string]any {
 	t.Helper()
 	root := filepath.Join("..", "..")
 	out := map[string]map[string]any{}
+	// Le corpus DÉDIÉ (testdata/corpus) complète les fixtures d'exemple. Il vit ici et
+	// non dans examples/ parce qu'il ne sert qu'à cette porte : le mettre dans
+	// examples/ ferait dériver la documentation générée à chaque ajout, ce qui
+	// dissuaderait d'en ajouter — exactement l'effet inverse de celui recherché.
+	//
+	// Chaque tenant y est CONFORME : l'ablation part d'une base silencieuse, sans quoi
+	// l'écart y serait déjà présent et son apparition ne se verrait pas.
+	groups := [][]string{{filepath.Join("testdata", "corpus", "*.json")}}
 	for _, prov := range []string{"scaleway", "outscale", "exoscale"} {
-		paths, _ := filepath.Glob(filepath.Join(root, "examples", prov, "*.json"))
-		more, _ := filepath.Glob(filepath.Join(root, "references", "tenants", prov, "*", "plan.json"))
-		for _, p := range append(paths, more...) {
+		groups = append(groups, []string{
+			filepath.Join(root, "examples", prov, "*.json"),
+			filepath.Join(root, "references", "tenants", prov, "*", "plan.json"),
+		})
+	}
+	for _, patterns := range groups {
+		var all []string
+		for _, pat := range patterns {
+			m, _ := filepath.Glob(pat)
+			all = append(all, m...)
+		}
+		for _, p := range all {
 			b, err := os.ReadFile(p) //nolint:gosec // chemins du dépôt, énumérés ici
 			if err != nil {
 				continue

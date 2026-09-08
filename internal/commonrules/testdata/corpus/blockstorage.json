@@ -1,0 +1,50 @@
+{
+  "provider": "outscale",
+  "resources": [
+    {
+      "provider": "outscale",
+      "type": "blockstorage_volume",
+      "id": "vol-1",
+      "name": "vol-1",
+      "region": "eu-west-2",
+      "attributes": {
+        "volume_id": "vol-1",
+        "state": "in-use",
+        "encrypted": true,
+        "tags": [
+          {
+            "key": "CostCenter",
+            "value": "cc-1"
+          },
+          {
+            "key": "Project",
+            "value": "p"
+          },
+          {
+            "key": "Env",
+            "value": "prod"
+          },
+          {
+            "key": "Owner",
+            "value": "team"
+          }
+        ]
+      }
+    },
+    {
+      "provider": "outscale",
+      "type": "blockstorage_snapshot",
+      "id": "snap-1",
+      "name": "snap-1",
+      "region": "eu-west-2",
+      "attributes": {
+        "snapshot_id": "snap-1",
+        "volume_id": "vol-1",
+        "state": "completed",
+        "creation_date": "2099-01-01T00:00:00Z",
+        "account_ids": [],
+        "global_permission": false
+      }
+    }
+  ]
+}
