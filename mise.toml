@@ -287,7 +287,7 @@ go test ./cmd/ -run '^$' -fuzz 'FuzzInventoryWalk' -fuzztime="$t"
 
 [tasks.prepush]
 description = "Tout ce sur quoi une PR échouera, qui coûte des secondes et n'exige aucun compte"
-depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftest"]
+depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftest", "falsify:lint"]
 # Ce que c'est, et ce que ce n'est délibérément PAS.
 #
 # Chacune de ces portes est déterministe, hors ligne, et tient en quelques
@@ -300,3 +300,10 @@ depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftes
 # fournisseur. Ces choses vivent en nocturne ou à la qualification de release,
 # précisément pour ne pas rendre ce chemin-ci trop lent pour être suivi.
 run = "echo 'prepush : toutes les portes locales sont vertes'"
+
+[tasks."falsify:lint"]
+description = "Les specs de falsification visent-elles encore du code qui existe"
+# Une spec dont le fragment a bougé ne mesure plus rien, et son silence ressemble
+# à s'y méprendre à une garde qui tient. Le cas s'est présenté dans l'heure qui a
+# suivi l'arrivée du harnais : le code a été réécrit, la spec est restée.
+run = "python3 tools/falsify/falsify.py --lint tools/falsify/specs"

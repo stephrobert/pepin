@@ -54,9 +54,16 @@ Une seule exception à « ce qui a été lu est gardé » : un **agrégat** n'es
 calculé sur une liste tronquée, parce qu'un compte faux est pire qu'un compte
 absent — une règle le compare à un seuil.
 
-**Dette connue** : le verrou raisonne aujourd'hui par *type* et en *any-of*, pas par
-ressource ni en *all-of*, et un contrôle ne déclare qu'un type. Voir #102 et #103 :
-c'est la limite actuelle de cette décision, pas une remise en cause de sa direction.
+**Dette, et ce qu'il en reste.** Le verrou raisonnait par *type* et en *any-of*
+implicite : une seule ressource porteuse de l'attribut ouvrait la porte du `pass` à
+toutes ses voisines. Corrigé (#102) — `attrsByType` se construit désormais par
+INTERSECTION, et la combinaison des attributs est explicite. Le défaut était vivant
+sur la fixture « conforme » du dépôt : quatre contrôles y déclaraient conforme une
+base de données dont la sauvegarde n'avait jamais été observée.
+
+Reste **#103** : un contrôle ne déclare qu'un seul type, donc l'incomplétude d'un
+second type qu'il lit ne le dégrade pas. C'est la limite actuelle de cette décision,
+pas une remise en cause de sa direction.
 
 ## Invariants
 

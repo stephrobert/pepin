@@ -745,18 +745,90 @@ func collected(v any) bool {
 
 func attrsByTypeOf(input any) map[string]map[string]bool {
 	out := map[string]map[string]bool{}
-	add := func(typ string, attrs map[string]any) {
+	// L'INTERSECTION, pas l'union. Un attribut ne compte comme collecté pour un type
+	// que si CHAQUE ressource de ce type le porte.
+	//
+	// L'union laissait une seule ressource porteuse ouvrir la porte du `pass` à
+	// toutes ses voisines : deux VMs, une seule avec `deletion_protection`, et le
+	// contrôle concluait sur la seconde sans avoir rien observé d'elle. Le fuzzing
+	// l'a trouvé de son côté, sur une liste vide voisine d'un nombre.
+	//
+	// Le coût est réel et voulu : un type dont une seule ressource manque l'attribut
+	// décisif ne rend plus `pass`, il rend `not-evaluated`. C'est ce que l'ADR-0006
+	// demande — on ne conclut pas sur ce qu'on n'a pas vu.
+	// La carte se construit en DEUX passes, et la seconde est ce qui la rend juste.
+	//
+	// Passe 1 — quels attributs le collecteur EXPOSE réellement sur ce type. Un
+	// attribut que personne n'expose n'a jamais été collecté : aucune provenance ne
+	// peut en faire une observation.
+	//
+	// Passe 2 — l'INTERSECTION sur les ressources, avec un secours. Un attribut
+	// absent des `attributes` mais présent en PROVENANCE a été cherché et non exposé
+	// par la source (ADR-0007) : c'est une observation — l'opérateur n'a rien
+	// déclaré — et non une lacune. Le secours n'est accordé QUE si la passe 1 a vu
+	// cet attribut exposé au moins une fois.
+	//
+	// Les trois cas que cette combinaison sépare, tous mesurés :
+	//
+	//   user_data       exposé sur 3 VM /5, cherché sur les 5   -> pass (rien à déclarer)
+	//   public_ip       exposé sur AUCUNE, cherché sur les 5    -> not-evaluated
+	//   disable_backup  exposé sur 1 base /2, cherché sur 1     -> not-evaluated
+	//
+	// Sans la passe 1, le deuxième cas devenait un `pass` — un faux vert bâti sur la
+	// seule intention de chercher.
+	type seenAttrs struct {
+		attrs map[string]any
+		prov  map[string]bool
+	}
+	perType := map[string][]seenAttrs{}
+	add := func(typ string, attrs map[string]any, prov map[string]bool) {
 		if typ == "" {
 			return
 		}
-		if out[typ] == nil {
-			out[typ] = map[string]bool{}
-		}
-		for k, v := range attrs {
-			if !collected(v) {
-				continue
+		perType[typ] = append(perType[typ], seenAttrs{attrs: attrs, prov: prov})
+	}
+	finish := func() {
+		for typ, rs := range perType {
+			exposed := map[string]bool{}
+			for _, r := range rs {
+				for k, v := range r.attrs {
+					if collected(v) {
+						exposed[k] = true
+					}
+				}
 			}
-			out[typ][k] = true
+			var inter map[string]bool
+			for i, r := range rs {
+				present := map[string]bool{}
+				for k, v := range r.attrs {
+					if collected(v) {
+						present[k] = true
+					}
+				}
+				for k := range r.prov {
+					if _, in := r.attrs[k]; !in && exposed[k] {
+						present[k] = true
+					}
+				}
+				if i == 0 {
+					inter = present
+					continue
+				}
+				for k := range inter {
+					if !present[k] {
+						delete(inter, k)
+					}
+				}
+			}
+			if inter == nil {
+				inter = map[string]bool{}
+			}
+			if out[typ] == nil {
+				out[typ] = map[string]bool{}
+			}
+			for k := range inter {
+				out[typ][k] = true
+			}
 		}
 	}
 	// La RÉGION est un champ de la ressource, pas un attribut : on l'enregistre sous la clé
@@ -779,7 +851,11 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 	switch rs := m["resources"].(type) {
 	case []model.Resource:
 		for _, r := range rs {
-			add(r.Type, r.Attributes)
+			prov := map[string]bool{}
+			for k := range r.Provenance {
+				prov[k] = true
+			}
+			add(r.Type, r.Attributes, prov)
 			addRegion(r.Region)
 		}
 	case []any:
@@ -787,12 +863,19 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 			if rm, ok := it.(map[string]any); ok {
 				t, _ := rm["type"].(string)
 				attrs, _ := rm["attributes"].(map[string]any)
-				add(t, attrs)
+				prov := map[string]bool{}
+				if pm, ok := rm["provenance"].(map[string]any); ok {
+					for k := range pm {
+						prov[k] = true
+					}
+				}
+				add(t, attrs, prov)
 				reg, _ := rm["region"].(string)
 				addRegion(reg)
 			}
 		}
 	}
+	finish()
 	return out
 }
 

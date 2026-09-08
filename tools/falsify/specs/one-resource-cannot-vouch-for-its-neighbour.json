@@ -1,0 +1,12 @@
+{
+  "package": "./cmd/",
+  "mutations": [
+    {
+      "label": "l'intersection n'intersecte plus : la dernière ressource décide pour toutes",
+      "file": "cmd/scan.go",
+      "find": "\t\t\t\tif i == 0 {\n\t\t\t\t\tinter = present\n\t\t\t\t\tcontinue\n\t\t\t\t}",
+      "replace": "\t\t\t\tif i >= 0 {\n\t\t\t\t\tinter = present\n\t\t\t\t\tcontinue\n\t\t\t\t}",
+      "test": "FuzzInventoryWalk"
+    }
+  ]
+}
