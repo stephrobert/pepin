@@ -142,9 +142,14 @@ func RequiredAttrs() map[string][]string {
 // fournisseur). Leur source est donc intrinsèquement collectée ; les autres contrôles de
 // gouvernance (ex. étiquettes, qui dépendent de la collecte d'attributs par ressource) ne
 // sont PAS présumés vérifiés.
+// `governance_resource_region_in_eu` n'y figure PAS, bien qu'il y ait figuré : il lit
+// la région de chaque ressource du tenant, pas le descripteur. L'y inscrire lui
+// accordait le verrou sans condition, et trois mécanismes se contredisaient alors sur
+// le même contrôle — `requiredAttr` le tenait par « region », `ControlType` rendait ""
+// et ce marqueur le déclarait intrinsèquement vérifié. C'est ce dernier qui gagnait.
+// Il passe désormais par ses types déclarés, comme n'importe quel contrôle mesuré.
 var governanceProviderReaders = map[string]bool{
-	"governance_resource_region_in_eu": true,
-	"governance_provider_sovereignty":  true,
+	"governance_provider_sovereignty": true,
 }
 
 // Verified indique si le contrat du fournisseur CONFIRME que la donnée dont un contrôle a
@@ -161,6 +166,18 @@ func Verified(provider, code string) bool {
 	case genprovider.ControlType(code) != "":
 		return genprovider.TypeEtat(provider, genprovider.ControlType(code)) == "verifie"
 	default:
+		// Contrôle TRANSVERSE : aucun type déduit de son code, mais des types
+		// déclarés — le contrôle de souveraineté, qui mesure la localisation sur les
+		// sept types qui hébergent quelque chose. Le contrat doit confirmer qu'AU
+		// MOINS un de ces types est collecté pour ce fournisseur, sans quoi il n'y a
+		// rien à localiser. Ce que le contrat ne dit pas, en revanche, c'est si la
+		// région est arrivée sur chaque ressource : c'est `attrCollected` qui le
+		// mesure sur l'inventaire, et c'est lui le verrou effectif du « pass ».
+		for _, t := range genprovider.ControlTypes(code) {
+			if genprovider.TypeEtat(provider, t) == "verifie" {
+				return true
+			}
+		}
 		return false
 	}
 }
@@ -197,6 +214,18 @@ func References(c referentiel.Control) []assessment.Reference {
 // resource and are gated by `verified` instead, so they always apply here.
 func applicable(code string, controlType map[string]string, resourceTypes map[string]bool) bool {
 	if strings.HasPrefix(code, "governance_") {
+		// Un contrôle de gouvernance qui DÉCLARE les types qu'il lit s'applique
+		// seulement si l'un d'eux est là. Le contrôle de souveraineté en déclare sept
+		// et n'en juge aucun autre : sans ressource localisée, il n'a rien à dire —
+		// et « rien à dire » ne s'écrit pas « conforme ».
+		if declared := genprovider.ControlTypes(code); len(declared) > 0 {
+			for _, t := range declared {
+				if resourceTypes[t] {
+					return true
+				}
+			}
+			return false
+		}
 		return true
 	}
 	t := controlType[code]
@@ -274,7 +303,7 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			// Otherwise the control could not actually be evaluated (attribute not collected, or
 			// nothing of this type in scope) — NotEvaluated, never a silent Pass.
 			switch {
-			case verified[code] && applicable(code, controlType, resourceTypes) && attrCollected(code, typ, attrsByType):
+			case verified[code] && applicable(code, controlType, resourceTypes) && attrCollected(code, typ, resourceTypes, attrsByType):
 				// A Pass carries WHAT was checked (basis of the assertion), not just a status.
 				res.Status = assessment.Pass
 				observed := i18n.T(
@@ -291,6 +320,18 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 					observed = i18n.T(
 						"conforme selon les faits de souveraineté déclarés au descripteur du fournisseur (attestation, non mesuré sur le tenant)",
 						"compliant according to the sovereignty facts declared in the provider descriptor (an attestation, not measured on the tenant)")
+				} else if scope := typesInScope(code, typ, resourceTypes); len(scope) > 0 {
+					// Contrôle transverse MESURÉ sur le tenant : la preuve nomme les types
+					// sur lesquels la donnée a effectivement été observée. « Contrat
+					// vérifié » ne disait rien de ce qui avait été regardé, et c'est
+					// précisément la phrase qui accompagnait le faux vert de la
+					// souveraineté — un bucket sans région, déclaré conforme.
+					sorted := append([]string(nil), scope...)
+					sort.Strings(sorted)
+					observed = fmt.Sprintf(i18n.T(
+						"aucune non-conformité détectée sur les ressources de type « %s », dont la donnée décisive a été observée sur chacune",
+						"no deviation detected on the resources of type \"%s\", whose deciding data was observed on every one of them"),
+						strings.Join(sorted, " / "))
 				}
 				res.Evidence = assessment.Evidence{Observed: observed, Source: run.Source}
 			default:
@@ -323,17 +364,58 @@ var requireAll = map[string]bool{
 	"network_peering_cross_organization": true,
 }
 
+// typesInScope rend les types sur lesquels ce contrôle JUGE réellement dans cet
+// inventaire — ceux qu'il lit et qui sont présents.
+//
+// Pour un contrôle ordinaire, c'est le type déduit de son code, et cette fonction ne
+// change rien. Elle existe pour le contrôle TRANSVERSE : `ControlType` rend "" pour
+// la gouvernance, et le contrôle de souveraineté lit pourtant sept types. Sans elle,
+// sa donnée décisive était cherchée sous une clé vide alimentée par n'importe quelle
+// ressource — un `iam_user` localisé certifiait une VM qui ne l'était pas.
+func typesInScope(code, typ string, resourceTypes map[string]bool) []string {
+	if typ != "" {
+		return []string{typ}
+	}
+	var out []string
+	for _, t := range genprovider.ControlTypes(code) {
+		if resourceTypes[t] {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
 // attrCollected dit si la donnée qui DÉCIDE a été collectée pour ce contrôle.
 //
 // `attrsByType` est construit par INTERSECTION sur les ressources d'un type
 // (cf. attrsByTypeOf) : un attribut n'y figure que si CHAQUE ressource le porte.
 // C'est ce qui empêche une ressource voisine d'ouvrir la porte du `pass` à une
 // ressource dont on n'a rien observé.
-func attrCollected(code, typ string, attrsByType map[string]map[string]bool) bool {
+//
+// Un contrôle transverse doit l'avoir sur CHACUN de ses types en scope : la
+// souveraineté ne se conclut pas des VMs vers les buckets. Et un scope VIDE ne
+// conclut rien — il n'y a alors aucune ressource à localiser, ce que
+// `notEvaluatedReason` dit avec ses mots.
+func attrCollected(code, typ string, resourceTypes map[string]bool, attrsByType map[string]map[string]bool) bool {
 	attrs := requiredAttr[code]
 	if len(attrs) == 0 {
 		return true
 	}
+	scope := typesInScope(code, typ, resourceTypes)
+	if len(scope) == 0 {
+		return false
+	}
+	for _, t := range scope {
+		if !attrsOnType(code, t, attrs, attrsByType) {
+			return false
+		}
+	}
+	return true
+}
+
+// attrsOnType applique la règle de suffisance d'un contrôle à UN type : tous les
+// attributs déclarés (`requireAll`), ou au moins un.
+func attrsOnType(code, typ string, attrs []string, attrsByType map[string]map[string]bool) bool {
 	if requireAll[code] {
 		for _, a := range attrs {
 			if !attrsByType[typ][a] {
@@ -363,10 +445,29 @@ func notEvaluatedReason(code, typ string, verified bool, resourceTypes map[strin
 			"aucune ressource de type « %s » dans l'inventaire évalué",
 			"no resource of type \"%s\" in the assessed inventory"), typ)
 	}
-	if attrs := requiredAttr[code]; len(attrs) > 0 && !attrCollected(code, typ, attrsByType) {
+	scope := typesInScope(code, typ, resourceTypes)
+	// Contrôle transverse dont AUCUN type lu n'est présent : il n'y a rien à juger.
+	// Le dire ainsi vaut mieux que « attribut non collecté », qui laisserait croire à
+	// une collecte défaillante là où l'inventaire ne contient simplement rien de
+	// localisable.
+	if typ == "" && len(scope) == 0 && len(genprovider.ControlTypes(code)) > 0 {
+		return i18n.T(
+			"aucune ressource des types que ce contrôle examine dans l'inventaire évalué",
+			"no resource of the types this control examines in the assessed inventory")
+	}
+	if attrs := requiredAttr[code]; len(attrs) > 0 && !attrCollected(code, typ, resourceTypes, attrsByType) {
 		where := fmt.Sprintf(i18n.T("les ressources de type « %s »", "the resources of type \"%s\""), typ)
-		if typ == "" { // contrôle transverse (gouvernance) : aucun type visé
-			where = i18n.T("les ressources collectées", "the collected resources")
+		if typ == "" { // contrôle transverse (gouvernance) : plusieurs types lus
+			// Nommer les types FAUTIFS, pas tous ceux en scope : l'opérateur doit
+			// savoir où la donnée manque pour aller la chercher.
+			var missing []string
+			for _, t := range scope {
+				if !attrsOnType(code, t, attrs, attrsByType) {
+					missing = append(missing, t)
+				}
+			}
+			where = fmt.Sprintf(i18n.T("les ressources de type « %s »", "the resources of type \"%s\""),
+				strings.Join(missing, " / "))
 		}
 		return fmt.Sprintf(i18n.T(
 			"attribut « %s » non collecté sur %s (garde de capacité)",

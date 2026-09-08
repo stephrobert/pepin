@@ -14,7 +14,41 @@ import (
 var (
 	reReadsType = regexp.MustCompile(`resources_of_type\("([a-z_]+)"\)`)
 	reEmitsCode = regexp.MustCompile(`"code":\s*"([a-z0-9_]+)"`)
+
+	// Une règle peut aussi filtrer sur un ENSEMBLE nommé de types :
+	//
+	//	_located_types := {"compute_instance", "load_balancer"}
+	//	...
+	//	r.type in _located_types
+	//
+	// C'est par là que `governance_resource_region_in_eu` est passé : il lit sept
+	// types, n'en déclarait aucun, et la porte le trouvait conforme parce qu'elle ne
+	// cherchait que des `resources_of_type` littéraux.
+	reTypeSet    = regexp.MustCompile(`(?s)(_[a-z_]+)\s*:=\s*\{([^}]*)\}`)
+	reInTypeSet  = regexp.MustCompile(`\.type\s+in\s+(_[a-z_]+)`)
+	reSetMembers = regexp.MustCompile(`"([a-z_]+)"`)
 )
+
+// typesReadViaSets rend les types qu'une règle lit à travers un ensemble nommé
+// comparé à `.type`. Seuls les ensembles RÉELLEMENT confrontés à `.type` comptent :
+// une règle qui définit un ensemble de protocoles ou de ports ne déclare pas des
+// types de ressource.
+func typesReadViaSets(text string) map[string]bool {
+	used := map[string]bool{}
+	for _, m := range reInTypeSet.FindAllStringSubmatch(text, -1) {
+		used[m[1]] = true
+	}
+	out := map[string]bool{}
+	for _, m := range reTypeSet.FindAllStringSubmatch(text, -1) {
+		if !used[m[1]] {
+			continue
+		}
+		for _, mm := range reSetMembers.FindAllStringSubmatch(m[2], -1) {
+			out[mm[1]] = true
+		}
+	}
+	return out
+}
 
 // TestControlTypesMatchTheRules confronte la table déclarée à ce que les règles
 // LISENT réellement.
@@ -24,10 +58,16 @@ var (
 // lit. Ici la source de vérité reste le Rego : la table le déclare, ce test le
 // vérifie, et la CI casse dans les deux sens.
 //
-// Ce qu'il ne peut PAS voir : un type lu à travers un helper de lib.rego plutôt que
-// par un `resources_of_type` littéral. Aucune règle ne le fait aujourd'hui ; si
-// l'une venait à le faire, ce test la déclarerait conforme à tort. C'est la limite
-// d'une analyse textuelle, et elle est écrite plutôt que tue.
+// Il dérive DEUX formes : `resources_of_type("t")`, et un ensemble nommé de types
+// confronté à `.type`. La seconde a été ajoutée après coup, parce que la première
+// laissait passer exactement le contrôle qui en avait le plus besoin — celui de la
+// souveraineté, qui lit sept types sans jamais écrire `resources_of_type`.
+//
+// Ce qu'il ne peut PAS voir : un type lu à travers un helper de lib.rego. Aucune
+// règle ne le fait aujourd'hui ; si l'une venait à le faire, ce test la déclarerait
+// conforme à tort. C'est la limite d'une analyse textuelle, et elle est écrite
+// plutôt que tue — la version précédente de cette phrase disait la même chose et
+// s'était trompée sur l'étendue du trou, ce qui est l'argument pour la mesurer.
 func TestControlTypesMatchTheRules(t *testing.T) {
 	dir := filepath.Join("..", "commonrules", "rules")
 	entries, err := os.ReadDir(dir)
@@ -50,6 +90,9 @@ func TestControlTypesMatchTheRules(t *testing.T) {
 		read := map[string]bool{}
 		for _, m := range reReadsType.FindAllStringSubmatch(text, -1) {
 			read[m[1]] = true
+		}
+		for ty := range typesReadViaSets(text) {
+			read[ty] = true
 		}
 		if len(read) == 0 {
 			continue

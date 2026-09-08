@@ -74,8 +74,25 @@ func TestApplicable(t *testing.T) {
 	if applicable("compute_image_not_public", ct, present) {
 		t.Error("compute_image control must NOT be applicable on a compute_instance-only inventory")
 	}
-	if !applicable("governance_provider_sovereignty", ct, present) {
-		t.Error("governance controls always apply (synthetic resource)")
+	// Un contrôle de gouvernance SANS type déclaré s'applique toujours : sa donnée est
+	// le descripteur, toujours là.
+	if !applicable("governance_resource_required_tags", ct, present) {
+		t.Error("un contrôle de gouvernance sans type déclaré s'applique toujours")
+	}
+	// Mais celui qui DÉCLARE ses types ne s'applique que si l'un d'eux est présent.
+	// Le contrôle de souveraineté lit sept types localisés ; sur un inventaire qui
+	// n'en porte aucun, il n'a rien à juger — et « rien à juger » n'est pas « conforme ».
+	if !applicable("governance_resource_region_in_eu", ct, present) {
+		t.Error("le contrôle de souveraineté s'applique dès qu'un type localisé est présent")
+	}
+	if applicable("governance_resource_region_in_eu", ct, map[string]bool{"iam_user": true}) {
+		t.Error("le contrôle de souveraineté ne s'applique PAS sans ressource localisée : " +
+			"une identité n'héberge rien, et la déclarer conforme serait le faux vert corrigé (#110)")
+	}
+	// Le contrôle du descripteur, lui, reste applicable : son type synthétique est
+	// publié à chaque scan.
+	if !applicable("governance_provider_sovereignty", ct, map[string]bool{"governance_provider": true}) {
+		t.Error("le contrôle du descripteur s'applique dès que la ressource synthétique est là")
 	}
 }
 
