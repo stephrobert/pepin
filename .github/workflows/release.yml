@@ -48,6 +48,12 @@ jobs:
       - name: Setup mise (outils + tâches)
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
+          # Épinglée, comme toute autre dépendance de la chaîne (ADR-0016). Sans
+          # `version`, l'action résout vers la DERNIÈRE étiquette — et une étiquette
+          # peut exister avant que ses binaires ne soient publiés : v2026.9.3 a rendu
+          # 404 sur cinq tentatives et cassé toutes les PR. Monter cette version est
+          # un geste délibéré, pas un effet de bord du calendrier de l'amont.
+          version: 2026.9.2
           experimental: true
 
       # Cohérence codes ↔ règles ↔ index SCSL gelé ↔ catalogue : un référentiel
