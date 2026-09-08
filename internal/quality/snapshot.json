@@ -1,0 +1,2495 @@
+{
+  "controls": 57,
+  "paths": 178,
+  "paths_proven": 23,
+  "obligations": 458,
+  "proven": 63,
+  "verdicts": {
+    "fail": {
+      "required": 140,
+      "proven": 10
+    },
+    "not-applicable": {
+      "required": 22,
+      "proven": 11
+    },
+    "not-evaluated": {
+      "required": 156,
+      "proven": 18
+    },
+    "pass": {
+      "required": 140,
+      "proven": 24
+    }
+  },
+  "live_paths": 100,
+  "live_validated": 0,
+  "counterwitnesses": 2,
+  "tenants": 6,
+  "canary": [
+    {
+      "provider": "exoscale",
+      "recorded": "2026-08-21",
+      "authenticated": false,
+      "answered": 9,
+      "moved": 0,
+      "unreachable": 0
+    },
+    {
+      "provider": "outscale",
+      "recorded": "2026-08-21",
+      "authenticated": false,
+      "answered": 17,
+      "moved": 0,
+      "unreachable": 0
+    },
+    {
+      "provider": "scaleway",
+      "recorded": "2026-08-21",
+      "authenticated": false,
+      "answered": 5,
+      "moved": 0,
+      "unreachable": 0
+    }
+  ],
+  "by_control": {
+    "blockstorage_snapshot_not_public": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/eu-data-bootstrap",
+        "exoscale/zone-demo",
+        "scaleway/ducklake",
+        "scaleway/kubic"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/compute_blockstorage_test.rego"
+      ]
+    },
+    "blockstorage_volume_encryption": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/volume-encryption-outscale-terraform.yaml"
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat",
+        "scaleway/ducklake",
+        "scaleway/kubic"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/blockstorage_volume_encryption_test.rego",
+        "internal/commonrules/rules/zz_boolean_as_string_test.rego"
+      ]
+    },
+    "blockstorage_volume_snapshots_exist": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/blockstorage_volume_snapshots_exist_test.rego",
+        "internal/commonrules/rules/compute_blockstorage_test.rego"
+      ]
+    },
+    "compute_image_not_public": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/compute_image_not_public_test.rego"
+      ]
+    },
+    "compute_instance_deletion_protection": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/compute_blockstorage_test.rego",
+        "internal/commonrules/rules/zz_boolean_as_string_test.rego"
+      ]
+    },
+    "compute_instance_has_security_group": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/compute_blockstorage_test.rego"
+      ]
+    },
+    "compute_instance_no_secrets_in_user_data": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/compute_blockstorage_test.rego",
+        "internal/commonrules/rules/compute_instance_no_secrets_confidence_test.rego"
+      ]
+    },
+    "compute_instance_public_ip_with_open_securitygroup": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/compute_instance_public_ip_with_open_securitygroup_test.rego",
+        "internal/commonrules/rules/zz_uncovered_branches_test.rego"
+      ]
+    },
+    "database_backup_enabled": {
+      "paths": [
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail"
+          ]
+        }
+      ],
+      "tenants": [
+        "scaleway/ducklake"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/database_managed_test.rego"
+      ]
+    },
+    "database_encryption_at_rest_enabled": {
+      "paths": [
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "scaleway/ducklake"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/database_managed_test.rego"
+      ]
+    },
+    "database_service_not_open_to_internet": {
+      "paths": [
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail"
+          ]
+        }
+      ],
+      "tenants": [
+        "scaleway/ducklake"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/database_service_not_open_to_internet_test.rego"
+      ]
+    },
+    "governance_provider_sovereignty": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/eu-data-bootstrap",
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat",
+        "scaleway/ducklake",
+        "scaleway/kubic"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/governance_provider_sovereignty_test.rego"
+      ]
+    },
+    "governance_resource_region_in_eu": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/eu-data-bootstrap",
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat",
+        "scaleway/ducklake",
+        "scaleway/kubic"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/governance_resource_region_in_eu_test.rego"
+      ]
+    },
+    "governance_resource_required_tags": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/eu-data-bootstrap",
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat",
+        "scaleway/ducklake",
+        "scaleway/kubic"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/governance_resource_required_tags_test.rego",
+        "internal/commonrules/rules/oks_lbu_governance_test.rego"
+      ]
+    },
+    "iam_accesskey_expiration_set": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_accesskey_expiration_set_test.rego"
+      ]
+    },
+    "iam_account_mfa_enforced": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_account_mfa_enforced_test.rego"
+      ]
+    },
+    "iam_apiaccesspolicy_max_key_expiration": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_apiaccess_test.rego"
+      ]
+    },
+    "iam_apiaccessrule_defined": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_apiaccess_test.rego"
+      ]
+    },
+    "iam_apiaccessrule_no_public_cidr": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_apiaccess_test.rego"
+      ]
+    },
+    "iam_no_root_access_key": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_no_root_access_key_test.rego"
+      ]
+    },
+    "iam_policy_no_administrative_privileges": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_policy_no_administrative_privileges_test.rego",
+        "internal/commonrules/rules/iam_policy_wildcard_resource_notaction_test.rego"
+      ]
+    },
+    "iam_policy_no_notaction_notresource": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_policy_wildcard_resource_notaction_test.rego"
+      ]
+    },
+    "iam_policy_no_privilege_escalation": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_policy_no_privilege_escalation_test.rego"
+      ]
+    },
+    "iam_policy_no_wildcard_resource": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/iam-wildcard-resource-outscale-live.yaml"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_policy_wildcard_resource_notaction_test.rego"
+      ]
+    },
+    "iam_role_key_lifetime_bounded": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_role_key_lifetime_bounded_test.rego"
+      ]
+    },
+    "iam_role_no_admin_privileges": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_role_no_admin_privileges_test.rego"
+      ]
+    },
+    "iam_role_source_ip_restricted": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_role_source_ip_restricted_test.rego"
+      ]
+    },
+    "iam_user_mfa_enabled": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_user_mfa_enabled_test.rego"
+      ]
+    },
+    "k8s_namespace_network_policy_defined": {
+      "paths": [
+        {
+          "provider": "kubernetes",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/k8s_incluster_test.rego"
+      ]
+    },
+    "k8s_namespace_pod_security_enforced": {
+      "paths": [
+        {
+          "provider": "kubernetes",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/k8s_incluster_test.rego"
+      ]
+    },
+    "k8s_rbac_no_cluster_admin_binding": {
+      "paths": [
+        {
+          "provider": "kubernetes",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/k8s_incluster_test.rego"
+      ]
+    },
+    "k8s_secrets_external_manager": {
+      "paths": [
+        {
+          "provider": "kubernetes",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/k8s_incluster_test.rego"
+      ]
+    },
+    "kubernetes_cluster_audit_logging_enabled": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/kubernetes_cluster_audit_logging_enabled_test.rego",
+        "internal/commonrules/rules/zz_boolean_as_string_test.rego"
+      ]
+    },
+    "kubernetes_cluster_auto_upgrade_enabled": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/kubernetes_cluster_resilience_test.rego",
+        "internal/commonrules/rules/zz_boolean_as_string_test.rego"
+      ]
+    },
+    "kubernetes_cluster_control_plane_highly_available": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/kubernetes_cluster_resilience_test.rego"
+      ]
+    },
+    "kubernetes_cluster_deletion_protection": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/kubernetes_cluster_resilience_test.rego"
+      ]
+    },
+    "kubernetes_cluster_not_publicly_accessible": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/oks_lbu_governance_test.rego"
+      ]
+    },
+    "loadbalancer_http_redirect_to_https": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/eu-data-bootstrap",
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/loadbalancer_http_redirect_test.rego"
+      ]
+    },
+    "loadbalancer_logging_enabled": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/eu-data-bootstrap",
+        "exoscale/zone-demo"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/oks_lbu_governance_test.rego"
+      ]
+    },
+    "loadbalancer_ssl_listeners": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/eu-data-bootstrap",
+        "exoscale/zone-demo"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/oks_lbu_governance_test.rego"
+      ]
+    },
+    "network_documented": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_documented_test.rego"
+      ]
+    },
+    "network_flow_matrix_documented": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_flow_matrix_documented_test.rego"
+      ]
+    },
+    "network_peering_cross_organization": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_peering_cross_organization_test.rego"
+      ]
+    },
+    "network_securitygroup_allow_ingress_from_internet_to_all_ports": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_securitygroup_ingress_test.rego"
+      ]
+    },
+    "network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_securitygroup_ingress_test.rego"
+      ]
+    },
+    "network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_securitygroup_ingress_test.rego"
+      ]
+    },
+    "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/ssh-open-scaleway-live.yaml",
+        "internal/veracity/testdata/scenarios/ssh-open-scaleway-terraform.yaml"
+      ],
+      "tenants": [
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_securitygroup_ingress_test.rego",
+        "internal/commonrules/rules/zz_uncovered_branches_test.rego"
+      ]
+    },
+    "network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_securitygroup_ingress_test.rego"
+      ]
+    },
+    "network_securitygroup_default_deny": {
+      "paths": [
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_securitygroup_default_deny_test.rego"
+      ]
+    },
+    "network_securitygroup_default_restrict_traffic": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_securitygroup_default_restrict_traffic_test.rego"
+      ]
+    },
+    "network_securitygroup_unrestricted_egress": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_securitygroup_ingress_test.rego"
+      ]
+    },
+    "network_subnet_no_public_ip_by_default": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        }
+      ],
+      "tenants": [
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/network_subnet_no_public_ip_by_default_test.rego"
+      ]
+    },
+    "objectstorage_bucket_default_encryption": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/objectstorage_bucket_test.rego",
+        "internal/commonrules/rules/zz_boolean_as_string_test.rego"
+      ]
+    },
+    "objectstorage_bucket_kms_encryption": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "exoscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "not-applicable",
+          "required": [
+            "not-applicable"
+          ],
+          "proven": [
+            "not-applicable"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "exoscale/eu-data-bootstrap",
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier",
+        "outscale/ztiac-vpc-nat",
+        "scaleway/ducklake"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/objectstorage_bucket_kms_encryption_test.rego"
+      ]
+    },
+    "objectstorage_bucket_object_lock_enabled": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail"
+          ]
+        }
+      ],
+      "tenants": [
+        "scaleway/ducklake"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/objectstorage_bucket_object_lock_enabled_test.rego",
+        "internal/commonrules/rules/zz_boolean_as_string_test.rego"
+      ]
+    },
+    "objectstorage_bucket_public_access": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "pass"
+          ]
+        }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/bucket-public-access-scaleway-live.yaml"
+      ],
+      "tenants": [
+        "scaleway/ducklake"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/objectstorage_bucket_test.rego",
+        "internal/commonrules/rules/zz_boolean_as_string_test.rego"
+      ]
+    },
+    "objectstorage_bucket_versioning_enabled": {
+      "paths": [
+        {
+          "provider": "exoscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
+        }
+      ],
+      "tenants": [
+        "scaleway/ducklake"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/objectstorage_bucket_test.rego"
+      ]
+    }
+  }
+}

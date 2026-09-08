@@ -205,9 +205,9 @@ What is not yet proven is **counted**, not hidden:
 | Figure | Count |
 |---|---:|
 | Control x provider x source paths on which Pépin concludes | 178 |
-| Paths whose every reachable verdict is proven end to end | 5 |
+| Paths whose every reachable verdict is proven end to end | 23 |
 | Verdicts to prove in total | 458 |
-| Verdicts left to prove | 445 |
+| Verdicts left to prove | 395 |
 <!-- /pepin:gen veracity-debt -->
 
 The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a
@@ -219,6 +219,16 @@ too.
 seven hundred cases. Nobody can *test* seven hundred cases — that is, break each one to check it
 turns red — and a matrix generated from a template would be exactly the false green this
 scanner exists to fight: a test that passes because its cases are hollow measures only itself.
+
+**What the reference tenants add to it, and what they do not.** Part of that debt is now paid
+by real third-party configurations, pinned to a commit and replayed on every build
+([Reference tenants](guides/reference-tenants.md)). They close a gap a fixture cannot: a
+fixture is written by the rule's author, so it proves the rule fires, never that it is right
+about a configuration nobody designed for it. They do **not** close the live one — a Terraform
+plan carries the *planned* state, and what a provider *answers* stays owed to a real
+collection. And a verdict only counts when it is substantive: a `not-evaluated` on a tenant
+that carries no resource of the targeted type states an absence, not a capability guard, so it
+is not counted.
 
 ## Limitations of the tool itself
 

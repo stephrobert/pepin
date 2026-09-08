@@ -28,7 +28,7 @@ const frozenDir = "cmd/testdata/frozen"
 // silencieusement à la page.
 var documentedVerbs = []string{
 	"scan", "verify", "provider", "provider list", "provider validate", "provider new",
-	"scsl", "version",
+	"scsl", "control", "control explain", "version",
 }
 
 // blockID rend l'identifiant de région d'une aide de verbe (« provider list » → « cli-help-provider-list »).

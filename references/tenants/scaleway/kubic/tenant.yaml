@@ -1,0 +1,30 @@
+# Tenant de référence — Scaleway, posture DURCIE.
+#
+# Le contre-témoin : un tenant réel sur lequel Pépin ne doit RIEN relever. C'est ici
+# qu'un faux positif se voit, et nulle part ailleurs — une fixture vulnérable ne peut
+# pas révéler qu'une règle se déclenche à tort sur une configuration courante.
+provider: scaleway
+source: terraform
+posture: hardened
+title: "Kubic : Kapsule, VPC et socle applicatif d'un établissement d'enseignement"
+title_en: "Kubic: Kapsule, VPC and application baseline of a higher-education institution"
+upstream:
+  repo: https://github.com/CentraleSupelec/kubic
+  commit: c326f47a4a9079453242e13e2d1829cc640020f9
+  path: scaleway
+  licence: MIT
+  retrieved: "2026-08-21"
+why: |
+  Une plateforme Kubernetes managée écrite pour être exploitée, pas pour être auditée.
+  Elle ne déclenche aucun écart : c'est précisément ce qu'on lui demande de prouver.
+  Le précédent qui justifie ce tenant est le rejeu de stacks tierces qui a trouvé un
+  faux positif CRITICAL sur la configuration Scaleway la plus courante — aucune
+  fixture maison ne l'aurait révélé, parce qu'aucune fixture maison ne décrit une
+  configuration correcte que son auteur n'a pas conçue.
+why_en: |
+  A managed Kubernetes platform written to be operated, not to be audited. It raises
+  no deviation, which is exactly what it is here to prove. The precedent that
+  justifies this tenant is the replay of third-party stacks that found a CRITICAL
+  false positive on the most common Scaleway configuration — no in-house fixture
+  would have revealed it, because no in-house fixture describes a correct
+  configuration its author did not design.

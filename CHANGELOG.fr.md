@@ -20,6 +20,78 @@ leur utilisateur à expliquer à un auditeur un changement qu'il n'a pas fait,
 et c'est ici que cette explication commence. Un refactor qui ne change ni
 l'une ni l'autre appartient au `git log`.
 
+## [Non publié]
+
+### Ajouté
+
+- **Les tenants de référence : des configurations tierces, rejouées à chaque build.**
+  Une fixture est écrite par l'auteur de la règle : elle prouve que la règle *se
+  déclenche*, jamais qu'elle a *raison* sur une configuration que personne n'a conçue
+  pour elle. Six stacks réelles, publiées, sous licence MIT ou Apache (deux par
+  fournisseur souverain) sont désormais épinglées à un commit sous
+  `references/tenants/`, scannées à travers le binaire à chaque build, et comparées aux
+  verdicts consignés à côté d'elles. Chaque fournisseur porte un tenant **exposé** et
+  son **contre-témoin durci** — le seul endroit où un faux positif se voit. Rien n'est
+  provisionné : `terraform plan` ne crée aucune ressource cloud.
+  `scripts/reference-tenant.sh --all` re-dérive les six plans depuis leurs amonts **à
+  l'octet près**, pour qu'un relecteur puisse vérifier que ce ne sont pas des fichiers
+  que Pépin a fini par s'écrire à lui-même. Cf.
+  [Les tenants de référence](docs/guides/reference-tenants.fr.md).
+- Le plan committé pour un tenant ne porte **que ce que Pépin lit** (`planned_values` et
+  les `source` de modules), toute valeur que Terraform lui-même marque `sensitive` étant
+  mise à null. `TestNoReferenceTenantPlanCarriesMoreThanPepinReads` refuse le reste :
+  `variables`, `provider_config`, `prior_state` et `resource_changes` sont précisément
+  là où un plan pris sur un tenant réel porterait ses identifiants.
+- **Les scans canari à la qualification de release.** `mise run canary` interroge le
+  **vrai** plan de contrôle de chaque fournisseur cloud et consigne ce qu'il a répondu
+  dans `references/canary/<fournisseur>.yaml`, committé et daté. Il ne détient **aucun
+  identifiant** et n'en a pas besoin : il envoie des valeurs synthétiques que le
+  fournisseur refuse, et ce qui se mesure est le refus — un endpoint qui répond 401/403
+  existe et se résout, un endpoint déplacé répondrait 404, c'est-à-dire la régression
+  qu'un descripteur ne peut pas voir venir. Première mesure, 31 endpoints : tous ont
+  répondu, aucun n'a bougé. Il n'établit **pas** qu'un droit *suffisant* rende `200`, et
+  ne vaut donc pas validation live d'un contrôle. La complétude est une porte de test
+  (`internal/canary`) ; la **fraîcheur** — aucun relevé de plus de 90 jours — est
+  vérifiée par le preflight, qui ne détient jamais de secret. Cf.
+  [Publier une release](RELEASING.fr.md).
+
+- **Une carte de qualité de détection générée**,
+  [docs/detection-quality.fr.md](docs/detection-quality.fr.md). Plutôt que d'annoncer
+  « 57 contrôles », elle publie ce qui se vérifie : **63 verdicts prouvés sur 458**,
+  **23 chemins entièrement prouvés sur 178**, et la ventilation par verdict — `fail` 10/140,
+  `pass` 24/140, `not-evaluated` 18/156, `not-applicable` 11/22. Chaque chiffre est dérivé du
+  registre de véracité, des tenants de référence et des relevés de canari ; aucun n'est saisi,
+  et `TestTheMapNeverExceedsTheLedger` refuse que la carte et le registre divergent.
+  **Validé en live : 0 %** — dérivé, pas écrit : seul un relevé authentifié le ferait monter,
+  et un canari ne détient aucun identifiant.
+- **`pepin control explain <code> [--provider p]`** : un nouveau verbe CLI (**surface cli v5**).
+  Pour un contrôle et un fournisseur, il rend la chaîne qui rend son verdict opposable : les
+  appels d'API qui alimentent la décision (la spec `collecte`, jointures comprises, plus les
+  collecteurs Go partagés), les attributs décisifs, les conditions exactes d'un `pass` dans
+  l'ordre où `assess.Build` les évalue, les tests qui l'éprouvent, et la date de la dernière
+  validation live — qui affiche `jamais`, et dit pourquoi. Il lit le **même** instantané
+  committé que la carte : deux calculs divergeraient, et celui qui diverge est celui qu'on lit.
+
+### Modifié
+
+- **La dette de véracité passe de 445 à 395 verdicts restant à prouver**, et les chemins
+  entièrement prouvés de 5 à 23 sur 178. Les tenants de référence et les scénarios
+  écrits à la main alimentent **un seul** registre : deux chiffres de couverture
+  divergeraient, et celui qui diverge est celui qu'on lit. Un verdict de tenant ne
+  compte que s'il est *substantiel* — `fail`, `pass` et `not-applicable` toujours,
+  `not-evaluated` seulement si le tenant porte réellement une ressource du type visé.
+  Sans ce filtre, les mêmes six tenants auraient payé 97 obligations au lieu de 50, la
+  moitié par des absences.
+- **Le plan d'un tenant ne garde plus que les attributs qu'un mapping lit vraiment.**
+  Le réducteur coupait au niveau des sections et gardait tous les attributs de toutes
+  les ressources : un `helm_release` embarquait donc son blob de valeurs Helm entier, un
+  `kubectl_manifest` son `yaml_body`, un `kubernetes_secret` son contenu — rien de tout
+  cela n'est lu par une règle commune. La réduction est désormais une liste blanche
+  dérivée des descripteurs, descendue jusqu'au champ, et
+  `TestNoReferenceTenantPlanCarriesAnAttributeNobodyReads` refuse le reste. **Aucun
+  verdict ne bouge** : `internal/tfmap` n'a jamais projeté que les champs mappés. Le
+  corpus passe de 54 Kio à 25 Kio.
+
 ## [0.3.0] - 2026-08-21
 
 ### Ajouté

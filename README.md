@@ -115,6 +115,10 @@ control is the one that governs.
   `not-applicable`, `not-evaluated` and `exempted` actually assert.
 - [Coverage matrix](docs/coverage.md) — what is measurable, per provider and per source.
   **Generated** from the reference and the provider descriptors, and verified in CI.
+- [Detection quality map](docs/detection-quality.md) — what Pépin can *prove* about its own
+  verdicts, and what it cannot. **Generated** from the veracity ledger, the reference tenants
+  and the canary records; no figure on it is typed in, and the figures are not flattering.
+  `pepin control explain <code>` answers the same question for a single control.
 - [Control catalogue](docs/controls/index.md) — one generated page per control: what it
   concludes, from which source, and how to fix what it finds.
 - [Known limitations](docs/known-limitations.md) — the blind spots, named.
@@ -133,6 +137,8 @@ control is the one that governs.
   [Evidence bundles](docs/guides/evidence-bundles.md) ·
   [Tracing real API calls](docs/guides/tracing-api-calls.md) — what a recording proves, and
   what it does not ·
+  [Reference tenants](docs/guides/reference-tenants.md) — third-party configurations replayed
+  on every build, and why a fixture cannot do their job ·
   [GitHub Actions](docs/guides/github-actions.md) · [GitLab CI](docs/guides/gitlab-ci.md).
 - Contributing: [Adding a control](docs/contributing/adding-a-control.md) ·
   [Adding a provider](docs/contributing/adding-a-provider.md) ·

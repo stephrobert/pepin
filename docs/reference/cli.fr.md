@@ -18,6 +18,8 @@ de drapeaux viennent de la surface gelée ; chaque aide ci-dessous est la sortie
 <!-- pepin:gen cli-verbs -->
 | Commande | Drapeaux |
 |---|---|
+| `pepin control` | _(aucun drapeau propre)_ |
+| `pepin control explain` | `--provider` |
 | `pepin provider` | _(aucun drapeau propre)_ |
 | `pepin provider list` | _(aucun drapeau propre)_ |
 | `pepin provider new` | _(aucun drapeau propre)_ |
@@ -37,7 +39,7 @@ séparément :
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v4** |
+| `cli` | verbes, drapeaux et codes de sortie | **v5** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
@@ -83,6 +85,7 @@ Usage:
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
+  control     Inspecter les contrôles du référentiel commun
   help        Help about any command
   provider    Gérer les providers déclaratifs (lister, valider, créer)
   scan        Évaluer la posture d'un cloud contre les politiques
@@ -326,6 +329,73 @@ Global Flags:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-scsl -->
+
+## `pepin control`
+
+<!-- pepin:gen cli-help-control -->
+```text
+Inspecter les contrôles du référentiel commun
+
+Usage:
+  pepin control [command]
+
+Available Commands:
+  explain     Expliquer d'où vient le verdict d'un contrôle, et ce qui l'éprouve
+
+Flags:
+  -h, --help   help for control
+
+Global Flags:
+      --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
+
+Use "pepin control [command] --help" for more information about a command.
+```
+<!-- /pepin:gen cli-help-control -->
+
+### `pepin control explain`
+
+Pourquoi Pépin a le droit d'affirmer un verdict. Un scanner qui annonce un résultat sans
+pouvoir dire d'où il le tient demande qu'on le croie ; un auditeur ne peut pas opposer une
+affirmation, il oppose une chaîne de preuve. Pour un contrôle — et, avec `--provider`, pour un
+fournisseur —, ce verbe rend cette chaîne : les **appels d'API** qui alimentent la décision
+(la spec `collecte` du descripteur, jointures comprises, plus les collecteurs Go partagés du
+stockage objet, du Kubernetes managé et des politiques inline), les **attributs décisifs**
+dont la présence conditionne un `pass`, les **conditions exactes d'un `pass`** dans l'ordre où
+`assess.Build` les évalue, les **tests** qui l'éprouvent (tests Rego, scénarios de véracité,
+tenants de référence), et la date de la **dernière validation live**.
+
+Cette dernière ligne affiche `jamais`, et elle est dérivée plutôt qu'écrite. Les relevés de
+canari (`references/canary/`) interrogent les vrais plans de contrôle des fournisseurs mais ne
+détiennent **aucun identifiant** : ils attestent qu'un endpoint existe et refuse, jamais qu'un
+droit *suffisant* rende `200` sur un tenant réel. Seul un relevé **authentifié** ferait bouger
+cette date, et il n'en existe aucun.
+
+Les chiffres de couverture viennent du même instantané committé que
+[la carte de qualité de détection](../detection-quality.fr.md). Deux calculs divergeraient, et
+celui qui diverge est celui qu'on lit.
+
+<!-- pepin:gen cli-help-control-explain -->
+```text
+Rend, pour un contrôle et un fournisseur, la chaîne qui rend son verdict
+opposable : les appels d'API qui alimentent la décision, les attributs
+décisifs, les conditions exactes d'un `pass`, les tests qui l'éprouvent, et la
+date de la dernière validation live.
+
+Les chiffres de couverture viennent de la MÊME source que la carte de qualité
+de détection (docs/detection-quality.md) : deux calculs divergeraient, et celui
+qui diverge est celui qu'on lit.
+
+Usage:
+  pepin control explain <code> [flags]
+
+Flags:
+  -h, --help              help for explain
+      --provider string   limiter l'explication à un fournisseur
+
+Global Flags:
+      --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
+```
+<!-- /pepin:gen cli-help-control-explain -->
 
 ## `pepin version`
 

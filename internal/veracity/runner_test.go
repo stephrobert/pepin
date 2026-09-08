@@ -16,7 +16,22 @@ import (
 
 	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/genprovider"
+	"github.com/stephrobert/pepin/internal/tenants"
 )
+
+// coveredNow rend TOUT ce qui est prouvé aujourd'hui : les scénarios écrits à la
+// main, et les verdicts que les tenants de référence rendent sur des
+// configurations tierces (internal/tenants). Les deux artefacts prouvent la même
+// chose — un verdict atteint de bout en bout à travers le binaire — et un seul
+// compteur les additionne, pour qu'il n'existe pas deux chiffres de couverture.
+func coveredNow(t *testing.T, files []veracity.File) map[veracity.Path][]veracity.Verdict {
+	t.Helper()
+	fromTenants, err := tenants.Covered(repoRoot)
+	if err != nil {
+		t.Fatalf("couverture des tenants de référence : %v", err)
+	}
+	return veracity.Merge(veracity.Covered(files), fromTenants)
+}
 
 // Le HARNAIS : il exécute le BINAIRE, pas une reconstitution de ce que le binaire
 // ferait. Un harnais qui rejouerait assess.Build à sa façon mesurerait sa propre
@@ -283,7 +298,7 @@ func TestTheVeracityDebtLedgerIsExact(t *testing.T) {
 	if err != nil {
 		t.Fatalf("chargement des scénarios : %v", err)
 	}
-	got := veracity.Debt(obligationsOf(t), veracity.Covered(files))
+	got := veracity.Debt(obligationsOf(t), coveredNow(t, files))
 	// La régénération est EXPLICITE et jamais automatique : un registre que le test
 	// réécrirait tout seul serait un registre qui ne dit plus rien, et la dette
 	// grandirait sans que personne ne la voie grandir.
@@ -329,7 +344,7 @@ func diff(want, got []string) (added, removed []string) {
 // referme.
 func writeLedger(t *testing.T, lines []string) {
 	t.Helper()
-	counts := veracity.Count(obligationsOf(t), veracity.Covered(mustScenarios(t)))
+	counts := veracity.Count(obligationsOf(t), coveredNow(t, mustScenarios(t)))
 	header := []string{
 		"# Registre de dette du contrat de véracité — RÉGÉNÉRÉ, jamais édité à la main.",
 		"#   mise run veracity-update",

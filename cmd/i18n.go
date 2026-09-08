@@ -154,6 +154,31 @@ func localize() {
 		"chemin de l'API SCSL (api/v1/exigences.json du framework)",
 		"path to the SCSL API (the framework's api/v1/exigences.json)"))
 
+	controlCmd.Short = tr(
+		"Inspecter les contrôles du référentiel commun",
+		"Inspect the controls of the common reference")
+	controlExplainCmd.Short = tr(
+		"Expliquer d'où vient le verdict d'un contrôle, et ce qui l'éprouve",
+		"Explain where a control's verdict comes from, and what tests it")
+	controlExplainCmd.Long = tr(
+		"Rend, pour un contrôle et un fournisseur, la chaîne qui rend son verdict\n"+
+			"opposable : les appels d'API qui alimentent la décision, les attributs\n"+
+			"décisifs, les conditions exactes d'un `pass`, les tests qui l'éprouvent, et la\n"+
+			"date de la dernière validation live.\n\n"+
+			"Les chiffres de couverture viennent de la MÊME source que la carte de qualité\n"+
+			"de détection (docs/detection-quality.md) : deux calculs divergeraient, et celui\n"+
+			"qui diverge est celui qu'on lit.",
+		"Renders, for a control and a provider, the chain that makes its verdict\n"+
+			"defensible: the API calls that feed the decision, the deciding attributes, the\n"+
+			"exact conditions for a `pass`, the tests that exercise it, and the date of the\n"+
+			"last live validation.\n\n"+
+			"The coverage figures come from the SAME source as the detection quality map\n"+
+			"(docs/detection-quality.md): two computations would diverge, and the one that\n"+
+			"diverges is the one people read.")
+	setUsage(controlExplainCmd, "provider", tr(
+		"limiter l'explication à un fournisseur",
+		"limit the explanation to one provider"))
+
 	verifyCmd.Short = tr(
 		"Vérifier l'intégrité (et la signature) d'un bundle de preuve",
 		"Verify the integrity (and the signature) of an evidence bundle")
