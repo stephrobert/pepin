@@ -266,6 +266,11 @@ jobs:
       - name: Install Cosign
         if: ${{ !github.event.repository.private }}
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # Figer l'OUTIL, pas seulement l'action qui l'installe (ADR-0016).
+          # Un outil de signature dont la version est choisie par l'amont au
+          # moment du build est un maillon qu'on ne contrôle pas.
+          cosign-release: v3.1.3
 
       # Par digest, jamais par tag : une signature sur un tag bénit ce que le
       # tag pointera plus tard.
@@ -332,12 +337,6 @@ jobs:
             exit 1
           }
 
-      - name: Generate checksums
-        working-directory: dist
-        run: |
-          sha256sum pepin-* > checksums.txt
-          cat checksums.txt
-
       - name: Generate SBOM (Syft, CycloneDX)
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -345,6 +344,16 @@ jobs:
           format: cyclonedx-json
           output-file: dist/sbom.cdx.json
           upload-release-assets: false
+
+      # Le SBOM est produit AVANT les sommes, et il y entre. La signature porte sur
+      # checksums.txt : ce qui n'y figure pas n'est couvert par aucun chemin de
+      # vérification documenté. L'attestation SBOM lie le CONTENU aux binaires, elle
+      # ne dit rien du fichier publié — les deux sont nécessaires (ADR-0016).
+      - name: Generate checksums
+        working-directory: dist
+        run: |
+          sha256sum pepin-* sbom.cdx.json > checksums.txt
+          cat checksums.txt
 
       - name: Attest build provenance
         id: attest
@@ -363,6 +372,11 @@ jobs:
       - name: Install Cosign
         if: ${{ !github.event.repository.private }}
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # Figer l'OUTIL, pas seulement l'action qui l'installe (ADR-0016).
+          # Un outil de signature dont la version est choisie par l'amont au
+          # moment du build est un maillon qu'on ne contrôle pas.
+          cosign-release: v3.1.3
 
       # Une signature sur checksums.txt couvre chaque artefact : leur empreinte y est.
       - name: Sign checksums (keyless)

@@ -79,6 +79,39 @@ resource never returns `0`, and neither does one that could not read part of its
 scope: an empty result is not a compliant one, a partial one is not either, and an
 exempted one is not either.
 
+## Verify what you downloaded
+
+Every release artefact is covered. One command each, and nothing to trust on faith.
+
+```bash
+V=v0.3.0
+gh release download "$V" --repo stephrobert/pepin
+
+# 1. the checksums are signed, and they cover the binaries AND the SBOM
+cosign verify-blob checksums.txt \
+  --bundle checksums.txt.cosign.bundle \
+  --certificate-identity-regexp '^https://github\.com/stephrobert/pepin/\.github/workflows/release\.yml@refs/tags/v' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+
+# 2. your files match those signed checksums
+sha256sum --check checksums.txt --ignore-missing
+
+# 3. the binary was built by this repository's release workflow (SLSA provenance)
+gh attestation verify pepin-linux-amd64 --repo stephrobert/pepin
+```
+
+**The SBOM** (`sbom.cdx.json`, CycloneDX) ships with every release. Step 1 covers the
+published file; it is also attested against the binaries, which is a different claim
+— that this inventory describes *that* build:
+
+```bash
+gh attestation verify pepin-linux-amd64 --repo stephrobert/pepin \
+  --predicate-type https://cyclonedx.org/bom
+
+# feed it to whatever you already use
+osv-scanner --sbom sbom.cdx.json
+```
+
 ## Language
 
 Pépin speaks French and English, and picks one on its own:
