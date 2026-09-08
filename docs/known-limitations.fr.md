@@ -205,9 +205,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 | Chiffre | Nombre |
 |---|---:|
 | Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 178 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 23 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 24 |
 | Verdicts à prouver au total | 458 |
-| Verdicts restant à prouver | 395 |
+| Verdicts restant à prouver | 375 |
 <!-- /pepin:gen veracity-debt -->
 
 Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est

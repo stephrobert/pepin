@@ -1,0 +1,46 @@
+# Port TCP a haut risque ouvert a Internet, chez Outscale.
+#
+# Ce controle vise les services d'infrastructure qu'on n'expose jamais
+# volontairement : bases de donnees, annuaires, partages de fichiers. Le
+# contre-exemple garde le MEME port — une base doit bien etre jointe par ses
+# clients — et ne change que l'origine.
+control: network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "PostgreSQL (5432) ouvert depuis 0.0.0.0/0 : la base est joignable depuis Internet"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_security_group_rule.pg
+              type: outscale_security_group_rule
+              name: pg
+              values:
+                security_group_id: sg-data
+                flow: Inbound
+                ip_protocol: tcp
+                from_port_range: 5432
+                to_port_range: 5432
+                ip_range: 0.0.0.0/0
+
+  - expect: pass
+    why: "MEME port 5432, ouvert au seul reseau applicatif : c'est ainsi qu'une base sert ses clients"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_security_group_rule.pg
+              type: outscale_security_group_rule
+              name: pg
+              values:
+                security_group_id: sg-data
+                flow: Inbound
+                ip_protocol: tcp
+                from_port_range: 5432
+                to_port_range: 5432
+                ip_range: 10.42.0.0/16

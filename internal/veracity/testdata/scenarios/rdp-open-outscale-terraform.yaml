@@ -1,0 +1,48 @@
+# RDP ouvert a Internet, chez Outscale.
+#
+# La frontiere que ce controle trace n'est pas « le port 3389 est ouvert » mais
+# « il est ouvert A TOUT INTERNET ». Une plage d'administration interne sur le
+# meme port est la configuration normale d'un parc Windows.
+#
+# Le cas `pass` ne change donc QUE le CIDR : meme groupe, meme port, meme
+# protocole. Fermer le port prouverait seulement que la regle sait lire un port.
+control: network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "TCP/3389 ouvert depuis 0.0.0.0/0 : le bureau a distance est expose a Internet"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_security_group_rule.rdp
+              type: outscale_security_group_rule
+              name: rdp
+              values:
+                security_group_id: sg-win
+                flow: Inbound
+                ip_protocol: tcp
+                from_port_range: 3389
+                to_port_range: 3389
+                ip_range: 0.0.0.0/0
+
+  - expect: pass
+    why: "MEME port 3389, restreint au reseau d'administration : c'est la configuration attendue d'un parc Windows"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_security_group_rule.rdp
+              type: outscale_security_group_rule
+              name: rdp
+              values:
+                security_group_id: sg-win
+                flow: Inbound
+                ip_protocol: tcp
+                from_port_range: 3389
+                to_port_range: 3389
+                ip_range: 10.42.0.0/16

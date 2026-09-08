@@ -1,0 +1,44 @@
+# Base managee ouverte a Internet, chez Scaleway.
+#
+# Le defaut d'API est ici l'inverse de l'intuition : tant qu'aucune ACL n'est
+# posee, la base est ATTEIGNABLE. Le controle mesure donc la presence d'une
+# restriction effective, et non l'absence d'une ouverture.
+#
+# Le cas `pass` garde une ACL — la meme forme, la meme ressource — mais bornee a
+# un reseau prive.
+control: database_service_not_open_to_internet
+provider: scaleway
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "l'ACL de la base autorise 0.0.0.0/0 : le service est joignable depuis Internet"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_rdb_acl.main
+              type: scaleway_rdb_acl
+              name: main
+              values:
+                instance_id: rdb-prod
+                acl_rules:
+                  - ip: 0.0.0.0/0
+                    description: ouvert
+
+  - expect: pass
+    why: "MEME ACL, bornee au reseau d'application : la base reste joignable par ce qui doit la joindre"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_rdb_acl.main
+              type: scaleway_rdb_acl
+              name: main
+              values:
+                instance_id: rdb-prod
+                acl_rules:
+                  - ip: 10.42.0.0/16
+                    description: reseau applicatif

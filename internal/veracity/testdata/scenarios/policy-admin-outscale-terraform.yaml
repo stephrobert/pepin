@@ -1,0 +1,45 @@
+# Politique IAM accordant tous les droits, chez Outscale.
+#
+# Le contre-exemple est une politique LARGE mais bornee : `Allow` sur un service
+# entier reste une politique legitime et tres repandue. Ce que le controle refuse
+# est l'action totale (`*`) sur la ressource totale.
+#
+# Une regle qui rougirait sur toute politique permissive rendrait le controle
+# inutilisable des le premier tenant reel.
+#
+# Le champ `document` est une CHAINE JSON, comme le fournisseur la porte : le
+# mapping la parse (transform `iampolicy`). Le lui donner deja eclate en liste
+# produisait `statements: []`, donc un `not-evaluated` — un scenario qui aurait
+# eu l'air de passer pour une raison etrangere a ce qu'il pretend montrer.
+control: iam_policy_no_administrative_privileges
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "Allow sur toutes les actions et toutes les ressources : la politique est administrateur"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_policy.admin
+              type: outscale_policy
+              name: admin
+              values:
+                policy_name: admin
+                document: "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": \"*\", \"Resource\": \"*\"}]}"
+
+  - expect: pass
+    why: "MEME forme de politique, large mais BORNEE a un service et a ses ressources : c'est une delegation ordinaire"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_policy.admin
+              type: outscale_policy
+              name: admin
+              values:
+                policy_name: lecture-objet
+                document: "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": [\"ReadObjects\", \"ListBuckets\"], \"Resource\": [\"arn:osc:oos:::sauvegardes/*\"]}]}"

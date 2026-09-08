@@ -1,0 +1,52 @@
+# Politique par defaut d'un groupe de securite Scaleway.
+#
+# Ce controle ne juge aucune regle : il juge ce qui se passe quand AUCUNE ne
+# correspond. Un groupe en `accept` par defaut laisse passer tout ce que ses
+# regles n'ont pas prevu, ce qui inverse la logique d'un pare-feu.
+#
+# Le contre-exemple garde le meme groupe et les memes regles ; seule la politique
+# par defaut change. Retirer les regles prouverait autre chose.
+control: network_securitygroup_default_deny
+provider: scaleway
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "politique entrante par defaut a accept : tout ce que les regles n'interdisent pas passe"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_instance_security_group.web
+              type: scaleway_instance_security_group
+              name: web
+              values:
+                id: sg-web
+                name: sg-web
+                inbound_default_policy: accept
+                inbound_rule:
+                  - action: accept
+                    protocol: TCP
+                    port: 443
+                    ip_range: 0.0.0.0/0
+
+  - expect: pass
+    why: "MEME groupe, MEMES regles, politique par defaut a drop : le pare-feu refuse ce qu'il n'a pas prevu"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_instance_security_group.web
+              type: scaleway_instance_security_group
+              name: web
+              values:
+                id: sg-web
+                name: sg-web
+                inbound_default_policy: drop
+                inbound_rule:
+                  - action: accept
+                    protocol: TCP
+                    port: 443
+                    ip_range: 0.0.0.0/0

@@ -1,0 +1,46 @@
+# Tous les ports ouverts a Internet, chez Outscale.
+#
+# Le contre-exemple est ici plus subtil qu'ailleurs : une plage LARGE n'est pas
+# fautive en soi. Entre deux sous-reseaux d'un meme VPC, tout ouvrir est un choix
+# d'architecture discutable mais courant, et ce n'est pas ce que ce controle
+# mesure. Ce qu'il mesure est l'origine : 0.0.0.0/0.
+control: network_securitygroup_allow_ingress_from_internet_to_all_ports
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "toute la plage de ports ouverte depuis 0.0.0.0/0 : aucun filtrage d'entree"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_security_group_rule.tout
+              type: outscale_security_group_rule
+              name: tout
+              values:
+                security_group_id: sg-app
+                flow: Inbound
+                ip_protocol: "-1"
+                from_port_range: 0
+                to_port_range: 65535
+                ip_range: 0.0.0.0/0
+
+  - expect: pass
+    why: "MEME plage complete de ports, mais entre sous-reseaux prives : large et interne, ce n'est pas une exposition"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_security_group_rule.tout
+              type: outscale_security_group_rule
+              name: tout
+              values:
+                security_group_id: sg-app
+                flow: Inbound
+                ip_protocol: "-1"
+                from_port_range: 0
+                to_port_range: 65535
+                ip_range: 10.0.0.0/8

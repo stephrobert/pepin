@@ -1,0 +1,69 @@
+# VM exposée : IP publique ET groupe de sécurité ouvert sur Internet, chez Outscale.
+#
+# C'est le premier couple de la table de l'issue #115, et il éprouve la frontière
+# que ce contrôle trace : ce n'est pas l'IP publique qui fait l'écart, ni le port
+# ouvert seul, c'est leur CONJONCTION. Un serveur web public est légitime ; le même
+# serveur avec SSH ouvert à tout Internet ne l'est pas.
+#
+# Le cas `pass` est délibérément PROCHE du cas `fail` : même VM, même IP publique,
+# même groupe de sécurité ouvert à 0.0.0.0/0 — seul le port change. Un contre-exemple
+# qui retirerait l'IP publique ne prouverait rien de la règle, seulement que le
+# contrôle a besoin d'une VM exposée pour parler.
+control: compute_instance_public_ip_with_open_securitygroup
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "VM a IP publique dont le groupe de securite ouvre SSH a 0.0.0.0/0 : la conjonction expose l'administration"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_vm.web
+              type: outscale_vm
+              name: web
+              values:
+                vm_id: i-expose
+                public_ip: 203.0.113.10
+                state: running
+                security_group_ids:
+                  - sg-web
+            - address: outscale_security_group_rule.ssh
+              type: outscale_security_group_rule
+              name: ssh
+              values:
+                security_group_id: sg-web
+                flow: Inbound
+                ip_protocol: tcp
+                from_port_range: 22
+                to_port_range: 22
+                ip_range: 0.0.0.0/0
+
+  - expect: pass
+    why: "MEME VM publique, MEME groupe ouvert a 0.0.0.0/0, mais sur 443 : un serveur web public est sa raison d'etre"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_vm.web
+              type: outscale_vm
+              name: web
+              values:
+                vm_id: i-expose
+                public_ip: 203.0.113.10
+                state: running
+                security_group_ids:
+                  - sg-web
+            - address: outscale_security_group_rule.https
+              type: outscale_security_group_rule
+              name: https
+              values:
+                security_group_id: sg-web
+                flow: Inbound
+                ip_protocol: tcp
+                from_port_range: 443
+                to_port_range: 443
+                ip_range: 0.0.0.0/0

@@ -1,0 +1,39 @@
+# Image machine publiee a tous les comptes, chez Outscale.
+#
+# Le contre-exemple est le meme partage, RESTREINT : `global_permission` a false.
+# Une image partagee explicitement a un compte tiers reste un partage voulu ;
+# c'est la publication A TOUS que ce controle refuse.
+control: compute_image_not_public
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "l'image est publiee globalement : n'importe quel compte du cloud peut la demarrer"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_image_launch_permission.diffusion
+              type: outscale_image_launch_permission
+              name: diffusion
+              values:
+                image_id: ami-prod
+                permission_additions:
+                  - global_permission: true
+
+  - expect: pass
+    why: "MEME ressource de partage, global_permission a false : le partage reste borne"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_image_launch_permission.diffusion
+              type: outscale_image_launch_permission
+              name: diffusion
+              values:
+                image_id: ami-prod
+                permission_additions:
+                  - global_permission: false
