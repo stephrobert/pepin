@@ -26,7 +26,7 @@ See [Exit codes](exit-codes.md).
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v4** |
+| `cli` | verbs, flags and exit codes | **v5** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |

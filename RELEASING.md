@@ -98,6 +98,60 @@ downloaded.
   cut blind.
 - `gh` must be authenticated for the preflight to ask CI about the commit.
 - Moving the CHANGELOG entries is writing, not generation, in both languages.
+- **The canary scan** (below): a maintainer's gesture, run locally, whose
+  result is recorded and dated.
+
+## The canary: what the real control planes answered
+
+```bash
+mise run canary                  # the three cloud providers
+tools/release/canary.sh scaleway # one of them
+```
+
+The `live` column of the coverage matrix is **derived from the descriptors**: it
+says what Pépin believes it can collect, never what it has observed. A release
+that promotes a live capability validated only on fixtures and an emulator
+promotes a belief.
+
+The canary is the one measurement in this repository that queries a sovereign
+provider's **real** control plane — and it holds **no credential**, which is the
+point. It sends **synthetic** values that the provider refuses, and what it
+measures is the refusal: an endpoint answering 401 or 403 exists, resolves and
+speaks; a moved endpoint would answer 404, which is exactly the regression a
+descriptor cannot see coming. The script clears every credential variable and
+sets a disposable `HOME` before it runs anything, so a maintainer cannot send
+their keys by accident — a property of the script, not a usage instruction.
+
+| It establishes | It does **not** establish |
+|---|---|
+| that the host compiled into the descriptor resolves and answers | the names and types of the native contract's fields |
+| that the declared path still exists (a 404 would say otherwise) | what a tenant contains |
+| the class a refusal is given | that a **sufficient** right returns `200` |
+
+A **signature** refusal is not a **right** refusal. The canary therefore does
+**not** count as live validation of a control, and the detection-quality map
+counts zero on that side rather than borrowing this figure.
+
+Records live in `references/canary/<provider>.yaml`, are committed, and carry
+only endpoint facts: unit, method, host, path, HTTP status, and the class Pépin
+gave the refusal. No query string is kept — that is the one place a tenant value
+could slip into a URL. **Read a record before committing it**; the canary
+produces nothing else, and checking is what lets us say so.
+
+The two halves are checked in two different places, deliberately:
+
+- **completeness** — every cloud provider has a readable, substantive record —
+  is checked by `internal/canary`, so by `mise run test` and CI, because it does
+  not depend on the date;
+- **freshness** — no record older than `canary.MaxAge` (90 days) — is checked by
+  the preflight, the only moment the question arises. A test that reddened with
+  the passage of time would redden one morning with nothing changed, and be
+  disarmed within the week.
+
+A record whose units are **all** unreachable is refused rather than written: it
+would describe the maintainer's network (proxy, sandbox, captive DNS), not the
+provider, and a later reader would take those `unreachable` entries for a
+control-plane regression that never happened.
 
 > **The preflight is a local check, not a gate.** Nothing ties the tag to having
 > run it: `git tag && git push` publishes a full signed, attested release on its

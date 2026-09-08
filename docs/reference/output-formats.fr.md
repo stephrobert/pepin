@@ -26,7 +26,7 @@ verdict. Voir [Codes de sortie](exit-codes.fr.md).
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v4** |
+| `cli` | verbes, drapeaux et codes de sortie | **v5** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |

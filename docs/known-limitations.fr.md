@@ -205,9 +205,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 | Chiffre | Nombre |
 |---|---:|
 | Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 178 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 5 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 23 |
 | Verdicts à prouver au total | 458 |
-| Verdicts restant à prouver | 445 |
+| Verdicts restant à prouver | 395 |
 <!-- /pepin:gen veracity-debt -->
 
 Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est
@@ -220,6 +220,17 @@ feraient quelque sept cents cas. Personne ne peut *éprouver* sept cents cas —
 casser un par un pour vérifier qu'ils rougissent —, et une matrice engendrée par gabarit serait
 exactement le faux vert que ce scanner existe pour combattre : un test qui passe parce que ses
 cas sont creux ne mesure que lui-même.
+
+**Ce que les tenants de référence y ajoutent, et ce qu'ils n'y ajoutent pas.** Une partie de
+cette dette est désormais payée par des configurations tierces réelles, épinglées à un commit
+et rejouées à chaque build ([Les tenants de référence](guides/reference-tenants.fr.md)). Elles
+comblent un angle mort qu'une fixture ne peut pas combler : une fixture est écrite par l'auteur
+de la règle, donc elle prouve que la règle se déclenche, jamais qu'elle a raison sur une
+configuration que personne n'a conçue pour elle. Elles ne comblent **pas** l'angle mort du live
+— un plan Terraform porte l'état *planifié*, et ce qu'un fournisseur *répond* reste dû à une
+collecte réelle. Et un verdict ne compte que s'il est substantiel : un `not-evaluated` sur un
+tenant qui ne porte aucune ressource du type visé énonce une absence, pas une garde de
+capacité, donc il n'est pas compté.
 
 ## Limites de l'outil lui-même
 

@@ -59,6 +59,13 @@ resolution, S3 endpoint, `collecte` (live API), `mapping_terraform`, and the
    (`mise run veracity-update`), never hidden: the ledger is a gate in both
    directions, and a control added without its scenarios fails the build.
 4. Validate with a real scan, then activate (`fournisseurs`).
+5. **Re-read the reference tenants** (`references/tenants/`): real third-party
+   configurations, pinned to a commit, replayed on every build. A fixture is
+   written by the rule's author, so it is self-confirming; a tenant nobody wrote
+   for Pépin is where a false positive shows up. If a verdict flips there, say
+   whether the product improved or regressed **before** running
+   `mise run tenants-update`. See
+   [Reference tenants](docs/guides/reference-tenants.md).
 
 Everything the user reads is **written twice**, side by side, because Pépin
 detects the reader's language. A rule emits `message`/`remediation` in French and

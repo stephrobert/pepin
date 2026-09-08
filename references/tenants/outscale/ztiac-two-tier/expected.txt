@@ -1,0 +1,54 @@
+# Verdicts rendus par Pépin sur ce tenant de référence — RÉGÉNÉRÉ.
+#   mise run tenants-update
+#
+# Amont : https://github.com/chimere-eu/ztiac
+#   commit 093330c7964da5ae33a812389833036b9cfacbc5 · templates/outscale/two-tier-architecture · MIT
+#
+# Une ligne qui bascule est une DÉCISION : soit le produit s'est amélioré,
+# soit il a régressé sur une configuration que personne n'a écrite pour lui.
+# Aucune régénération sans avoir dit laquelle des deux.
+
+blockstorage_snapshot_not_public not-evaluated
+blockstorage_volume_encryption not-applicable
+blockstorage_volume_snapshots_exist not-evaluated
+compute_image_not_public not-evaluated
+compute_instance_deletion_protection not-evaluated
+compute_instance_has_security_group not-evaluated
+compute_instance_no_secrets_in_user_data pass
+compute_instance_public_ip_with_open_securitygroup not-evaluated
+governance_provider_sovereignty pass
+governance_resource_region_in_eu not-evaluated
+governance_resource_required_tags fail
+iam_accesskey_expiration_set not-evaluated
+iam_account_mfa_enforced not-evaluated
+iam_apiaccesspolicy_max_key_expiration not-evaluated
+iam_apiaccessrule_defined not-evaluated
+iam_apiaccessrule_no_public_cidr not-evaluated
+iam_no_root_access_key not-evaluated
+iam_policy_no_administrative_privileges not-evaluated
+iam_policy_no_notaction_notresource not-evaluated
+iam_policy_no_privilege_escalation not-evaluated
+iam_policy_no_wildcard_resource not-evaluated
+iam_user_mfa_enabled not-applicable
+kubernetes_cluster_auto_upgrade_enabled not-evaluated
+kubernetes_cluster_control_plane_highly_available not-evaluated
+kubernetes_cluster_deletion_protection not-evaluated
+kubernetes_cluster_not_publicly_accessible not-evaluated
+loadbalancer_http_redirect_to_https not-applicable
+loadbalancer_logging_enabled not-evaluated
+loadbalancer_ssl_listeners not-evaluated
+network_documented fail
+network_peering_cross_organization not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_all_ports pass
+network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports pass
+network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports pass
+network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 pass
+network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 pass
+network_securitygroup_default_restrict_traffic not-evaluated
+network_securitygroup_unrestricted_egress pass
+network_subnet_no_public_ip_by_default pass
+objectstorage_bucket_default_encryption not-evaluated
+objectstorage_bucket_kms_encryption not-applicable
+objectstorage_bucket_object_lock_enabled not-evaluated
+objectstorage_bucket_public_access not-evaluated
+objectstorage_bucket_versioning_enabled not-evaluated
