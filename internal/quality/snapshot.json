@@ -1480,7 +1480,8 @@
         "outscale/ztiac-vpc-nat"
       ],
       "rego_tests": [
-        "internal/commonrules/rules/loadbalancer_http_redirect_test.rego"
+        "internal/commonrules/rules/loadbalancer_http_redirect_test.rego",
+        "internal/commonrules/rules/oks_lbu_governance_test.rego"
       ]
     },
     "loadbalancer_logging_enabled": {

@@ -105,3 +105,51 @@ test_lbu_tcp_port80_denied if {
 	}]}
 	f.code == "loadbalancer_ssl_listeners"
 }
+
+_lbu(listeners, extra) := {"resources": [{
+	"provider": "outscale", "type": "load_balancer", "id": "lb-x",
+	"attributes": object.union(
+		{"load_balancer_name": "lb-x", "load_balancer_type": "internet-facing", "listeners": listeners},
+		extra,
+	),
+}]}
+
+# ✗ HTTPS:443 ET HTTP:8080 → écart. Un listener chiffré ailleurs ne protège pas le
+# trafic qui passe par celui-ci. La règle demandait « au moins un bon listener »,
+# un existentiel là où il fallait un universel.
+test_mixed_listeners_are_a_deviation if {
+	some f in deny with input as _lbu(
+		[
+			{"load_balancer_protocol": "HTTPS", "load_balancer_port": 443},
+			{"load_balancer_protocol": "HTTP", "load_balancer_port": 8080},
+		],
+		{},
+	)
+	f.code == "loadbalancer_ssl_listeners"
+	contains(f.message, "8080")
+}
+
+# ✓ Tout en HTTPS → rien.
+test_all_https_listeners_ok if {
+	count({f | some f in deny; f.code == "loadbalancer_ssl_listeners"}) == 0 with input as _lbu(
+		[
+			{"load_balancer_protocol": "HTTPS", "load_balancer_port": 443},
+			{"load_balancer_protocol": "HTTPS", "load_balancer_port": 8443},
+		],
+		{},
+	)
+}
+
+# ✗ HTTP sur un port ALTERNATIF sans redirection → écart. Ne viser que le 80
+# laissait passer 8080, 8000, 8888 : des ports d'application servis en clair tout
+# autant.
+test_http_on_alternative_port_needs_redirect if {
+	some f in deny with input as _lbu([{"load_balancer_protocol": "HTTP", "load_balancer_port": 8080, "redirect_to_https": false}], {})
+	f.code == "loadbalancer_http_redirect_to_https"
+	contains(f.message, "8080")
+}
+
+# ✓ Le même avec redirection → rien.
+test_http_on_alternative_port_with_redirect_ok if {
+	count({f | some f in deny; f.code == "loadbalancer_http_redirect_to_https"}) == 0 with input as _lbu([{"load_balancer_protocol": "HTTP", "load_balancer_port": 8080, "redirect_to_https": true}], {})
+}

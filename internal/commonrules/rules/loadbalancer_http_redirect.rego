@@ -16,7 +16,12 @@ deny contains f if {
 	some lb in resources_of_type("load_balancer")
 	some l in object.get(lb.attributes, "listeners", [])
 	object.get(l, "load_balancer_protocol", "") == "HTTP"
-	object.get(l, "load_balancer_port", 0) == 80
+
+	# TOUT listener HTTP, quel que soit son port. Ne viser que le 80 laissait passer
+	# un HTTP sur 8080, 8000 ou 8888 — des ports d'application courants, servis en
+	# clair tout autant. C'est le miroir du défaut de `loadbalancer_ssl_listeners` :
+	# là un port était pris pour un protocole, ici un port restreignait un protocole
+	# pourtant connu. Le protocole est ce que l'API déclare ; le port n'en dit rien.
 	"redirect_to_https" in object.keys(l) # garde de capacité : état de redirection réellement collecté
 	not truthy(object.get(l, "redirect_to_https", true))
 	name := object.get(lb.attributes, "load_balancer_name", lb.id)
@@ -24,12 +29,12 @@ deny contains f if {
 		"code": "loadbalancer_http_redirect_to_https",
 		"severity": "medium",
 		"subject": name,
-		"message": sprintf("LBU « %s » : listener HTTP:80 sans redirection vers HTTPS — trafic en clair possible.", [name]),
+		"message": sprintf("LBU « %s » : listener HTTP (port %d) sans redirection vers HTTPS — trafic en clair possible.", [name, object.get(l, "load_balancer_port", 0)]),
 		"remediation": "Mettre en place une redirection 301 du listener HTTP:80 vers HTTPS.",
 		"labels": {
 			"provider": provider_of(lb),
 			"category": "security",
-			"message_en": sprintf("LBU \"%s\": HTTP:80 listener with no redirect to HTTPS — cleartext traffic is possible.", [name]),
+			"message_en": sprintf("LBU \"%s\": HTTP listener (port %d) with no redirect to HTTPS — cleartext traffic is possible.", [name, object.get(l, "load_balancer_port", 0)]),
 			"remediation_en": "Set up a 301 redirect from the HTTP:80 listener to HTTPS.",
 		},
 	}

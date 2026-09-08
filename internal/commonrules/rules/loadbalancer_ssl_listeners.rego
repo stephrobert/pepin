@@ -77,3 +77,41 @@ deny contains f if {
 		},
 	}
 }
+
+# ── CHAQUE listener public, pas seulement l'existence d'un bon ────────────────
+#
+# La règle d'origine demandait « le LBU a-t-il AU MOINS UN listener sécurisé ». Un
+# répartiteur offrant HTTPS:443 ET HTTP:8080 la satisfaisait donc, tout en servant
+# du clair — un quantificateur existentiel là où il fallait un universel. C'est la
+# même erreur que le verrou de capacité par type corrigé en #102, sur un autre objet.
+#
+# Ce `deny` porte sur le LISTENER fautif et le NOMME, parce qu'un rapport qui dit
+# « ce LBU a un problème » sans dire lequel oblige à le chercher.
+deny contains f if {
+	some lb in resources_of_type("load_balancer")
+	object.get(lb.attributes, "load_balancer_type", "") == "internet-facing"
+	_has_secure_listener(lb.attributes)
+	some l in object.get(lb.attributes, "listeners", [])
+	_listener_is_cleartext(l)
+	name := object.get(lb.attributes, "load_balancer_name", lb.id)
+	port := object.get(l, "load_balancer_port", 0)
+	f := {
+		"code": "loadbalancer_ssl_listeners",
+		"severity": "high",
+		"subject": name,
+		"message": sprintf("LBU « %s » : le listener %s:%d sert en clair, alors qu'un autre listener est chiffré — la protection n'est pas celle qu'on croit.", [name, object.get(l, "load_balancer_protocol", ""), port]),
+		"remediation": "Chiffrer ou retirer ce listener : la présence d'un listener HTTPS ailleurs ne protège pas le trafic qui passe par celui-ci.",
+		"labels": {
+			"provider": provider_of(lb),
+			"category": "security",
+			"message_en": sprintf("LBU \"%s\": listener %s:%d serves cleartext while another listener is encrypted — the protection is not what it looks like.", [name, object.get(l, "load_balancer_protocol", ""), port]),
+			"remediation_en": "Encrypt or remove that listener: an HTTPS listener elsewhere does not protect the traffic going through this one.",
+		},
+	}
+}
+
+# _listener_is_cleartext — un listener dont le protocole DÉCLARÉ transporte du clair.
+# On ne juge que ce que l'API affirme : `HTTP`. Un `TCP` peut porter du chiffré, et
+# c'est précisément ce que la règle ne sait pas trancher (voir la branche
+# indéterminée ci-dessus) — l'inclure ici referait le faux positif qu'on évite.
+_listener_is_cleartext(l) if object.get(l, "load_balancer_protocol", "") == "HTTP"
