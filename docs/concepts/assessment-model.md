@@ -378,8 +378,7 @@ reasons observed:
 <!-- pepin:gen not-evaluated-reasons -->
 | Reason | Count | Witness control |
 |---|---:|---|
-| attribute "…" not collected on the collected resources (capability guard) | 1 | `governance_resource_region_in_eu` |
-| attribute "…" not collected on the resources of type "…" (capability guard) | 4 | `compute_instance_has_security_group` |
+| attribute "…" not collected on the resources of type "…" (capability guard) | 5 | `compute_instance_has_security_group` |
 | collection of the required data is not confirmed for this provider (contract not "…") | 1 | `network_documented` |
 | no resource of type "…" in the assessed inventory | 3 | `iam_accesskey_expiration_set` |
 <!-- /pepin:gen not-evaluated-reasons -->

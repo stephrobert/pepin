@@ -32,6 +32,24 @@ var extraControlTypes = map[string][]string{
 	// lit bien un type — la ressource synthétique que le descripteur publie. Sans
 	// cette entrée, une collecte incomplète de cette ressource ne le dégradait pas.
 	"governance_provider_sovereignty": {"governance_provider"},
+
+	// Les types LOCALISÉS, ceux sur lesquels la souveraineté se mesure. La règle les
+	// énumère dans son ensemble `_located_types` et n'en regarde aucun autre : une
+	// identité ou une règle de filtrage n'héberge rien.
+	//
+	// Sans cette déclaration, le contrôle n'avait AUCUN type — `ControlType` rend ""
+	// pour la gouvernance — et la région d'une ressource quelconque suffisait à le
+	// rendre « conforme ». Mesuré avant correction : un `iam_user` en fr-par certifiait
+	// une VM dont la région n'avait jamais été collectée.
+	"governance_resource_region_in_eu": {
+		"compute_instance",
+		"object_storage_bucket",
+		"blockstorage_volume",
+		"blockstorage_snapshot",
+		"kubernetes_cluster",
+		"load_balancer",
+		"managed_database",
+	},
 }
 
 // ControlTypes rend TOUS les types normalisés qu'un contrôle lit : celui qui décide

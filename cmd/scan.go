@@ -776,16 +776,25 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 	//
 	// Sans la passe 1, le deuxième cas devenait un `pass` — un faux vert bâti sur la
 	// seule intention de chercher.
+	//
+	// La RÉGION suit le même chemin, sous la clé « region » du type de la ressource
+	// qui la porte. C'est un champ du modèle et non un attribut, mais la question
+	// posée est identique — a-t-on observé cette donnée sur CHAQUE ressource ? — et
+	// elle mérite donc la même intersection. Elle était auparavant enregistrée en
+	// UNION sous une clé vide commune : une seule ressource localisée ouvrait le
+	// `pass` du contrôle de souveraineté à toutes les autres, y compris à celles
+	// d'un type qu'il ne regarde pas.
 	type seenAttrs struct {
-		attrs map[string]any
-		prov  map[string]bool
+		attrs  map[string]any
+		prov   map[string]bool
+		region string
 	}
 	perType := map[string][]seenAttrs{}
-	add := func(typ string, attrs map[string]any, prov map[string]bool) {
+	add := func(typ string, attrs map[string]any, prov map[string]bool, region string) {
 		if typ == "" {
 			return
 		}
-		perType[typ] = append(perType[typ], seenAttrs{attrs: attrs, prov: prov})
+		perType[typ] = append(perType[typ], seenAttrs{attrs: attrs, prov: prov, region: region})
 	}
 	finish := func() {
 		for typ, rs := range perType {
@@ -796,6 +805,9 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 						exposed[k] = true
 					}
 				}
+				if r.region != "" {
+					exposed["region"] = true
+				}
 			}
 			var inter map[string]bool
 			for i, r := range rs {
@@ -804,6 +816,9 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 					if collected(v) {
 						present[k] = true
 					}
+				}
+				if r.region != "" {
+					present["region"] = true
 				}
 				for k := range r.prov {
 					if _, in := r.attrs[k]; !in && exposed[k] {
@@ -831,19 +846,6 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 			}
 		}
 	}
-	// La RÉGION est un champ de la ressource, pas un attribut : on l'enregistre sous la clé
-	// vide, celle des contrôles de gouvernance (dont le type visé est ""). Sans ça,
-	// governance_resource_region_in_eu — qui lit r.region sur CHAQUE ressource — pouvait
-	// s'afficher conforme alors qu'aucune région n'avait été collectée.
-	addRegion := func(region string) {
-		if region == "" {
-			return
-		}
-		if out[""] == nil {
-			out[""] = map[string]bool{}
-		}
-		out[""]["region"] = true
-	}
 	m, ok := input.(map[string]any)
 	if !ok {
 		return out
@@ -855,8 +857,7 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 			for k := range r.Provenance {
 				prov[k] = true
 			}
-			add(r.Type, r.Attributes, prov)
-			addRegion(r.Region)
+			add(r.Type, r.Attributes, prov, r.Region)
 		}
 	case []any:
 		for _, it := range rs {
@@ -869,9 +870,8 @@ func attrsByTypeOf(input any) map[string]map[string]bool {
 						prov[k] = true
 					}
 				}
-				add(t, attrs, prov)
 				reg, _ := rm["region"].(string)
-				addRegion(reg)
+				add(t, attrs, prov, reg)
 			}
 		}
 	}
