@@ -1,0 +1,22 @@
+# Tenant de référence — Outscale, posture EXPOSÉE.
+provider: outscale
+source: terraform
+posture: exposed
+title: "ZTIAC deux tiers : bastion, tiers applicatif et tiers données sur un Net Outscale"
+title_en: "ZTIAC two-tier: bastion, application tier and data tier on an Outscale Net"
+upstream:
+  repo: https://github.com/chimere-eu/ztiac
+  commit: 093330c7964da5ae33a812389833036b9cfacbc5
+  path: templates/outscale/two-tier-architecture
+  licence: MIT
+  retrieved: "2026-08-21"
+why: |
+  Un gabarit d'architecture publié par un tiers pour être déployé tel quel. Il porte
+  neuf verdicts « conforme » que Pépin confirme et deux contrôles en écart : ce sont
+  les deux faces dont une fixture maison ne sait produire qu'une seule à la fois, et
+  jamais sur la même configuration.
+why_en: |
+  An architecture template published by a third party to be deployed as is. It
+  carries nine "pass" verdicts that Pepin confirms and two failing controls: the two
+  faces an in-house fixture only ever produces one at a time, and never on the same
+  configuration.

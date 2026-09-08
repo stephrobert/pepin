@@ -13,6 +13,7 @@ import (
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
+	"github.com/stephrobert/pepin/internal/tenants"
 	"github.com/stephrobert/pepin/internal/veracity"
 	"github.com/stephrobert/pepin/referentiel"
 )
@@ -672,7 +673,15 @@ func veracityBlock(t blockStrings, root string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	c := veracity.Count(obligations, veracity.Covered(files))
+	// Les tenants de référence prouvent, eux aussi, des verdicts de bout en bout.
+	// Le compteur PUBLIÉ les additionne aux scénarios, exactement comme le registre
+	// committé : deux calculs de couverture divergeraient, et celui qui diverge est
+	// celui qu'on lit.
+	fromTenants, err := tenants.Covered(root)
+	if err != nil {
+		return "", err
+	}
+	c := veracity.Count(obligations, veracity.Merge(veracity.Covered(files), fromTenants))
 	var b strings.Builder
 	b.WriteString("| " + t.colFigure + " | " + t.colCount + " |\n|---|---:|\n")
 	row := func(label string, n int) { _, _ = fmt.Fprintf(&b, "| %s | %d |\n", label, n) }

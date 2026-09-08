@@ -1,0 +1,132 @@
+# Relevé de canari — GÉNÉRÉ par tools/release/canary.sh.
+#
+# Une requête NON AUTHENTIFIÉE par endpoint déclaré, contre le vrai plan de
+# contrôle du fournisseur. Ce qui se mesure est le REFUS : un endpoint qui
+# répond existe et se résout ; un 404 dit qu'il a bougé.
+#
+# Ce relevé ne porte aucun identifiant : le canari n'en a jamais eu.
+provider: outscale
+recorded: 2026-08-21
+pepin_version: "v0.3.0-2-g1ee97f5"
+authenticated: false
+summary:
+  answered: 17
+  moved: 0
+  unreachable: 0
+units:
+  - unit: access_key
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadAccessKeys"
+    classified: unavailable
+  - unit: api_access_policy
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadApiAccessPolicy"
+    classified: unavailable
+  - unit: api_access_rule
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadApiAccessRules"
+    classified: unavailable
+  - unit: api_access_summary
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadApiAccessRules"
+    classified: unavailable
+  - unit: blockstorage_snapshot
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadAccounts"
+    classified: unavailable
+  - unit: blockstorage_volume
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadVolumes"
+    classified: unavailable
+  - unit: compute_image
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadAccounts"
+    classified: unavailable
+  - unit: compute_instance
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadVms"
+    classified: unavailable
+  - unit: iam_policy
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadPolicies"
+    classified: unavailable
+  - unit: iam_policy_inline
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadUsers"
+    classified: unavailable
+  - unit: kubernetes_cluster
+    verdict: answered
+    status: 500
+    method: GET
+    host: api.eu-west-2.oks.outscale.com
+    path: "/api/v2/clusters/all"
+    classified: unavailable
+  - unit: load_balancer
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadLoadBalancers"
+    classified: unavailable
+  - unit: network
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadNets"
+    classified: unavailable
+  - unit: network_peering
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadNetPeerings"
+    classified: unavailable
+  - unit: object_storage_bucket
+    verdict: answered
+    status: 403
+    classified: permission_denied
+  - unit: security_group_rule
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadSecurityGroups"
+    classified: unavailable
+  - unit: subnet
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadSubnets"
+    classified: unavailable

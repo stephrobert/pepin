@@ -51,7 +51,14 @@ const (
 // mutuellement exclusifs. Aucun code de sortie n'est ajouté ni redéfini, mais
 // `--strict` refuse désormais aussi une correspondance normative tombée sous un
 // réglage assoupli — un pipeline qui utilise --strict doit le savoir.
-const cliSurfaceVersion = 4
+// v5 : ajout du verbe `control` et de sa sous-commande `control explain <code>`
+// (drapeau `--provider`), qui rend la chaîne de preuve d'un contrôle : appels
+// d'API alimentant la décision, attributs décisifs, conditions d'un `pass`, tests
+// qui l'éprouvent, date de dernière validation live. Ajout PUR : aucun verbe,
+// aucun drapeau et aucun code de sortie existant ne bouge. L'incrément est dû
+// quand même — la surface est la liste de ce qu'un intégrateur a le droit de
+// brancher, et elle vient de s'allonger.
+const cliSurfaceVersion = 5
 
 // findingsSurfaceVersion est la version de FORME de `--format json`
 // ({"findings": [...], "summary": {...}}), la sortie qu'un pipeline parse le
