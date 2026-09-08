@@ -15,7 +15,7 @@
 | Severity | `medium` |
 | SCSL requirement (frozen index) | `CLD-LOG-1` |
 | Resource type read | `load_balancer` |
-| Deciding attribute | _none: judged on the presence of a deviation_ |
+| Deciding attribute | `access_log` |
 | State | active |
 | Declared for | `outscale` |
 | Remediation proofs | 0 / 1 |
@@ -77,7 +77,8 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 ## How to investigate
 
 - Normalized resource type the rule reads: `load_balancer`
-- No attribute lock: the control is judged on the presence of a deviation, absence of a bad configuration counting as compliance.
+- Attribute the decision depends on: `access_log`
+- Without that attribute on a resource of the targeted type, the scan returns `not-evaluated` rather than `pass` (`internal/assess`, `requiredAttr` table).
 - What each source projects is readable in the descriptor: [`providers/outscale.yaml`](../../providers/outscale.yaml)
 - The rule that emits this code lives in [`internal/commonrules/rules/`](../../internal/commonrules/rules): it is **common** to every provider, only the source changes.
 

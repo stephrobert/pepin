@@ -68,8 +68,12 @@ var requiredAttr = map[string][]string{
 	// seul, ce qui franchissait le verrou et concluait « conforme » sur une ACL jamais lue —
 	// alors que l'ACL est le vecteur d'exposition le plus courant. Sans signal d'ACL, le
 	// contrôle sort « non évalué », ce qui est la réponse honnête.
-	"objectstorage_bucket_public_access":                {"acl", "acl_grants", "public_via_acl"},
-	"database_encryption_at_rest_enabled":               {"encryption_at_rest"},
+	"objectstorage_bucket_public_access":  {"acl", "acl_grants", "public_via_acl"},
+	"database_encryption_at_rest_enabled": {"encryption_at_rest"},
+	// Sans cette entrée, une LBU dont `access_log` n'a pas été collecté rendait un
+	// `pass` SILENCIEUX depuis que la règle a cessé de conclure sur une absence.
+	// La règle se tait, le verrou dit pourquoi : « non collecté », pas « conforme ».
+	"loadbalancer_logging_enabled":                      {"access_log"},
 	"loadbalancer_http_redirect_to_https":               {"redirect_to_https"},
 	"loadbalancer_ssl_listeners":                        {"load_balancer_type"},
 	"network_subnet_no_public_ip_by_default":            {"map_public_ip_on_launch"},
