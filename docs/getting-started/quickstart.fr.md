@@ -208,7 +208,7 @@ sans le PermissionSet `IAMManager`, et les quatre étiquettes de gouvernance sur
 ──────────────────────────────────────────────────────────────────────────────
  Summary
 
- Verdict : conforme sur le périmètre déclaré (plan Terraform, état planifié) (aucune non-conformité détectée, 16 contrôles conformes)
+ Verdict : conforme sur le périmètre déclaré (plan Terraform, état planifié) (aucune non-conformité détectée, 12 contrôles conformes)
 
  🔴 CRITICAL 0   🟠 HIGH 0   🟡 MEDIUM 0   🔵 LOW 0
 ──────────────────────────────────────────────────────────────────────────────

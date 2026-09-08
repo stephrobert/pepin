@@ -305,9 +305,37 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 // attrCollected indique que l'ATTRIBUT clé du contrôle (s'il en a un) est présent sur au moins
 // une ressource de son type. Sans attribut requis déclaré, true (le contrôle s'évalue par la
 // présence d'un finding). C'est le verrou par ATTRIBUT (pas seulement par type) du « pass ».
+// requireAll énumère les contrôles dont les attributs déclarés se combinent en ET,
+// et non en OU.
+//
+// Le défaut : `requiredAttr` portait une LISTE, et la boucle rendait vrai au premier
+// attribut trouvé — un `any-of` implicite que personne n'avait décidé. Pour la
+// plupart des contrôles c'est juste : plusieurs signaux alternatifs établissent le
+// même fait. Pour celui-ci, non.
+//
+// `network_peering_cross_organization` COMPARE les deux comptes. Avec un seul, il n'y
+// a rien à comparer, et le contrôle franchissait pourtant sa porte.
+var requireAll = map[string]bool{
+	"network_peering_cross_organization": true,
+}
+
+// attrCollected dit si la donnée qui DÉCIDE a été collectée pour ce contrôle.
+//
+// `attrsByType` est construit par INTERSECTION sur les ressources d'un type
+// (cf. attrsByTypeOf) : un attribut n'y figure que si CHAQUE ressource le porte.
+// C'est ce qui empêche une ressource voisine d'ouvrir la porte du `pass` à une
+// ressource dont on n'a rien observé.
 func attrCollected(code, typ string, attrsByType map[string]map[string]bool) bool {
 	attrs := requiredAttr[code]
 	if len(attrs) == 0 {
+		return true
+	}
+	if requireAll[code] {
+		for _, a := range attrs {
+			if !attrsByType[typ][a] {
+				return false
+			}
+		}
 		return true
 	}
 	for _, a := range attrs {

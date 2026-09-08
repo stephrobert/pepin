@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"resources\":[{\"type\":\"0\",\"attributes\":{\"\":\"\",\"0\":[]}},{\"type\":\"0\",\"attributes\":{\"\":\"\",\"0\":\"\",\"0\":0}}]}")

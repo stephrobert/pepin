@@ -54,7 +54,7 @@ $ ./pepin scan scaleway --terraform examples/scaleway/terraform-fixed/plan.json
 […]
  Summary
 
- Verdict: compliant on the declared scope (Terraform plan, planned state) (no deviation detected, 16 compliant controls)
+ Verdict: compliant on the declared scope (Terraform plan, planned state) (no deviation detected, 12 compliant controls)
 
  🔴 CRITICAL 0   🟠 HIGH 0   🟡 MEDIUM 0   🔵 LOW 0
 ──────────────────────────────────────────────────────────────────────────────
