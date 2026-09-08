@@ -15,7 +15,7 @@
 | Sévérité | `high` |
 | Exigence SCSL (index gelé) | `CLD-STO-3` |
 | Type de ressource lu | `blockstorage_volume` |
-| Attribut décisif | `state` |
+| Attribut décisif | `volume_id` sur `blockstorage_snapshot`, `state` sur `blockstorage_volume` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale` |
 | Preuves de remédiation | 1 / 2 |
@@ -77,7 +77,7 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 ## Comment enquêter
 
 - Type de ressource normalisé lu par la règle : `blockstorage_volume`
-- Attribut dont la décision dépend : `state`
+- Attribut dont la décision dépend : `state` / `volume_id`
 - Sans cet attribut sur une ressource du type visé, le scan rend `not-evaluated` et non `pass` (`internal/assess`, table `requiredAttr`).
 - Ce que chaque source projette se lit dans le descripteur : [`providers/exoscale.yaml`](../../providers/exoscale.yaml) · [`providers/outscale.yaml`](../../providers/outscale.yaml)
 - La règle qui émet ce code vit dans [`internal/commonrules/rules/`](../../internal/commonrules/rules) : elle est **commune** à tous les fournisseurs, seule la source change.

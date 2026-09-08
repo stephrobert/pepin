@@ -15,11 +15,14 @@ type controlStrings struct {
 	colProofs, colFamily, colFigure, colCount  string
 	figTotal, figActive, figDormant, figProofs string
 
-	backToIndex                               string
-	colField, colValue                        string
-	rowCode, rowFamily, rowSeverity, rowSCSL  string
-	rowType, rowAttrs, rowState, rowDeclared  string
-	rowProofs, noType, noAttr                 string
+	backToIndex                              string
+	colField, colValue                       string
+	rowCode, rowFamily, rowSeverity, rowSCSL string
+	rowType, rowAttrs, rowState, rowDeclared string
+	rowProofs, noType, noAttr                string
+	// onTypeWord rattache un attribut décisif à SON type, quand un contrôle en lit
+	// plusieurs : sans lui, « state / volume_id » se lit comme une alternative.
+	onTypeWord                                string
 	stateActive, stateDormant                 string
 	whyTitle, whyNote                         string
 	mappingTitle, mappingIntro                string
@@ -82,7 +85,7 @@ func controlText(lang string) controlStrings {
 			colField:    "Champ", colValue: "Valeur",
 			rowCode: "Code", rowFamily: "Famille", rowSeverity: "Sévérité",
 			rowSCSL: "Exigence SCSL (index gelé)", rowType: "Type de ressource lu",
-			rowAttrs: "Attribut décisif", rowState: "État", rowDeclared: "Déclaré pour",
+			onTypeWord: "sur", rowAttrs: "Attribut décisif", rowState: "État", rowDeclared: "Déclaré pour",
 			rowProofs: "Preuves de remédiation",
 			noType:    "aucun : contrôle transverse", noAttr: "aucun : jugé à la présence d'un écart",
 			stateActive: "actif", stateDormant: "dormant (déclaré pour aucun fournisseur)",
@@ -187,7 +190,7 @@ func controlText(lang string) controlStrings {
 		colField:    "Field", colValue: "Value",
 		rowCode: "Code", rowFamily: "Family", rowSeverity: "Severity",
 		rowSCSL: "SCSL requirement (frozen index)", rowType: "Resource type read",
-		rowAttrs: "Deciding attribute", rowState: "State", rowDeclared: "Declared for",
+		onTypeWord: "on", rowAttrs: "Deciding attribute", rowState: "State", rowDeclared: "Declared for",
 		rowProofs: "Remediation proofs",
 		noType:    "none: cross-cutting control", noAttr: "none: judged on the presence of a deviation",
 		stateActive: "active", stateDormant: "dormant (declared for no provider)",

@@ -45,22 +45,40 @@ var frameworkSlug = map[string]string{
 // Valeur = attributs acceptés (any-of) : le gate passe si AU MOINS UN est présent. Permet
 // à un contrôle d'être évaluable par plusieurs dérivations selon le fournisseur (ex.
 // iam_no_root : flag explicite `root_owned` chez l'un, tag `scope` account/eim chez l'autre).
-var requiredAttr = map[string][]string{
-	"compute_instance_deletion_protection":               {"deletion_protection"},
-	"compute_instance_no_secrets_in_user_data":           {"user_data"},
-	"compute_instance_has_security_group":                {"security_group_ids"},
-	"compute_instance_public_ip_with_open_securitygroup": {"public_ip"},
-	"compute_image_not_public":                           {"public"},
-	"iam_no_root_access_key":                             {"root_owned", "scope"},
-	"iam_user_mfa_enabled":                               {"mfa_enabled"},
-	"iam_account_mfa_enforced":                           {"require_trusted_env"},
-	"iam_apiaccesspolicy_max_key_expiration":             {"max_access_key_expiration_seconds"},
-	"blockstorage_volume_encryption":                     {"encrypted"},
-	"blockstorage_snapshot_not_public":                   {"global_permission"},
-	"objectstorage_bucket_object_lock_enabled":           {"object_lock_enabled"},
-	"objectstorage_bucket_kms_encryption":                {"sse_kms_enabled"},
-	"objectstorage_bucket_versioning_enabled":            {"versioning"},
-	"objectstorage_bucket_default_encryption":            {"default_encryption_enabled"},
+//
+// La déclaration est faite PAR TYPE, d'où l'imbrication. La clé `""` désigne le type
+// PRINCIPAL, celui que `genprovider.ControlType` dérive déjà du code : l'écrire serait
+// redondant, et une redondance est ce qui finit par diverger. Seul un type SECONDAIRE
+// se nomme.
+//
+// Pourquoi ce cran supplémentaire. La table portait un attribut par contrôle, appliqué
+// au type principal, et six contrôles en corrèlent plusieurs. `volume_id` non collecté
+// sur les SNAPSHOTS rendait alors chaque snapshot inattribuable, donc tous les volumes
+// « sans sauvegarde » — un faux positif de MASSE sur un contrôle `high`, déclenché par
+// une lacune de collecte que rien ne signalait. Mesuré avant correction : deux volumes
+// réellement sauvegardés par des snapshots fraîches et terminées, tous deux en écart.
+//
+// L'AND est entre les types, le OR entre les attributs d'un même type : chaque type que
+// le contrôle lit doit avoir sa donnée décisive, sans quoi il conclut sur ce qu'il n'a
+// pas vu. Les types nommés ici sont confrontés à `genprovider.ControlTypes` par
+// TestDecidingAttributesDeclareKnownTypes — la chaîne va du Rego aux types, puis des
+// types aux attributs, et aucun maillon ne flotte.
+var requiredAttr = map[string]map[string][]string{
+	"compute_instance_deletion_protection":               {"": {"deletion_protection"}},
+	"compute_instance_no_secrets_in_user_data":           {"": {"user_data"}},
+	"compute_instance_has_security_group":                {"": {"security_group_ids"}},
+	"compute_instance_public_ip_with_open_securitygroup": {"": {"public_ip"}},
+	"compute_image_not_public":                           {"": {"public"}},
+	"iam_no_root_access_key":                             {"": {"root_owned", "scope"}},
+	"iam_user_mfa_enabled":                               {"": {"mfa_enabled"}},
+	"iam_account_mfa_enforced":                           {"": {"require_trusted_env"}},
+	"iam_apiaccesspolicy_max_key_expiration":             {"": {"max_access_key_expiration_seconds"}},
+	"blockstorage_volume_encryption":                     {"": {"encrypted"}},
+	"blockstorage_snapshot_not_public":                   {"": {"global_permission"}},
+	"objectstorage_bucket_object_lock_enabled":           {"": {"object_lock_enabled"}},
+	"objectstorage_bucket_kms_encryption":                {"": {"sse_kms_enabled"}},
+	"objectstorage_bucket_versioning_enabled":            {"": {"versioning"}},
+	"objectstorage_bucket_default_encryption":            {"": {"default_encryption_enabled"}},
 	// Un 403 sur GetBucketAcl ne doit pas rendre un bucket public « conforme ». La liste
 	// n'accepte QUE des signaux d'ACL, volontairement : `policy_public` en faisait partie,
 	// or collectBucket interroge ACL et policy SÉPARÉMENT (best effort). Un 403 sur
@@ -68,25 +86,25 @@ var requiredAttr = map[string][]string{
 	// seul, ce qui franchissait le verrou et concluait « conforme » sur une ACL jamais lue —
 	// alors que l'ACL est le vecteur d'exposition le plus courant. Sans signal d'ACL, le
 	// contrôle sort « non évalué », ce qui est la réponse honnête.
-	"objectstorage_bucket_public_access":  {"acl", "acl_grants", "public_via_acl"},
-	"database_encryption_at_rest_enabled": {"encryption_at_rest"},
+	"objectstorage_bucket_public_access":  {"": {"acl", "acl_grants", "public_via_acl"}},
+	"database_encryption_at_rest_enabled": {"": {"encryption_at_rest"}},
 	// Sans cette entrée, une LBU dont `access_log` n'a pas été collecté rendait un
 	// `pass` SILENCIEUX depuis que la règle a cessé de conclure sur une absence.
 	// La règle se tait, le verrou dit pourquoi : « non collecté », pas « conforme ».
-	"loadbalancer_logging_enabled":                      {"access_log"},
-	"loadbalancer_http_redirect_to_https":               {"redirect_to_https"},
-	"loadbalancer_ssl_listeners":                        {"load_balancer_type"},
-	"network_subnet_no_public_ip_by_default":            {"map_public_ip_on_launch"},
-	"network_securitygroup_default_restrict_traffic":    {"security_group_name"},
-	"network_peering_cross_organization":                {"source_account", "accepter_account"},
-	"kubernetes_cluster_not_publicly_accessible":        {"admin_whitelist"},
-	"kubernetes_cluster_control_plane_highly_available": {"control_plane_multi_az"},
-	"kubernetes_cluster_auto_upgrade_enabled":           {"auto_upgrade"},
-	"kubernetes_cluster_deletion_protection":            {"deletion_protection"},
-	"kubernetes_cluster_audit_logging_enabled":          {"audit_enabled"},
+	"loadbalancer_logging_enabled":                      {"": {"access_log"}},
+	"loadbalancer_http_redirect_to_https":               {"": {"redirect_to_https"}},
+	"loadbalancer_ssl_listeners":                        {"": {"load_balancer_type"}},
+	"network_subnet_no_public_ip_by_default":            {"": {"map_public_ip_on_launch"}},
+	"network_securitygroup_default_restrict_traffic":    {"": {"security_group_name"}},
+	"network_peering_cross_organization":                {"": {"source_account", "accepter_account"}},
+	"kubernetes_cluster_not_publicly_accessible":        {"": {"admin_whitelist"}},
+	"kubernetes_cluster_control_plane_highly_available": {"": {"control_plane_multi_az"}},
+	"kubernetes_cluster_auto_upgrade_enabled":           {"": {"auto_upgrade"}},
+	"kubernetes_cluster_deletion_protection":            {"": {"deletion_protection"}},
+	"kubernetes_cluster_audit_logging_enabled":          {"": {"audit_enabled"}},
 	// Ce contrôle lit la RÉGION de chaque ressource (pas la ressource synthétique du
 	// fournisseur) : sans région collectée, il ne mesure rien.
-	"governance_resource_region_in_eu": {"region"},
+	"governance_resource_region_in_eu": {"": {"region"}},
 
 	// --- Verrous ajoutés après l'audit de livraison -------------------------
 	// Ces contrôles concluaient « conforme » alors que l'attribut qui porte leur
@@ -96,43 +114,94 @@ var requiredAttr = map[string][]string{
 
 	// La base est ouverte tant qu'aucune ACL n'est posée (défaut d'API Scaleway) :
 	// sans ip_filter collecté, « conforme » est exactement l'inverse de la réalité.
-	"database_service_not_open_to_internet": {"ip_filter"},
-	"database_backup_enabled":               {"disable_backup"},
+	"database_service_not_open_to_internet": {"": {"ip_filter"}},
+	"database_backup_enabled":               {"": {"disable_backup"}},
 
 	// `statements` est TOUJOURS posé par le collecteur, au besoin à [] quand le
 	// document n'a pas pu être analysé : le verrou ne vaut que parce que
 	// attrsByTypeOf ne compte plus une collection vide comme collectée.
-	"iam_policy_no_administrative_privileges": {"statements"},
-	"iam_policy_no_notaction_notresource":     {"statements"},
-	"iam_policy_no_wildcard_resource":         {"statements"},
-	"iam_policy_no_privilege_escalation":      {"statements", "manages_iam"},
-	"iam_role_key_lifetime_bounded":           {"max_session_ttl", "policy_has_expiration"},
-	"iam_role_no_admin_privileges":            {"admin_privileges"},
-	"iam_role_source_ip_restricted":           {"source_ip_restricted"},
-	"iam_apiaccessrule_no_public_cidr":        {"ip_ranges"},
+	"iam_policy_no_administrative_privileges": {"": {"statements"}},
+	"iam_policy_no_notaction_notresource":     {"": {"statements"}},
+	"iam_policy_no_wildcard_resource":         {"": {"statements"}},
+	"iam_policy_no_privilege_escalation":      {"": {"statements", "manages_iam"}},
+	"iam_role_key_lifetime_bounded":           {"": {"max_session_ttl", "policy_has_expiration"}},
+	"iam_role_no_admin_privileges":            {"": {"admin_privileges"}},
+	"iam_role_source_ip_restricted":           {"": {"source_ip_restricted"}},
+	"iam_apiaccessrule_no_public_cidr":        {"": {"ip_ranges"}},
 
-	"network_securitygroup_default_deny": {"inbound_default_policy"},
-	"network_flow_matrix_documented":     {"description"},
+	"network_securitygroup_default_deny": {"": {"inbound_default_policy"}},
+	"network_flow_matrix_documented":     {"": {"description"}},
 
 	// La cartographie réseau se juge sur les ÉTIQUETTES du réseau. Sans elles, la
 	// règle se tait (garde de capacité) et le contrôle s'affichait « conforme » : le
 	// faux vert exact que l'issue #47 décrit, un contrôle qui valide une conformité
 	// qu'il n'a pas mesurée.
-	"network_documented": {"tags"},
+	"network_documented": {"": {"tags"}},
 
 	// Sur un plan Terraform, `state` arrive en after_unknown et aucun
 	// blockstorage_snapshot n'existe : le contrôle ne peut PAS y être évalué,
 	// et s'affichait pourtant vert sur l'exemple livré dans le dépôt.
-	"blockstorage_volume_snapshots_exist": {"state"},
+	//
+	// Et `volume_id` sur les SNAPSHOTS, qui est le lien vers le volume. Sans lui
+	// aucune snapshot n'est attribuable, donc aucun volume n'a de sauvegarde
+	// visible, donc TOUS sortent en écart `high` — alors que la lacune est dans la
+	// collecte, pas dans la sauvegarde. C'est le type secondaire que la table ne
+	// savait pas exprimer avant #133.
+	"blockstorage_volume_snapshots_exist": {
+		"":                      {"state"},
+		"blockstorage_snapshot": {"volume_id"},
+	},
 }
 
 // RequiredAttrs retourne, par contrôle, les attributs dont la PRÉSENCE conditionne un « pass »
 // (copie : la table interne reste immuable). Exposé pour que la documentation de couverture
 // (internal/docgen) soit DÉRIVÉE de la table réellement appliquée, jamais recopiée à côté.
+// L'APLATISSEMENT convient à qui demande « de quelle donnée ce contrôle a-t-il
+// besoin ? » — la matrice de couverture s'en sert pour savoir si un contrôle est gaté.
+// Il ne convient PAS à qui AFFICHE la réponse : joindre les attributs par « ou »
+// dirait « state ou volume_id » là où le contrôle exige « state sur les volumes ET
+// volume_id sur les snapshots ». Pour afficher, prendre DecidingAttrsByType.
 func RequiredAttrs() map[string][]string {
 	out := make(map[string][]string, len(requiredAttr))
-	for code, attrs := range requiredAttr {
-		out[code] = append([]string(nil), attrs...)
+	for code, parType := range requiredAttr {
+		seen := map[string]bool{}
+		var attrs []string
+		for _, liste := range parType {
+			for _, a := range liste {
+				if seen[a] {
+					continue
+				}
+				seen[a] = true
+				attrs = append(attrs, a)
+			}
+		}
+		sort.Strings(attrs) // ordre stable : la doc générée en dépend
+		out[code] = attrs
+	}
+	return out
+}
+
+// DecidingAttrsByType rend, par contrôle puis par TYPE, les attributs décisifs — la
+// déclaration telle qu'elle est réellement appliquée, avec le type PRINCIPAL résolu en
+// son nom concret pour que l'affichage n'ait pas à refaire la dérivation.
+//
+// C'est la vue à utiliser pour montrer l'exigence à un humain : « state sur les
+// volumes, volume_id sur les snapshots » se lit, là où l'union à plat ment sur la
+// conjonction.
+func DecidingAttrsByType() map[string]map[string][]string {
+	out := make(map[string]map[string][]string, len(requiredAttr))
+	for code, parType := range requiredAttr {
+		concret := map[string][]string{}
+		for t, attrs := range parType {
+			nom := t
+			if nom == "" {
+				nom = genprovider.ControlType(code)
+			}
+			liste := append([]string(nil), attrs...)
+			sort.Strings(liste)
+			concret[nom] = append(concret[nom], liste...)
+		}
+		out[code] = concret
 	}
 	return out
 }
@@ -235,6 +304,56 @@ func applicable(code string, controlType map[string]string, resourceTypes map[st
 	return resourceTypes[t]
 }
 
+// correlationBroken dit si un contrôle CORRÉLANT plusieurs types a perdu le lien qui
+// le rend concluant, et pourquoi.
+//
+// Le verrou de capacité ne protège que la branche « pass » : dès qu'une règle émet un
+// écart, il n'est jamais consulté. Or une donnée manquante sur un type SECONDAIRE ne
+// produit pas un faux vert, elle produit son contraire — un faux ÉCART, et de masse.
+// `volume_id` non collecté sur les snapshots casse la jointure pour TOUS les volumes,
+// et chacun sort « sans sauvegarde » alors que rien de tel n'a été observé.
+//
+// La distinction avec le type PRINCIPAL est délibérée et c'est elle qui borne le
+// mécanisme. Sur le type principal, la règle juge ressource par ressource : celle dont
+// l'attribut manque ne déclenche pas, les autres restent des écarts RÉELS qu'il serait
+// grave de taire. Sur un type secondaire, l'absence casse la corrélation pour toutes,
+// et aucun des écarts n'est alors adossé à une observation.
+//
+// On ne requalifie donc que ce second cas, et seulement quand le type secondaire est
+// PRÉSENT : l'absence totale de snapshots est une observation — rien n'est sauvegardé —
+// tandis que des snapshots privées de leur lien sont une lacune de collecte.
+func correlationBroken(code string, resourceTypes map[string]bool, attrsByType map[string]map[string]bool) (string, bool) {
+	parType := requiredAttr[code]
+	if len(parType) == 0 {
+		return "", false
+	}
+	types := make([]string, 0, len(parType))
+	for t := range parType {
+		if t != "" && resourceTypes[t] {
+			types = append(types, t)
+		}
+	}
+	sort.Strings(types) // ordre stable : ce motif part dans un rapport opposable
+	var rompu []string
+	for _, t := range types {
+		if attrsOnType(code, t, parType[t], attrsByType) {
+			continue
+		}
+		attrs := append([]string(nil), parType[t]...)
+		sort.Strings(attrs)
+		rompu = append(rompu, fmt.Sprintf(i18n.T(
+			"« %s » non collecté sur les ressources de type « %s »",
+			"\"%s\" not collected on the resources of type \"%s\""), strings.Join(attrs, " / "), t))
+	}
+	if len(rompu) == 0 {
+		return "", false
+	}
+	return fmt.Sprintf(i18n.T(
+		"corrélation impossible : %s — l'écart ne peut être ni établi ni écarté (garde de capacité)",
+		"correlation impossible: %s — the deviation can be neither established nor ruled out (capability guard)"),
+		strings.Join(rompu, ", ")), true
+}
+
 // Build derives the assessment for one provider scan. `findings` must carry the AGNOSTIC
 // control code (finding.Code before any SCSL enrichment). `resourceTypes` is the set of
 // resource types present in the evaluated inventory. `naReasons` maps a control code to the
@@ -248,6 +367,17 @@ func applicable(code string, controlType map[string]string, resourceTypes map[st
 func Build(provider string, controls map[string]referentiel.Control, findings []finding.Finding, resourceTypes map[string]bool, naReasons map[string]string, verified map[string]bool, controlType map[string]string, attrsByType map[string]map[string]bool, run assessment.Run) assessment.Assessment {
 	// One Fail result per finding (a control may fail on several subjects).
 	failedControls := map[string]bool{}
+	// Un contrôle dont la CORRÉLATION est rompue ne produit pas des écarts, il produit
+	// du bruit : le motif est calculé une fois par contrôle, pas par finding.
+	rompu := map[string]string{}
+	for _, f := range findings {
+		if _, deja := rompu[f.Code]; deja {
+			continue
+		}
+		if motif, cassee := correlationBroken(f.Code, resourceTypes, attrsByType); cassee {
+			rompu[f.Code] = motif
+		}
+	}
 	var results []assessment.Result
 	for _, f := range findings {
 		// Un finding INCONCLUANT n'est pas un écart : la règle a vu la donnée et n'a
@@ -255,8 +385,16 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 		// `failedControls` reste marqué : la ligne par sujet est déjà émise, la
 		// branche pass/not-evaluated ne doit pas en ajouter une seconde.
 		status := assessment.Fail
+		evidence := stripSubject(f.Message)
 		if IsInconclusive(f) {
 			status = assessment.NotEvaluated
+		}
+		// Même conclusion, cause différente : ici ce n'est pas la règle qui constate
+		// qu'elle ne sait pas, c'est l'assessment qui sait que la donnée reliant les
+		// deux types n'est jamais arrivée. Affirmer l'écart serait l'inventer.
+		if motif, cassee := rompu[f.Code]; cassee {
+			status = assessment.NotEvaluated
+			evidence = motif
 		}
 		failedControls[f.Code] = true
 		c := controls[f.Code]
@@ -266,7 +404,7 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			Status:      status,
 			Severity:    first(f.Severity, c.Severite),
 			Subject:     f.Subject,
-			Evidence:    assessment.Evidence{Observed: stripSubject(f.Message), Source: run.Source},
+			Evidence:    assessment.Evidence{Observed: evidence, Source: run.Source},
 			References:  References(c),
 			Remediation: first(f.Remediation, c.RemediationIn(i18n.Current())),
 			Labels:      maps.Clone(f.Labels), // copie : une mutation post-Build (enrichFromReferentiel) ne doit pas altérer l'assessment scellé
@@ -396,21 +534,47 @@ func typesInScope(code, typ string, resourceTypes map[string]bool) []string {
 // souveraineté ne se conclut pas des VMs vers les buckets. Et un scope VIDE ne
 // conclut rien — il n'y a alors aucune ressource à localiser, ce que
 // `notEvaluatedReason` dit avec ses mots.
+// Chaque type que le contrôle lit doit avoir SA donnée décisive : `volume_id` manquant
+// sur les snapshots ne dit rien des volumes, mais il rend le lien illisible, et un lien
+// illisible n'est pas une absence de sauvegarde.
 func attrCollected(code, typ string, resourceTypes map[string]bool, attrsByType map[string]map[string]bool) bool {
-	attrs := requiredAttr[code]
-	if len(attrs) == 0 {
+	exige := decidingByType(code, typ, resourceTypes)
+	if len(requiredAttr[code]) == 0 {
 		return true
 	}
-	scope := typesInScope(code, typ, resourceTypes)
-	if len(scope) == 0 {
+	if len(exige) == 0 {
 		return false
 	}
-	for _, t := range scope {
+	for t, attrs := range exige {
 		if !attrsOnType(code, t, attrs, attrsByType) {
 			return false
 		}
 	}
 	return true
+}
+
+// decidingByType rend, pour cet inventaire, les attributs à exiger SUR CHAQUE TYPE.
+//
+// La clé `""` de la déclaration vise le type principal — ou, pour un contrôle
+// transverse qui n'en a pas, tous les types qu'il lit et qui sont présents. Un type
+// SECONDAIRE nommé n'est exigé que s'il est présent : l'absence totale de snapshots
+// est une OBSERVATION (rien n'est sauvegardé), là où des snapshots privées de leur
+// `volume_id` sont une lacune de collecte. Confondre les deux est précisément ce qui
+// produisait le faux positif de masse.
+func decidingByType(code, typ string, resourceTypes map[string]bool) map[string][]string {
+	out := map[string][]string{}
+	for t, attrs := range requiredAttr[code] {
+		if t != "" {
+			if resourceTypes[t] {
+				out[t] = append(out[t], attrs...)
+			}
+			continue
+		}
+		for _, s := range typesInScope(code, typ, resourceTypes) {
+			out[s] = append(out[s], attrs...)
+		}
+	}
+	return out
 }
 
 // attrsOnType applique la règle de suffisance d'un contrôle à UN type : tous les
@@ -455,23 +619,47 @@ func notEvaluatedReason(code, typ string, verified bool, resourceTypes map[strin
 			"aucune ressource des types que ce contrôle examine dans l'inventaire évalué",
 			"no resource of the types this control examines in the assessed inventory")
 	}
-	if attrs := requiredAttr[code]; len(attrs) > 0 && !attrCollected(code, typ, resourceTypes, attrsByType) {
-		where := fmt.Sprintf(i18n.T("les ressources de type « %s »", "the resources of type \"%s\""), typ)
-		if typ == "" { // contrôle transverse (gouvernance) : plusieurs types lus
-			// Nommer les types FAUTIFS, pas tous ceux en scope : l'opérateur doit
-			// savoir où la donnée manque pour aller la chercher.
-			var missing []string
-			for _, t := range scope {
-				if !attrsOnType(code, t, attrs, attrsByType) {
-					missing = append(missing, t)
-				}
+	if len(requiredAttr[code]) > 0 && !attrCollected(code, typ, resourceTypes, attrsByType) {
+		// Nommer le COUPLE (type, attribut) qui manque, pas l'union des attributs du
+		// contrôle : dire « volume_id non collecté » sans dire « sur les snapshots »
+		// envoie l'opérateur chercher au mauvais endroit, puisque le contrôle porte le
+		// nom du volume.
+		exige := decidingByType(code, typ, resourceTypes)
+		types := make([]string, 0, len(exige))
+		for t := range exige {
+			types = append(types, t)
+		}
+		sort.Strings(types) // ordre stable : ce message part dans un rapport opposable
+		type lacune struct{ attrs, typ string }
+		var manquants []lacune
+		for _, t := range types {
+			if attrsOnType(code, t, exige[t], attrsByType) {
+				continue
 			}
-			where = fmt.Sprintf(i18n.T("les ressources de type « %s »", "the resources of type \"%s\""),
-				strings.Join(missing, " / "))
+			attrs := append([]string(nil), exige[t]...)
+			sort.Strings(attrs)
+			manquants = append(manquants, lacune{attrs: strings.Join(attrs, " / "), typ: t})
+		}
+		// Un seul type manquant garde la phrase d'origine, qui se lit mieux : le verbe
+		// suit son sujet. Au-delà, la liste passe DEVANT, car accumuler les compléments
+		// avant le participe produit « attribut « a » sur « X », « b » sur « Y » non
+		// collecté », où le verbe arrive après trois virgules sans plus se rattacher à
+		// rien.
+		if len(manquants) == 1 {
+			return fmt.Sprintf(i18n.T(
+				"attribut « %s » non collecté sur les ressources de type « %s » (garde de capacité)",
+				"attribute \"%s\" not collected on the resources of type \"%s\" (capability guard)"),
+				manquants[0].attrs, manquants[0].typ)
+		}
+		clauses := make([]string, 0, len(manquants))
+		for _, m := range manquants {
+			clauses = append(clauses, fmt.Sprintf(i18n.T(
+				"« %s » sur les ressources de type « %s »",
+				"\"%s\" on the resources of type \"%s\""), m.attrs, m.typ))
 		}
 		return fmt.Sprintf(i18n.T(
-			"attribut « %s » non collecté sur %s (garde de capacité)",
-			"attribute \"%s\" not collected on %s (capability guard)"), strings.Join(attrs, " / "), where)
+			"attributs décisifs non collectés : %s (garde de capacité)",
+			"deciding attributes not collected: %s (capability guard)"), strings.Join(clauses, ", "))
 	}
 	return i18n.T("contrôle non évaluable sur cet inventaire", "control not evaluable on this inventory")
 }

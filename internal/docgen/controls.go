@@ -16,6 +16,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/stephrobert/pepin/internal/assess"
+
 	yaml "go.yaml.in/yaml/v3"
 
 	"github.com/stephrobert/pepin/internal/i18n"
@@ -256,9 +258,27 @@ func (m Matrix) identityTable(t controlStrings, r Row, proofs map[string]map[str
 	if r.Type != "" {
 		typ = "`" + r.Type + "`"
 	}
+	// Les attributs décisifs sont déclarés PAR TYPE. Un contrôle qui en lit plusieurs
+	// doit dire lequel va avec lequel : « `state` / `volume_id` » sur une seule ligne
+	// laissait croire à une alternative sur le type principal, alors que `volume_id`
+	// est décisif sur les snapshots et que les deux sont exigés ensemble.
 	attrs := "_" + t.noAttr + "_"
-	if len(r.RequiredAttrs) > 0 {
-		attrs = strings.Join(codeList(r.RequiredAttrs), " / ")
+	if parType := assess.DecidingAttrsByType()[r.Code]; len(parType) > 0 {
+		types := make([]string, 0, len(parType))
+		for ty := range parType {
+			types = append(types, ty)
+		}
+		sort.Strings(types)
+		clauses := make([]string, 0, len(types))
+		for _, ty := range types {
+			liste := strings.Join(codeList(parType[ty]), " / ")
+			if len(types) == 1 {
+				clauses = append(clauses, liste)
+				continue
+			}
+			clauses = append(clauses, fmt.Sprintf("%s %s `%s`", liste, t.onTypeWord, ty))
+		}
+		attrs = strings.Join(clauses, ", ")
 	}
 	state := t.stateActive
 	if len(declared) == 0 {

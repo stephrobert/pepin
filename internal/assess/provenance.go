@@ -169,23 +169,40 @@ func WithProvenance(a assessment.Assessment, idx ProvenanceIndex, controlType ma
 	}
 	res := append([]assessment.Result(nil), a.Results...)
 	for i := range res {
-		attrs := requiredAttr[res[i].Control]
-		if len(attrs) == 0 {
+		parType := requiredAttr[res[i].Control]
+		if len(parType) == 0 {
 			continue
 		}
-		byAttr := idx[controlType[res[i].Control]]
-		if byAttr == nil {
-			continue
+		// La déclaration est PAR TYPE : chaque attribut se cherche dans la provenance
+		// du type sur lequel il est décisif, la clé `""` désignant le type principal.
+		// Chercher `volume_id` dans la provenance du volume ne le trouverait jamais —
+		// il est porté par la snapshot.
+		types := make([]string, 0, len(parType))
+		for t := range parType {
+			types = append(types, t)
 		}
+		sort.Strings(types) // ordre stable : cette annotation part dans le rapport
 		var attested []string
 		var labels []string
-		for _, attr := range attrs {
-			o, ok := byAttr[attr]
-			if !ok {
+		for _, t := range types {
+			concret := t
+			if concret == "" {
+				concret = controlType[res[i].Control]
+			}
+			byAttr := idx[concret]
+			if byAttr == nil {
 				continue
 			}
-			attested = append(attested, attr)
-			labels = append(labels, attr+"="+o.Label())
+			attrs := append([]string(nil), parType[t]...)
+			sort.Strings(attrs)
+			for _, attr := range attrs {
+				o, ok := byAttr[attr]
+				if !ok {
+					continue
+				}
+				attested = append(attested, attr)
+				labels = append(labels, attr+"="+o.Label())
+			}
 		}
 		if len(attested) == 0 {
 			continue

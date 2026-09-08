@@ -906,7 +906,12 @@ func inventoryTypesTable(t blockStrings) string {
 }
 
 func requiredAttrTable(t blockStrings) string {
-	req := assess.RequiredAttrs()
+	// UNE LIGNE PAR COUPLE (contrôle, type). L'exigence est déclarée par type, et
+	// l'aplatir la rendrait fausse : `blockstorage_volume_snapshots_exist` sortait
+	// « `state` ou `volume_id` » sur la ligne du volume, alors que `volume_id` est
+	// décisif sur les SNAPSHOTS et que la conjonction est un ET. Un lecteur de la
+	// documentation seule en aurait tiré la mauvaise conclusion.
+	req := assess.DecidingAttrsByType()
 	codes := make([]string, 0, len(req))
 	for c := range req {
 		codes = append(codes, c)
@@ -915,19 +920,24 @@ func requiredAttrTable(t blockStrings) string {
 	var b strings.Builder
 	b.WriteString("| " + t.colControl + " | " + t.colType + " | " + t.colDeciding + " |\n|---|---|---|\n")
 	for _, c := range codes {
-		attrs := req[c]
-		sort.Strings(attrs)
-		quoted := make([]string, 0, len(attrs))
-		for _, a := range attrs {
-			quoted = append(quoted, "`"+a+"`")
+		types := make([]string, 0, len(req[c]))
+		for ty := range req[c] {
+			types = append(types, ty)
 		}
-		typ := genprovider.ControlType(c)
-		if typ == "" {
-			typ = t.noTypeWord // contrôle transverse : aucun type de ressource visé
-		} else {
-			typ = "`" + typ + "`"
+		sort.Strings(types)
+		for _, ty := range types {
+			attrs := req[c][ty]
+			sort.Strings(attrs)
+			quoted := make([]string, 0, len(attrs))
+			for _, a := range attrs {
+				quoted = append(quoted, "`"+a+"`")
+			}
+			libelle := t.noTypeWord // contrôle transverse : aucun type de ressource visé
+			if ty != "" {
+				libelle = "`" + ty + "`"
+			}
+			_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s |\n", c, libelle, strings.Join(quoted, " "+t.orWord+" "))
 		}
-		_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s |\n", c, typ, strings.Join(quoted, " "+t.orWord+" "))
 	}
 	return b.String()
 }

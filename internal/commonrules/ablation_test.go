@@ -65,14 +65,18 @@ var ablationExceptions = map[string]string{
 
 	// Une snapshot sans `volume_id` n'est attribuable à AUCUN volume : le lien est
 	// ce qui la fait compter. Son absence n'est donc pas un repli défavorable mais
-	// une donnée structurellement inexploitable.
+	// une donnée structurellement inexploitable, et la RÈGLE ne peut rien y faire —
+	// elle ne voit pas la différence entre « aucune snapshot ne correspond » et
+	// « le lien n'a pas été collecté ».
 	//
-	// La bonne réponse à long terme n'est pas ici mais au verrou de capacité : si
-	// `volume_id` n'est pas collecté sur les snapshots, AUCUNE ne peut être
-	// attribuée et tous les volumes paraissent non sauvegardés — un faux positif
-	// de masse. Exprimer cela demande un verrou par TYPE au sein d'un contrôle
-	// multi-types, que le contrat de décision ne porte pas encore. Suivi en #133.
-	"blockstorage_volume_snapshots_exist\x00volume_id": "le lien vers le volume est structurel : sans lui la snapshot n'est attribuable à rien",
+	// Cette exception RESTE donc, mais elle ne consigne plus une dette : #133 a
+	// traité le problème là où il se traite, un cran plus haut. Le contrat de
+	// décision déclare désormais `volume_id` décisif SUR LE TYPE snapshot, et
+	// l'assessment requalifie les écarts en `not-evaluated` quand ce lien manque —
+	// le faux positif de masse (tous les volumes « non sauvegardés » alors que rien
+	// ne l'a été observé) ne peut plus sortir. Ce que cette ligne dit aujourd'hui,
+	// c'est seulement que la porte d'ablation mesure la règle, pas la chaîne.
+	"blockstorage_volume_snapshots_exist\x00volume_id": "le lien vers le volume est structurel : sans lui la snapshot n'est attribuable à rien ; le faux positif de masse est traité au verrou de capacité, par type (#133)",
 }
 
 type finding struct {
