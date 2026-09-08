@@ -268,3 +268,35 @@ run = "python3 tools/falsify/falsify.py --selftest"
 [tasks."falsify:all"]
 description = "Rejoue toutes les specs de falsification versionnées"
 run = "python3 tools/falsify/falsify.py --all tools/falsify/specs"
+
+[tasks.fuzz]
+description = "Cherche des entrées qui font paniquer les parseurs. Campagne longue : FUZZTIME=5m mise run fuzz"
+# Les deux cibles existaient depuis longtemps SANS jamais chercher : `go test`
+# n'exécute que le corpus de graines, donc le fuzzing était une non-régression, pas
+# une recherche. Les cibles visent le bon endroit — les parseurs d'entrée non
+# fiable, ce que la §5 du CLAUDE.md exige : « parser défensivement, jamais de
+# panique ». Une trouvaille rejoint testdata/fuzz/, donc elle est gardée pour
+# toujours.
+run = """
+set -eu
+t="${FUZZTIME:-30s}"
+echo "campagne de ${t} par cible"
+go test ./internal/tfparse/ -run '^$' -fuzz 'FuzzParsePlan' -fuzztime="$t"
+go test ./cmd/ -run '^$' -fuzz 'FuzzInventoryWalk' -fuzztime="$t"
+"""
+
+[tasks.prepush]
+description = "Tout ce sur quoi une PR échouera, qui coûte des secondes et n'exige aucun compte"
+depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftest"]
+# Ce que c'est, et ce que ce n'est délibérément PAS.
+#
+# Chacune de ces portes est déterministe, hors ligne, et tient en quelques
+# secondes : elles peuvent être un hook sans jamais apprendre `--no-verify` à
+# personne. C'est la seule façon qu'une porte serve — une porte qu'on ne lance
+# qu'en CI est une porte qu'on découvre après avoir poussé.
+#
+# Ce qu'elle n'attrape PAS, et il faut le savoir : tout ce qui exige un compte
+# cloud, une campagne longue (fuzz, falsify:all) ou l'observation d'un vrai
+# fournisseur. Ces choses vivent en nocturne ou à la qualification de release,
+# précisément pour ne pas rendre ce chemin-ci trop lent pour être suivi.
+run = "echo 'prepush : toutes les portes locales sont vertes'"
