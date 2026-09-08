@@ -23,6 +23,15 @@ belongs in `git log`.
 
 ### Added
 
+- **The quality map now publishes precision, derived from the counterexample corpus.**
+  "42 controls" is a sentence every CSPM says. Catching and staying SILENT are two
+  different measurements, and they are now printed side by side: 42 active
+  `high`/`critical` controls, 18 with a detection path proven end to end, 16 with a
+  legitimate counterexample, 0 false positives measured on the hardened
+  counter-witnesses. There is deliberately **no false-negative row**: nothing in the
+  repository measures them, and a published "0" would mean "we did not look". A gate
+  fails if that field is ever added, and another refuses any precision figure larger
+  than its denominator.
 - **Every `high`/`critical` rule must now prove what it REFUSES to fire on.** The
   veracity contract proved Pépin could produce the expected verdict; it never proved
   it *withholds* that verdict on a near-identical but legitimate configuration. A rule

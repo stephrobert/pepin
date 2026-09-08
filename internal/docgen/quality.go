@@ -63,11 +63,44 @@ func BuildQuality(root string, m Matrix) (quality.Snapshot, error) {
 	// relève aucun écart critical/high. TestEveryPostureIsTheOneMeasured confronte
 	// cette déclaration au scan, donc ce compteur est mesuré et non annoncé.
 	counterwitnesses := 0
+	// Les FAUX POSITIFS, mesurés et non annoncés : un écart critical/high relevé sur
+	// un tenant qui se déclare DURCI. Le relevé `expected.txt` est régénéré depuis le
+	// binaire, donc ce compteur suit le produit et non une intention. C'est le seul
+	// faux positif que ce dépôt sache mesurer, et un « 0 » n'y vaut que parce qu'il
+	// est publié avec son dénominateur (le nombre de contre-témoins).
+	faussesAlertes := 0
+	ctl := referentiel.All()
 	for _, t := range list {
-		if t.Posture == tenants.PostureHardened {
-			counterwitnesses++
+		if t.Posture != tenants.PostureHardened {
+			continue
+		}
+		counterwitnesses++
+		attendus, lerr := tenants.LoadExpected(t.ExpectedPath())
+		if lerr != nil {
+			return quality.Snapshot{}, lerr
+		}
+		for code, statut := range attendus {
+			if statut != "fail" {
+				continue
+			}
+			if s := ctl[code].Severite; s == "high" || s == "critical" {
+				faussesAlertes++
+			}
 		}
 	}
+	// Les contrôles sur lesquels la précision se mesure : actifs, et de sévérité
+	// haute. Un contrôle dormant n'est jamais évalué.
+	var hautes []string
+	for code, c := range ctl {
+		if len(c.Fournisseurs) == 0 {
+			continue
+		}
+		if c.Severite == "high" || c.Severite == "critical" {
+			hautes = append(hautes, code)
+		}
+	}
+	sort.Strings(hautes)
+
 	return quality.Compute(quality.Inputs{
 		Cells:              VeracityCells(m),
 		Covered:            veracity.Merge(veracity.Covered(files), fromTenants),
@@ -78,6 +111,12 @@ func BuildQuality(root string, m Matrix) (quality.Snapshot, error) {
 		RegoTestsByControl: regoTests,
 		Counterwitnesses:   counterwitnesses,
 		TenantsTotal:       len(list),
+		// La précision lit le MÊME calcul de contre-exemples que la porte qui refuse
+		// un contrôle sans le sien : deux calculs de couverture divergent toujours,
+		// et celui qui diverge est celui qu'on publie.
+		HighSeverityControls: hautes,
+		CounterexamplePairs:  veracity.CounterexamplePairs(files),
+		FalsePositives:       faussesAlertes,
 	}), nil
 }
 
@@ -158,6 +197,8 @@ type qualityText struct {
 	canaryTitle, canaryIntro                               string
 	colProvider, colRecorded, colAnswered, colMoved, colUn string
 	fpTitle, fpBody, counterwitnesses, tenantsWord         string
+	precTitle, precBody, precControls, precDetect          string
+	precCounter, precFP, precNoFN                          string
 	blindTitle, blindBody                                  string
 	generated                                              string
 }
@@ -192,6 +233,15 @@ func qualityStrings(lang string) qualityText {
 				"Un endpoint qui répond existe et se résout ; un `moved` (404) dit qu'il a bougé.",
 			colProvider: "Fournisseur", colRecorded: "Relevé le", colAnswered: "Ont répondu",
 			colMoved: "Déplacés", colUn: "Injoignables",
+			precTitle: "Précision des règles high/critical",
+			precBody: "Détecter et se TAIRE sont deux mesures différentes, et elles se publient ensemble :\n" +
+				"« 21 chemins de détection prouvés » se lit dans le sens le plus flatteur tant que\nrien ne dit sur combien de configurations légitimes ces mêmes règles se sont tues.\nUne règle qui se déclenche sur tout est parfaitement sensible.\n\nUn CONTRE-EXEMPLE est un couple sur un même chemin contrôle × fournisseur ×\nsource : un cas fautif, et un cas correct qui lui ressemble. Les contrôles qui\nn'en ont pas encore sont comptés dans\n`internal/veracity/testdata/counterexamples-debt.txt`.",
+			precControls: "Contrôles high/critical actifs",
+			precDetect:   "Dont un chemin de détection est prouvé de bout en bout",
+			precCounter:  "Dont un contre-exemple légitime est prouvé",
+			precFP:       "Faux positifs mesurés sur les contre-témoins",
+			precNoFN: "Il n'y a pas de ligne « faux négatifs », et son absence est le chiffre le plus\n" +
+				"honnête de cette page. Aucun artefact du dépôt ne les mesure : il faudrait un\ncorpus de configurations fautives dont on SAIT qu'elles échappent aux règles,\nc'est-à-dire savoir ce qu'on ne sait pas. Publier « 0 » serait le faux vert exact\nque cette page combat — zéro mesuré n'est pas zéro existant.",
 			fpTitle: "Faux positifs",
 			fpBody: "Le dépôt ne tient pas de registre de faux positifs, et en publier un compte serait\n" +
 				"exactement la saisie que cette page refuse. Ce qui est MESURÉ, c'est le\ncontre-témoin : un tenant tiers déclaré durci sur lequel Pépin ne relève aucun\nécart `critical`/`high`. C'est le seul endroit où un faux positif se voit, et une\nporte le vérifie à chaque build.",
@@ -231,6 +281,15 @@ func qualityStrings(lang string) qualityText {
 			"An endpoint that answers exists and resolves; a `moved` (404) says it has shifted.",
 		colProvider: "Provider", colRecorded: "Recorded", colAnswered: "Answered",
 		colMoved: "Moved", colUn: "Unreachable",
+		precTitle: "Precision of the high/critical rules",
+		precBody: "Catching and STAYING SILENT are two different measurements, and they are published\n" +
+			"together: \"21 detection paths proven\" reads in the most flattering way for as long\nas nothing says on how many legitimate configurations those same rules held their\ntongue. A rule that fires on everything is perfectly sensitive.\n\nA COUNTEREXAMPLE is a pair on one control × provider × source path: a faulty case,\nand a correct one that resembles it. Controls that do not have one yet are counted\nin `internal/veracity/testdata/counterexamples-debt.txt`.",
+		precControls: "Active high/critical controls",
+		precDetect:   "Of which a detection path is proven end to end",
+		precCounter:  "Of which a legitimate counterexample is proven",
+		precFP:       "False positives measured on the counter-witnesses",
+		precNoFN: "There is no \"false negatives\" row, and its absence is the most honest figure on\n" +
+			"this page. No repository artefact measures them: it would take a corpus of faulty\nconfigurations KNOWN to escape the rules, that is, knowing what one does not know.\nPublishing \"0\" would be the exact false green this page fights — a measured zero is\nnot an existing zero.",
 		fpTitle: "False positives",
 		fpBody: "The repository keeps no false-positive register, and publishing a count would be\n" +
 			"exactly the data entry this page refuses. What is MEASURED is the\ncounter-witness: a third-party tenant declared hardened on which Pépin raises no\n`critical`/`high` deviation. It is the only place a false positive shows up, and\na gate checks it on every build.",
@@ -293,6 +352,14 @@ func qualityPage(lang string, s quality.Snapshot) string {
 			c.Provider, c.Recorded, c.Answered, c.Moved, c.Unreachable)
 	}
 	b.WriteString("\n")
+
+	b.WriteString("## " + t.precTitle + "\n\n" + t.precBody + "\n\n")
+	b.WriteString("| " + t.colFigure + " | " + t.colCount + " |\n|---|---:|\n")
+	row(t.precControls, s.Precision.Controls)
+	row(t.precDetect, s.Precision.DetectionProven)
+	row(t.precCounter, s.Precision.WithCounterexample)
+	row(t.precFP, s.Precision.FalsePositives)
+	b.WriteString("\n" + t.precNoFN + "\n\n")
 
 	b.WriteString("## " + t.fpTitle + "\n\n" + t.fpBody + "\n\n")
 	b.WriteString("| " + t.colFigure + " | " + t.colCount + " |\n|---|---:|\n")

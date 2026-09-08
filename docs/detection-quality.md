@@ -70,6 +70,30 @@ An endpoint that answers exists and resolves; a `moved` (404) says it has shifte
 | `outscale` | 2026-08-21 | 17 | 0 | 0 |
 | `scaleway` | 2026-08-21 | 5 | 0 | 0 |
 
+## Precision of the high/critical rules
+
+Catching and STAYING SILENT are two different measurements, and they are published
+together: "21 detection paths proven" reads in the most flattering way for as long
+as nothing says on how many legitimate configurations those same rules held their
+tongue. A rule that fires on everything is perfectly sensitive.
+
+A COUNTEREXAMPLE is a pair on one control × provider × source path: a faulty case,
+and a correct one that resembles it. Controls that do not have one yet are counted
+in `internal/veracity/testdata/counterexamples-debt.txt`.
+
+| Figure | Count |
+|---|---:|
+| Active high/critical controls | 42 |
+| Of which a detection path is proven end to end | 18 |
+| Of which a legitimate counterexample is proven | 16 |
+| False positives measured on the counter-witnesses | 0 |
+
+There is no "false negatives" row, and its absence is the most honest figure on
+this page. No repository artefact measures them: it would take a corpus of faulty
+configurations KNOWN to escape the rules, that is, knowing what one does not know.
+Publishing "0" would be the exact false green this page fights — a measured zero is
+not an existing zero.
+
 ## False positives
 
 The repository keeps no false-positive register, and publishing a count would be
