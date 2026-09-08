@@ -1000,7 +1000,7 @@ func buildRun(provider string, rtypes map[string]bool) assessment.Run {
 	}
 	sort.Strings(included)
 	return assessment.Run{
-		Tool:      assessment.Component{Name: "pepin", Version: version, Digest: binaryDigest()},
+		Tool:      assessment.Component{Name: "pepin", Version: bareVersion(), Digest: binaryDigest()},
 		Ruleset:   assessment.Component{Name: "pepin-config", Digest: configDigest()},
 		Target:    assessment.Target{ID: targetID(provider), Provider: provider, Region: scanRegion, Platform: provider},
 		Timestamp: scanTimestamp,
@@ -1179,14 +1179,53 @@ func hasGovernanceResource(resources any) bool {
 	return false
 }
 
-// scslDocBase est la racine de la doc SCSL ; on y concatène l'id de l'exigence
-// SCSL (CLD-*) du contrôle pour pointer sa page (explication + remédiation).
-const scslDocBase = "https://stephane-robert.info/scsl/"
+// scslDocBase est la racine de la doc SCSL publiée.
+//
+// Le référentiel n'est PAS publié à raison d'une page par exigence : il est découpé
+// par FAMILLE, et chaque exigence y est une ancre (`#socle-<code en minuscules>`),
+// posée par le composant `Exigences`. La concaténation à plat qui précédait —
+// `…/scsl/CLD-NET-1` — ne servait aucune page, et chaque finding imprimait donc un
+// lien qui renvoyait le lecteur à la racine du site.
+const scslDocBase = "https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/"
+
+// scslFamilyPage associe le préfixe de famille d'une exigence à sa page publiée.
+// `mise run validate` ne peut pas vérifier une URL distante ; c'est
+// TestEverySCSLFamilyHasItsDocPage qui refuse une famille sans page, à partir de
+// l'index SCSL gelé lui-même.
+var scslFamilyPage = map[string]string{
+	"GEN": "index",
+	"IAM": "iam-acces-cloud",
+	"NET": "exposition-filtrage-reseau",
+	"STO": "stockage-donnees",
+	"CHF": "chiffrement-cles",
+	"CMP": "compute-instances",
+	"LOG": "journalisation-audit",
+	"GVN": "gouvernance-inventaire-cloud",
+}
+
+// scslDocURL construit l'URL publiée d'une exigence telle que `CLD-NET-1`.
+//
+// Une famille inconnue, ou un code qui n'est pas une exigence SCSL, ne rend AUCUN
+// lien. C'est délibéré et c'est le même raisonnement que celui appliqué au
+// `not-evaluated` : un lien faux coûte plus cher que pas de lien du tout, parce
+// qu'il est suivi, et que celui qui le suit croit avoir lu la bonne page.
+func scslDocURL(code string) string {
+	parts := strings.Split(code, "-") // CLD-NET-1
+	if len(parts) != 3 || parts[0] != "CLD" {
+		return ""
+	}
+	page, ok := scslFamilyPage[parts[1]]
+	if !ok {
+		return ""
+	}
+	return scslDocBase + page + "/#socle-" + strings.ToLower(code)
+}
 
 // docURL pointe la page SCSL du finding. Après enrichissement, `code` est l'id
-// SCSL (CLD-*) ; sinon le check agnostique sert de repli.
+// SCSL (CLD-*) ; le check agnostique, lui, n'a pas de page publiée et ne rend donc
+// pas de lien.
 func docURL(f finding.Finding) string {
-	return scslDocBase + f.Code
+	return scslDocURL(f.Code)
 }
 
 // verdictHeadline dérive le bandeau de verdict de l'ASSESSMENT, pas des seuls findings :
@@ -1291,14 +1330,16 @@ func scanReportOptions(provName, path string) screport.Options {
 	}
 	return screport.Options{
 		ToolName: "pepin",
-		Version:  version,
-		Mode:     mode,
-		Source:   path,
-		Banner:   pepinBanner(),
-		Tagline:  tr("scanner de posture cloud (sécurité · conformité)", "cloud posture scanner (security · compliance)"),
-		Brand:    lipgloss.Color("#C792EA"),
-		TierOf:   func(f finding.Finding) string { return f.Label("provider") },
-		DocURL:   docURL,
+		// Le rendu partagé ajoute lui-même son « v » : lui passer une chaîne déjà
+		// préfixée imprimait « vv0.3.0… » sur chaque scan.
+		Version: bareVersion(),
+		Mode:    mode,
+		Source:  path,
+		Banner:  pepinBanner(),
+		Tagline: tr("scanner de posture cloud (sécurité · conformité)", "cloud posture scanner (security · compliance)"),
+		Brand:   lipgloss.Color("#C792EA"),
+		TierOf:  func(f finding.Finding) string { return f.Label("provider") },
+		DocURL:  docURL,
 	}
 }
 

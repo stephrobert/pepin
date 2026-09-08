@@ -77,7 +77,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-1
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CHF-2  ·  scaleway
@@ -91,7 +91,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-CHF-2
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CMP-9  ·  scaleway
@@ -105,7 +105,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Bannir les secrets des données utilisateur ; utiliser un coffre de secrets et l'injection au démarrage. Révoquer le secret exposé.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-CMP-9
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/compute-instances/#socle-cld-cmp-9
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-IAM-12  ·  scaleway
@@ -119,7 +119,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Réserver la gestion IAM à une politique d'administration dédiée ; retirer le PermissionSet de gestion des politiques d'usage.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-IAM-12
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/iam-acces-cloud/#socle-cld-iam-12
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-1  ·  scaleway
@@ -134,7 +134,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand disponible) ; retirer 0.0.0.0/0.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-NET-1
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-2  ·  scaleway
@@ -148,7 +148,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Basculer la politique entrante par défaut sur « drop » et n'ouvrir que les flux légitimes par des règles explicites.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-NET-2
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-2
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-STO-3  ·  scaleway
@@ -162,7 +162,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Réactiver les sauvegardes automatiques et fixer une rétention adaptée au RPO.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-3
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-3
 
 ──────────────────────────────────────────────────────────────────────────────
  MEDIUM  ·  CLD-GVN-1  ·  scaleway
@@ -176,7 +176,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Ajouter les étiquettes obligatoires (CostCenter, Project, Env, Owner) sur la ressource.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-GVN-1
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/gouvernance-inventaire-cloud/#socle-cld-gvn-1
 
 ──────────────────────────────────────────────────────────────────────────────
  LOW  ·  CLD-STO-8  ·  scaleway
@@ -190,7 +190,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remediation
     Activer l'Object Lock (mode conformité/gouvernance) sur les buckets de sauvegarde et d'objets critiques.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-8
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-8
 
   Controls
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
@@ -261,7 +261,7 @@ premier écran d'un long rapport soit déjà actionnable.
   Remediation
     Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-STO-1
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
 ```
 <!-- /pepin:gen scan-control-objectstore -->
 
@@ -499,6 +499,15 @@ mot.
 ```json
 {
   "control": "blockstorage_volume_encryption",
+  "evidence": {
+    "observed": "Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2).",
+    "proves": [
+      "",
+      "",
+      ""
+    ],
+    "source": "terraform-plan"
+  },
   "references": [
     {
       "framework": "scsl",

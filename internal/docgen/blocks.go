@@ -309,12 +309,17 @@ func captureAll(root, bin, lang string) (captures, error) {
 	// Les documents PARSABLES, eux, portent la version nue (`"version": "0.2.0"`) : la
 	// forme citée y est donc celle du champ JSON, sans quoi la page de formats divergerait
 	// à chaque build.
-	if version != "" {
+	// Les DEUX formes se dérivent d'une seule, nue. Elles étaient auparavant supposées :
+	// ce code ajoutait un « v » à ce que `pepin version` imprime, tandis que le bandeau
+	// en ajoutait un de son côté — les deux chemins se contredisaient, et c'est ce
+	// désaccord qui imprimait « vv0.3.0… » sur chaque scan.
+	nue := strings.TrimPrefix(version, "v")
+	if nue != "" {
 		for _, capt := range c.all() {
-			capt.Stdout = strings.ReplaceAll(capt.Stdout, "v"+version, "v"+versionPlaceholder)
-			capt.Stderr = strings.ReplaceAll(capt.Stderr, "v"+version, "v"+versionPlaceholder)
-			capt.Stdout = strings.ReplaceAll(capt.Stdout, `"`+version+`"`, `"`+versionPlaceholder+`"`)
-			capt.Stderr = strings.ReplaceAll(capt.Stderr, `"`+version+`"`, `"`+versionPlaceholder+`"`)
+			capt.Stdout = strings.ReplaceAll(capt.Stdout, "v"+nue, "v"+versionPlaceholder)
+			capt.Stderr = strings.ReplaceAll(capt.Stderr, "v"+nue, "v"+versionPlaceholder)
+			capt.Stdout = strings.ReplaceAll(capt.Stdout, `"`+nue+`"`, `"`+versionPlaceholder+`"`)
+			capt.Stderr = strings.ReplaceAll(capt.Stderr, `"`+nue+`"`, `"`+versionPlaceholder+`"`)
 		}
 	}
 	return c, nil

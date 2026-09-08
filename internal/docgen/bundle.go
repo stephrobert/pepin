@@ -190,8 +190,13 @@ func captureBundle(r Runner, tmp, version string) (bundleCaptures, error) {
 func normalizeBundleText(s, tmp, version string) string {
 	s = strings.ReplaceAll(s, tmp+string(os.PathSeparator), "")
 	s = strings.ReplaceAll(s, tmp, "")
-	if version != "" {
-		s = strings.ReplaceAll(s, `"`+version+`"`, `"<version>"`)
+	// Le manifest porte la version NUE (`"version": "0.3.0"`), comme toute surface
+	// parsable ; `version` arrive ici telle que `pepin version` l'imprime, donc
+	// préfixée. Comparer les deux sans dépréfixer laissait passer la version réelle
+	// dans une page générée, qui divergeait alors à chaque build. C'était le troisième
+	// endroit où ces deux formes se contredisaient.
+	if nue := strings.TrimPrefix(version, "v"); nue != "" {
+		s = strings.ReplaceAll(s, `"`+nue+`"`, `"<version>"`)
 	}
 	s = vcsDigest.ReplaceAllString(s, "<provenance>")
 	s = sha64.ReplaceAllString(s, "<sha256>")

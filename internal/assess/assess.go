@@ -435,6 +435,13 @@ func Build(provider string, controls map[string]referentiel.Control, findings []
 			// Contract-declared not-applicable, with its justification — the auditor gold.
 			res.Status = assessment.NotApplicable
 			res.Waiver = &assessment.Waiver{Justification: naReasons[code]}
+			// La justification est AUSSI portée par `evidence.observed`. Elle était déjà
+			// là, dans `waiver`, mais `not-applicable` était le seul statut dont
+			// `evidence` restait nul : un lecteur qui parcourt les preuves d'un rapport
+			// trouvait une explication partout sauf ici, et devait savoir qu'un autre
+			// champ existait. Rien n'est retiré, rien ne bouge : la même phrase est
+			// lisible là où toutes les autres le sont.
+			res.Evidence = assessment.Evidence{Observed: naReasons[code], Source: run.Source}
 		case contains(c.Fournisseurs, provider):
 			// Implemented for this provider. Pass is asserted ONLY when the contract confirms
 			// the needed data is collected (verified) AND a resource of that service is present.
