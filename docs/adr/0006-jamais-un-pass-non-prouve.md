@@ -61,9 +61,12 @@ INTERSECTION, et la combinaison des attributs est explicite. Le défaut était v
 sur la fixture « conforme » du dépôt : quatre contrôles y déclaraient conforme une
 base de données dont la sauvegarde n'avait jamais été observée.
 
-Reste **#103** : un contrôle ne déclare qu'un seul type, donc l'incomplétude d'un
-second type qu'il lit ne le dégrade pas. C'est la limite actuelle de cette décision,
-pas une remise en cause de sa direction.
+Corrigé aussi (#103) : un contrôle déclare désormais TOUS les types qu'il lit, et
+l'incomplétude de n'importe lequel le dégrade. Six règles corrèlent plusieurs types,
+et l'incomplétude du second passait inaperçue — « VMs collectées, règles SG en 403 »
+laissait conclure sur une exposition dont la donnée n'était jamais arrivée. La
+déclaration est gardée par sa dérivation : `TestControlTypesMatchTheRules` la
+confronte à ce que les règles lisent, dans les deux sens.
 
 ## Invariants
 

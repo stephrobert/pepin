@@ -267,7 +267,8 @@ Collector capability report
   ✗ security_group_rule — insufficient privilege on the scanning account
     required grant: InstancesReadOnly (Project scope)
     HTTP 403 - GET https://api.scaleway.com/instance/v1/zones/fr-par-1/security_groups - insufficient permissions
-Result: 6 control(s) cannot be evaluated on this scope.
+Result: 7 control(s) cannot be evaluated on this scope.
+  · compute_instance_public_ip_with_open_securitygroup
   · network_securitygroup_allow_ingress_from_internet_to_all_ports
   · network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports
   · network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports
@@ -286,7 +287,7 @@ $ ./pepin scan scaleway partial-inventory.json
 […]
  Summary
 
- Verdict: INCOMPLETE — 6 control(s) are not evaluable because the collection is incomplete, 0 medium/low deviation(s) on what could be read
+ Verdict: INCOMPLETE — 7 control(s) are not evaluable because the collection is incomplete, 0 medium/low deviation(s) on what could be read
 
  🔴 CRITICAL 0   🟠 HIGH 0   🟡 MEDIUM 0   🔵 LOW 0
 ──────────────────────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/scankit/assessment"
@@ -58,15 +59,25 @@ func DegradedControls(coll model.Collection, controlType map[string]string, scop
 		if !scope[code] {
 			continue
 		}
-		typ := controlType[code]
-		if typ == "" {
-			// Un contrôle transverse (gouvernance) ne lit pas un type précis : aucune
-			// unité ne le porte, donc aucune ne peut prouver qu'il est dégradé. Ne pas
-			// le compter est l'énoncé prudent — l'affirmer serait inventer un lien.
+		// TOUS les types que le contrôle lit, pas seulement celui dont son code
+		// porte le préfixe. Six règles corrèlent plusieurs types, et l'incomplétude
+		// du SECOND passait inaperçue : « VMs collectées, règles SG en 403 » laissait
+		// conclure sur une exposition dont la donnée n'était jamais arrivée.
+		// L'incomplétude de n'importe lequel dégrade (ADR-0006).
+		types := genprovider.ControlTypes(code)
+		if len(types) == 0 {
+			// Un contrôle transverse qui ne lit AUCUN type : aucune unité ne le porte,
+			// donc aucune ne peut prouver qu'il est dégradé. Ne pas le compter est
+			// l'énoncé prudent — l'affirmer serait inventer un lien.
 			continue
 		}
-		if unit, ok := incomplete[typ]; ok {
+		for _, typ := range types {
+			unit, ok := incomplete[typ]
+			if !ok {
+				continue
+			}
 			out[code] = unit
+			break // une unité incomplète suffit ; la première nommée est la raison
 		}
 	}
 	return out
