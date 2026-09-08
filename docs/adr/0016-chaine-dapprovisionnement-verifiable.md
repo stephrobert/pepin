@@ -40,6 +40,7 @@ Concrètement, ce qui est tenu :
 | Mécanisme | Ce qu'il couvre |
 |---|---|
 | Épinglage par SHA complet | toute action tierce, sans exception |
+| Version explicite | tout OUTIL qu'une action installe |
 | Permissions minimales, déclarées par job | le jeton de chaque étape |
 | `checksums.txt` + `cosign sign-blob` | l'empreinte de **chaque** artefact publié |
 | Provenance SLSA (`attest-build-provenance`) | les binaires, comme sujets |
@@ -64,6 +65,16 @@ est celui qui a été publié » ; l'attestation dit « ce contenu décrit ce bi
 **Épingler les actions par étiquette de version** (`@v4`). Rejeté : une étiquette se
 déplace, donc elle n'épingle rien. C'est le vecteur d'attaque le plus documenté de
 l'écosystème.
+
+**Épingler l'action et laisser flotter ce qu'elle installe.** C'était l'état réel, et
+il a cassé toutes les PR le 2026-09-08 : `jdx/mise-action` était correctement épinglée
+par SHA, mais sans `version:` elle résolvait vers la dernière étiquette de mise — et
+`v2026.9.3` existait comme étiquette sans que ses binaires soient publiés. Cinq
+tentatives, 404, tout le dépôt à l'arrêt.
+
+Une chaîne ne vaut que son maillon le moins figé, et celui-là était choisi pour nous
+chaque jour par le dernier qui taguait en amont. L'invariant porte donc désormais sur
+l'outil, pas seulement sur l'action qui l'installe.
 
 **Signer chaque artefact séparément.** Rejeté : autant de signatures à vérifier, et
 un vérificateur qui en oublie une ne le saura pas. Un condensé unique signé donne
@@ -91,12 +102,15 @@ a survécu à trois releases.
 ## Invariants
 
 - Toute action tierce est épinglée par un SHA de 40 caractères.
+- Toute action qui INSTALLE un outil lui donne une version explicite. L'épinglage
+  d'une action ne fige que l'action : ce qu'elle télécharge ensuite reste choisi par
+  l'amont si personne ne le dit.
 - Tout artefact publié figure dans `checksums.txt`, donc sous la signature.
 - La documentation donne, pour chaque artefact, la commande qui le vérifie.
 - Aucun secret de fournisseur n'entre en CI (ADR-0012).
 
-*Gardes : `TestEveryPublishedArtefactIsChecksummed` et
-`TestEveryActionIsPinnedToAFullSHA` ; le préflight rejoue la vérification avant tout
+*Gardes : `TestEveryPublishedArtefactIsChecksummed`,
+`TestEveryActionIsPinnedToAFullSHA` et `TestEveryInstallerActionPinsItsTool` ; le préflight rejoue la vérification avant tout
 tag.*
 
 ## Validation

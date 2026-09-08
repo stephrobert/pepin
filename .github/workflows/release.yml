@@ -266,6 +266,11 @@ jobs:
       - name: Install Cosign
         if: ${{ !github.event.repository.private }}
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # Figer l'OUTIL, pas seulement l'action qui l'installe (ADR-0016).
+          # Un outil de signature dont la version est choisie par l'amont au
+          # moment du build est un maillon qu'on ne contrôle pas.
+          cosign-release: v3.1.3
 
       # Par digest, jamais par tag : une signature sur un tag bénit ce que le
       # tag pointera plus tard.
@@ -367,6 +372,11 @@ jobs:
       - name: Install Cosign
         if: ${{ !github.event.repository.private }}
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # Figer l'OUTIL, pas seulement l'action qui l'installe (ADR-0016).
+          # Un outil de signature dont la version est choisie par l'amont au
+          # moment du build est un maillon qu'on ne contrôle pas.
+          cosign-release: v3.1.3
 
       # Une signature sur checksums.txt couvre chaque artefact : leur empreinte y est.
       - name: Sign checksums (keyless)

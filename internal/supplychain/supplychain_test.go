@@ -116,3 +116,64 @@ func TestEveryPublishedArtefactIsChecksummed(t *testing.T) {
 	}
 	t.Logf("artefacts publiés contrôlés : %d", len(published))
 }
+
+// installerActions énumère les actions dont le RÔLE est d'installer un outil, avec
+// le nom de l'entrée qui en fige la version.
+//
+// La liste est explicite plutôt que devinée : « cette action installe-t-elle quelque
+// chose » n'est pas une question qu'un test peut poser au texte d'un workflow. Une
+// action ajoutée ici est une décision ; une action installatrice absente d'ici est
+// un trou, et c'est le prix de l'honnêteté de cette porte.
+var installerActions = map[string]string{
+	"jdx/mise-action":           "version",
+	"actions/setup-go":          "go-version-file",
+	"actions/setup-python":      "python-version",
+	"actions/setup-node":        "node-version",
+	"sigstore/cosign-installer": "cosign-release",
+}
+
+// TestEveryInstallerActionPinsItsTool ferme le trou que l'ADR-0016 n'avait pas nommé.
+//
+// Épingler une action par SHA ne fige QUE l'action. Ce qu'elle télécharge ensuite
+// reste choisi par l'amont si personne ne le dit — et le 2026-09-08, `mise-action`
+// sans `version:` a résolu vers une étiquette dont les binaires n'étaient pas
+// publiés. 404, cinq fois, et tout le dépôt à l'arrêt.
+//
+// Une chaîne ne vaut que son maillon le moins figé.
+func TestEveryInstallerActionPinsItsTool(t *testing.T) {
+	var checked int
+	for name, body := range workflows(t) {
+		lines := strings.Split(body, "\n")
+		for i, l := range lines {
+			m := usesRe.FindStringSubmatch(l)
+			if m == nil {
+				continue
+			}
+			action := strings.SplitN(strings.TrimPrefix(m[1], "./"), "@", 2)[0]
+			key, isInstaller := installerActions[action]
+			if !isInstaller {
+				continue
+			}
+			checked++
+			// La version se déclare dans le bloc `with:` de CETTE étape : on lit
+			// jusqu'à la prochaine étape, marquée par un tiret de liste.
+			var block []string
+			for j := i + 1; j < len(lines); j++ {
+				if strings.HasPrefix(strings.TrimSpace(lines[j]), "- ") {
+					break
+				}
+				block = append(block, lines[j])
+			}
+			if !strings.Contains(strings.Join(block, "\n"), key+":") {
+				t.Errorf("%s ligne %d : %q installe un outil sans figer sa version (%q manquant).\n"+
+					"  Épingler l'action ne fige que l'action ; ce qu'elle télécharge reste choisi\n"+
+					"  par l'amont. Voir ADR-0016 et l'incident mise v2026.9.3.",
+					name, i+1, action, key)
+			}
+		}
+	}
+	if checked == 0 {
+		t.Fatal("aucune action installatrice trouvée : la porte ne mesure rien")
+	}
+	t.Logf("%d action(s) installatrice(s) vérifiée(s)", checked)
+}
