@@ -78,6 +78,40 @@ n'a collecté aucune ressource ne rend jamais `0`, et un scan qui n'a pas pu lir
 partie de son périmètre non plus : un résultat vide n'est pas conforme, un résultat
 partiel non plus, un résultat dérogé non plus.
 
+## Vérifier ce que vous avez téléchargé
+
+Chaque artefact de release est couvert. Une commande pour chacun, et rien à croire
+sur parole.
+
+```bash
+V=v0.3.0
+gh release download "$V" --repo stephrobert/pepin
+
+# 1. les sommes sont signées, et elles couvrent les binaires ET le SBOM
+cosign verify-blob checksums.txt \
+  --bundle checksums.txt.cosign.bundle \
+  --certificate-identity-regexp '^https://github\.com/stephrobert/pepin/\.github/workflows/release\.yml@refs/tags/v' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+
+# 2. vos fichiers correspondent à ces sommes signées
+sha256sum --check checksums.txt --ignore-missing
+
+# 3. le binaire a bien été produit par le workflow de release de ce dépôt (provenance SLSA)
+gh attestation verify pepin-linux-amd64 --repo stephrobert/pepin
+```
+
+**Le SBOM** (`sbom.cdx.json`, CycloneDX) accompagne chaque release. L'étape 1 couvre
+le fichier publié ; il est par ailleurs attesté contre les binaires, ce qui est une
+affirmation différente — que cet inventaire décrit *cette* compilation :
+
+```bash
+gh attestation verify pepin-linux-amd64 --repo stephrobert/pepin \
+  --predicate-type https://cyclonedx.org/bom
+
+# à donner à l'outil que vous utilisez déjà
+osv-scanner --sbom sbom.cdx.json
+```
+
 ## Langue
 
 Pépin parle français et anglais, et choisit tout seul :
