@@ -21,30 +21,26 @@
 #
 # Aucune base_url de collecte n'est redirigeable (seul --s3-endpoint l'est). Le
 # client de collecte, lui, n'installe pas de Transport : il hérite de
-# http.DefaultTransport, DONC il honore HTTPS_PROXY. Deux étages suffisent alors,
-# et ils ne demandent aucune modification de Pépin, donc aucune surface
+# http.DefaultTransport, DONC il honore HTTPS_PROXY. Un seul étage suffit alors,
+# et il ne demande aucune modification de Pépin, donc aucune surface
 # d'exfiltration : un endpoint de collecte surchargeable serait un moyen
-# d'envoyer la clé secrète d'un tenant vers un hôte arbitraire.
+# d'envoyer la clé secrète d'un tenant vers un hôte arbitraire (ADR-0012).
 #
-#   Pépin ──HTTPS_PROXY, CONNECT──▶ proxy AMONT (--forward, enregistre)
-#                                        │ redial vers l'hôte demandé
-#                                        ▼  (résolu sur 127.0.0.1 par /etc/hosts)
-#                                   proxy AVAL (--intercept, sert le TLS)
-#                                        │ --upstream
+#   Pépin ──HTTPS_PROXY, CONNECT──▶ feint proxy --forward api.x=http://…:PORT
+#                                        │ enregistre, puis redial
 #                                        ▼
 #                                   feint serve (l'émulateur)
 #
-# feint 0.10.0 REFUSE --forward et --upstream ensemble : --forward envoie chaque
-# requête à l'hôte que le client a demandé, --upstream à l'hôte qu'on a choisi.
-# Le second étage est ce qui fait que « l'hôte demandé » est l'émulateur.
+# Cette procédure exigeait naguère un espace de noms utilisateur, un /etc/hosts
+# de remplacement et le port 443 privilégié, parce que feint 0.10.0 refusait
+# --forward et --upstream ensemble. feint ≥ 0.12 accepte `host=target` : l'hôte
+# demandé reste dans la transcription, seule la socket va ailleurs. Les trois
+# contraintes tombent, et la procédure tourne désormais là où
+# apparmor_restrict_unprivileged_userns=1 interdit `unshare` (issue #92).
 #
-# ─── CE QUE CE SCRIPT NE TOUCHE PAS ──────────────────────────────────────────
-#
-# Tout tourne dans un espace de noms (user + mount + net) : le /etc/hosts modifié
-# est celui de CET espace, jamais le vôtre, et le port 443 lié l'est dans une
-# pile réseau privée qui disparaît avec le dernier processus. Rien n'écoute hors
-# de la boucle locale. --vm off interdit à l'émulateur de démarrer le moindre
-# conteneur avec vos privilèges.
+# Rien n'écoute hors de la boucle locale. --vm off interdit à l'émulateur de
+# démarrer le moindre conteneur avec vos privilèges, donc rien n'est provisionné
+# et rien n'est à détruire (CLAUDE.md §1.1).
 #
 # ─── LA PRÉCAUTION QUI NE SE NÉGOCIE PAS ─────────────────────────────────────
 #
@@ -61,7 +57,6 @@ OUT="${2:-$(mktemp -d)}"
 mkdir -p "$OUT"
 
 command -v feint >/dev/null || { echo "feint absent du PATH (https://github.com/…/feint)"; exit 2; }
-command -v unshare >/dev/null || { echo "unshare absent : util-linux requis"; exit 2; }
 
 # Les hôtes que les descripteurs figent. Un hôte non nommé ici voit son CONNECT
 # REFUSÉ par le proxy amont, qui le signale à l'arrêt. C'est ainsi que l'API
@@ -78,12 +73,4 @@ sos-ch-dk-2.exo.io
 sos-ch-gva-2.exo.io
 EOF
 
-{
-  echo "127.0.0.1 localhost"
-  echo "::1 localhost"
-  while read -r h; do [ -n "$h" ] && echo "127.0.0.1 $h"; done < "$OUT/hosts.txt"
-} > "$OUT/hosts"
-
-export PEPIN_TRACE_OUT="$OUT"
-export PEPIN_TRACE_PROVIDER="$PROVIDER"
-exec unshare --map-root-user --mount --net -- "$(dirname "$0")/trace-collector-inner.sh"
+exec "$(dirname "$0")/trace-collector-inner.sh" "$PROVIDER" "$OUT"

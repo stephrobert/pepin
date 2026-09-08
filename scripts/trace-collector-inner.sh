@@ -1,82 +1,103 @@
 #!/usr/bin/env bash
 #
-# Second étage de scripts/trace-collector.sh : exécuté DANS l'espace de noms
-# (user, mount et net). Ne s'appelle pas seul : il suppose une pile réseau privée
-# et un /etc/hosts qu'il a le droit de remplacer.
-set -uo pipefail
+# Étage unique. Appelé par trace-collector.sh, qui a préparé $OUT/hosts.txt.
+#
+# ─── POURQUOI CE SCRIPT A MAIGRI ─────────────────────────────────────────────
+#
+# Il tenait 89 lignes et exigeait un espace de noms utilisateur, un /etc/hosts de
+# remplacement et le port 443 privilégié. La raison était écrite dans son propre
+# en-tête : feint 0.10.0 REFUSAIT --forward et --upstream ensemble, parce que le
+# premier envoie chaque requête à l'hôte que le CLIENT a demandé, le second à
+# l'hôte qu'on a CHOISI. Il fallait donc un second étage pour que « l'hôte
+# demandé » devienne l'émulateur, et un /etc/hosts privé pour l'y résoudre.
+#
+# feint ≥ 0.12 accepte `host=target` dans --forward : l'hôte demandé est
+# conservé dans la transcription, seule la socket va ailleurs. Le second étage,
+# l'espace de noms et le port privilégié disparaissent tous les trois.
+#
+# Ce que cela débloque concrètement : la procédure tourne désormais sur un hôte
+# portant apparmor_restrict_unprivileged_userns=1, où `unshare` échoue — c'est
+# le cas de la machine de développement, et c'était l'objet de l'issue #92.
+#
+#   Pépin ──HTTPS_PROXY, CONNECT──▶ feint proxy --forward api.x=http://…:PORT
+#                                        │ enregistre, puis redial
+#                                        ▼
+#                                   feint serve (l'émulateur)
+#
+# Aucune ligne de Pépin n'est modifiée, donc aucune surface d'exfiltration n'est
+# créée : un endpoint de collecte surchargeable serait un moyen d'envoyer la clé
+# secrète d'un tenant vers un hôte arbitraire (ADR-0012).
+set -euo pipefail
 
-OUT="${PEPIN_TRACE_OUT:?}"
-PROVIDER="${PEPIN_TRACE_PROVIDER:?}"
+PROVIDER=${1:?provider}
+OUT=${2:?répertoire de sortie}
 HOSTS=$(paste -sd, "$OUT/hosts.txt")
-PEPIN="${PEPIN_BIN:-./pepin}"
 
-# Un proxy d'entreprise hérité de l'environnement se glisserait dans la mesure et
-# la rendrait fausse. Il n'y a pas de mesure sans maîtrise de ce qui la traverse.
-unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy
-unset GRPC_PROXY grpc_proxy FTP_PROXY ftp_proxy NO_PROXY no_proxy
+# Les PORTS sont configurables, et ils doivent l'être : feint tourne souvent en
+# parallèle pour d'autres projets sur la même machine, et un port figé transforme
+# une collision en échec incompréhensible.
+FEINT_PORT="${FEINT_PORT:-4599}"
+PROXY_PORT="${PROXY_PORT:-4600}"
 
-ip link set lo up
-mount --bind "$OUT/hosts" /etc/hosts
+# Refuser tôt : un port déjà pris donne sinon un timeout de 30 s sans raison lisible.
+for p in "$FEINT_PORT" "$PROXY_PORT"; do
+  if ss -ltn 2>/dev/null | grep -qE "[:.]${p}\b"; then
+    echo "port $p déjà occupé — feint tourne peut-être pour un autre projet." >&2
+    echo "Relancer avec FEINT_PORT / PROXY_PORT sur des ports libres." >&2
+    exit 2
+  fi
+done
 
+# `feint stop` ne connaît que les instances lancées par `feint start`, qui les
+# enregistre ; un `feint serve &` lui est invisible — il répond « nothing recorded »
+# et laisse le processus vivant. On garde donc les PID et on les tue. Vérifié en
+# exécution : sans cela, l'émulateur survivait au script et gardait son port.
 cleanup() {
-  # CLAUDE.md §1.1 : rien de ce qui a été lancé ne survit à la mesure. Le SIGTERM
-  # laisse aux proxys le temps de vider leur file d'écriture ; un SIGKILL perdrait
-  # les derniers échanges, c'est-à-dire précisément ceux de la fin de collecte.
-  for pid in "${UP:-}" "${DOWN:-}" "${SERVE:-}"; do
-    [ -n "$pid" ] && kill -TERM "$pid" 2>/dev/null && wait "$pid" 2>/dev/null
+  for pid in "${PROXY_PID:-}" "${SERVE_PID:-}"; do
+    [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
   done
+  wait 2>/dev/null || true
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
-# 1. l'émulateur. --vm off : aucun conteneur ne démarre avec vos privilèges.
-feint serve --addr 127.0.0.1:4599 --vm off --state "$OUT/feint-state.json" \
-  > "$OUT/serve.log" 2>&1 &
-SERVE=$!
-feint wait --addr 127.0.0.1:4599 --timeout 30s || { cat "$OUT/serve.log"; exit 1; }
+# 1. l'émulateur. --vm off : aucun conteneur n'est démarré avec les privilèges de
+#    l'utilisateur, et il n'y a donc rien à détruire ensuite (CLAUDE.md §1.1).
+feint serve --addr "127.0.0.1:$FEINT_PORT" --vm off --state "$OUT/feint-state.json" \
+  >"$OUT/serve.log" 2>&1 &
+SERVE_PID=$!
+feint wait --addr "127.0.0.1:$FEINT_PORT" --timeout 30s || { cat "$OUT/serve.log"; exit 1; }
 
-waitCA() { # rend le chemin de l'autorité éphémère qu'un proxy vient de frapper
-  local log=$1
+# 2. le proxy direct, qui termine le TLS et renvoie chaque hôte vers l'émulateur.
+FORWARD=$(tr ',' '\n' <<<"$HOSTS" | sed "s|\$|=http://127.0.0.1:$FEINT_PORT|" | paste -sd,)
+feint proxy --addr "127.0.0.1:$PROXY_PORT" --forward "$FORWARD" \
+  --record "$OUT/$PROVIDER.jsonl" >"$OUT/proxy-$PROVIDER.log" 2>&1 &
+PROXY_PID=$!
+
+waitCA() { # rend le chemin de l'autorité éphémère que le proxy vient de frapper
   for _ in $(seq 1 100); do
-    grep -q "CA written to" "$log" 2>/dev/null && break
+    grep -q "CA written to" "$OUT/proxy-$PROVIDER.log" 2>/dev/null && break
     sleep 0.2
   done
-  sed -n 's/.*CA written to \([^ ]*\).*/\1/p' "$log" | head -1
+  sed -n 's/.*CA written to \([^ ]*\).*/\1/p' "$OUT/proxy-$PROVIDER.log" | head -1
 }
+CA=$(waitCA)
+[ -s "$CA" ] || { echo "le proxy n'a frappé aucune autorité :" >&2; cat "$OUT/proxy-$PROVIDER.log" >&2; exit 1; }
 
-# 2. étage AVAL : sert le TLS des hôtes figés, renvoie à l'émulateur.
-feint proxy --addr 127.0.0.1:443 --intercept "$HOSTS" \
-  --upstream http://127.0.0.1:4599 --record "$OUT/aval-$PROVIDER.jsonl" \
-  > "$OUT/aval-$PROVIDER.log" 2>&1 &
-DOWN=$!
-CA_DOWN=$(waitCA "$OUT/aval-$PROVIDER.log")
-[ -s "$CA_DOWN" ] || { echo "étage aval : pas d'autorité"; cat "$OUT/aval-$PROVIDER.log"; exit 1; }
+# 3. le scan. Les identifiants sont SYNTHÉTIQUES : l'émulateur accepte tout, et
+#    aucun secret réel n'entre donc dans la procédure ni dans l'enregistrement.
+SSL_CERT_FILE="$CA" \
+HTTPS_PROXY="http://127.0.0.1:$PROXY_PORT" \
+HTTP_PROXY="http://127.0.0.1:$PROXY_PORT" \
+SCW_ACCESS_KEY=SCWXXXXXXXXXXXXXXXXX \
+SCW_SECRET_KEY=11111111-1111-1111-1111-111111111111 \
+SCW_DEFAULT_ORGANIZATION_ID=11111111-1111-1111-1111-111111111111 \
+SCW_DEFAULT_PROJECT_ID=11111111-1111-1111-1111-111111111111 \
+SCW_DEFAULT_REGION=fr-par \
+OSC_ACCESS_KEY=SCWXXXXXXXXXXXXXXXXX \
+OSC_SECRET_KEY=11111111-1111-1111-1111-111111111111 \
+OSC_REGION=eu-west-2 \
+EXOSCALE_API_KEY=EXOxxxxxxxxxxxxxxxxxxxx \
+EXOSCALE_API_SECRET=11111111-1111-1111-1111-111111111111 \
+  ./pepin scan "$PROVIDER" --live --format json >"$OUT/$PROVIDER-scan.json" 2>"$OUT/$PROVIDER-scan.log" || true
 
-# 3. étage AMONT : accepte le CONNECT, déchiffre, ENREGISTRE. Sa transcription
-#    est celle qui fait foi, car elle voit exactement ce que Pépin a émis.
-SSL_CERT_FILE="$CA_DOWN" feint proxy --addr 127.0.0.1:4600 --forward "$HOSTS" \
-  --record "$OUT/$PROVIDER.jsonl" > "$OUT/amont-$PROVIDER.log" 2>&1 &
-UP=$!
-CA_UP=$(waitCA "$OUT/amont-$PROVIDER.log")
-[ -s "$CA_UP" ] || { echo "étage amont : pas d'autorité"; cat "$OUT/amont-$PROVIDER.log"; exit 1; }
-
-# 4. Pépin, INCHANGÉ. Les identifiants sont ceux de l'émulateur, qui les accepte
-#    tous : aucun secret réel ne traverse quoi que ce soit.
-eval "$(feint env "$PROVIDER" 2>/dev/null)"
-# L'émulateur publie SCW_API_URL / OSC_ENDPOINT_API / EXOSCALE_API_ENDPOINT.
-# Pépin ne les lit PAS : ses base_url sont figées, et c'est la raison d'être de
-# toute cette plomberie. On les retire pour que rien ne puisse le prétendre.
-unset SCW_API_URL OSC_ENDPOINT_API OSC_PROTOCOL EXOSCALE_API_ENDPOINT SCW_INSECURE
-export HTTPS_PROXY=http://127.0.0.1:4600
-export SSL_CERT_FILE="$CA_UP"
-
-"$PEPIN" scan "$PROVIDER" --live --format json \
-  > "$OUT/scan-$PROVIDER.json" 2> "$OUT/scan-$PROVIDER.err"
-echo "pepin scan $PROVIDER --live → code $?"
-
-cleanup; trap - EXIT
-echo
-echo "transcription : $OUT/$PROVIDER.jsonl"
-echo "état de collecte : $OUT/scan-$PROVIDER.json (clé \"collection\")"
-echo
-echo "AVANT de committer : relire la transcription VALEUR PAR VALEUR."
-echo "Les corps sont conservés : contre un vrai tenant ils portent son inventaire."
+echo "enregistrement : $OUT/$PROVIDER.jsonl ($(wc -l <"$OUT/$PROVIDER.jsonl" 2>/dev/null || echo 0) échanges)"
