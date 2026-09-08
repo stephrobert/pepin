@@ -1,6 +1,7 @@
 package quality_test
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -175,5 +176,60 @@ func TestPercentNeverReadsFullOnAnEmptyDenominator(t *testing.T) {
 	}
 	if got := quality.Percent(3, 3); got != 100 {
 		t.Errorf("Percent(3, 3) = %d, attendu 100", got)
+	}
+}
+
+// TestPrecisionNeverExceedsWhatIsMeasured — la même règle que pour le reste de la
+// carte, appliquée aux chiffres de précision (issue #118).
+//
+// Ces trois-là sont les plus tentants du dépôt : ils décrivent la qualité même du
+// produit, et ce sont exactement ceux qu'on aurait envie d'arrondir. La règle ne
+// change pas : aucun ne peut dépasser son dénominateur, et aucun n'est saisi.
+func TestPrecisionNeverExceedsWhatIsMeasured(t *testing.T) {
+	p := embedded(t).Precision
+	if p.Controls <= 0 {
+		t.Fatal("aucun contrôle high/critical : la mesure de précision serait vide")
+	}
+	if p.DetectionProven > p.Controls {
+		t.Errorf("%d chemins de détection prouvés pour %d contrôles high/critical",
+			p.DetectionProven, p.Controls)
+	}
+	if p.WithCounterexample > p.Controls {
+		t.Errorf("%d contre-exemples pour %d contrôles high/critical",
+			p.WithCounterexample, p.Controls)
+	}
+	// Un faux positif se compte sur un contre-témoin : sans contre-témoin, il ne peut
+	// pas y en avoir de mesuré, et un chiffre non nul serait sorti de nulle part.
+	if p.FalsePositives > 0 && p.Counterwitnesses == 0 {
+		t.Errorf("%d faux positifs annonces sans aucun contre-temoin pour les mesurer",
+			p.FalsePositives)
+	}
+	if p.Counterwitnesses > embedded(t).Tenants {
+		t.Errorf("%d contre-témoins pour %d tenants", p.Counterwitnesses, embedded(t).Tenants)
+	}
+}
+
+// TestPrecisionPublishesNoFalseNegativeCount : l'absence de ce chiffre est une
+// DÉCISION, pas un oubli.
+//
+// Aucun artefact du dépôt ne mesure un faux négatif — il faudrait un corpus de
+// configurations fautives dont on SAIT qu'elles échappent aux règles, c'est-à-dire
+// savoir ce qu'on ne sait pas. Publier « 0 » serait le faux vert exact que cette
+// carte combat : zéro mesuré n'est pas zéro existant.
+//
+// Cette garde est une PORTE CONTRE SOI-MÊME : elle échoue le jour où quelqu'un
+// ajoute le champ, et l'oblige à écrire d'abord d'où viendrait la mesure.
+func TestPrecisionPublishesNoFalseNegativeCount(t *testing.T) {
+	raw, err := json.Marshal(embedded(t).Precision)
+	if err != nil {
+		t.Fatalf("sérialisation : %v", err)
+	}
+	for _, interdit := range []string{"false_negative", "false_negatives", "faux_negatif"} {
+		if strings.Contains(string(raw), interdit) {
+			t.Errorf("la carte publie un compteur %q.\n"+
+				"  Aucun artefact ne le mesure : ce serait un chiffre saisi, et un « 0 » y\n"+
+				"  vaudrait « nous n'avons pas cherché ». Écrire d'abord d'où vient la mesure.",
+				interdit)
+		}
 	}
 }

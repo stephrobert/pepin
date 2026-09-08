@@ -110,6 +110,42 @@ type Snapshot struct {
 	Tenants          int                     `json:"tenants"`
 	Canary           []CanaryProvider        `json:"canary"`
 	ByControl        map[string]ControlProof `json:"by_control"`
+	// Precision : ce que la carte peut dire de la précision des règles high/critical.
+	Precision Precision `json:"precision"`
+}
+
+// Precision est la mesure de ce qu'une règle REFUSE de détecter, à côté de ce
+// qu'elle détecte.
+//
+// Les deux chiffres se publient ENSEMBLE, et c'est délibéré : « 21 chemins de
+// détection prouvés » se lit dans le sens le plus flatteur si rien ne dit sur
+// combien de configurations légitimes ces règles se sont tues. Une règle qui se
+// déclenche sur tout est parfaitement sensible.
+//
+// Ce que cette structure ne porte PAS, et c'est le point le plus important : un
+// compteur de FAUX NÉGATIFS. Aucun artefact du dépôt ne le mesure — il faudrait un
+// corpus de configurations fautives dont on sait qu'elles échappent aux règles,
+// c'est-à-dire savoir ce qu'on ne sait pas. Publier « 0 faux négatif » serait donc
+// le faux vert exact que ce paquet combat : zéro mesuré n'est pas zéro existant. La
+// page le DIT plutôt que d'afficher un chiffre.
+type Precision struct {
+	// Controls : contrôles ACTIFS de sévérité high ou critical. Un contrôle dormant
+	// n'est jamais évalué : sa précision serait une intention.
+	Controls int `json:"controls"`
+	// DetectionProven : ceux dont au moins un chemin prouve un `fail` de bout en
+	// bout, sur une configuration réellement fautive. C'est la sensibilité mesurée.
+	DetectionProven int `json:"detection_proven"`
+	// WithCounterexample : ceux qui portent un COUPLE — un cas `fail` et un cas
+	// `pass` proche, sur le même chemin. C'est la précision mesurée.
+	WithCounterexample int `json:"with_counterexample"`
+	// FalsePositives : écarts critical/high relevés sur un tenant tiers déclaré
+	// DURCI. C'est le seul faux positif que le dépôt sache mesurer, et le compteur
+	// est adossé au scan, pas à une déclaration.
+	FalsePositives int `json:"false_positives"`
+	// Counterwitnesses : les tenants durcis sur lesquels cette mesure porte. Sans
+	// eux, un « 0 faux positif » ne voudrait rien dire : il faut publier le
+	// dénominateur avec le numérateur.
+	Counterwitnesses int `json:"counterwitnesses"`
 }
 
 // Percent rend un pourcentage entier, et 0 quand rien n'est dû — jamais 100 sur un
@@ -143,6 +179,16 @@ type Inputs struct {
 	// Counterwitnesses, Tenants : tenants durcis sans écart critical/high, et total.
 	Counterwitnesses int
 	TenantsTotal     int
+	// HighSeverityControls : les contrôles ACTIFS de sévérité high ou critical, sur
+	// lesquels la précision se mesure. Passés plutôt que recalculés ici : le
+	// référentiel est déjà lu par l'appelant, et deux lectures divergent.
+	HighSeverityControls []string
+	// CounterexamplePairs : les contrôles portant un couple `fail`+`pass` sur un
+	// même chemin (veracity.CounterexamplePairs).
+	CounterexamplePairs map[string]bool
+	// FalsePositives : écarts critical/high relevés sur un tenant DURCI. Mesuré par
+	// le scan des tenants de référence, jamais annoncé.
+	FalsePositives int
 }
 
 // Compute dérive la carte. Rien n'y est saisi : chaque champ vient d'un artefact.
@@ -160,6 +206,25 @@ func Compute(in Inputs) Snapshot {
 		Counterwitnesses: in.Counterwitnesses,
 		Tenants:          in.TenantsTotal,
 		ByControl:        map[string]ControlProof{},
+	}
+
+	// La PRÉCISION, dérivée du corpus de contre-exemples et du scan des tenants
+	// durcis. Aucun de ces trois chiffres n'est saisi, et il n'y en a pas de
+	// quatrième : le faux négatif n'a aucune source de mesure, donc il ne se publie
+	// pas (cf. le commentaire du type Precision).
+	detecte := veracity.DetectionProven(in.Covered)
+	s.Precision = Precision{
+		Controls:         len(in.HighSeverityControls),
+		FalsePositives:   in.FalsePositives,
+		Counterwitnesses: in.Counterwitnesses,
+	}
+	for _, code := range in.HighSeverityControls {
+		if detecte[code] {
+			s.Precision.DetectionProven++
+		}
+		if in.CounterexamplePairs[code] {
+			s.Precision.WithCounterexample++
+		}
 	}
 
 	// Un relevé AUTHENTIFIÉ est le seul qui atteste qu'un droit suffisant a rendu

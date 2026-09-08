@@ -41,23 +41,18 @@ import (
 // à chaque contre-exemple réellement écrit.
 const contreExempleLedger = "testdata/counterexamples-debt.txt"
 
-// counterexamplePairs rend, par contrôle, les verdicts couverts par un scénario.
-func counterexamplePairs(t *testing.T) map[string]map[veracity.Verdict]bool {
+// couples rend les contrôles portant un couple `fail`+`pass` sur un même chemin.
+//
+// La porte et la CARTE DE QUALITÉ lisent la même fonction (veracity.CounterexamplePairs) :
+// deux calculs de couverture divergent toujours, et celui qui diverge est celui qu'on
+// publie. C'est pourquoi ce calcul a quitté ce fichier de test pour le paquet.
+func couples(t *testing.T) map[string]bool {
 	t.Helper()
 	files, err := veracity.LoadScenarios(scenarioDir)
 	if err != nil {
 		t.Fatalf("chargement des scénarios : %v", err)
 	}
-	out := map[string]map[veracity.Verdict]bool{}
-	for _, f := range files {
-		if out[f.Control] == nil {
-			out[f.Control] = map[veracity.Verdict]bool{}
-		}
-		for _, s := range f.Scenarios {
-			out[f.Control][s.Expect] = true
-		}
-	}
-	return out
+	return veracity.CounterexamplePairs(files)
 }
 
 // highSeverityControls rend les contrôles ACTIFS de sévérité `high` ou `critical`.
@@ -81,16 +76,7 @@ func highSeverityControls() []string {
 // fail+pass, dans l'ordre.
 func sansContreExemple(t *testing.T) []string {
 	t.Helper()
-	couvert := counterexamplePairs(t)
-	var out []string
-	for _, code := range highSeverityControls() {
-		v := couvert[code]
-		if v[veracity.Verdict("fail")] && v[veracity.Verdict("pass")] {
-			continue
-		}
-		out = append(out, code)
-	}
-	return out
+	return veracity.WithoutCounterexample(highSeverityControls(), couples(t))
 }
 
 // TestEveryHighSeverityControlHasALegitimateCounterexample est la porte de l'issue

@@ -2564,5 +2564,12 @@
         "internal/commonrules/rules/objectstorage_bucket_test.rego"
       ]
     }
+  },
+  "precision": {
+    "controls": 42,
+    "detection_proven": 18,
+    "with_counterexample": 16,
+    "false_positives": 0,
+    "counterwitnesses": 2
   }
 }

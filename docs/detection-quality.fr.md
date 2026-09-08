@@ -70,6 +70,31 @@ Un endpoint qui répond existe et se résout ; un `moved` (404) dit qu'il a boug
 | `outscale` | 2026-08-21 | 17 | 0 | 0 |
 | `scaleway` | 2026-08-21 | 5 | 0 | 0 |
 
+## Précision des règles high/critical
+
+Détecter et se TAIRE sont deux mesures différentes, et elles se publient ensemble :
+« 21 chemins de détection prouvés » se lit dans le sens le plus flatteur tant que
+rien ne dit sur combien de configurations légitimes ces mêmes règles se sont tues.
+Une règle qui se déclenche sur tout est parfaitement sensible.
+
+Un CONTRE-EXEMPLE est un couple sur un même chemin contrôle × fournisseur ×
+source : un cas fautif, et un cas correct qui lui ressemble. Les contrôles qui
+n'en ont pas encore sont comptés dans
+`internal/veracity/testdata/counterexamples-debt.txt`.
+
+| Chiffre | Nombre |
+|---|---:|
+| Contrôles high/critical actifs | 42 |
+| Dont un chemin de détection est prouvé de bout en bout | 18 |
+| Dont un contre-exemple légitime est prouvé | 16 |
+| Faux positifs mesurés sur les contre-témoins | 0 |
+
+Il n'y a pas de ligne « faux négatifs », et son absence est le chiffre le plus
+honnête de cette page. Aucun artefact du dépôt ne les mesure : il faudrait un
+corpus de configurations fautives dont on SAIT qu'elles échappent aux règles,
+c'est-à-dire savoir ce qu'on ne sait pas. Publier « 0 » serait le faux vert exact
+que cette page combat — zéro mesuré n'est pas zéro existant.
+
 ## Faux positifs
 
 Le dépôt ne tient pas de registre de faux positifs, et en publier un compte serait

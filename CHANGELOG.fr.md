@@ -24,6 +24,15 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **La carte de qualité publie désormais la précision, dérivée du corpus de
+  contre-exemples.** « 42 contrôles » est une phrase que tous les CSPM prononcent.
+  Détecter et se TAIRE sont deux mesures différentes, et elles s'impriment maintenant
+  côte à côte : 42 contrôles `high`/`critical` actifs, 18 dont un chemin de détection
+  est prouvé de bout en bout, 16 dont un contre-exemple légitime l'est, 0 faux positif
+  mesuré sur les contre-témoins durcis. Il n'y a délibérément **aucune ligne « faux
+  négatifs »** : rien dans le dépôt ne les mesure, et un « 0 » publié voudrait dire
+  « nous n'avons pas cherché ». Une garde échoue si ce champ est ajouté, une autre
+  refuse tout chiffre de précision supérieur à son dénominateur.
 - **Chaque règle `high`/`critical` doit désormais prouver ce sur quoi elle REFUSE de
   se déclencher.** Le contrat de véracité prouvait que Pépin sait produire le verdict
   attendu ; il ne prouvait jamais qu'il le RETIENT sur une configuration voisine et
