@@ -283,6 +283,7 @@
       ],
       "rego_tests": [
         "internal/commonrules/rules/compute_blockstorage_test.rego",
+        "internal/commonrules/rules/compute_instance_deletion_protection_test.rego",
         "internal/commonrules/rules/zz_boolean_as_string_test.rego"
       ]
     },

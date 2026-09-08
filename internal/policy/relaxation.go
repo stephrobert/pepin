@@ -215,6 +215,13 @@ func members(r Resolved, param string) (map[string]bool, bool) {
 	switch param {
 	case "tagging.resource_types":
 		return set(r.Tagging.ResourceTypes), true
+	case "tagging.production_values":
+		// Le sens compte, et il est l'INVERSE de celui des états de snapshot.
+		// Élargir cet ensemble fait entrer PLUS d'instances dans le périmètre du
+		// contrôle : c'est un durcissement. Le RÉTRÉCIR en sort des instances, donc
+		// cesse de les regarder — c'est cela qui assouplit. La correspondance ne
+		// tient donc que si l'ensemble effectif est un SURENSEMBLE du défaut.
+		return set(r.Tagging.ProductionValues), true
 	case "snapshots.accepted_states":
 		return set(r.Snapshots.AcceptedStates), true
 	default:

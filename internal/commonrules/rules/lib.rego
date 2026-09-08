@@ -396,3 +396,33 @@ _default_snapshot_max_age_days := 7
 _default_snapshot_states := ["completed", "created"]
 
 _default_min_confidence := "low"
+
+# ── L'ENVIRONNEMENT d'une ressource, et ce qu'il autorise à conclure ──────────
+#
+# Certains contrôles ne visent que les services EN PRODUCTION : leur commentaire
+# le disait déjà, leur condition ne le vérifiait pas. Une VM de laboratoire, par
+# construction éphémère, produisait le même écart qu'un serveur de production.
+#
+# Les valeurs qui désignent la production sont CONFIGURABLES : imposer « prod »
+# serait la convention arbitraire que l'issue #61 dénonçait. La comparaison est
+# insensible à la casse, comme celle des noms d'étiquettes.
+
+production_values := object.get(_config_tagging, "production_values", _default_production_values)
+
+_default_production_values := ["live", "prd", "prod", "production"]
+
+# environment_of — la valeur de l'étiquette d'environnement, ou undefined si
+# aucune n'est lisible. Les écritures acceptées viennent du même profil que le
+# reste : `Env`, `environment`, `stage`, et ce qu'une organisation y ajoute.
+environment_of(attrs) := lower(v) if {
+	some t in object.get(attrs, "tags", [])
+	some req in required_tags_billable
+	req.name == "Env"
+	normalize_tag_key(object.get(t, "key", "")) in req.keys
+	v := object.get(t, "value", "")
+	v != ""
+}
+
+is_production(attrs) if environment_of(attrs) in production_values
+
+environment_known(attrs) if environment_of(attrs)

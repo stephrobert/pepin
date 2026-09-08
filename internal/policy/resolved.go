@@ -25,6 +25,10 @@ type ResolvedTagging struct {
 	Required []RequiredTag `json:"required"`
 	// NetworkRequired : les étiquettes exigées sur les réseaux (cartographie).
 	NetworkRequired []RequiredTag `json:"network_required"`
+	// ProductionValues : les valeurs d'environnement qui désignent la production,
+	// en minuscules. Elles décident du périmètre des contrôles qui ne visent que
+	// les services en production.
+	ProductionValues []string `json:"production_values"`
 }
 
 // RequiredTag est une étiquette exigée : son nom LOGIQUE (celui que lira un
@@ -78,6 +82,10 @@ var (
 	// la même exigence. L'ORDRE est celui du message, donc il est signifiant et
 	// se conserve (voir resolveTags, qui ne trie pas).
 	defaultBillableTags = []string{"CostCenter", "Project", "Env", "Owner"}
+
+	// Les écritures courantes de « production », en minuscules. Recommandation,
+	// pas norme : une organisation qui écrit autrement le déclare.
+	defaultProductionValues = []string{"prod", "production", "prd", "live"}
 
 	// defaultNetworkTags : la cartographie réseau (CLD-NET-5) demande de savoir à
 	// QUI et à QUOI sert un réseau, et dans quel environnement. Le centre de coût
@@ -155,9 +163,10 @@ var (
 func Defaults() Resolved {
 	return Resolved{
 		Tagging: ResolvedTagging{
-			ResourceTypes:   sortedUnique(defaultTaggedTypes),
-			Required:        resolveTags(defaultBillableTags, defaultTagAliases),
-			NetworkRequired: resolveTags(defaultNetworkTags, defaultTagAliases),
+			ResourceTypes:    sortedUnique(defaultTaggedTypes),
+			Required:         resolveTags(defaultBillableTags, defaultTagAliases),
+			NetworkRequired:  resolveTags(defaultNetworkTags, defaultTagAliases),
+			ProductionValues: sortedUnique(defaultProductionValues),
 		},
 		Snapshots: ResolvedSnapshots{
 			MaxAgeDays:     defaultMaxAgeDays,
@@ -190,6 +199,13 @@ func Resolve(c *Controls) Resolved {
 		}
 		out.Tagging.Required = resolveTags(names, aliases)
 		out.Tagging.NetworkRequired = resolveTags(netNames, aliases)
+		if t.ProductionValues != nil {
+			lower := make([]string, 0, len(t.ProductionValues))
+			for _, v := range t.ProductionValues {
+				lower = append(lower, strings.ToLower(strings.TrimSpace(v)))
+			}
+			out.Tagging.ProductionValues = sortedUnique(lower)
+		}
 		if t.ResourceTypes != nil {
 			out.Tagging.ResourceTypes = sortedUnique(t.ResourceTypes)
 		}

@@ -929,6 +929,13 @@ controles:
     scsl: [CLD-CMP-10]
     frameworks:
     fournisseurs: [outscale]
+    # RÉTRÉCIR les valeurs qui désignent la production sort des instances du
+    # périmètre : le contrôle cesse de les regarder, et la correspondance ne vaut
+    # plus. Élargir, au contraire, durcit. Le périmètre doit donc rester au moins
+    # aussi large que le défaut.
+    config_requise:
+      - parametre: tagging.production_values
+        contrainte: superset_du_defaut
 
   - code: kubernetes_cluster_deletion_protection
     famille: compute
