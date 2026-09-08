@@ -39,6 +39,32 @@ Do not submit a change if `mise run test` or `mise run audit` fails. `opa test`,
 6. **No hardcoded secrets** (keys, passwords): CLI options / environment /
    `random_password` in fixtures.
 
+## ADR review — before touching the code
+
+Code describes the current state. An **ADR** (`docs/adr/`) explains why that state
+exists, and which decisions cannot be reopened without an explicit new decision.
+
+> **An issue describes what we want to change. An ADR describes decisions already
+> taken. An issue cannot silently overturn an ADR.**
+
+Before implementing anything that touches the data model, the architecture, the
+network, an API, a workflow, an output format, persistence, security, generation,
+orchestration or **public behaviour**:
+
+1. Identify the components touched.
+2. Find the applicable ADRs — scope table in [`docs/adr/README.md`](docs/adr/README.md),
+   or each ADR's `scope:` field.
+3. Read them in full, and list their invariants.
+4. Check that the change does not reintroduce an alternative an ADR rejected.
+5. If it conflicts with an ADR, **stop**: propose a superseding ADR first, never a
+   silent rewrite of the old one.
+
+A typo or a missing test needs none of this. Declare the outcome in the PR under
+**ADR impact**.
+
+`mise run adr-drift` reports stale form — a vanished path, a guard that no longer
+exists. It cannot tell you an ADR has become false; that still takes reading.
+
 ## Adding a provider
 
 A provider is one `providers/<name>.yaml` file: identity, auth, credential

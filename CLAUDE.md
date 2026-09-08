@@ -33,6 +33,48 @@ dans **`internal/commonrules/`** et s'évaluent sur le **modèle normalisé comm
 > collecteur/mapper vers le modèle commun, puis on écrit **une** règle commune —
 > jamais une règle par provider.
 
+## 0.1 Revue ADR — AVANT toute implémentation
+
+Le code décrit l'état actuel. Les **ADR** (`docs/adr/`) expliquent pourquoi cet
+état existe et quelles décisions ne se rouvrent pas sans décision explicite.
+
+> **Une issue décrit ce que nous voulons changer. Un ADR décrit les décisions déjà
+> prises. Une issue ne peut pas annuler un ADR en silence.**
+>
+> **Une solution techniquement correcte mais contraire à une décision existante est
+> INCORRECTE tant que cette décision n'a pas été explicitement révisée.**
+
+Avant de modifier du code qui touche au modèle de données, à l'architecture, au
+réseau, à une API, à un workflow, à un format de sortie, à la persistance, à la
+sécurité, à la génération, à l'orchestration ou au **comportement public** :
+
+1. Lire `docs/adr/README.md`.
+2. Identifier les ADR applicables — table de portée, ou champ `scope:`. **Ne pas
+   lire tout le registre pour un petit changement** ; le parcourir entièrement
+   pour un changement transverse.
+3. Lire ces ADR EN ENTIER, pas leur titre.
+4. Relever leurs invariants.
+5. Vérifier que la solution envisagée ne réintroduit pas une **alternative écartée**.
+   C'est le piège propre à un agent : reproposer, vite et de bonne foi, une solution
+   plausible que quelqu'un a déjà rejetée pour des raisons écrites.
+6. **En cas de conflit : ne pas implémenter.** Signaler :
+
+   ```
+   Cette évolution entre en conflit avec ADR-XXXX : <résumé>.
+   Elle exige soit de respecter l'ADR, soit une nouvelle décision explicite.
+   ```
+
+   Si la décision doit changer, créer un ADR qui remplace (`ADR-0023 supersedes
+   ADR-0007`) et passer l'ancien en `Status: Superseded by ADR-0023`. Jamais de
+   réécriture silencieuse : l'historique est ce qui empêche de refaire le tour.
+7. Après implémentation, vérifier que les invariants tiennent toujours.
+
+Déclarer le résultat dans la PR sous **Impact ADR**. Une faute de frappe ou un test
+manquant n'exige rien de cela.
+
+`mise run adr-drift` signale la dérive de FORME. Il ne dit pas qu'un ADR est devenu
+faux.
+
 ## 1. Build, test, audit — toujours via `mise`
 
 Le projet est piloté par **mise** (`mise.toml`, plus de Makefile) : `mise run <tâche>`
