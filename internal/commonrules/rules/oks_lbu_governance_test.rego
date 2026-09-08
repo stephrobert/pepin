@@ -29,9 +29,18 @@ test_lbu_internal_ok if {
 }
 
 # ---- loadbalancer_logging_enabled ----
-test_lbu_no_log_denied if {
-	some f in deny with input as _lb({"load_balancer_name": "web", "load_balancer_type": "internal", "listeners": [{"load_balancer_protocol": "HTTPS"}]})
+# ✗ access_log OBSERVÉ et désactivé → finding. C'est le seul cas où la règle sait.
+test_lbu_log_disabled_denied if {
+	some f in deny with input as _lb({"load_balancer_name": "web", "load_balancer_type": "internal", "listeners": [{"load_balancer_protocol": "HTTPS"}], "access_log": {"is_enabled": false}})
 	f.code == "loadbalancer_logging_enabled"
+}
+
+# ✓ access_log NON collecté → aucun finding. « Absent » et « désactivé » ne se
+# confondent pas (ADR-0003, ADR-0014) : sans cette distinction, un fournisseur qui
+# n'expose pas ce champ produisait un écart permanent et incorrigible. Le verrou de
+# capacité prend le relais et rend `not-evaluated`.
+test_lbu_log_not_collected_does_not_deny if {
+	count({f | some f in deny; f.code == "loadbalancer_logging_enabled"}) == 0 with input as _lb({"load_balancer_name": "web", "load_balancer_type": "internal", "listeners": [{"load_balancer_protocol": "HTTPS"}]})
 }
 
 test_lbu_log_ok if {
@@ -58,12 +67,29 @@ test_tags_not_exposed_ok if {
 
 # ✓ FP : un LBU internet-facing en TLS PASSTHROUGH (listener TCP:443, TLS terminé au
 # backend) est chiffré de bout en bout — le flaguer « trafic en clair » était un faux positif.
-test_lbu_tcp_passthrough_not_cleartext if {
-	count({f | some f in deny; f.code == "loadbalancer_ssl_listeners"}) == 0 with input as {"resources": [{
+# ✗→? Un TCP sur port TLS standard ne PROUVE rien : ni chiffrement, ni clair. La
+# règle constate son incapacité (`inconclusive`), et l'assessment en fait un
+# `not-evaluated`. Le compter comme sécurisé était un FAUX VERT (ADR-0015) — le
+# seul du lot, et le plus grave, parce qu'un faux vert ne se voit pas.
+test_lbu_tcp_passthrough_is_inconclusive if {
+	some f in deny with input as {"resources": [{
 		"provider": "outscale", "type": "load_balancer", "id": "lb-1",
 		"attributes": {
 			"load_balancer_name": "lb-1", "load_balancer_type": "internet-facing",
 			"listeners": [{"load_balancer_protocol": "TCP", "load_balancer_port": 443}],
+		},
+	}]}
+	f.code == "loadbalancer_ssl_listeners"
+	f.labels.inconclusive == "true"
+}
+
+# ✓ Un vrai listener HTTPS reste conforme, et n'est PAS marqué indéterminé.
+test_lbu_https_listener_is_conclusive if {
+	count({f | some f in deny; f.code == "loadbalancer_ssl_listeners"}) == 0 with input as {"resources": [{
+		"provider": "outscale", "type": "load_balancer", "id": "lb-1",
+		"attributes": {
+			"load_balancer_name": "lb-1", "load_balancer_type": "internet-facing",
+			"listeners": [{"load_balancer_protocol": "HTTPS", "load_balancer_port": 443}],
 		},
 	}]}
 }

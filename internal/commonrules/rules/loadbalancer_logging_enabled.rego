@@ -10,6 +10,13 @@ import rego.v1
 
 deny contains f if {
 	some lb in resources_of_type("load_balancer")
+
+	# La configuration de journalisation doit être OBSERVÉE. Sans cette garde,
+	# `access_log` non exposé par l'API ou non mappé par le collecteur retombait
+	# sur `is_enabled = false`, et Pépin annonçait « journalisation désactivée »
+	# alors que personne n'avait rien regardé (ADR-0003, ADR-0014). Le verrou de
+	# capacité prend alors le relais : le contrôle rend `not-evaluated`.
+	"access_log" in object.keys(lb.attributes)
 	not _access_log_enabled(lb.attributes)
 	name := object.get(lb.attributes, "load_balancer_name", lb.id)
 	f := {

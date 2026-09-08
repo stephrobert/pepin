@@ -109,6 +109,7 @@ The table below is rendered from that very map — not transcribed from it:
 | `kubernetes_cluster_deletion_protection` | `kubernetes_cluster` | `deletion_protection` |
 | `kubernetes_cluster_not_publicly_accessible` | `kubernetes_cluster` | `admin_whitelist` |
 | `loadbalancer_http_redirect_to_https` | `load_balancer` | `redirect_to_https` |
+| `loadbalancer_logging_enabled` | `load_balancer` | `access_log` |
 | `loadbalancer_ssl_listeners` | `load_balancer` | `load_balancer_type` |
 | `network_documented` | `network` | `tags` |
 | `network_flow_matrix_documented` | `security_group_rule` | `description` |

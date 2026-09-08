@@ -15,7 +15,7 @@
 | Sévérité | `medium` |
 | Exigence SCSL (index gelé) | `CLD-LOG-1` |
 | Type de ressource lu | `load_balancer` |
-| Attribut décisif | _aucun : jugé à la présence d'un écart_ |
+| Attribut décisif | `access_log` |
 | État | actif |
 | Déclaré pour | `outscale` |
 | Preuves de remédiation | 0 / 1 |
@@ -78,7 +78,8 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 ## Comment enquêter
 
 - Type de ressource normalisé lu par la règle : `load_balancer`
-- Aucun verrou d'attribut : le contrôle se juge à la présence d'un écart, l'absence de mauvaise configuration valant conformité.
+- Attribut dont la décision dépend : `access_log`
+- Sans cet attribut sur une ressource du type visé, le scan rend `not-evaluated` et non `pass` (`internal/assess`, table `requiredAttr`).
 - Ce que chaque source projette se lit dans le descripteur : [`providers/outscale.yaml`](../../providers/outscale.yaml)
 - La règle qui émet ce code vit dans [`internal/commonrules/rules/`](../../internal/commonrules/rules) : elle est **commune** à tous les fournisseurs, seule la source change.
 
