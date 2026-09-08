@@ -115,10 +115,25 @@ jobs:
         with:
           args: -quiet ./...
 
+      # La version de Go vient de go.mod, et il faut la passer par `go-version-input`.
+      # `go-version-file` seul était IGNORÉ : l'action porte un `go-version-input`
+      # défaut « stable » qu'elle transmet à setup-go, lequel avertit « only
+      # go-version will be used ». govulncheck analysait donc le code sous une
+      # version que le projet ne cible pas — ce qui compte, l'applicabilité d'une
+      # vulnérabilité de la bibliothèque standard dépendant de cette version.
+      #
+      # `cache: false` parce que setup-go a DÉJÀ restauré le cache Go plus haut :
+      # deux restaurations dans le même job déballent l'une sur l'autre, d'où les
+      # « Cannot open: File exists » et l'échec de tar en fin de job.
+      - name: Version de Go du projet
+        id: gomod
+        run: echo "version=$(sed -n 's/^go //p' go.mod)" >> "$GITHUB_OUTPUT"
+
       - name: Vulnérabilités appelées (govulncheck)
         uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
         with:
-          go-version-file: go.mod
+          go-version-input: ${{ steps.gomod.outputs.version }}
+          cache: false
           repo-checkout: false
 
   lint:

@@ -93,6 +93,7 @@ var ConfigParameters = []string{
 	"tagging.required_tags",
 	"tagging.network_required_tags",
 	"tagging.resource_types",
+	"tagging.production_values",
 	"snapshots.max_age_days",
 	"snapshots.accepted_states",
 	"secrets.min_confidence",

@@ -99,6 +99,14 @@ type Tagging struct {
 	// ResourceTypes : les types de ressources normalisés sur lesquels l'étiquetage
 	// est exigé.
 	ResourceTypes []string `yaml:"resource_types" json:"resource_types,omitempty"`
+	// ProductionValues : les valeurs de l'étiquette d'environnement qui désignent la
+	// PRODUCTION. Elles décident du périmètre des contrôles réservés aux services en
+	// production — la protection contre la suppression, notamment.
+	//
+	// Configurable parce qu'imposer « prod » serait la même convention arbitraire que
+	// #61 dénonçait : une organisation qui écrit « live » ou « prd » n'est pas moins
+	// gouvernée. La comparaison est insensible à la casse.
+	ProductionValues []string `yaml:"production_values" json:"production_values,omitempty"`
 }
 
 // Snapshots règle le contrôle de FRAÎCHEUR des snapshots de volume.
