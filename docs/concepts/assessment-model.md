@@ -284,6 +284,15 @@ rejected by any auditor, so the tool refuses to produce one.
 ```json
 {
   "control": "blockstorage_volume_encryption",
+  "evidence": {
+    "observed": "Encryption at rest of block volumes is guest-side (LUKS/Cryptsetup), a customer responsibility (shared responsibility model); the block API exposes no encryption field, hence unobservable on the platform side (CHF-2).",
+    "proves": [
+      "",
+      "",
+      ""
+    ],
+    "source": "terraform-plan"
+  },
   "references": [
     {
       "framework": "scsl",

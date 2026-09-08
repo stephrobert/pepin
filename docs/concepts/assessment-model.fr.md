@@ -284,6 +284,15 @@ rejeté par n'importe quel auditeur, l'outil refuse donc d'en produire.
 ```json
 {
   "control": "blockstorage_volume_encryption",
+  "evidence": {
+    "observed": "Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2).",
+    "proves": [
+      "",
+      "",
+      ""
+    ],
+    "source": "terraform-plan"
+  },
   "references": [
     {
       "framework": "scsl",

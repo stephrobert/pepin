@@ -144,7 +144,7 @@ lifted from the run above:
   Remediation
     Enable encryption at rest on the instance (at creation time, or through an upgrade).
 
-  ↳ docs: https://stephane-robert.info/scsl/CLD-CHF-2
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
 ```
 <!-- /pepin:gen scan-control-encryption -->
 
