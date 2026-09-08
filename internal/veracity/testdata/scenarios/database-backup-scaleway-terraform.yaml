@@ -1,0 +1,39 @@
+# Sauvegarde automatique desactivee sur une base manageee Scaleway.
+#
+# Le champ est NEGATIF (`disable_backup`), ce qui est le genre de piege ou une
+# regle se trompe de sens sans que rien ne rougisse : le contre-exemple porte
+# donc explicitement la valeur `false`, et non l'absence du champ.
+control: database_backup_enabled
+provider: scaleway
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "disable_backup vaut true : aucune sauvegarde automatique n'est prise"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_rdb_instance.main
+              type: scaleway_rdb_instance
+              name: main
+              values:
+                name: rdb-prod
+                disable_backup: true
+                encryption_at_rest: true
+
+  - expect: pass
+    why: "MEME base, disable_backup a false : la sauvegarde est active, et c'est la valeur OBSERVEE qui le dit"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_rdb_instance.main
+              type: scaleway_rdb_instance
+              name: main
+              values:
+                name: rdb-prod
+                disable_backup: false
+                encryption_at_rest: true

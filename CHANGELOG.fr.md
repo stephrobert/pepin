@@ -24,6 +24,15 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Chaque règle `high`/`critical` doit désormais prouver ce sur quoi elle REFUSE de
+  se déclencher.** Le contrat de véracité prouvait que Pépin sait produire le verdict
+  attendu ; il ne prouvait jamais qu'il le RETIENT sur une configuration voisine et
+  légitime. Une règle qui se déclenche sur tout est parfaitement sensible et sans
+  précision aucune. Un contre-exemple est un **couple** sur un même chemin contrôle ×
+  fournisseur × source : un cas `fail` et un cas `pass` proche. 13 écrits à ce jour,
+  chacun éprouvé dans les deux sens ; les 26 manquants sont comptés dans un registre
+  exact dans les deux sens, et un contrôle `high`/`critical` ajouté sans son
+  contre-exemple casse la CI. `mise run counterexamples-update` le régénère.
 - **Les tenants de référence : des configurations tierces, rejouées à chaque build.**
   Une fixture est écrite par l'auteur de la règle : elle prouve que la règle *se
   déclenche*, jamais qu'elle a *raison* sur une configuration que personne n'a conçue

@@ -1,0 +1,40 @@
+# Registre des contrôles high/critical SANS contre-exemple légitime.
+#   RÉGÉNÉRÉ par `mise run counterexamples-update`, jamais édité à la main.
+#
+# Un contre-exemple est un COUPLE : sur un même chemin contrôle × fournisseur
+# × source, un cas `fail` et un cas `pass` proche. Sans lui, la règle a une
+# sensibilité mesurée et AUCUNE précision mesurée — une règle qui se déclenche
+# sur tout est parfaitement sensible.
+#
+# Une ligne qui disparaît est une dette payée. Une ligne qui apparaît sans
+# contre-exemple est une règle high/critical ajoutée sans sa preuve de
+# précision, et la CI la refuse.
+#
+# high/critical actifs : 42 · avec contre-exemple : 16 · restants : 26
+
+blockstorage_snapshot_not_public
+blockstorage_volume_encryption
+blockstorage_volume_snapshots_exist
+compute_instance_has_security_group
+database_encryption_at_rest_enabled
+governance_provider_sovereignty
+governance_resource_region_in_eu
+iam_account_mfa_enforced
+iam_apiaccessrule_defined
+iam_apiaccessrule_no_public_cidr
+iam_no_root_access_key
+iam_policy_no_privilege_escalation
+iam_role_key_lifetime_bounded
+iam_role_no_admin_privileges
+iam_role_source_ip_restricted
+iam_user_mfa_enabled
+k8s_namespace_network_policy_defined
+k8s_namespace_pod_security_enforced
+k8s_rbac_no_cluster_admin_binding
+k8s_secrets_external_manager
+kubernetes_cluster_control_plane_highly_available
+kubernetes_cluster_not_publicly_accessible
+loadbalancer_ssl_listeners
+network_peering_cross_organization
+network_securitygroup_default_restrict_traffic
+objectstorage_bucket_default_encryption

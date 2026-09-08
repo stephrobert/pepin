@@ -1,0 +1,38 @@
+# Politique IAM ecrite en NotAction / NotResource, chez Outscale.
+#
+# Une politique par exclusion accorde tout ce que personne n'a pense a exclure :
+# elle se perime silencieusement des qu'une action nouvelle apparait au catalogue
+# du fournisseur. Le contre-exemple exprime la MEME intention par enumeration
+# positive, ce qui est la correction attendue et non un contournement.
+control: iam_policy_no_notaction_notresource
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "la politique s'ecrit par exclusion : elle accordera toute action future non listee"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_policy.exclusion
+              type: outscale_policy
+              name: exclusion
+              values:
+                policy_name: tout-sauf-iam
+                document: "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"NotAction\": [\"DeleteUser\"], \"Resource\": \"*\"}]}"
+
+  - expect: pass
+    why: "MEME intention, exprimee par enumeration positive : ce qui n'est pas accorde ne l'est pas"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_policy.exclusion
+              type: outscale_policy
+              name: exclusion
+              values:
+                policy_name: tout-sauf-iam
+                document: "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": [\"ReadVms\", \"ReadVolumes\"], \"Resource\": [\"arn:osc:api:::vm/*\"]}]}"

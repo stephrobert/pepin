@@ -1,13 +1,13 @@
 {
   "controls": 57,
   "paths": 178,
-  "paths_proven": 23,
+  "paths_proven": 24,
   "obligations": 458,
-  "proven": 63,
+  "proven": 83,
   "verdicts": {
     "fail": {
       "required": 140,
-      "proven": 10
+      "proven": 21
     },
     "not-applicable": {
       "required": 22,
@@ -19,7 +19,7 @@
     },
     "pass": {
       "required": 140,
-      "proven": 24
+      "proven": 33
     }
   },
   "live_paths": 100,
@@ -247,8 +247,15 @@
             "fail",
             "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/image-public-outscale-terraform.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/compute_image_not_public_test.rego"
@@ -421,8 +428,15 @@
             "fail",
             "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/user-data-secrets-scaleway-terraform.yaml"
       ],
       "tenants": [
         "outscale/ztiac-two-tier"
@@ -474,6 +488,8 @@
             "not-evaluated"
           ],
           "proven": [
+            "fail",
+            "pass",
             "not-evaluated"
           ]
         },
@@ -496,6 +512,9 @@
           ]
         }
       ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/public-vm-open-sg-outscale-terraform.yaml"
+      ],
       "tenants": [
         "outscale/ztiac-two-tier"
       ],
@@ -516,9 +535,13 @@
             "not-evaluated"
           ],
           "proven": [
-            "fail"
+            "fail",
+            "pass"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/database-backup-scaleway-terraform.yaml"
       ],
       "tenants": [
         "scaleway/ducklake"
@@ -562,9 +585,13 @@
             "not-evaluated"
           ],
           "proven": [
-            "fail"
+            "fail",
+            "pass"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/database-open-scaleway-terraform.yaml"
       ],
       "tenants": [
         "scaleway/ducklake"
@@ -843,8 +870,15 @@
             "fail",
             "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/accesskey-expiration-scaleway-terraform.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/iam_accesskey_expiration_set_test.rego"
@@ -971,8 +1005,15 @@
             "fail",
             "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/policy-admin-outscale-terraform.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/iam_policy_no_administrative_privileges_test.rego",
@@ -999,8 +1040,15 @@
             "fail",
             "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/policy-notaction-outscale-terraform.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/iam_policy_wildcard_resource_notaction_test.rego"
@@ -1721,6 +1769,7 @@
             "not-evaluated"
           ],
           "proven": [
+            "fail",
             "pass"
           ]
         },
@@ -1744,6 +1793,9 @@
             "not-evaluated"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/all-ports-open-outscale-terraform.yaml"
       ],
       "tenants": [
         "exoscale/zone-demo",
@@ -1798,6 +1850,7 @@
             "not-evaluated"
           ],
           "proven": [
+            "fail",
             "pass"
           ]
         },
@@ -1821,6 +1874,9 @@
             "not-evaluated"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/high-risk-tcp-outscale-terraform.yaml"
       ],
       "tenants": [
         "exoscale/zone-demo",
@@ -1875,6 +1931,7 @@
             "not-evaluated"
           ],
           "proven": [
+            "fail",
             "pass"
           ]
         },
@@ -1898,6 +1955,9 @@
             "not-evaluated"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/high-risk-udp-outscale-terraform.yaml"
       ],
       "tenants": [
         "exoscale/zone-demo",
@@ -2044,6 +2104,7 @@
             "not-evaluated"
           ],
           "proven": [
+            "fail",
             "pass"
           ]
         },
@@ -2068,6 +2129,9 @@
           ]
         }
       ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/rdp-open-outscale-terraform.yaml"
+      ],
       "tenants": [
         "exoscale/zone-demo",
         "outscale/ztiac-two-tier"
@@ -2086,8 +2150,15 @@
             "fail",
             "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/sg-default-deny-scaleway-terraform.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/network_securitygroup_default_deny_test.rego"

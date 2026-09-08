@@ -92,6 +92,14 @@ run = "python3 scripts/scsl-drift.py --update"
 description = "Régénère le registre de dette du contrat de véracité (internal/veracity/testdata/debt.txt) après avoir ajouté un contrôle ou un scénario"
 run = "PEPIN_UPDATE_VERACITY=1 go test ./internal/veracity/ -run 'DebtLedgerIsExact' -count=1"
 
+# Le contre-exemple LÉGITIME (issue #115). Le contrat de véracité prouve que
+# Pépin sait produire le verdict attendu ; il ne prouvait pas qu'il REFUSE de le
+# produire sur une configuration correcte et voisine. Une règle qui se déclenche
+# sur tout est parfaitement sensible et sans précision aucune.
+[tasks.counterexamples-update]
+description = "Régénère le registre des contrôles high/critical sans contre-exemple légitime (internal/veracity/testdata/counterexamples-debt.txt)"
+run = "PEPIN_UPDATE_COUNTEREXAMPLES=1 go test ./internal/veracity/ -run 'HasALegitimateCounterexample' -count=1"
+
 # Tracer les appels RÉELS d'un collecteur (issue #84). Le contrat de véracité
 # prouve la chaîne à partir d'une réponse canned ; celle-ci ne prouve rien du
 # CÂBLAGE de la spec `collecte`, c'est-à-dire quels endpoints partent vraiment

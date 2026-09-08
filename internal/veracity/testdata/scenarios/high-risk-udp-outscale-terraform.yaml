@@ -1,0 +1,45 @@
+# Port UDP a haut risque ouvert a Internet, chez Outscale.
+#
+# Les services UDP exposes servent d'amplificateurs a des attaques par deni de
+# service : le risque ne pese pas que sur le tenant, il pese sur des tiers. Le
+# contre-exemple garde le MEME service, borne a son reseau.
+control: network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "SNMP (161/UDP) ouvert depuis 0.0.0.0/0 : service d'administration expose et amplificateur connu"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_security_group_rule.snmp
+              type: outscale_security_group_rule
+              name: snmp
+              values:
+                security_group_id: sg-infra
+                flow: Inbound
+                ip_protocol: udp
+                from_port_range: 161
+                to_port_range: 161
+                ip_range: 0.0.0.0/0
+
+  - expect: pass
+    why: "MEME port SNMP, ouvert a la seule supervision interne : la sonde doit pouvoir interroger"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_security_group_rule.snmp
+              type: outscale_security_group_rule
+              name: snmp
+              values:
+                security_group_id: sg-infra
+                flow: Inbound
+                ip_protocol: udp
+                from_port_range: 161
+                to_port_range: 161
+                ip_range: 10.9.0.0/24

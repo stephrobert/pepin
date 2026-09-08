@@ -8,7 +8,7 @@
 # Une ligne qui disparaît est une dette payée. Une ligne qui apparaît sans
 # scénario est un contrôle ajouté sans sa preuve, et la CI la refuse.
 #
-# chemins : 178 · entierement prouves : 23 · obligations : 458 · restantes : 395
+# chemins : 178 · entierement prouves : 24 · obligations : 458 · restantes : 375
 
 blockstorage_snapshot_not_public exoscale live not-applicable
 blockstorage_snapshot_not_public outscale live fail,pass,not-evaluated
@@ -21,7 +21,7 @@ blockstorage_volume_snapshots_exist exoscale live fail,pass,not-evaluated
 blockstorage_volume_snapshots_exist exoscale terraform fail,pass,not-evaluated
 blockstorage_volume_snapshots_exist outscale live fail,pass,not-evaluated
 compute_image_not_public outscale live fail,pass,not-evaluated
-compute_image_not_public outscale terraform fail,pass,not-evaluated
+compute_image_not_public outscale terraform not-evaluated
 compute_instance_deletion_protection outscale live fail,pass,not-evaluated
 compute_instance_has_security_group exoscale live fail,pass,not-evaluated
 compute_instance_has_security_group exoscale terraform fail,pass,not-evaluated
@@ -34,16 +34,15 @@ compute_instance_no_secrets_in_user_data exoscale terraform fail,pass,not-evalua
 compute_instance_no_secrets_in_user_data outscale live fail,pass,not-evaluated
 compute_instance_no_secrets_in_user_data outscale terraform fail,not-evaluated
 compute_instance_no_secrets_in_user_data scaleway live not-evaluated
-compute_instance_no_secrets_in_user_data scaleway terraform fail,pass,not-evaluated
+compute_instance_no_secrets_in_user_data scaleway terraform not-evaluated
 compute_instance_public_ip_with_open_securitygroup exoscale live fail,pass,not-evaluated
 compute_instance_public_ip_with_open_securitygroup exoscale terraform fail,pass,not-evaluated
 compute_instance_public_ip_with_open_securitygroup outscale live fail,pass,not-evaluated
-compute_instance_public_ip_with_open_securitygroup outscale terraform fail,pass
 compute_instance_public_ip_with_open_securitygroup scaleway live fail,pass,not-evaluated
 compute_instance_public_ip_with_open_securitygroup scaleway terraform not-evaluated
-database_backup_enabled scaleway terraform pass,not-evaluated
+database_backup_enabled scaleway terraform not-evaluated
 database_encryption_at_rest_enabled scaleway terraform fail,pass
-database_service_not_open_to_internet scaleway terraform pass,not-evaluated
+database_service_not_open_to_internet scaleway terraform not-evaluated
 governance_provider_sovereignty exoscale live fail,pass,not-evaluated
 governance_provider_sovereignty exoscale terraform pass,not-evaluated
 governance_provider_sovereignty outscale live fail,pass,not-evaluated
@@ -60,7 +59,7 @@ governance_resource_required_tags outscale live not-evaluated
 governance_resource_required_tags scaleway live not-evaluated
 iam_accesskey_expiration_set outscale live fail,pass,not-evaluated
 iam_accesskey_expiration_set scaleway live fail,pass,not-evaluated
-iam_accesskey_expiration_set scaleway terraform fail,pass,not-evaluated
+iam_accesskey_expiration_set scaleway terraform not-evaluated
 iam_account_mfa_enforced outscale live fail,pass,not-evaluated
 iam_apiaccesspolicy_max_key_expiration outscale live fail,pass,not-evaluated
 iam_apiaccessrule_defined outscale live fail,pass,not-evaluated
@@ -69,9 +68,9 @@ iam_no_root_access_key outscale live fail,pass,not-evaluated
 iam_no_root_access_key scaleway live not-evaluated
 iam_no_root_access_key scaleway terraform not-evaluated
 iam_policy_no_administrative_privileges outscale live fail,pass,not-evaluated
-iam_policy_no_administrative_privileges outscale terraform fail,pass,not-evaluated
+iam_policy_no_administrative_privileges outscale terraform not-evaluated
 iam_policy_no_notaction_notresource outscale live fail,pass,not-evaluated
-iam_policy_no_notaction_notresource outscale terraform fail,pass,not-evaluated
+iam_policy_no_notaction_notresource outscale terraform not-evaluated
 iam_policy_no_privilege_escalation outscale live fail,pass,not-evaluated
 iam_policy_no_privilege_escalation outscale terraform fail,pass,not-evaluated
 iam_policy_no_privilege_escalation scaleway terraform fail,pass,not-evaluated
@@ -116,19 +115,19 @@ network_peering_cross_organization outscale live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_all_ports exoscale live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_all_ports exoscale terraform fail,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_all_ports outscale live fail,pass,not-evaluated
-network_securitygroup_allow_ingress_from_internet_to_all_ports outscale terraform fail,not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_all_ports outscale terraform not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_all_ports scaleway live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_all_ports scaleway terraform fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports exoscale live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports exoscale terraform fail,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports outscale live fail,pass,not-evaluated
-network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports outscale terraform fail,not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports outscale terraform not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports scaleway live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports scaleway terraform fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports exoscale live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports exoscale terraform fail,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports outscale live fail,pass,not-evaluated
-network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports outscale terraform fail,not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports outscale terraform not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports scaleway live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports scaleway terraform fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 exoscale live fail,pass,not-evaluated
@@ -138,10 +137,10 @@ network_securitygroup_allow_ingress_from_internet_to_tcp_port_22 outscale terraf
 network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 exoscale live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 exoscale terraform fail,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 outscale live fail,pass,not-evaluated
-network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 outscale terraform fail,not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 outscale terraform not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 scaleway live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389 scaleway terraform fail,pass,not-evaluated
-network_securitygroup_default_deny scaleway terraform fail,pass,not-evaluated
+network_securitygroup_default_deny scaleway terraform not-evaluated
 network_securitygroup_default_restrict_traffic outscale live fail,pass,not-evaluated
 network_securitygroup_unrestricted_egress exoscale live fail,pass,not-evaluated
 network_securitygroup_unrestricted_egress exoscale terraform fail,not-evaluated

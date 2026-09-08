@@ -1,0 +1,39 @@
+# Cle d'API sans date d'expiration, chez Scaleway.
+#
+# Ce controle conclut d'une ABSENCE, et c'est legitime : chez Scaleway un
+# `ExpiresAt` nul EST la facon dont l'API dit « aucune expiration » (ADR-0017).
+# Le couple ci-dessous eprouve donc la frontiere la plus fine du referentiel :
+# absence de valeur contre valeur presente, sur le meme champ.
+control: iam_accesskey_expiration_set
+provider: scaleway
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "la cle ne porte aucune date d'expiration : une fuite resterait exploitable indefiniment"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_iam_api_key.ci
+              type: scaleway_iam_api_key
+              name: ci
+              values:
+                access_key: SCWXXXXXXXXXXXXXXXXX
+                description: cle de CI
+
+  - expect: pass
+    why: "MEME cle, avec une expiration datee : la rotation est bornee par le fournisseur lui-meme"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_iam_api_key.ci
+              type: scaleway_iam_api_key
+              name: ci
+              values:
+                access_key: SCWXXXXXXXXXXXXXXXXX
+                description: cle de CI
+                expires_at: "2027-01-01T00:00:00Z"

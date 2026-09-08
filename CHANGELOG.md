@@ -23,6 +23,15 @@ belongs in `git log`.
 
 ### Added
 
+- **Every `high`/`critical` rule must now prove what it REFUSES to fire on.** The
+  veracity contract proved Pépin could produce the expected verdict; it never proved
+  it *withholds* that verdict on a near-identical but legitimate configuration. A rule
+  that fires on everything is perfectly sensitive and has no measured precision at all.
+  A counterexample is a **pair** on one control × provider × source path: a `fail` case
+  and a close `pass` case. 13 written so far, each proven in both directions; the 26
+  still missing are counted in a ledger that is exact both ways, and a new
+  `high`/`critical` control without its counterexample breaks CI.
+  `mise run counterexamples-update` regenerates it.
 - **Reference tenants: third-party configurations, replayed on every build.** A
   fixture is written by the author of the rule, so it proves the rule *fires* — never
   that it is *right* about a configuration nobody designed for it. Six real, published,
