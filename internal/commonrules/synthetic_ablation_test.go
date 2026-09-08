@@ -154,9 +154,14 @@ func findingCodes(t *testing.T, ctx context.Context, inv map[string]any) map[str
 var syntheticExceptions = map[string]string{
 	// Scaleway expose ExpiresAt comme un *time.Time (providers/scaleway.yaml,
 	// contrat access_key, etat: verifie). Un nil EST la façon dont l'API dit
-	// « aucune expiration » : l'absence est ici l'observation. Ambiguïté restante
-	// suivie en #121.
-	"iam_accesskey_expiration_set\x00expiration_date": "contrat Scaleway : ExpiresAt est un *time.Time, un nil signifie « aucune expiration »",
+	// « aucune expiration » : l'absence est ici l'observation.
+	//
+	// L'ambiguïté que cette ligne signalait est tranchée (#121) : l'assessment lit la
+	// provenance et requalifie un écart déduit d'une absence JAMAIS cherchée
+	// (ADR-0017). L'exception subsiste parce que cette porte-ci n'éprouve que la
+	// règle, qui n'a pas accès à la provenance — et n'y aura pas accès, c'est
+	// l'invariant 1 de l'ADR-0017.
+	"iam_accesskey_expiration_set\x00expiration_date": "contrat Scaleway : ExpiresAt est un *time.Time, un nil signifie « aucune expiration » ; l'absence non attestée est requalifiée par l'assessment (#121, ADR-0017)",
 
 	// `editable` absent ⇒ le rôle est traité comme éditable, donc DANS le périmètre.
 	// Le repli inverse exclurait silencieusement tout rôle dont le fournisseur

@@ -230,6 +230,11 @@ func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any
 		got := assess.Build(name, referentiel.All(), f, resourceTypesOf(input),
 			naReasons, providerVerified(name), controlTypes(), attrsByTypeOf(input), run)
 		got = assess.WithProvenance(got, assess.ProvenanceOf(input), controlTypes())
+		// La requalification d'une absence non attestée se REJOUE, pour la raison
+		// exacte de la dégradation ci-dessous : elle déplace des verdicts (ADR-0017),
+		// donc l'oublier reconstruirait un assessment plus affirmatif que celui qui a
+		// été scellé, et crierait à la falsification sur un bundle honnête.
+		got = assess.WithAttestedAbsence(got, assess.ProvenanceOf(input))
 		// La dégradation par incomplétude de collecte se REJOUE elle aussi : l'état de
 		// collecte voyage dans input.json précisément pour cela. Sans ce rejeu, le
 		// vérificateur reconstruirait un assessment PLUS AFFIRMATIF que celui qui a été
