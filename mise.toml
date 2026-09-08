@@ -244,3 +244,10 @@ run = [
   "go install golang.org/x/vuln/cmd/govulncheck@v1.7.0",
   "go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.5.1",
 ]
+
+[tasks.adr-drift]
+description = "Détecte la dérive de forme entre les ADR et le dépôt"
+# Partiel par construction : ce contrôle voit un chemin disparu, une garde
+# introuvable, un statut incohérent. Il ne voit pas qu'un ADR est devenu faux.
+# Un rapport vide ne dispense pas de relire.
+run = "python3 tools/adr/drift.py"

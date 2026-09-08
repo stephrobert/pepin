@@ -39,6 +39,34 @@ Ne proposez pas de changement si `mise run test` ou `mise run audit` échoue.
 6. **Aucun secret en dur** (clés, mots de passe) : options CLI / environnement /
    `random_password` dans les fixtures.
 
+## Revue ADR — avant de toucher au code
+
+Le code décrit l'état actuel. Un **ADR** (`docs/adr/`) explique pourquoi cet état
+existe, et quelles décisions ne se rouvrent pas sans décision explicite.
+
+> **Une issue décrit ce que nous voulons changer. Un ADR décrit les décisions déjà
+> prises. Une issue ne peut pas annuler un ADR en silence.**
+
+Avant d'implémenter quoi que ce soit qui touche au modèle de données, à
+l'architecture, au réseau, à une API, à un workflow, à un format de sortie, à la
+persistance, à la sécurité, à la génération, à l'orchestration ou au
+**comportement public** :
+
+1. Identifier les composants touchés.
+2. Trouver les ADR applicables — table de portée dans
+   [`docs/adr/README.md`](docs/adr/README.md), ou champ `scope:` de chaque ADR.
+3. Les lire en entier, et relever leurs invariants.
+4. Vérifier que le changement ne réintroduit pas une alternative qu'un ADR a écartée.
+5. En cas de conflit, **s'arrêter** : proposer d'abord un ADR qui remplace, jamais
+   une réécriture silencieuse de l'ancien.
+
+Une faute de frappe ou un test manquant n'exige rien de tout cela. Déclarer le
+résultat dans la PR, sous **Impact ADR**.
+
+`mise run adr-drift` signale la dérive de forme — un chemin disparu, une garde
+qui n'existe plus. Il ne sait pas dire qu'un ADR est devenu faux ; cela demande
+encore de lire.
+
 ## Ajouter un provider
 
 Un provider = un fichier `providers/<nom>.yaml` : identité, auth, résolution des
