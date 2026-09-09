@@ -1,0 +1,53 @@
+# Le security group « default » d'un réseau, sur une collecte live Outscale.
+#
+# Le chemin traverse le collecteur RÉEL : `/ReadSecurityGroups`, le mapping déclaratif du
+# descripteur (`SecurityGroupName` du SG parent → `security_group_name`,
+# `SecurityGroupsMembers` → `peer_security_group_ids`), le verrou de capacité, la règle,
+# puis l'assessment. C'est l'entrée exigée par le contrat : le type
+# `security_group_rule` est produit par la spec `collecte`, donc un scénario `live` ne
+# peut pas passer par `inventory:`.
+#
+# Ce qui est en jeu ici est précisément le MAPPING. La règle sait déjà distinguer la
+# règle d'usine auto-référencée d'une règle écrite par l'exploitant ; ce qu'aucun test
+# Rego ne prouve, c'est que le collecteur lui apporte de quoi le faire. Un
+# `SecurityGroupsMembers` non projeté rendrait la distinction muette sans rien casser :
+# la règle retomberait sur son repli, et personne ne verrait la différence.
+control: network_securitygroup_default_restrict_traffic
+provider: outscale
+source: live
+
+scenarios:
+  - expect: fail
+    why: "reseau neuf : le SG default porte la regle d'usine auto-referencee, et c'est un ecart"
+    api:
+      /ReadSecurityGroups: |
+        {"SecurityGroups": [{"SecurityGroupId": "sg-default-1",
+                             "SecurityGroupName": "default",
+                             "NetId": "vpc-1",
+                             "InboundRules": [{"IpProtocol": "-1",
+                                               "SecurityGroupsMembers": [{"SecurityGroupId": "sg-default-1",
+                                                                          "SecurityGroupName": "default"}]}],
+                             "OutboundRules": [{"IpProtocol": "-1", "IpRanges": ["0.0.0.0/0"]}]}]}
+
+  - expect: pass
+    why: "le meme reseau une fois la remediation appliquee : le SG default n'a plus de regle entrante"
+    api:
+      /ReadSecurityGroups: |
+        {"SecurityGroups": [{"SecurityGroupId": "sg-default-1",
+                             "SecurityGroupName": "default",
+                             "NetId": "vpc-1",
+                             "InboundRules": [],
+                             "OutboundRules": [{"IpProtocol": "-1", "IpRanges": ["0.0.0.0/0"]}]},
+                            {"SecurityGroupId": "sg-web-1",
+                             "SecurityGroupName": "web",
+                             "NetId": "vpc-1",
+                             "InboundRules": [{"IpProtocol": "tcp",
+                                               "FromPortRange": 443,
+                                               "ToPortRange": 443,
+                                               "IpRanges": ["0.0.0.0/0"]}],
+                             "OutboundRules": []}]}
+
+  - expect: not-evaluated
+    why: "le droit api:Read* manque : l'unite est incomplete, et rien ne se conclut d'une lecture refusee"
+    deny:
+      - /ReadSecurityGroups

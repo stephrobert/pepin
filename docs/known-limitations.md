@@ -206,9 +206,9 @@ What is not yet proven is **counted**, not hidden:
 | Figure | Count |
 |---|---:|
 | Control x provider x source paths on which Pépin concludes | 179 |
-| Paths whose every reachable verdict is proven end to end | 25 |
+| Paths whose every reachable verdict is proven end to end | 26 |
 | Verdicts to prove in total | 461 |
-| Verdicts left to prove | 375 |
+| Verdicts left to prove | 372 |
 <!-- /pepin:gen veracity-debt -->
 
 The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a

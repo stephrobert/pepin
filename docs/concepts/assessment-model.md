@@ -429,7 +429,7 @@ with one more step.
 {
   "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
   "evidence": {
-    "observed": "Security group \"sg-bastion\": SSH (port 22) accepted from/to the internet.",
+    "observed": "Security group \"sg-bastion\": SSH (port 22) accepted from the internet.",
     "source": "export"
   },
   "labels": {

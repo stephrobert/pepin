@@ -91,7 +91,19 @@ import (
 //	ROTATION ne se lit nulle part : CLD-IAM-2 demande « une expiration ET une
 //	rotation », l'expiration se lit sur un champ, la rotation se déduit de l'âge.
 //	Un consommateur qui l'ignore ne perd rien de ce qu'il lisait déjà.
-const InventoryFormat = "pepin-inventory/v5"
+//
+// v6 : une `security_group_rule` ENTRANTE porte `peer_security_group_ids`, les groupes
+//
+//	dont les membres sont admis comme source (osc-sdk-go v2.24.0
+//	SecurityGroupRule.SecurityGroupsMembers, vérifié dans
+//	model_security_groups_member.go). Ajout PUR — aucun champ existant ne bouge.
+//	Une règle entrante admet une source par CIDR OU par groupe ; sans ce champ,
+//	« pas de CIDR » ne dit pas si la règle n'admet personne ou si elle admet un
+//	groupe qu'on n'a pas lu. Le contrôle du SG « default » a besoin de la
+//	différence pour nommer ce qu'il a trouvé, et la DÉDUIRE d'une absence serait la
+//	fabrication que l'ADR-0014 refuse. Mappé sur l'entrant seul : rien ne lit la
+//	contrepartie sortante.
+const InventoryFormat = "pepin-inventory/v6"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

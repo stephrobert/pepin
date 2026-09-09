@@ -278,6 +278,30 @@ l'une ni l'autre appartient au `git log`.
 
 ### Modifié
 
+- **Les deux findings d'un réseau tout juste créé disent maintenant lequel vient de
+  l'exploitant.** Sur un Net Outscale neuf, un scan live signalait un `high` sur le
+  security group « default » — « porte une règle entrante » — et l'exploitant allait
+  chercher une règle qu'il aurait écrite. La règle trouvée est celle que le provider crée
+  avec le réseau : sa seule source admise est le groupe lui-même. L'écart subsiste (deux
+  ressources démarrées sans SG explicite y atterrissent et communiquent librement, ce que
+  CLD-NET-4 refuse), mais il nomme désormais la forme qu'il a trouvée et porte
+  `confidence: contextual` au lieu de `confirmed`. La distinction est **observée**, pas
+  déduite d'un CIDR absent : une règle entrante admet une source par CIDR **ou** par
+  groupe, et la source par groupe est maintenant collectée
+  (`peer_security_group_ids`). Là où le champ manque, la règle retombe sur la formulation
+  générale et sur `confirmed` — ne pas savoir ne doit pas faire sortir un écart d'une
+  porte de CI.
+- **La sortie non restreinte est `contextual`, plus `confirmed`.** L'étiquette venait du
+  constructeur partagé, dont la justification porte sur l'entrée : il n'existe pas de
+  raison légitime d'ouvrir SSH à tout Internet. Cet argument ne vaut pas pour la sortie.
+  Une sortie ouverte est un chemin d'exfiltration réel, mais des architectures
+  défendables la laissent ouverte et filtrent en aval — passerelle, mandataire, pare-feu
+  périmétrique — sur un plan que le scan ne voit pas. Le finding garde son code, sa
+  sévérité `medium` et sa catégorie `security` ; il quitte `--gate security` sans quitter
+  le rapport. **Le comportement par défaut ne bouge pas** : `--gate all` rend toujours `1`.
+- Les messages d'exposition choisissent leur préposition selon la direction de la règle.
+  Une règle sortante n'accepte rien « depuis » Internet, et un lecteur qui corrige ce que
+  la phrase décrit cherchait au mauvais endroit.
 - **La souveraineté se mesure désormais sur les ressources qui hébergent des données,
   et sur elles seules.** Le contrôle de localisation UE concluait depuis une *voisine* :
   une seule ressource portant une région ouvrait le `pass` à toutes les autres, y

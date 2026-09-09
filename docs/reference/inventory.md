@@ -12,7 +12,7 @@ with the same regard as the CLI surface.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v5
+pepin-inventory/v6
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -164,7 +164,7 @@ descriptors and from the Go collectors — never a hand-kept list beside the cod
 | `network_peering` | `accepter_account` `peering_id` `source_account` `state` |
 | `object_storage_bucket` | `acl` `acl_grants` `default_encryption_enabled` `kms_key_id` `name` `object_lock_enabled` `policy_public` `public_via_acl` `sse_kms_enabled` `tags` `versioning` |
 | `security_group` | `inbound_default_policy` `security_group_id` |
-| `security_group_rule` | `action` `cidrs` `description` `direction` `port_from` `port_to` `protocol` `security_group_id` `security_group_name` |
+| `security_group_rule` | `action` `cidrs` `description` `direction` `peer_security_group_ids` `port_from` `port_to` `protocol` `security_group_id` `security_group_name` |
 | `subnet` | `map_public_ip_on_launch` `network_id` `state` `subnet_id` `tags` |
 <!-- /pepin:gen inventory-types -->
 
