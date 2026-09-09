@@ -10,8 +10,8 @@ import rego.v1
 
 deny contains f if {
 	some c in resources_of_type("kubernetes_cluster")
-	some cidr in cidr_list(object.get(c.attributes, "admin_whitelist", []))
-	is_public_cidr(cidr)
+	cidr := unrestricted_label(object.get(c.attributes, "admin_whitelist", []))
+	cidr != ""
 	name := object.get(c.attributes, "name", c.id)
 	f := {
 		"code": "kubernetes_cluster_not_publicly_accessible",

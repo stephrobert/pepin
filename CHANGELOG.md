@@ -59,6 +59,31 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A security group open to the whole internet through `/2` ranges produced no
+  finding.** `is_public_cidr` called a range public only at prefix ≤ 1, so the four
+  ranges `0.0.0.0/2`, `64.0.0.0/2`, `128.0.0.0/2`, `192.0.0.0/2` — which together cover
+  all of IPv4 — went unnoticed, while `0.0.0.0/1` in the same group was caught. Measured
+  on a real Outscale tenant: RDP open to the entire internet, and the report silent. A
+  `/3`, or a list of `/8`s, passed the same way. A source is now unrestricted when it is
+  **wide** (prefix ≤ 8) **and not private** — the second condition is what keeps
+  `10.0.0.0/8` on port 22 silent, and a partner network like `203.0.113.0/24` is
+  deliberately not flagged: "open to the internet" and "open to someone else" are
+  different claims.
+
+  The union is closed too: `net.cidr_merge` collapses a rule's ranges before they are
+  judged, so 512 `/9` covering the space become `0.0.0.0/0` and fire — measured. The
+  raw entries are still tested alongside, because a maskless literal (`0.0.0.0`, `*`)
+  is not a valid CIDR and the merge would lose it; and only valid entries are merged,
+  because `net.cidr_merge` goes undefined on a malformed one, which would silence the
+  rule on third-party input.
+
+  The merge only brings CONTIGUOUS ranges together, so a checkerboard escaped it: 256
+  `/9` one in two — half the internet — merged to 256 unchanged blocks and stayed
+  silent. The public addresses a source list opens are now COUNTED, exactly: merged
+  blocks are disjoint, and two CIDRs are either disjoint or nested, so a block's public
+  size is its own minus the special-use blocks it contains. One finding per resource
+  names the union — `0.0.0.0/0`, or `256 CIDR → 1848508416 IPv4` — rather than one per
+  range.
 - **The root description names the providers that exist.** The first sentence a new
   user reads advertised OVH — a roadmap entry, not a provider — and omitted Kubernetes,
   which is one. The list is now derived from the registry: a copied list goes stale at
