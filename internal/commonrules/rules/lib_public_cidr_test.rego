@@ -70,3 +70,49 @@ test_a_partner_network_stays_silent if {
 
 # Le réseau d'administration du contre-exemple de véracité.
 test_an_administration_network_stays_silent if not is_public_cidr("10.42.0.0/16")
+
+# ── L'UNION : ce qu'aucune plage prise isolément ne montre ─────────────────────
+
+# Le cas MESURÉ sur le tenant, vu comme la règle le voit : une liste, pas une plage.
+test_the_union_of_four_quarters_is_unrestricted if {
+	unrestricted_source(["0.0.0.0/2", "64.0.0.0/2", "128.0.0.0/2", "192.0.0.0/2"])
+}
+
+# Le cas que j'avais d'abord déclaré hors de portée : 512 plages plus étroites que le
+# seuil, dont l'union couvre tout. `net.cidr_merge` les collapse en `0.0.0.0/0`.
+test_the_union_of_narrower_ranges_is_unrestricted if {
+	# Un TABLEAU, comme le modèle normalisé le porte : `cidr_list` ne convertit qu'un
+	# tableau ou un scalaire, et lui passer un ensemble rendait ce test vide — donc
+	# vert pour la mauvaise raison, ce qu'il a fait au premier essai.
+	moities := [c |
+		some a in numbers.range(0, 255)
+		some suffixe in ["0.0.0", "128.0.0"]
+		c := sprintf("%d.%s/9", [a, suffixe])
+	]
+	count(moities) == 512
+	unrestricted_source(moities)
+}
+
+# Un littéral SANS masque n'est pas un CIDR valide : la fusion le perdrait, le chemin
+# brut le garde. Les deux chemins sont nécessaires.
+test_a_maskless_literal_survives_the_merge if {
+	unrestricted_source(["0.0.0.0"])
+	unrestricted_source(["*"])
+}
+
+# Une entrée MALFORMÉE — donnée d'un tiers — ne doit pas rendre la règle muette :
+# `net.cidr_merge` y devient indéfini, et le filtrage par validité est ce qui l'évite.
+test_a_malformed_entry_does_not_silence_the_rule if {
+	unrestricted_source(["pas-un-cidr", "0.0.0.0/0"])
+}
+
+# ── Les contre-exemples tiennent aussi pour l'union ────────────────────────────
+
+# Deux moitiés d'un réseau privé fusionnent en ce réseau privé : toujours silencieux.
+test_the_union_of_two_private_halves_stays_silent if {
+	not unrestricted_source(["10.0.0.0/9", "10.128.0.0/9"])
+}
+
+test_a_list_of_partner_networks_stays_silent if {
+	not unrestricted_source(["203.0.113.0/24", "198.51.100.0/24", "10.42.0.0/16"])
+}

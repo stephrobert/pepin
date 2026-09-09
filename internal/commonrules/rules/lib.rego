@@ -38,12 +38,11 @@ resources_of_type(t) := [r | some r in input.resources; r.type == t]
 # quelqu'un d'autre que moi » sont deux affirmations différentes, et la seconde n'est pas
 # ce que ces contrôles mesurent.
 #
-# # Ce qui reste ouvert, et c'est écrit plutôt que tu
+# # # L'UNION, et non plus seulement chaque plage prise isolément
 #
-# Une UNION de plages plus étroites que /8 — 512 `/9`, par exemple — couvre l'espace sans
-# qu'aucune ne franchisse le seuil. Le détecter demande une arithmétique d'intervalles
-# que le Rego rend coûteuse, et les trois formes réellement mesurées (des `/2`, un `/3`,
-# une liste de `/8`) sont fermées. Suivi en #169.
+# Une plage isolée ne dit pas tout : 512 `/9` couvrent l'espace sans qu'aucune ne
+# franchisse le seuil. `unrestricted_source` fusionne donc la liste d'une règle avant de
+# la juger — `net.cidr_merge` collapse ces 512 plages en `0.0.0.0/0`, mesuré.
 is_public_cidr(cidr) if {
 	t := trim_space(cidr)
 	_cidr_prefix(t) <= 8
@@ -193,13 +192,60 @@ proto_covers(rule, _) if {
 # drop » — un `deny`/`reject` d'un futur provider serait alors compté à tort comme ouvert.
 sg_accepting(rule) if lower(object.get(rule, "action", "accept")) in {"accept", "allow", ""}
 
+# unrestricted_source — la LISTE de sources d'une règle est-elle non restreinte ?
+#
+# Juger chaque plage isolément laissait passer une UNION : quatre `/2` couvrent tout
+# IPv4 sans qu'aucune ne soit « tout Internet », et 512 `/9` font de même sous n'importe
+# quel seuil de largeur. La liste est donc FUSIONNÉE avant d'être jugée — `net.cidr_merge`
+# rend la plus petite couverture équivalente, et les 512 `/9` y deviennent `0.0.0.0/0`.
+#
+# Les deux chemins coexistent, et il faut les deux :
+#
+#   - les entrées BRUTES portent les littéraux sans masque (`0.0.0.0`, `*`), que
+#     `net.cidr_is_valid` rejette et que la fusion perdrait ;
+#   - les entrées FUSIONNÉES portent l'union, qu'aucune entrée brute ne montre.
+#
+# Le filtrage par `net.cidr_is_valid` avant la fusion n'est pas de la prudence de
+# principe : `net.cidr_merge` rend l'expression INDÉFINIE sur une entrée malformée
+# (mesuré), ce qui rendrait la règle muette — le faux négatif exact que ce correctif
+# existe pour fermer, sur une entrée fournie par un tiers.
+unrestricted_source(cidrs) if count(unrestricted_cidrs(cidrs)) > 0
+
+# unrestricted_cidrs — les sources FAUTIVES, brutes et fusionnées confondues.
+#
+# L'ensemble plutôt qu'un booléen : les messages nomment la plage en cause, et une
+# règle qui dirait « ouvert à Internet » sans dire par où laisserait l'opérateur
+# chercher. Une union fautive s'y nomme par sa forme fusionnée — `0.0.0.0/0` — ce qui
+# est exactement ce qu'il faut lire pour comprendre que quatre `/2` se recouvrent.
+unrestricted_cidrs(cidrs) := brutes | fusionnees if {
+	brutes := {c |
+		some c in cidr_list(cidrs)
+		is_public_cidr(c)
+	}
+	valides := {c |
+		some c in cidr_list(cidrs)
+		net.cidr_is_valid(c)
+	}
+	fusionnees := {m |
+		some m in _merge_ou_vide(valides)
+		is_public_cidr(m)
+	}
+}
+
+# _merge_ou_vide — la fusion, ou rien. `net.cidr_merge` sur un ensemble VIDE, ou
+# portant une entrée malformée, rend l'expression indéfinie : sans ce garde-fou, une
+# donnée de tiers mal formée rendrait la règle muette, c'est-à-dire produirait le faux
+# négatif exact que ce chemin existe pour fermer.
+_merge_ou_vide(valides) := net.cidr_merge(valides) if count(valides) > 0
+
+_merge_ou_vide(valides) := set() if count(valides) == 0
+
 # sg_inbound_from_internet — règle entrante acceptante dont la source couvre
-# Internet ; renvoie true si au moins un CIDR public est présent.
+# Internet ; renvoie true si la liste de sources est non restreinte.
 sg_inbound_from_internet(rule) if {
 	lower(object.get(rule, "direction", "")) == "inbound"
 	sg_accepting(rule)
-	some cidr in cidr_list(object.get(rule, "cidrs", []))
-	is_public_cidr(cidr)
+	unrestricted_source(object.get(rule, "cidrs", []))
 }
 
 # cidr_list — accepte la liste du modele normalise AUSSI BIEN qu'un scalaire.

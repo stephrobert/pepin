@@ -69,6 +69,13 @@ belongs in `git log`.
   `10.0.0.0/8` on port 22 silent, and a partner network like `203.0.113.0/24` is
   deliberately not flagged: "open to the internet" and "open to someone else" are
   different claims.
+
+  The union is closed too: `net.cidr_merge` collapses a rule's ranges before they are
+  judged, so 512 `/9` covering the space become `0.0.0.0/0` and fire — measured. The
+  raw entries are still tested alongside, because a maskless literal (`0.0.0.0`, `*`)
+  is not a valid CIDR and the merge would lose it; and only valid entries are merged,
+  because `net.cidr_merge` goes undefined on a malformed one, which would silence the
+  rule on third-party input.
 - **The root description names the providers that exist.** The first sentence a new
   user reads advertised OVH — a roadmap entry, not a provider — and omitted Kubernetes,
   which is one. The list is now derived from the registry: a copied list goes stale at

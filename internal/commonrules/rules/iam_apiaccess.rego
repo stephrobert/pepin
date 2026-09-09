@@ -14,8 +14,7 @@ import rego.v1
 # comportement inchangé (on flague), donc rétro-compatible.
 deny contains f if {
 	some r in resources_of_type("api_access_rule")
-	some cidr in cidr_list(object.get(r.attributes, "ip_ranges", []))
-	is_public_cidr(cidr)
+	some cidr in unrestricted_cidrs(object.get(r.attributes, "ip_ranges", []))
 	not _requires_client_cert(r)
 	f := {
 		"code": "iam_apiaccessrule_no_public_cidr",

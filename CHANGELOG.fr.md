@@ -74,6 +74,13 @@ l'une ni l'autre appartient au `git log`.
   silencieux, et le réseau d'un partenaire comme `203.0.113.0/24` n'est délibérément pas
   signalé : « ouvert à Internet » et « ouvert à quelqu'un d'autre » sont deux
   affirmations différentes.
+
+  L'union est fermée elle aussi : `net.cidr_merge` fusionne les plages d'une règle avant
+  de les juger, si bien que 512 `/9` couvrant l'espace deviennent `0.0.0.0/0` et sont
+  signalées — mesuré. Les entrées brutes restent éprouvées à côté, parce qu'un littéral
+  sans masque (`0.0.0.0`, `*`) n'est pas un CIDR valide et que la fusion le perdrait ; et
+  seules les entrées valides sont fusionnées, parce que `net.cidr_merge` devient indéfini
+  sur une entrée malformée, ce qui rendrait la règle muette sur une donnée de tiers.
 - **La description racine nomme les fournisseurs qui existent.** La première phrase
   qu'un nouvel utilisateur lit annonçait OVH — une entrée de feuille de route, pas un
   fournisseur — et omettait Kubernetes, qui en est un. La liste est désormais dérivée du
