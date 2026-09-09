@@ -472,6 +472,17 @@ contrat:
   # K8S-1 N'EST PLUS marqué non applicable : l'API server SKS étant toujours
   # exposée (aucune allow-list IP, OpenAPI create/get-sks-cluster), le contrôle
   # est NON SATISFAIT (écart), pas « sans objet » — à exposer comme tel ultérieurement.
+  # NET-2 : le mécanisme « tout protocole » n'existe pas chez Exoscale. Le contrôle
+  # visait donc une configuration que le fournisseur ne sait pas exprimer, et son
+  # `pass` était un pass PAR ABSENCE — publié comme « aucun écart détecté (contrat
+  # vérifié) », ce qui promet une mesure qui ne peut pas avoir lieu.
+  #
+  # Le cas réel — tout le TCP et tout l'UDP ouverts à Internet — reste couvert, par les
+  # quatre contrôles de familles de ports (22, 3389, ports TCP sensibles, ports UDP
+  # sensibles), et c'est ce que le tenant de qualification a mesuré.
+  - control: network_securitygroup_allow_ingress_from_internet_to_all_ports
+    reason: "Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel."
+    reason_en: "An Exoscale security group rule has no \"all protocols\" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case."
   - control: blockstorage_snapshot_not_public
     reason: "Snapshots block-storage Exoscale non exportables/partageables (doc officielle) : le risque d'exposition publique est structurellement absent, conforme par construction (STO-2)."
     reason_en: "Exoscale block-storage snapshots cannot be exported or shared (official documentation): the risk of public exposure is structurally absent, compliant by construction (STO-2)."

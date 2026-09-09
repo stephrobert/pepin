@@ -17,8 +17,8 @@
 | Resource type read | `object_storage_bucket` |
 | Deciding attribute | `default_encryption_enabled` |
 | State | active |
-| Declared for | `outscale` |
-| Remediation proofs | 0 / 1 |
+| Declared for | `outscale`, `scaleway` |
+| Remediation proofs | 0 / 2 |
 
 ## The risk
 
@@ -50,7 +50,7 @@ source".
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✅ |
-| scaleway | ✗ | ✗ |
+| scaleway | ◐ | ✅ |
 | kubernetes | n/a | ✗ |
 
 Every cell that is not ✅ **while the control is declared for that provider** carries its
@@ -59,15 +59,16 @@ reason:
 | Provider | Source | Status | Reason |
 |---|---|---|---|
 | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
+| scaleway | terraform | ◐ `partial` | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
-| `fail` | a deviation was detected on a real resource | outscale / live |
-| `pass` | the deciding data was collected, and it is compliant | outscale / live |
+| `fail` | a deviation was detected on a real resource | outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | the deciding data was collected, and it is compliant | outscale / live · scaleway / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
-| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
+| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | scaleway / terraform |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
 resource of the targeted type: "nothing to look at" is not "compliant".
@@ -77,7 +78,7 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 - Normalized resource type the rule reads: `object_storage_bucket`
 - Attribute the decision depends on: `default_encryption_enabled`
 - Without that attribute on a resource of the targeted type, the scan returns `not-evaluated` rather than `pass` (`internal/assess`, `requiredAttr` table).
-- What each source projects is readable in the descriptor: [`providers/outscale.yaml`](../../providers/outscale.yaml)
+- What each source projects is readable in the descriptor: [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - The rule that emits this code lives in [`internal/commonrules/rules/`](../../internal/commonrules/rules): it is **common** to every provider, only the source changes.
 
 ## How to remediate
@@ -87,6 +88,7 @@ Enable the bucket's default encryption (SSE) and check that the objects already 
 | Provider | Deployable setup |
 |---|---|
 | outscale | _no proof filed yet_ |
+| scaleway | _no proof filed yet_ |
 
 A remediation proof is a self-contained, **compliant** Terraform module that deploys as
 is, or a note anchored on the official documentation. See
@@ -95,6 +97,9 @@ is, or a note anchored on the official documentation. See
 ## How to verify the fix
 
 ```bash
+# from a Terraform plan: nothing is provisioned
+./pepin scan scaleway --terraform plan.json --format assessment
+
 # from the provider API: effective configuration
 ./pepin scan outscale --live --format assessment
 ```
@@ -102,6 +107,10 @@ is, or a note anchored on the official documentation. See
 In the `assessment` output, look for `"control": "objectstorage_bucket_default_encryption"`: its `status` must be `pass`.
 If it stays `not-evaluated`, the deciding data was not collected and the fix is **not**
 demonstrated: the reasons table above says why.
+
+**One of the two sources cannot lift the `pass` lock** for this control: the provider
+quoted does produce the targeted type there, but the scan will return `not-evaluated`.
+The reasons table says which one, and why.
 
 ## See also
 

@@ -396,6 +396,10 @@ contrat:
         versioning: GetBucketVersioning → Status
         policy_public: 'DÉRIVÉ : GetBucketPolicy contient Allow Principal *'
         tags: GetBucketTagging → TagSet[]
+        default_encryption_enabled: 'DÉRIVÉ : GetBucketEncryption → au moins une règle de chiffrement par défaut. Le SSE
+          est OPT-IN par bucket chez Scaleway (SSE-ONE, SSE-KMS, SSE-C — doc object-storage/api-cli/enable-sse-one) : un
+          bucket sans configuration écrit ses objets en clair côté fournisseur, et « aucune configuration » est une
+          VALEUR, pas une lacune (CLD-CHF-2).'
         sse_kms_enabled: 'DÉRIVÉ : GetBucketEncryption → règle par défaut SSEAlgorithm=aws:kms (KEK client via Key Manager,
           doc object-storage/api-cli/enable-sse-kms). true ⇒ clé gérée par le client (CLD-CHF-4).'
         kms_key_id: 'GetBucketEncryption → ApplyServerSideEncryptionByDefault.KMSMasterKeyID (ID de la KEK Key Manager)'

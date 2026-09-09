@@ -282,6 +282,7 @@ source produces the resource type and its deciding attribute, and the other does
 | `network_securitygroup_default_deny` | scaleway | terraform | this source produces no resource of type "security_group" |
 | `network_securitygroup_default_restrict_traffic` | outscale | live | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | outscale | live | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_default_encryption` | scaleway | live | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_kms_encryption` | scaleway | live | deciding attribute "sse_kms_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_object_lock_enabled` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_object_lock_enabled` | outscale | live | this source produces no resource of type "object_storage_bucket" |

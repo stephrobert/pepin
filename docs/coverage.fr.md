@@ -43,12 +43,12 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 
 | Famille | Contrôles | exoscale | outscale | scaleway |
 |---|---:|---|---|---|
-| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 1 · ◐ 1 · ∅ 1 · ✗ 4 |
+| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 1 · ∅ 1 · ✗ 3 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
 | `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 3 · ◐ 1 · ∅ 0 · ✗ 11 |
 | `journalisation` | 2 | ✅ 1 · ◐ 0 · ∅ 1 · ✗ 0 | ✅ 1 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 0 · ◐ 0 · ∅ 0 · ✗ 2 |
-| `reseau` | 15 | ✅ 9 · ◐ 0 · ∅ 0 · ✗ 6 | ✅ 11 · ◐ 0 · ∅ 0 · ✗ 4 | ✅ 9 · ◐ 1 · ∅ 0 · ✗ 5 |
+| `reseau` | 15 | ✅ 8 · ◐ 0 · ∅ 1 · ✗ 6 | ✅ 11 · ◐ 0 · ∅ 0 · ✗ 4 | ✅ 9 · ◐ 1 · ∅ 0 · ✗ 5 |
 | `stockage` | 7 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 | ✅ 6 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 |
 
 ## Matrice complète (contrôle × fournisseur × source)
@@ -99,7 +99,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `network_documented` | low | CLD-NET-5 | ✅ | ✅ | ✅ | ✅ | ◐ | ✗ |
 | `network_flow_matrix_documented` | medium | CLD-NET-5 | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
 | `network_peering_cross_organization` | high | CLD-NET-7 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
-| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | critical | CLD-NET-2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | critical | CLD-NET-2 | ∅ | ∅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports` | high | CLD-NET-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports` | high | CLD-NET-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_tcp_port_22` | high | CLD-NET-1, CLD-IAM-6, CLD-NET-6 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -108,7 +108,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `network_securitygroup_default_restrict_traffic` | high | CLD-NET-4 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `network_securitygroup_unrestricted_egress` | medium | CLD-NET-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_subnet_no_public_ip_by_default` | medium | CLD-NET-3 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
-| `objectstorage_bucket_default_encryption` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
+| `objectstorage_bucket_default_encryption` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✅ | ◐ | ✅ |
 | `objectstorage_bucket_kms_encryption` | medium | CLD-CHF-4 | ∅ | ∅ | ∅ | ∅ | ◐ | ✅ |
 | `objectstorage_bucket_object_lock_enabled` | low | CLD-STO-8 | ✗ | ✅ | ✗ | ✅ | ✅ | ✅ |
 | `objectstorage_bucket_public_access` | critical | CLD-STO-1 | ✗ | ✅ | ✗ | ✅ | ✅ | ✅ |
@@ -179,9 +179,12 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `network_documented` | scaleway | terraform | ◐ `partial` | contrat du fournisseur : le type « network » n'est pas déclaré `verifie` (état : a_verifier) |
 | `network_documented` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « network » |
 | `network_peering_cross_organization` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « network_peering » |
+| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | terraform | ∅ `not-applicable` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
+| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | live | ∅ `not-applicable` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
 | `network_securitygroup_default_deny` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « security_group » |
 | `network_securitygroup_default_restrict_traffic` | outscale | terraform | ◐ `partial` | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
+| `objectstorage_bucket_default_encryption` | scaleway | terraform | ◐ `partial` | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_kms_encryption` | exoscale | terraform | ∅ `not-applicable` | SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | exoscale | live | ∅ `not-applicable` | SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | outscale | terraform | ∅ `not-applicable` | OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A. |
@@ -212,10 +215,10 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 
 | Fournisseur | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 20 | 2 | 5 | 31 |
-| exoscale | live | 25 | 1 | 5 | 27 |
+| exoscale | terraform | 19 | 2 | 6 | 31 |
+| exoscale | live | 24 | 1 | 6 | 27 |
 | outscale | terraform | 16 | 5 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 7 | 2 | 32 |
-| scaleway | live | 16 | 3 | 2 | 37 |
+| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | live | 17 | 3 | 2 | 36 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

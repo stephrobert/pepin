@@ -50,7 +50,7 @@ déclaré, ou type absent de cette source ».
 
 | Fournisseur | Plan Terraform | Collecte live |
 |---|:-:|:-:|
-| exoscale | ✅ | ✅ |
+| exoscale | ∅ | ∅ |
 | outscale | ✅ | ✅ |
 | scaleway | ✅ | ✅ |
 | kubernetes | sans objet | ✗ |
@@ -58,15 +58,18 @@ déclaré, ou type absent de cette source ».
 Chaque case qui n'est pas ✅, **alors que le contrôle est déclaré pour ce fournisseur**,
 porte son motif :
 
-_Aucune : toutes les cases déclarées sont pleinement observables._
+| Fournisseur | Source | Statut | Motif |
+|---|---|---|---|
+| exoscale | terraform | ∅ `not-applicable` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
+| exoscale | live | ∅ `not-applicable` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
-| `fail` | un écart a été détecté sur une ressource réelle | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
-| `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
+| `fail` | un écart a été détecté sur une ressource réelle | outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
+| `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | exoscale / terraform · exoscale / live |
 | `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | aucun |
 
 Un contrôle observable rend tout de même `not-evaluated` sur un inventaire qui ne
@@ -97,10 +100,10 @@ tel quel, ou une note ancrée sur la documentation officielle. Voir
 
 ```bash
 # depuis un plan Terraform : aucune ressource n'est créée
-./pepin scan exoscale --terraform plan.json --format assessment
+./pepin scan outscale --terraform plan.json --format assessment
 
 # depuis l'API du fournisseur : configuration effective
-./pepin scan exoscale --live --format assessment
+./pepin scan outscale --live --format assessment
 ```
 
 Dans la sortie `assessment`, chercher `"control": "network_securitygroup_allow_ingress_from_internet_to_all_ports"` : son `status` doit être

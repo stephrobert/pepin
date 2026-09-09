@@ -77,7 +77,7 @@ raises a version number and gets a CHANGELOG line.
   "summary": {
     "fail": 10,
     "not-applicable": 2,
-    "not-evaluated": 9,
+    "not-evaluated": 10,
     "pass": 6
   },
   "artifacts": [

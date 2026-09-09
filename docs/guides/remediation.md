@@ -205,8 +205,8 @@ provider) pairs the reference actually declares:
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 41 |
-| scaleway | 0 / 25 |
-| **Total** | **26 / 96** |
+| scaleway | 0 / 26 |
+| **Total** | **26 / 97** |
 <!-- /pepin:gen remediation-coverage -->
 
 Read that table for what it is: it counts **deployable proofs**, not remediations. The

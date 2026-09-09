@@ -49,7 +49,7 @@ source".
 
 | Provider | Terraform plan | Live collection |
 |---|:-:|:-:|
-| exoscale | ✅ | ✅ |
+| exoscale | ∅ | ∅ |
 | outscale | ✅ | ✅ |
 | scaleway | ✅ | ✅ |
 | kubernetes | n/a | ✗ |
@@ -57,15 +57,18 @@ source".
 Every cell that is not ✅ **while the control is declared for that provider** carries its
 reason:
 
-_None: every declared cell is fully observable._
+| Provider | Source | Status | Reason |
+|---|---|---|---|
+| exoscale | terraform | ∅ `not-applicable` | An Exoscale security group rule has no "all protocols" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case. |
+| exoscale | live | ∅ `not-applicable` | An Exoscale security group rule has no "all protocols" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case. |
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
-| `fail` | a deviation was detected on a real resource | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | the deciding data was collected, and it is compliant | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
-| `not-applicable` | the provider contract declares the control untestable, with its justification | — |
+| `fail` | a deviation was detected on a real resource | outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | the deciding data was collected, and it is compliant | outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
+| `not-applicable` | the provider contract declares the control untestable, with its justification | exoscale / terraform · exoscale / live |
 | `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
@@ -96,10 +99,10 @@ is, or a note anchored on the official documentation. See
 
 ```bash
 # from a Terraform plan: nothing is provisioned
-./pepin scan exoscale --terraform plan.json --format assessment
+./pepin scan outscale --terraform plan.json --format assessment
 
 # from the provider API: effective configuration
-./pepin scan exoscale --live --format assessment
+./pepin scan outscale --live --format assessment
 ```
 
 In the `assessment` output, look for `"control": "network_securitygroup_allow_ingress_from_internet_to_all_ports"`: its `status` must be `pass`.

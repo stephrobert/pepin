@@ -83,6 +83,23 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A control emitted six correct deviations on a provider the reference did not
+  declare it for.** `objectstorage_bucket_default_encryption` fires on Scaleway — the
+  shared S3 collector sets `default_encryption_enabled` on every bucket, and SSE is
+  opt-in per bucket there, so a bucket without one writes objects in cleartext. The
+  verdicts were right; the declaration was wrong, and the coverage matrix said ✗ for a
+  provider the tool was actually measuring. Declared now, with the attribute recorded in
+  the provider contract and its source.
+- **Two controls declared ✅ for Exoscale could never fire, and the two cases did not
+  deserve the same answer.** Both required `protocol == "all"`, which an Exoscale
+  security group rule cannot express (the provider schema and the v2 API accept only
+  ah, esp, gre, icmp, icmpv6, ipip, tcp, udp). `…_to_all_ports` is now **not applicable**
+  there, with the sourced justification: the any/any mechanism does not exist, and the
+  port-family controls cover the real case. But `unrestricted_egress` was **broadened**
+  instead — an open egress does exist on Exoscale, written `tcp 1-65535 → 0.0.0.0/0`,
+  and declaring it unmeasurable would have hidden a real posture fact. The bound is
+  strict: an egress limited to a few ports is filtering, and shouting at it is the false
+  positive that gets a tool switched off.
 - **A security group rule with no description got `pass` — from the control that
   exists to catch exactly that.** The rule guarded itself with `"description" in
   object.keys(...)`, meant to answer "does this provider expose the field at all", but

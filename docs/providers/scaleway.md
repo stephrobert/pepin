@@ -153,8 +153,8 @@ pepin scan scaleway --terraform plan.json
 <!-- pepin:gen provider-scaleway-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 7 | 2 | 32 |
-| live | 16 | 3 | 2 | 37 |
+| terraform | 17 | 8 | 2 | 31 |
+| live | 17 | 3 | 2 | 36 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
 Control by control, with the reason for every cell that is not fully supported, the source of
@@ -184,6 +184,7 @@ A `not-applicable` is a claim, so it carries its justification, taken from the p
 | `iam_policy_no_privilege_escalation` | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | live | this source produces no resource of type "iam_user" |
 | `network_securitygroup_default_deny` | terraform | this source produces no resource of type "security_group" |
+| `objectstorage_bucket_default_encryption` | live | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_kms_encryption` | live | deciding attribute "sse_kms_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_versioning_enabled` | live | deciding attribute "versioning" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 <!-- /pepin:gen provider-scaleway-onesource -->

@@ -74,8 +74,8 @@ déployable** : un module Terraform autonome et conforme sous `references/remedi
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 41 |
-| scaleway | 0 / 25 |
-| **Total** | **26 / 96** |
+| scaleway | 0 / 26 |
+| **Total** | **26 / 97** |
 <!-- /pepin:gen remediation-coverage -->
 
 `mise run check-remediation` est volontairement débranché de `mise run validate` : une

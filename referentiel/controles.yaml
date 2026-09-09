@@ -1249,7 +1249,7 @@ controles:
     frameworks:
       secnumcloud_3_2: ["10.1"]
       iso_27001_2022: ["A.8.24"]
-    fournisseurs: [outscale]
+    fournisseurs: [outscale, scaleway]
 
   - code: objectstorage_bucket_kms_encryption
     famille: chiffrement
