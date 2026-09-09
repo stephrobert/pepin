@@ -59,6 +59,13 @@ belongs in `git log`.
 
 ### Fixed
 
+- **An access key whose expiry has already passed no longer counts as compliant.** The
+  rule only refused a MISSING date, so a key still `ACTIVE` two years past its expiry
+  passed — measured on a real tenant. Both readings of that state are bad, which is why
+  the pass was wrong: either the provider still honours the key and the expiry protects
+  nothing, or it does not and a dead key is still declared active. The scan does not
+  need to settle which to know that "compliant" is false. The reference instant is the
+  EVALUATION time, not the clock, so replaying a sealed bundle yields the same verdict.
 - **A scan that measured nothing no longer renders as compliant.** A green tick,
   "No deviations found in the audited scope" and four severity counters at zero were
   printed immediately above a verdict saying `INDÉTERMINÉ`. Three signals literally true
@@ -150,6 +157,16 @@ belongs in `git log`.
 
 ### Added
 
+- **`iam_accesskey_rotated`: the rotation half of CLD-IAM-2, which nothing measured.**
+  The requirement asks for long-lived keys "with an expiry AND a rotation". The expiry
+  reads off a field; the rotation reads nowhere — it is deduced from the key's age,
+  because a key never replaced is a key never rotated. Measured on a real tenant: a key
+  expiring in 2099 satisfies the expiry control while no rotation has ever taken place,
+  and an account with `MaxAccessKeyExpirationSeconds: 0` has no ceiling to bound it
+  either. The window is `controls.iam.key_max_age_days`, 90 days by default; widening it
+  silences deviations, so the reference binds it to the requirement through
+  `au_plus_le_defaut`. Inventory schema v4 → v5: an `access_key` now carries
+  `creation_date` (osc-sdk-go v2.24.0 `AccessKey.CreationDate`, verified in the SDK).
 - **`scan --gate <all|security|compliance|sovereignty>`: a profile for the CI gate,
   which hides nothing.** A first scan should trigger "oh, that one is interesting", not
   "yes, I know my test VM has no deletion protection". The report stays COMPLETE in

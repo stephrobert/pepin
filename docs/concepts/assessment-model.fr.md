@@ -92,6 +92,7 @@ Le tableau ci-dessous est rendu depuis cette table même, il n'en est pas la cop
 | `database_encryption_at_rest_enabled` | `managed_database` | `encryption_at_rest` |
 | `database_service_not_open_to_internet` | `managed_database` | `ip_filter` |
 | `governance_resource_region_in_eu` | (aucun : contrôle transverse) | `region` |
+| `iam_accesskey_rotated` | `access_key` | `creation_date` |
 | `iam_account_mfa_enforced` | `api_access_policy` | `require_trusted_env` |
 | `iam_apiaccesspolicy_max_key_expiration` | `api_access_policy` | `max_access_key_expiration_seconds` |
 | `iam_apiaccessrule_no_public_cidr` | `api_access_rule` | `ip_ranges` |

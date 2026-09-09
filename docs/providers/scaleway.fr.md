@@ -156,8 +156,8 @@ pepin scan scaleway --terraform plan.json
 <!-- pepin:gen provider-scaleway-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 18 | 6 | 2 | 31 |
-| live | 16 | 3 | 2 | 36 |
+| terraform | 18 | 6 | 2 | 32 |
+| live | 16 | 3 | 2 | 37 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
 Contrôle par contrôle, avec le motif de chaque case qui n'est pas pleinement supportée, la

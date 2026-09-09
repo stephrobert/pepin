@@ -136,10 +136,10 @@ Pépin ne fait pas :
 <!-- pepin:gen control-counts -->
 | Chiffre | Nombre |
 |---|---:|
-| Contrôles au référentiel | 57 |
-| Contrôles déclarés pour au moins un fournisseur | 56 |
+| Contrôles au référentiel | 58 |
+| Contrôles déclarés pour au moins un fournisseur | 57 |
 | `critical` | 10 |
-| `high` | 32 |
+| `high` | 33 |
 | `medium` | 13 |
 | `low` | 2 |
 <!-- /pepin:gen control-counts -->

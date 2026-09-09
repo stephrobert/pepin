@@ -16,14 +16,14 @@ overview per provider and per source, see the [coverage matrix](../coverage.md).
 
 | Figure | Count |
 |---|---:|
-| Controls in the reference | 57 |
-| Active controls | 56 |
+| Controls in the reference | 58 |
+| Active controls | 57 |
 | Dormant controls | 1 |
 | `critical` | 10 |
-| `high` | 32 |
+| `high` | 33 |
 | `medium` | 13 |
 | `low` | 2 |
-| Deployable remediation proofs | 26 / 95 |
+| Deployable remediation proofs | 26 / 96 |
 
 ## How to read this catalogue
 
@@ -43,6 +43,7 @@ overview per provider and per source, see the [coverage matrix](../coverage.md).
 | Control | Severity | SCSL | Active for | Proofs |
 |---|---|---|---|---|
 | [`iam_accesskey_expiration_set`](iam_accesskey_expiration_set.md) Access key without expiry or rotation | critical | `CLD-IAM-2` | `outscale`, `scaleway` | 0 / 2 |
+| [`iam_accesskey_rotated`](iam_accesskey_rotated.md) Access key never renewed | high | `CLD-IAM-2` | `outscale` | 0 / 1 |
 | [`iam_account_mfa_enforced`](iam_account_mfa_enforced.md) MFA not enforced at the account level | high | `CLD-IAM-3` | `outscale` | 0 / 1 |
 | [`iam_apiaccesspolicy_max_key_expiration`](iam_apiaccesspolicy_max_key_expiration.md) API access policy without a maximum key expiry | medium | `CLD-IAM-2` | `outscale` | 0 / 1 |
 | [`iam_apiaccessrule_defined`](iam_apiaccessrule_defined.md) No API access rule defined | high | `CLD-IAM-4` | `outscale` | 0 / 1 |

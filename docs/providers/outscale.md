@@ -212,8 +212,8 @@ API returns a boolean. The rules normalize both
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 4 | 4 | 32 |
-| live | 39 | 1 | 4 | 13 |
+| terraform | 17 | 4 | 4 | 33 |
+| live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
 Control by control, with the reason for every cell that is not fully supported, the source of
@@ -240,6 +240,7 @@ truth is the [coverage matrix](../coverage.md).
 | `compute_instance_deletion_protection` | live | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `governance_resource_region_in_eu` | live | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_accesskey_expiration_set` | live | this source produces no resource of type "access_key" |
+| `iam_accesskey_rotated` | live | this source produces no resource of type "access_key" |
 | `iam_account_mfa_enforced` | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | live | this source produces no resource of type "api_access_summary" |

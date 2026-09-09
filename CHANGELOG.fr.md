@@ -63,6 +63,14 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une clé d'accès dont l'expiration est dépassée ne compte plus comme conforme.** La
+  règle ne refusait qu'une date ABSENTE, si bien qu'une clé encore `ACTIVE` deux ans
+  après son échéance passait — mesuré sur un tenant réel. Les deux lectures de cet état
+  sont mauvaises, et c'est pourquoi le `pass` était faux : soit le fournisseur honore
+  encore la clé et l'expiration ne protège rien, soit il ne l'honore plus et une clé
+  morte reste déclarée active. Le scan n'a pas à trancher laquelle pour savoir que
+  « conforme » est faux. L'instant de référence est celui de l'ÉVALUATION, pas
+  l'horloge : le rejeu d'un bundle scellé rend donc le même verdict.
 - **Un scan qui n'a rien mesuré ne se rend plus comme conforme.** Une coche verte,
   « Aucun écart sur le périmètre audité » et quatre compteurs à zéro s'imprimaient
   immédiatement au-dessus d'un verdict `INDÉTERMINÉ`. Trois signaux littéralement vrais
@@ -161,6 +169,17 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **`iam_accesskey_rotated` : la moitié « rotation » de CLD-IAM-2, que rien ne
+  mesurait.** L'exigence demande des clés longue durée « assorties d'une expiration ET
+  d'une rotation ». L'expiration se lit sur un champ ; la rotation ne se lit nulle part —
+  elle se déduit de l'âge de la clé, parce qu'une clé jamais remplacée est une clé jamais
+  tournée. Mesuré sur un tenant réel : une clé expirant en 2099 satisfait le contrôle
+  d'expiration sans qu'aucune rotation n'ait eu lieu, et un compte avec
+  `MaxAccessKeyExpirationSeconds: 0` n'a aucun plafond pour la borner non plus. La
+  fenêtre est `controls.iam.key_max_age_days`, 90 jours par défaut ; l'allonger tait des
+  écarts, donc le référentiel l'adosse à l'exigence par `au_plus_le_defaut`. Schéma
+  d'inventaire v4 → v5 : une `access_key` porte désormais `creation_date` (osc-sdk-go
+  v2.24.0 `AccessKey.CreationDate`, vérifié dans le SDK).
 - **`scan --gate <all|security|compliance|sovereignty>` : un profil pour la porte de
   CI, qui ne cache rien.** Un premier scan doit provoquer « ah oui, ça c'est
   intéressant », pas « oui, je sais que ma VM de test n'a pas de protection contre la

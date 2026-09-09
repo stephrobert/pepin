@@ -12,7 +12,7 @@ with the same regard as the CLI surface.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v4
+pepin-inventory/v5
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -141,7 +141,7 @@ descriptors and from the Go collectors — never a hand-kept list beside the cod
 <!-- pepin:gen inventory-types -->
 | Resource type read | Common attributes |
 |---|---|
-| `access_key` | `access_key_id` `expiration_date` `owner_user` `scope` `state` |
+| `access_key` | `access_key_id` `creation_date` `expiration_date` `owner_user` `scope` `state` |
 | `api_access_policy` | `id` `max_access_key_expiration_seconds` `require_trusted_env` |
 | `api_access_rule` | `api_access_rule_id` `ca_ids` `cns` `ip_ranges` |
 | `api_access_summary` | `id` `rule_count` |

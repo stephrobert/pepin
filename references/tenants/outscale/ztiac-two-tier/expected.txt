@@ -20,6 +20,7 @@ governance_provider_sovereignty pass
 governance_resource_region_in_eu not-evaluated
 governance_resource_required_tags fail
 iam_accesskey_expiration_set not-evaluated
+iam_accesskey_rotated not-evaluated
 iam_account_mfa_enforced not-evaluated
 iam_apiaccesspolicy_max_key_expiration not-evaluated
 iam_apiaccessrule_defined not-evaluated

@@ -95,6 +95,7 @@ var ConfigParameters = []string{
 	"tagging.resource_types",
 	"tagging.production_values",
 	"snapshots.max_age_days",
+	"iam.key_max_age_days",
 	"snapshots.accepted_states",
 	"secrets.min_confidence",
 }

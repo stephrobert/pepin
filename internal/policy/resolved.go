@@ -14,6 +14,7 @@ import "strings"
 type Resolved struct {
 	Tagging   ResolvedTagging   `json:"tagging"`
 	Snapshots ResolvedSnapshots `json:"snapshots"`
+	Iam       ResolvedIam       `json:"iam"`
 	Secrets   ResolvedSecrets   `json:"secrets"`
 }
 
@@ -42,6 +43,11 @@ type RequiredTag struct {
 type ResolvedSnapshots struct {
 	MaxAgeDays     int      `json:"max_age_days"`
 	AcceptedStates []string `json:"accepted_states"`
+}
+
+// ResolvedIam est la politique d'identités effective.
+type ResolvedIam struct {
+	KeyMaxAgeDays int `json:"key_max_age_days"`
 }
 
 // ResolvedSecrets est la politique de détection effective.
@@ -155,6 +161,11 @@ var (
 	// courante, et c'est la valeur que le contrôle appliquait en dur avant d'être
 	// réglable — la rendre configurable ne devait déplacer aucun verdict.
 	defaultMaxAgeDays = 7
+	// defaultKeyMaxAgeDays : quatre-vingt-dix jours. C'est la période de rotation que
+	// les référentiels publics retiennent le plus souvent pour un secret statique, et
+	// elle est assez longue pour qu'une organisation qui ne l'a pas outillée puisse
+	// s'y conformer sans automatisation.
+	defaultKeyMaxAgeDays = 90
 
 	// defaultSnapshotStates : les états NATIFS d'une snapshot réellement
 	// exploitable, ANCRÉS sur le contrat de chaque API (jamais devinés) :
@@ -190,6 +201,7 @@ func Defaults() Resolved {
 			MaxAgeDays:     defaultMaxAgeDays,
 			AcceptedStates: sortedUnique(defaultSnapshotStates),
 		},
+		Iam:     ResolvedIam{KeyMaxAgeDays: defaultKeyMaxAgeDays},
 		Secrets: ResolvedSecrets{MinConfidence: defaultMinConfidence},
 	}
 }
@@ -235,6 +247,9 @@ func Resolve(c *Controls) Resolved {
 		if s.AcceptedStates != nil {
 			out.Snapshots.AcceptedStates = sortedUnique(s.AcceptedStates)
 		}
+	}
+	if i := c.Iam; i != nil && i.KeyMaxAgeDays != nil {
+		out.Iam.KeyMaxAgeDays = *i.KeyMaxAgeDays
 	}
 	if s := c.Secrets; s != nil && s.MinConfidence != "" {
 		// NORMALISÉ au vocabulaire courant : une politique écrite `low` et une écrite

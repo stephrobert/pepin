@@ -92,6 +92,7 @@ actually decide them. The reason given is the one that applies to the source tha
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `governance_resource_region_in_eu` | outscale | live | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
+| `iam_accesskey_rotated` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_account_mfa_enforced` | outscale | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | outscale | live | this source produces no resource of type "api_access_summary" |
@@ -145,13 +146,13 @@ Per provider and per source, over all controls in the reference:
 <!-- pepin:gen coverage-totals -->
 | Provider | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 21 | 1 | 5 | 30 |
-| exoscale | live | 25 | 1 | 5 | 26 |
-| outscale | terraform | 17 | 4 | 4 | 32 |
-| outscale | live | 39 | 1 | 4 | 13 |
-| scaleway | terraform | 18 | 6 | 2 | 31 |
-| scaleway | live | 16 | 3 | 2 | 36 |
-| kubernetes | live | 4 | 0 | 0 | 53 |
+| exoscale | terraform | 21 | 1 | 5 | 31 |
+| exoscale | live | 25 | 1 | 5 | 27 |
+| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | live | 40 | 1 | 4 | 13 |
+| scaleway | terraform | 18 | 6 | 2 | 32 |
+| scaleway | live | 16 | 3 | 2 | 37 |
+| kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
 
 The per-control detail, with the reason for every cell that is not fully supported, is the
@@ -169,9 +170,9 @@ documented note. Today:
 |---|---:|
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
-| outscale | 0 / 40 |
+| outscale | 0 / 41 |
 | scaleway | 0 / 25 |
-| **Total** | **26 / 95** |
+| **Total** | **26 / 96** |
 <!-- /pepin:gen remediation-coverage -->
 
 This is deliberately **not** wired into `mise run validate`: over all providers the count is
@@ -204,9 +205,9 @@ What is not yet proven is **counted**, not hidden:
 <!-- pepin:gen veracity-debt -->
 | Figure | Count |
 |---|---:|
-| Control x provider x source paths on which Pépin concludes | 178 |
-| Paths whose every reachable verdict is proven end to end | 24 |
-| Verdicts to prove in total | 458 |
+| Control x provider x source paths on which Pépin concludes | 179 |
+| Paths whose every reachable verdict is proven end to end | 25 |
+| Verdicts to prove in total | 461 |
 | Verdicts left to prove | 375 |
 <!-- /pepin:gen veracity-debt -->
 

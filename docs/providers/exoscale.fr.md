@@ -177,8 +177,8 @@ pepin scan exoscale --terraform plan.json
 <!-- pepin:gen provider-exoscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 21 | 1 | 5 | 30 |
-| live | 25 | 1 | 5 | 26 |
+| terraform | 21 | 1 | 5 | 31 |
+| live | 25 | 1 | 5 | 27 |
 <!-- /pepin:gen provider-exoscale-coverage -->
 
 Contrôle par contrôle, avec le motif de chaque case qui n'est pas pleinement supportée, la

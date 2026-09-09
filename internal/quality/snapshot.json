@@ -1,28 +1,28 @@
 {
-  "controls": 57,
-  "paths": 178,
-  "paths_proven": 24,
-  "obligations": 458,
-  "proven": 83,
+  "controls": 58,
+  "paths": 179,
+  "paths_proven": 25,
+  "obligations": 461,
+  "proven": 86,
   "verdicts": {
     "fail": {
-      "required": 140,
-      "proven": 21
+      "required": 141,
+      "proven": 22
     },
     "not-applicable": {
       "required": 22,
       "proven": 11
     },
     "not-evaluated": {
-      "required": 156,
-      "proven": 18
+      "required": 157,
+      "proven": 19
     },
     "pass": {
-      "required": 140,
-      "proven": 33
+      "required": 141,
+      "proven": 34
     }
   },
-  "live_paths": 100,
+  "live_paths": 101,
   "live_validated": 0,
   "counterwitnesses": 2,
   "tenants": 6,
@@ -882,6 +882,31 @@
       ],
       "rego_tests": [
         "internal/commonrules/rules/iam_accesskey_expiration_set_test.rego"
+      ]
+    },
+    "iam_accesskey_rotated": {
+      "paths": [
+        {
+          "provider": "outscale",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/accesskey-rotation-outscale-live.yaml"
+      ],
+      "rego_tests": [
+        "internal/commonrules/rules/iam_accesskey_rotated_test.rego"
       ]
     },
     "iam_account_mfa_enforced": {
@@ -2566,9 +2591,9 @@
     }
   },
   "precision": {
-    "controls": 42,
-    "detection_proven": 18,
-    "with_counterexample": 16,
+    "controls": 43,
+    "detection_proven": 19,
+    "with_counterexample": 17,
     "false_positives": 0,
     "counterwitnesses": 2
   }

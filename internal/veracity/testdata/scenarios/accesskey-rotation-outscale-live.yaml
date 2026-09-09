@@ -1,0 +1,56 @@
+# Rotation d'une clé d'accès longue durée, sur une collecte live Outscale.
+#
+# Le chemin traverse le collecteur RÉEL : `/ReadAccessKeys`, le mapping déclaratif du
+# descripteur (`CreationDate` → `creation_date`, `State` → `state`), le verrou de
+# capacité, la règle, puis l'assessment. C'est l'entrée exigée par le contrat : le type
+# `access_key` est produit par la spec `collecte`, donc un scénario `live` ne peut pas
+# passer par `inventory:` — c'est le collecteur qui a laissé passer l'incident fondateur
+# de cette vague, pas la règle.
+#
+# # Pourquoi le contre-exemple porte sur l'ÉTAT et non sur l'ÂGE
+#
+# Un `pass` fondé sur une clé « récente » exigerait une date récente, donc une date
+# FIXE qui cesse d'être récente. Le scénario rougirait au bout de quatre-vingt-dix
+# jours, pour une raison étrangère à ce qu'il prouve — et un test qui pourrit est un
+# test qu'on finit par désarmer.
+#
+# Le contre-exemple garde donc la MÊME clé, la MÊME date de création, et ne change que
+# `State`. C'est la frontière que la règle trace réellement : une clé désactivée ne peut
+# plus servir, quelle que soit son ancienneté, et crier dessus serait le faux positif qui
+# fait désactiver l'outil.
+control: iam_accesskey_rotated
+provider: outscale
+source: live
+
+scenarios:
+  - expect: fail
+    why: "cle active creee en 2020 : jamais remplacee, tres au-dela de la fenetre de rotation"
+    api:
+      /ReadUsers: |
+        {"Users": [], "HasMoreItems": false}
+      /ReadAccessKeys: |
+        {"AccessKeys": [{"AccessKeyId": "AKIAEXEMPLE0000001",
+                         "State": "ACTIVE",
+                         "CreationDate": "2020-01-15T09:30:00Z",
+                         "ExpirationDate": "2099-01-01T00:00:00Z"}]}
+
+  - expect: pass
+    why: "la MEME cle, aussi ancienne, mais DELETED : elle ne peut plus servir"
+    api:
+      /ReadUsers: |
+        {"Users": [], "HasMoreItems": false}
+      /ReadAccessKeys: |
+        {"AccessKeys": [{"AccessKeyId": "AKIAEXEMPLE0000001",
+                         "State": "DELETED",
+                         "CreationDate": "2020-01-15T09:30:00Z",
+                         "ExpirationDate": "2099-01-01T00:00:00Z"}]}
+
+  - expect: not-evaluated
+    why: "la cle ne porte aucune date de creation : l'age ne se deduit pas d'une absence"
+    api:
+      /ReadUsers: |
+        {"Users": [], "HasMoreItems": false}
+      /ReadAccessKeys: |
+        {"AccessKeys": [{"AccessKeyId": "AKIAEXEMPLE0000001",
+                         "State": "ACTIVE",
+                         "ExpirationDate": "2099-01-01T00:00:00Z"}]}

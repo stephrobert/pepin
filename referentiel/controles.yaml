@@ -188,6 +188,39 @@ controles:
       iso_27001_2022: ["A.5.17", "A.8.2"]
     fournisseurs: [outscale, scaleway]
 
+  - code: iam_accesskey_rotated
+    famille: iam
+    titre: Clé d'accès jamais renouvelée
+    titre_en: Access key never renewed
+    severite: high
+    description: >
+      Une clé d'accès longue durée n'a pas été remplacée depuis plus longtemps
+      que la fenêtre de rotation : une expiration lointaine satisfait le contrôle
+      d'expiration sans qu'aucune rotation n'ait jamais eu lieu, et un compte
+      sans plafond d'expiration ne borne rien.
+    description_en: >
+      A long-lived access key has not been replaced for longer than the rotation
+      window: a distant expiry satisfies the expiry control while no rotation has
+      ever taken place, and an account with no expiry ceiling bounds nothing.
+    remediation: >
+      Émettre une nouvelle clé, migrer les consommateurs, puis révoquer
+      l'ancienne ; automatiser la rotation. Préférer une identité courte (OIDC)
+      à un secret statique.
+    remediation_en: >
+      Issue a new key, migrate its consumers, then revoke the old one; automate
+      the rotation. Prefer a short-lived identity (OIDC) over a static secret.
+    scsl: [CLD-IAM-2]
+    frameworks:
+      secnumcloud_3_2: ["9.5", "10.5"]
+      iso_27001_2022: ["A.5.17", "A.8.2"]
+    fournisseurs: [outscale]
+    # Allonger la fenêtre TAIT des écarts : la correspondance normative ne tient
+    # que si le réglage effectif reste au plus égal au défaut. CLD-IAM-2 demande
+    # « une rotation », et une rotation de trois ans n'en est pas une.
+    config_requise:
+      - parametre: iam.key_max_age_days
+        contrainte: au_plus_le_defaut
+
   - code: iam_user_mfa_enabled
     famille: iam
     titre: MFA non activée sur un compte
