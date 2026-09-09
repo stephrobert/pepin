@@ -23,6 +23,27 @@ belongs in `git log`.
 
 ### Security
 
+- **`verify` no longer accepts a bundle that contradicts itself.** Rewriting four
+  `fail` results into `pass` and recomputing the digest of the file touched produced a
+  bundle reported as "internally consistent", exit 0 — while its own `manifest.json`
+  still announced `"fail": 4`. The bundle already carried the information that
+  contradicted it, and nothing compared the two. Three cross-checks now do, none of
+  them needing a key: the manifest summary is reconciled with the statuses actually
+  present in `assessment.json`, each artifact's declared **size** is checked alongside
+  its digest, and `checksums.txt` is parsed **strictly** — an unreadable or duplicated
+  line is a refusal, where an appended byte used to go unnoticed.
+- **`verify --require-signature`** fails when no signature was verified. A caller
+  scripting `verify` received 0 for a bundle the tool itself calls non-defensible: the
+  warning was on stdout, the exit code said success, and automation reads the exit
+  code. Opt-in, so no existing chain changes. CLI surface v5 → v6.
+
+  What this does **not** do is close the digest chain, and the limit is worth stating:
+  nothing inside a bundle can anchor `checksums.txt`, because whoever rewrites a file
+  rewrites the anchor too. Only the detached cosign signature closes it. These checks
+  catch corruption and self-contradiction, not a determined forger.
+
+### Security
+
 - **A third-party policy could exfiltrate the audited inventory, silently.** Rules
   hot-loaded through `--policy-dir` are third-party code, run over everything the scan
   collected. The engine had removed `http.send`, `net.lookup_ip_addr` and `opa.runtime`
