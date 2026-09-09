@@ -59,6 +59,16 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A subject at fault by several routes no longer reads as several deviations.** Three
+  `deny` blocks of `objectstorage_bucket_public_access` — a canned ACL, a grant, a bucket
+  policy — conclude on the same bucket, and each cause is real. But a public bucket is
+  *one* problem, and printing it three times made the report look bigger than what it
+  measures. Worse, it took all three slots of the "immediate action" panel, which
+  announces the three **most severe** deviations and delivered the same one three times.
+  Fixed upstream in scankit 0.3.5: one line per subject with its causes beneath, and the
+  panel deduplicates by (code, subject) before ranking. The aggregation is of the
+  **display only** — the block's count, the parsable formats and the severity tally still
+  carry every cause separately.
 - **A document without an inventory's shape is refused instead of being scanned as an
   empty one.** A `terraform show -json` output handed over without `--terraform`, or an
   empty object, was accepted and evaluated as an empty inventory: exit 3, "nothing

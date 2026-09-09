@@ -63,6 +63,16 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un sujet fautif par plusieurs voies ne se lit plus comme plusieurs écarts.** Trois
+  blocs `deny` d'`objectstorage_bucket_public_access` — ACL prédéfinie, grant, politique
+  de bucket — concluent sur le même bucket, et chaque cause est réelle. Mais un bucket
+  public est UN problème, et l'imprimer trois fois faisait paraître le rapport plus gros
+  que ce qu'il mesure. Pire, cela occupait les trois places du panneau « action
+  immédiate », qui annonce les trois écarts les **plus graves** et en livrait trois fois
+  le même. Corrigé en amont dans scankit 0.3.5 : une ligne par sujet avec ses causes en
+  dessous, et le panneau déduplique par (code, sujet) avant de classer. L'agrégation ne
+  porte que sur l'**affichage** — le décompte du bloc, les formats analysables et le
+  tableau de sévérité continuent de porter chaque cause séparément.
 - **Un document qui n'a pas la forme d'un inventaire est refusé au lieu d'être scanné
   comme un inventaire vide.** Une sortie `terraform show -json` passée sans
   `--terraform`, ou un objet vide, étaient acceptés et évalués comme un inventaire
