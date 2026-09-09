@@ -64,6 +64,7 @@ but they will never confirm compliance.
 <!-- pepin:gen never-pass -->
 | Control | Severity | Reason |
 |---|---|---|
+| `database_encryption_at_rest_enabled` | high | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 | `governance_resource_required_tags` | medium | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 <!-- /pepin:gen never-pass -->
 
@@ -86,9 +87,9 @@ actually decide them. The reason given is the one that applies to the source tha
 | `blockstorage_volume_snapshots_exist` | outscale | live | this source produces no resource of type "blockstorage_volume" |
 | `compute_instance_deletion_protection` | outscale | live | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_no_secrets_in_user_data` | scaleway | terraform | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | outscale | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
-| `database_encryption_at_rest_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `governance_resource_region_in_eu` | outscale | live | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
@@ -101,6 +102,7 @@ actually decide them. The reason given is the one that applies to the source tha
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | exoscale | live | this source produces no resource of type "iam_user" |
 | `iam_user_mfa_enabled` | scaleway | live | this source produces no resource of type "iam_user" |
+| `kubernetes_cluster_audit_logging_enabled` | exoscale | live | deciding attribute "audit_enabled" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 | `kubernetes_cluster_auto_upgrade_enabled` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
@@ -146,11 +148,11 @@ Per provider and per source, over all controls in the reference:
 <!-- pepin:gen coverage-totals -->
 | Provider | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 21 | 1 | 5 | 31 |
+| exoscale | terraform | 20 | 2 | 5 | 31 |
 | exoscale | live | 25 | 1 | 5 | 27 |
-| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | terraform | 16 | 5 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 18 | 6 | 2 | 32 |
+| scaleway | terraform | 17 | 7 | 2 | 32 |
 | scaleway | live | 16 | 3 | 2 | 37 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
@@ -206,9 +208,9 @@ What is not yet proven is **counted**, not hidden:
 | Figure | Count |
 |---|---:|
 | Control x provider x source paths on which Pépin concludes | 179 |
-| Paths whose every reachable verdict is proven end to end | 27 |
-| Verdicts to prove in total | 461 |
-| Verdicts left to prove | 369 |
+| Paths whose every reachable verdict is proven end to end | 29 |
+| Verdicts to prove in total | 455 |
+| Verdicts left to prove | 365 |
 <!-- /pepin:gen veracity-debt -->
 
 The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a

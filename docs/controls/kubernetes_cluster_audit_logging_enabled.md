@@ -48,7 +48,7 @@ source".
 
 | Provider | Terraform plan | Live collection |
 |---|:-:|:-:|
-| exoscale | ✅ | ✅ |
+| exoscale | ◐ | ✅ |
 | outscale | ✗ | ✗ |
 | scaleway | ✗ | ✗ |
 | kubernetes | n/a | ✗ |
@@ -56,16 +56,18 @@ source".
 Every cell that is not ✅ **while the control is declared for that provider** carries its
 reason:
 
-_None: every declared cell is fully observable._
+| Provider | Source | Status | Reason |
+|---|---|---|---|
+| exoscale | terraform | ◐ `partial` | deciding attribute "audit_enabled" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
 | `fail` | a deviation was detected on a real resource | exoscale / terraform · exoscale / live |
-| `pass` | the deciding data was collected, and it is compliant | exoscale / terraform · exoscale / live |
+| `pass` | the deciding data was collected, and it is compliant | exoscale / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
-| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
+| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | exoscale / terraform |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
 resource of the targeted type: "nothing to look at" is not "compliant".
@@ -103,6 +105,10 @@ is, or a note anchored on the official documentation. See
 In the `assessment` output, look for `"control": "kubernetes_cluster_audit_logging_enabled"`: its `status` must be `pass`.
 If it stays `not-evaluated`, the deciding data was not collected and the fix is **not**
 demonstrated: the reasons table above says why.
+
+**One of the two sources cannot lift the `pass` lock** for this control: the provider
+quoted does produce the targeted type there, but the scan will return `not-evaluated`.
+The reasons table says which one, and why.
 
 ## See also
 

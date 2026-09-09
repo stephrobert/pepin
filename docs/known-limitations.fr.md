@@ -62,6 +62,7 @@ aucune source** ne peut actuellement lever les quatre verrous du `pass`. Ils peu
 <!-- pepin:gen never-pass -->
 | Contrôle | Sévérité | Motif |
 |---|---|---|
+| `database_encryption_at_rest_enabled` | high | attribut décisif « encryption_at_rest » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
 | `governance_resource_required_tags` | medium | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
 <!-- /pepin:gen never-pass -->
 
@@ -85,9 +86,9 @@ pas.
 | `blockstorage_volume_snapshots_exist` | outscale | live | cette source ne produit aucune ressource de type « blockstorage_volume » |
 | `compute_instance_deletion_protection` | outscale | live | attribut décisif « deletion_protection » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_no_secrets_in_user_data` | scaleway | terraform | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | outscale | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
-| `database_encryption_at_rest_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `governance_resource_region_in_eu` | outscale | live | attribut décisif « region » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_accesskey_expiration_set` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
@@ -100,6 +101,7 @@ pas.
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | cette source ne produit aucune ressource de type « iam_policy » |
 | `iam_user_mfa_enabled` | exoscale | live | cette source ne produit aucune ressource de type « iam_user » |
 | `iam_user_mfa_enabled` | scaleway | live | cette source ne produit aucune ressource de type « iam_user » |
+| `kubernetes_cluster_audit_logging_enabled` | exoscale | live | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
 | `kubernetes_cluster_auto_upgrade_enabled` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_deletion_protection` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
@@ -146,11 +148,11 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 <!-- pepin:gen coverage-totals -->
 | Fournisseur | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 21 | 1 | 5 | 31 |
+| exoscale | terraform | 20 | 2 | 5 | 31 |
 | exoscale | live | 25 | 1 | 5 | 27 |
-| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | terraform | 16 | 5 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 18 | 6 | 2 | 32 |
+| scaleway | terraform | 17 | 7 | 2 | 32 |
 | scaleway | live | 16 | 3 | 2 | 37 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
@@ -206,9 +208,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 | Chiffre | Nombre |
 |---|---:|
 | Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 179 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 27 |
-| Verdicts à prouver au total | 461 |
-| Verdicts restant à prouver | 369 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 29 |
+| Verdicts à prouver au total | 455 |
+| Verdicts restant à prouver | 365 |
 <!-- /pepin:gen veracity-debt -->
 
 Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est

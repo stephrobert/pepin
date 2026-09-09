@@ -153,7 +153,7 @@ pepin scan scaleway --terraform plan.json
 <!-- pepin:gen provider-scaleway-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 18 | 6 | 2 | 32 |
+| terraform | 17 | 7 | 2 | 32 |
 | live | 16 | 3 | 2 | 37 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
@@ -180,7 +180,6 @@ A `not-applicable` is a claim, so it carries its justification, taken from the p
 | `compute_instance_no_secrets_in_user_data` | terraform | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | terraform | this source produces no resource of type "managed_database" |
-| `database_encryption_at_rest_enabled` | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | terraform | this source produces no resource of type "managed_database" |
 | `iam_policy_no_privilege_escalation` | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | live | this source produces no resource of type "iam_user" |

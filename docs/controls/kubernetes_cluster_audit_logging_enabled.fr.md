@@ -49,7 +49,7 @@ déclaré, ou type absent de cette source ».
 
 | Fournisseur | Plan Terraform | Collecte live |
 |---|:-:|:-:|
-| exoscale | ✅ | ✅ |
+| exoscale | ◐ | ✅ |
 | outscale | ✗ | ✗ |
 | scaleway | ✗ | ✗ |
 | kubernetes | sans objet | ✗ |
@@ -57,16 +57,18 @@ déclaré, ou type absent de cette source ».
 Chaque case qui n'est pas ✅, **alors que le contrôle est déclaré pour ce fournisseur**,
 porte son motif :
 
-_Aucune : toutes les cases déclarées sont pleinement observables._
+| Fournisseur | Source | Statut | Motif |
+|---|---|---|---|
+| exoscale | terraform | ◐ `partial` | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
 | `fail` | un écart a été détecté sur une ressource réelle | exoscale / terraform · exoscale / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | exoscale / terraform · exoscale / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | exoscale / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
-| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | aucun |
+| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | exoscale / terraform |
 
 Un contrôle observable rend tout de même `not-evaluated` sur un inventaire qui ne
 contient aucune ressource du type visé : « rien à voir » n'est pas « conforme ».
@@ -104,6 +106,10 @@ tel quel, ou une note ancrée sur la documentation officielle. Voir
 Dans la sortie `assessment`, chercher `"control": "kubernetes_cluster_audit_logging_enabled"` : son `status` doit être
 `pass`. S'il reste `not-evaluated`, la donnée décisive n'a pas été collectée, et la
 correction n'est **pas** démontrée : le tableau des motifs ci-dessus dit pourquoi.
+
+**Une des deux sources ne sait pas lever le verrou du « pass »** pour ce contrôle :
+le fournisseur cité y produit bien le type visé, mais le scan y rendra `not-evaluated`.
+Le tableau des motifs dit laquelle, et pourquoi.
 
 ## Voir aussi
 

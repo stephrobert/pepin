@@ -42,7 +42,7 @@ and the report says so on every scan, control by control, with the reason.
 
 | Family | Controls | exoscale | outscale | scaleway |
 |---|---:|---|---|---|
-| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 1 · ✗ 4 |
+| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 1 · ◐ 1 · ∅ 1 · ✗ 4 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
 | `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 3 · ◐ 1 · ∅ 0 · ✗ 11 |
@@ -61,9 +61,9 @@ and the report says so on every scan, control by control, with the reason.
 | `compute_instance_deletion_protection` | medium | CLD-CMP-10 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `compute_instance_has_security_group` | critical | CLD-CMP-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `compute_instance_no_secrets_in_user_data` | high | CLD-CMP-9 | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ |
-| `compute_instance_public_ip_with_open_securitygroup` | critical | CLD-NET-3 | ✅ | ✅ | ✅ | ✅ | ◐ | ✅ |
+| `compute_instance_public_ip_with_open_securitygroup` | critical | CLD-NET-3 | ✅ | ✅ | ◐ | ✅ | ◐ | ✅ |
 | `database_backup_enabled` | high | CLD-STO-3 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
-| `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
+| `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ |
 | `database_service_not_open_to_internet` | high | CLD-NET-1 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `governance_provider_sovereignty` | high | CLD-GVN-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ◐ | ✅ | ✅ | ✅ |
@@ -87,7 +87,7 @@ and the report says so on every scan, control by control, with the reason.
 | `k8s_namespace_pod_security_enforced` | high | CLD-K8S-5 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | `k8s_rbac_no_cluster_admin_binding` | critical | CLD-K8S-4 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | `k8s_secrets_external_manager` | high | CLD-K8S-10 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| `kubernetes_cluster_audit_logging_enabled` | medium | CLD-LOG-1 | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| `kubernetes_cluster_audit_logging_enabled` | medium | CLD-LOG-1 | ◐ | ✅ | ✗ | ✗ | ✗ | ✗ |
 | `kubernetes_cluster_auto_upgrade_enabled` | medium | CLD-K8S-3 | ✅ | ✅ | ✗ | ✅ | ✗ | ✗ |
 | `kubernetes_cluster_control_plane_highly_available` | high | CLD-K8S-2 | ✅ | ✅ | ✗ | ✅ | ✗ | ✗ |
 | `kubernetes_cluster_deletion_protection` | medium | CLD-K8S-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
@@ -133,8 +133,10 @@ already shows them, and they add nothing.
 | `blockstorage_volume_snapshots_exist` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "blockstorage_volume" |
 | `compute_instance_deletion_protection` | outscale | terraform | ◐ `partial` | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_no_secrets_in_user_data` | scaleway | live | ◐ `partial` | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | outscale | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | ◐ `partial` | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 | `database_encryption_at_rest_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `governance_resource_region_in_eu` | outscale | terraform | ◐ `partial` | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
@@ -158,6 +160,7 @@ already shows them, and they add nothing.
 | `iam_user_mfa_enabled` | outscale | terraform | ∅ `not-applicable` | resource type "iam_user" absent from the outscale API |
 | `iam_user_mfa_enabled` | outscale | live | ∅ `not-applicable` | resource type "iam_user" absent from the outscale API |
 | `iam_user_mfa_enabled` | scaleway | terraform | ✗ `unsupported` | this source produces no resource of type "iam_user" |
+| `kubernetes_cluster_audit_logging_enabled` | exoscale | terraform | ◐ `partial` | deciding attribute "audit_enabled" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 | `kubernetes_cluster_auto_upgrade_enabled` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_control_plane_highly_available` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "kubernetes_cluster" |
@@ -208,10 +211,10 @@ the other's scope. One source only: live collection through a kubeconfig.
 
 | Provider | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 21 | 1 | 5 | 31 |
+| exoscale | terraform | 20 | 2 | 5 | 31 |
 | exoscale | live | 25 | 1 | 5 | 27 |
-| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | terraform | 16 | 5 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 18 | 6 | 2 | 32 |
+| scaleway | terraform | 17 | 7 | 2 | 32 |
 | scaleway | live | 16 | 3 | 2 | 37 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

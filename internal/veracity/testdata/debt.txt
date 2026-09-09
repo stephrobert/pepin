@@ -8,7 +8,7 @@
 # Une ligne qui disparaît est une dette payée. Une ligne qui apparaît sans
 # scénario est un contrôle ajouté sans sa preuve, et la CI la refuse.
 #
-# chemins : 179 · entierement prouves : 27 · obligations : 461 · restantes : 369
+# chemins : 179 · entierement prouves : 29 · obligations : 455 · restantes : 365
 
 blockstorage_snapshot_not_public exoscale live not-applicable
 blockstorage_snapshot_not_public outscale live fail,pass,not-evaluated
@@ -40,7 +40,6 @@ compute_instance_public_ip_with_open_securitygroup exoscale terraform fail,pass,
 compute_instance_public_ip_with_open_securitygroup scaleway live fail,pass,not-evaluated
 compute_instance_public_ip_with_open_securitygroup scaleway terraform not-evaluated
 database_backup_enabled scaleway terraform not-evaluated
-database_encryption_at_rest_enabled scaleway terraform fail,pass
 database_service_not_open_to_internet scaleway terraform not-evaluated
 governance_provider_sovereignty exoscale live fail,pass,not-evaluated
 governance_provider_sovereignty exoscale terraform pass,not-evaluated
@@ -88,7 +87,6 @@ k8s_namespace_pod_security_enforced kubernetes live fail,pass,not-evaluated
 k8s_rbac_no_cluster_admin_binding kubernetes live fail,pass,not-evaluated
 k8s_secrets_external_manager kubernetes live fail,pass,not-evaluated
 kubernetes_cluster_audit_logging_enabled exoscale live fail,pass,not-evaluated
-kubernetes_cluster_audit_logging_enabled exoscale terraform fail,pass
 kubernetes_cluster_auto_upgrade_enabled exoscale live fail,pass,not-evaluated
 kubernetes_cluster_auto_upgrade_enabled exoscale terraform fail,not-evaluated
 kubernetes_cluster_auto_upgrade_enabled outscale live fail,pass,not-evaluated

@@ -63,6 +63,26 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un document qui n'a pas la forme d'un inventaire est refusé au lieu d'être scanné
+  comme un inventaire vide.** Une sortie `terraform show -json` passée sans
+  `--terraform`, ou un objet vide, étaient acceptés et évalués comme un inventaire
+  vide : code 3, « rien de mesuré ». Honnête sur ce qui a été mesuré, faux sur la
+  cause — l'appelant n'a pas un périmètre vide, il a donné le mauvais fichier, ce qui
+  est le code 2. Un plan est nommé comme tel (« ce fichier est un plan Terraform : le
+  scanner avec `--terraform` »), et l'échange inverse était déjà refusé : les deux sens
+  marchent désormais du même pas. Les tests du dépôt s'appuyaient sur le défaut : deux
+  d'entre eux passaient un plan en position d'inventaire.
+- **La matrice de couverture mesure ce qu'un plan porte au lieu de déclarer ce que le
+  mapping nomme.** `compute_instance_public_ip_with_open_securitygroup` affichait ✅ pour
+  outscale/terraform alors que `public_ip` est calculé — Terraform ne le connaît
+  qu'après `apply`, donc aucun plan réel ne le porte — et les scénarios de véracité
+  confirmaient la cellule sur un plan écrit à la main où l'attribut est un littéral. La
+  couverture est désormais corrigée par ce que les plans des tenants de référence,
+  générés depuis du HCL tiers, produisent réellement. Trois cellules passent de ✅ à ◐,
+  et le motif distingue « le mapping ne le nomme pas » (qui se corrige dans la spec) de
+  « le mapping le nomme mais aucun plan ne le porte » (qui ne s'y corrige pas du tout).
+  Six obligations qui ne pouvaient jamais être tenues quittent le registre de véracité
+  avec elles.
 - **Le rapport terminal imprimait le titre et la remédiation d'un contrôle au-dessus
   des findings d'un AUTRE.** Un bloc imprime un code, un titre et une remédiation puis
   liste des findings dessous : il affirme donc ces trois choses de chacun d'eux — or le

@@ -68,7 +68,7 @@ deny contains f if {
 	bin := buildPepin(t)
 	// Le scan peut échouer ou non : ce qui se mesure ici n'est pas son verdict, c'est
 	// si le témoin a été touché.
-	_, _ = runPepin(t, bin, nil, "scan", "scaleway", scanFixture, "--policy-dir", dir, "--format", "json")
+	_, _ = runPepin(t, bin, nil, "scan", "scaleway", "--terraform", scanFixture, "--policy-dir", dir, "--format", "json")
 
 	if n := atteint.Load(); n != 0 {
 		t.Errorf("une règle tierce a atteint le réseau (%d requête(s) reçues).\n"+
@@ -91,7 +91,7 @@ deny contains f if {
 // d'épinglage remettrait les blancs sans que rien d'autre ne rougisse.
 func TestNoResultCarriesAnEmptyProof(t *testing.T) {
 	bin := buildPepin(t)
-	stdout, _ := runPepin(t, bin, nil, "scan", "scaleway", scanFixture, "--format", "assessment")
+	stdout, _ := runPepin(t, bin, nil, "scan", "scaleway", "--terraform", scanFixture, "--format", "assessment")
 
 	var doc struct {
 		Results []struct {
