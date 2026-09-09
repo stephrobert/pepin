@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
@@ -118,4 +120,53 @@ func TestNoResultCarriesAnEmptyProof(t *testing.T) {
 			}
 		}
 	}
+}
+
+// TestNoGateProfileTurnsARedChainGreen — l'invariant de l'issue #112, mesuré sur le
+// binaire.
+//
+// Un profil de porte allège ce qui pèse dans le code de sortie. C'est utile, et c'est
+// aussi la façon la plus discrète de casser une chaîne de CI : une équipe qui échoue
+// aujourd'hui sur un écart passerait au vert après une mise à jour, sans que personne
+// n'ait rien décidé. Ce serait le faux vert que cette vague a passé trois lots à
+// combattre, à ceci près qu'il viendrait d'un réglage plutôt que d'une règle — donc
+// invisible.
+//
+// La règle : un profil peut transformer un 1 en 3 (« le scan n'établit pas la
+// conformité »), JAMAIS en 0. L'ordre de précédence de l'ADR-0005 tient — un écart
+// resté visible rend toujours 1.
+func TestNoGateProfileTurnsARedChainGreen(t *testing.T) {
+	bin := buildPepin(t)
+	const nonConforme = "examples/scaleway/inventory.json"
+
+	// Référence : sans profil, cet inventaire est non conforme.
+	if code := exitCodeOf(t, bin, "scan", "scaleway", nonConforme); code != 1 {
+		t.Fatalf("l'inventaire de référence rend %d au lieu de 1 : le test ne mesure rien", code)
+	}
+	for _, p := range []string{"all", "security", "compliance", "sovereignty"} {
+		code := exitCodeOf(t, bin, "scan", "scaleway", nonConforme, "--gate", p)
+		if code == 0 {
+			t.Errorf("profil %q : un inventaire NON CONFORME rend 0.\n"+
+				"  Une chaîne rouge est passée au vert sans que personne ne l'ait décidé.\n"+
+				"  Un profil ne peut alléger que jusqu'à 3, jamais jusqu'à 0.", p)
+		}
+		if code != 1 && code != 3 {
+			t.Errorf("profil %q : code %d inattendu (1 ou 3 attendus)", p, code)
+		}
+	}
+}
+
+// exitCodeOf lance le binaire et rend son code de sortie, sans faire échouer le test.
+func exitCodeOf(t *testing.T, bin string, args ...string) int {
+	t.Helper()
+	cmd := exec.Command(bin, args...)
+	cmd.Dir = repoRoot
+	if err := cmd.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			return ee.ExitCode()
+		}
+		t.Fatalf("exécution de %v : %v", args, err)
+	}
+	return 0
 }

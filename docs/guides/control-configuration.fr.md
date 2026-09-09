@@ -103,6 +103,53 @@ qu'un risque orphelin.
   `governance_provider` (ressource synthétique, pas une ressource du tenant) ; `k8s_*`
   (portée intra-cluster, hors posture cloud).
 
+## Le profil de PORTE : ce qui casse une chaîne, sans rien cacher
+
+Un premier scan doit provoquer « ah oui, ça c'est intéressant », pas « oui, je sais que
+ma VM de test n'a pas de protection contre la suppression ». Une VM publique dont SSH
+est ouvert à Internet et un volume sans snapshot récente sont tous deux `high` : le
+second est un faux positif **assumé** — la règle le documente elle-même —, et lui
+donner le poids du premier fait douter du premier.
+
+```bash
+pepin scan scaleway inv.json                        # all — le défaut, rien n'est filtré
+pepin scan scaleway inv.json --gate security        # l'exposition et les secrets, quand la règle est sûre
+pepin scan scaleway inv.json --gate compliance      # l'audit normatif et l'hygiène documentaire
+pepin scan scaleway inv.json --gate sovereignty     # la localisation et l'extraterritorialité
+```
+
+### Ce qu'un profil ne fait pas
+
+**Il ne cache rien.** Le rapport reste complet dans tous les formats — table, `json`,
+`sarif`, `assessment`, bundle scellé. C'est la règle déjà appliquée aux dérogations et
+aux constats d'incertitude : *le rapport dit tout, seule la porte filtre*.
+
+Un profil qui retirerait des écarts du rapport transformerait le silence en faux vert,
+et il le ferait depuis un **réglage** plutôt qu'un défaut de règle — donc invisible.
+
+### Ce qu'il change, et la garantie qui va avec
+
+Il change ce qui pèse dans le **code de sortie**, et il le dit à chaque scan :
+
+```
+pepin: porte « sovereignty » — le rapport ci-dessus reste COMPLET, seul le code de sortie est filtré.
+       4 contrôle(s) mis de côté, hors du profil : iam_accesskey_expiration_set, …
+       dont au moins un critical/high : le scan sort en 3 (« n'établit pas la conformité »), jamais 0.
+```
+
+| Situation | Code |
+|---|---|
+| le profil voit l'écart | **1** — inchangé |
+| le profil met de côté un écart critical/high | **3** — n'établit pas la conformité |
+| plus rien à mettre de côté | **0** |
+
+**Aucun profil ne peut faire passer une chaîne de rouge à vert.** Un `1` devient au
+pire un `3`, jamais un `0`, et `TestNoGateProfileTurnsARedChainGreen` le mesure sur le
+binaire à chaque build. Le défaut reste `all` : sans le drapeau, rien ne change.
+
+> `--gate` ne s'appelle pas `--profile` : ce nom désigne déjà le profil d'identifiants
+> de la collecte live (`--profile ~/.osc/config.json`).
+
 ## Ce qu'un assouplissement fait perdre
 
 Chaque correspondance du référentiel porte les contraintes de configuration sous lesquelles

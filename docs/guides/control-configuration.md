@@ -99,6 +99,53 @@ resource that costs money without a known owner is an orphan cost as much as an 
   `governance_provider` (a synthetic resource, not a tenant resource); `k8s_*` (in-cluster
   scope, outside cloud posture).
 
+## The GATE profile: what breaks a chain, without hiding anything
+
+A first scan should trigger "oh, that one is interesting", not "yes, I know my test VM
+has no deletion protection". A public VM with SSH open to the internet and a volume with
+no recent snapshot are both `high`: the second is an **assumed** false positive — the
+rule documents it itself — and giving it the weight of the first makes people doubt the
+first.
+
+```bash
+pepin scan scaleway inv.json                        # all — the default, nothing filtered
+pepin scan scaleway inv.json --gate security        # exposure and secrets, where the rule is sure
+pepin scan scaleway inv.json --gate compliance      # the normative audit and documentation hygiene
+pepin scan scaleway inv.json --gate sovereignty     # location and extraterritoriality
+```
+
+### What a profile does not do
+
+**It hides nothing.** The report stays complete in every format — table, `json`,
+`sarif`, `assessment`, sealed bundle. This is the rule already applied to exemptions and
+inconclusive findings: *the report says everything, only the gate filters*.
+
+A profile that removed deviations from the report would turn silence into a false green,
+and it would do so from a **setting** rather than a rule defect — so, invisibly.
+
+### What it changes, and the guarantee that comes with it
+
+It changes what weighs in the **exit code**, and it says so on every scan:
+
+```
+pepin: gate "sovereignty" — the report above stays COMPLETE, only the exit code is filtered.
+       4 control(s) set aside, outside the profile: iam_accesskey_expiration_set, …
+       at least one of them critical/high: the scan exits 3 ("does not establish compliance"), never 0.
+```
+
+| Situation | Code |
+|---|---|
+| the profile sees the deviation | **1** — unchanged |
+| the profile sets a critical/high deviation aside | **3** — does not establish compliance |
+| nothing left to set aside | **0** |
+
+**No profile can turn a red chain green.** A `1` becomes a `3` at worst, never a `0`,
+and `TestNoGateProfileTurnsARedChainGreen` measures it on the binary on every build.
+The default stays `all`: without the flag, nothing changes.
+
+> `--gate` is not called `--profile`: that name already designates the credentials
+> profile of a live collection (`--profile ~/.osc/config.json`).
+
 ## What a relaxation costs
 
 Each mapping in the reference carries the configuration constraints under which it holds:

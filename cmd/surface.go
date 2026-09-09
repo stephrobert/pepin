@@ -58,7 +58,16 @@ const (
 // aucun drapeau et aucun code de sortie existant ne bouge. L'incrément est dû
 // quand même — la surface est la liste de ce qu'un intégrateur a le droit de
 // brancher, et elle vient de s'allonger.
-const cliSurfaceVersion = 5
+// v6 : ajout de `scan --gate` (all | security | compliance | sovereignty), le profil
+// de PORTE. Il ne filtre pas le rapport — celui-ci reste complet dans tous les
+// formats — il filtre ce qui pèse dans le CODE DE SORTIE, et c'est pourquoi
+// l'incrément est dû : un pipeline qui pose ce drapeau doit savoir qu'un écart mis
+// de côté rend 3 (« n'établit pas la conformité »), jamais 0. Le défaut reste `all`,
+// donc aucune chaîne existante ne change de code sans qu'on l'ait écrit.
+//
+// Le drapeau ne s'appelle PAS `--profile` : ce nom désigne déjà le profil
+// d'identifiants de la collecte live.
+const cliSurfaceVersion = 6
 
 // findingsSurfaceVersion est la version de FORME de `--format json`
 // ({"findings": [...], "summary": {...}}), la sortie qu'un pipeline parse le

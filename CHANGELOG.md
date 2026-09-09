@@ -46,6 +46,17 @@ belongs in `git log`.
 
 ### Added
 
+- **`scan --gate <all|security|compliance|sovereignty>`: a profile for the CI gate,
+  which hides nothing.** A first scan should trigger "oh, that one is interesting", not
+  "yes, I know my test VM has no deletion protection". The report stays COMPLETE in
+  every format — the rule already applied to exemptions and inconclusive findings: the
+  report says everything, only the gate filters. What changes is what weighs in the
+  **exit code**, and every scan prints what was set aside and why.
+  **No profile can turn a red chain green**: a `1` becomes a `3` at worst — "does not
+  establish compliance", the honest reading of a deliberately partial scan (ADR-0005,
+  and still no fifth code) — never a `0`. The default stays `all`, so nothing changes
+  without the flag. CLI surface v5 → v6. The flag is not `--profile`: that name already
+  designates the live-collection credentials profile.
 - **A finding now declares its CONFIDENCE, distinct from its severity.** Severity says
   the consequence if the problem is real; confidence says how sure Pépin is that it
   established the problem at all. A volume with no recent snapshot and a VM with SSH

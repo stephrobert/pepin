@@ -24,7 +24,7 @@ by running the binary. A public flag that is missing here fails
 | `pepin provider list` | _(no flag of its own)_ |
 | `pepin provider new` | _(no flag of its own)_ |
 | `pepin provider validate` | _(no flag of its own)_ |
-| `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
+| `pepin scan` | `--exceptions`, `--format` / `-f`, `--gate`, `--kubeconfig`, `--lang`, `--live`, `--policy`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
 | `pepin scsl` | `--index` |
 | `pepin verify` | `--bundle`, `--pubkey`, `--re-derive` |
 | `pepin version` | _(no flag of its own)_ |
@@ -39,7 +39,7 @@ independently:
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v5** |
+| `cli` | verbs, flags and exit codes | **v6** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
@@ -117,6 +117,7 @@ Usage:
 Flags:
       --exceptions file                  exemptions YAML file (control, justification, expires_at, owner, approved_by) — a covered deviation becomes exempted, never compliant
   -f, --format string                    output format: table | json | assessment | oscal | sarif (default "table")
+      --gate string                      GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
   -h, --help                             help for scan
       --kubeconfig string                path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (use READ-ONLY, short-lived access — never cluster-admin)
       --live                             collect the inventory live through the provider API (credentials required)
