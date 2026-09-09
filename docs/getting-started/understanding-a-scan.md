@@ -389,11 +389,6 @@ documented in
   "evidence": {
     "attribute": "acl",
     "observed": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL).",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -450,11 +445,6 @@ documented in
   "control": "network_securitygroup_allow_ingress_from_internet_to_all_ports",
   "evidence": {
     "observed": "no deviation detected on the collected resources of type \"security_group_rule\" (contract verified)",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "terraform-plan"
   },
   "references": [
@@ -499,11 +489,6 @@ documented in
   "control": "blockstorage_volume_encryption",
   "evidence": {
     "observed": "Encryption at rest of block volumes is guest-side (LUKS/Cryptsetup), a customer responsibility (shared responsibility model); the block API exposes no encryption field, hence unobservable on the platform side (CHF-2).",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "terraform-plan"
   },
   "references": [
@@ -539,11 +524,6 @@ documented in
   "control": "compute_instance_public_ip_with_open_securitygroup",
   "evidence": {
     "observed": "attribute \"public_ip\" not collected on the resources of type \"compute_instance\" (capability guard)",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "terraform-plan"
   },
   "references": [

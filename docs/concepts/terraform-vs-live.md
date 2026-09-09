@@ -68,11 +68,6 @@ control that reads instance filtering therefore cannot decide, and says so rathe
   "evidence": {
     "attribute": "security_group_ids",
     "observed": "attribute \"security_group_ids\" not collected on the resources of type \"compute_instance\" (capability guard)",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "security_group_ids=terraform-plan:scaleway_instance_server observed=0/1"
   },
   "references": [
@@ -144,11 +139,6 @@ instance in an inventory shaped as the live collector normalizes it — `vm_id` 
   "control": "compute_instance_has_security_group",
   "evidence": {
     "observed": "no deviation detected on the collected resources of type \"compute_instance\" (contract verified)",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "export"
   },
   "references": [
