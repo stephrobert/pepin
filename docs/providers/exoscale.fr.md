@@ -219,11 +219,11 @@ pepin scan exoscale --terraform examples/exoscale/terraform/plan.json
 <!-- pepin:gen provider-exoscale-scan -->
 ```text
 […]
-  │ CLD-IAM-1  │ Rôle IAM aux privilèges excessifs                │ HIGH     │ exoscale │ 1 │
   │ CLD-IAM-12 │ Politique IAM permettant une élévation de privi… │ HIGH     │ exoscale │ 1 │
   │ CLD-IAM-4  │ Rôle IAM sans restriction d'IP source            │ HIGH     │ exoscale │ 2 │
   │ CLD-K8S-2  │ Plan de contrôle Kubernetes non hautement dispo… │ HIGH     │ exoscale │ 1 │
-  │ CLD-NET-1  │ SSH (port 22) ouvert à Internet                  │ HIGH     │ exoscale │ 2 │
+  │ CLD-NET-1  │ RDP (port 3389) ouvert à Internet                │ HIGH     │ exoscale │ 1 │
+  │ CLD-NET-1  │ SSH (port 22) ouvert à Internet                  │ HIGH     │ exoscale │ 1 │
   │ CLD-GVN-1  │ Inventaire et étiquetage incomplets              │ MEDIUM   │ exoscale │ 1 │
   │ CLD-K8S-3  │ Mises à jour automatiques du cluster Kubernetes… │ MEDIUM   │ exoscale │ 1 │
   │ CLD-GVN-3  │ Ressource hébergée hors Union européenne         │ LOW      │ exoscale │ 3 │

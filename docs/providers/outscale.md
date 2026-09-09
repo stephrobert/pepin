@@ -282,8 +282,8 @@ pepin scan outscale --terraform examples/outscale/terraform/plan.json
 <!-- pepin:gen provider-outscale-scan -->
 ```text
 […]
-  ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
-  │ CLD-IAM-1  │ IAM policy with administrative privileges (wild… │ CRITICAL │ outscale │ 2 │
+  │ CLD-IAM-1  │ IAM policy with administrative privileges (wild… │ CRITICAL │ outscale │ 1 │
+  │ CLD-IAM-1  │ IAM policy with a wildcard resource              │ HIGH     │ outscale │ 1 │
   │ CLD-IAM-12 │ IAM policy allowing privilege escalation         │ HIGH     │ outscale │ 1 │
   │ CLD-NET-1  │ SSH (port 22) open to the internet               │ HIGH     │ outscale │ 1 │
   │ CLD-STO-2  │ Machine image shared publicly                    │ HIGH     │ outscale │ 1 │

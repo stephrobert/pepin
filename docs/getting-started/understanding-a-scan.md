@@ -126,14 +126,27 @@ large tenant, you want to know the tool started. The closing line is
  HIGH  ·  CLD-NET-1  ·  scaleway
  Managed database reachable from the internet
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 2
+  Total deviations: 1
 
   Details:
       HIGH  fr-par/11111111-1111-1111-1111-111111111111 — Managed database "fr-par/11111111-1111-1111-1111-111111111111": ACL allowing a public CIDR (0.0.0.0/0) — the service is exposed to the internet.
-      HIGH  scaleway_instance_security_group.web — Security group "scaleway_instance_security_group.web": SSH (port 22) accepted from the internet.
 
   Remediation
     Restrict the database ACL to the application CIDRs only (a private network where one is available); remove 0.0.0.0/0.
+
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
+
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-NET-1  ·  scaleway
+ SSH (port 22) open to the internet
+──────────────────────────────────────────────────────────────────────────────
+  Total deviations: 1
+
+  Details:
+      HIGH  scaleway_instance_security_group.web — Security group "scaleway_instance_security_group.web": SSH (port 22) accepted from the internet.
+
+  Remediation
+    Restrict the rule to legitimate sources/destinations and ports (administration CIDR, bastion, VPN); never expose a sensitive service to 0.0.0.0/0.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
 
@@ -201,7 +214,8 @@ large tenant, you want to know the tool started. The closing line is
   │ CLD-CHF-2  │ Managed database without encryption at rest      │ HIGH     │ scaleway │ 1 │
   │ CLD-CMP-9  │ Cleartext secret in the user data (user-data)    │ HIGH     │ scaleway │ 1 │
   │ CLD-IAM-12 │ IAM policy allowing privilege escalation         │ HIGH     │ scaleway │ 1 │
-  │ CLD-NET-1  │ Managed database reachable from the internet     │ HIGH     │ scaleway │ 2 │
+  │ CLD-NET-1  │ Managed database reachable from the internet     │ HIGH     │ scaleway │ 1 │
+  │ CLD-NET-1  │ SSH (port 22) open to the internet               │ HIGH     │ scaleway │ 1 │
   │ CLD-NET-2  │ Security group inbound default policy set to "a… │ HIGH     │ scaleway │ 1 │
   │ CLD-STO-3  │ Automatic backups disabled on a managed database │ HIGH     │ scaleway │ 1 │
   │ CLD-GVN-1  │ Incomplete inventory and tagging                 │ MEDIUM   │ scaleway │ 1 │

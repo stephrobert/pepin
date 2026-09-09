@@ -63,6 +63,17 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Le rapport terminal imprimait le titre et la remédiation d'un contrôle au-dessus
+  des findings d'un AUTRE.** Un bloc imprime un code, un titre et une remédiation puis
+  liste des findings dessous : il affirme donc ces trois choses de chacun d'eux — or le
+  regroupement se faisait sur le seul code SCSL, et une exigence couvre souvent
+  plusieurs contrôles. Le titre et la remédiation étaient alors ceux du premier finding.
+  Mesuré sur un tenant réel, la ligne sur laquelle un lecteur agit lui disait de
+  révoquer une clé root pour corriger une autorisation `Resource="*"`. Corrigé en amont
+  dans scankit 0.3.4 : la clé de regroupement est désormais exactement ce que le bloc
+  affirme, donc `CLD-IAM-1` rend un bloc par contrôle et le tableau des contrôles cesse
+  d'additionner sévérité et décomptes sur une ligne qui recouvrait deux contrôles. Un
+  contrôle unique sous un code rend à l'identique.
 - **Une VM publique par sa carte secondaire, SSH ouvert sur cette carte, ne produisait
   aucun finding.** Le collecteur projetait l'union des IP publiques des cartes, donc la
   machine comptait pour publique — mais il la confrontait à `Vm.SecurityGroups`, que

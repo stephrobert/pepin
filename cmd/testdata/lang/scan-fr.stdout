@@ -75,14 +75,27 @@
  HIGH  ·  CLD-NET-1  ·  scaleway
  Base de données managée joignable depuis Internet
 ──────────────────────────────────────────────────────────────────────────────
-  Écarts au total : 2
+  Écarts au total : 1
 
   Détail :
       HIGH  fr-par/11111111-1111-1111-1111-111111111111 — ACL autorisant un CIDR public (0.0.0.0/0) — service exposé à Internet.
-      HIGH  scaleway_instance_security_group.web — SSH (port 22) accepté depuis Internet.
 
   Remédiation
     Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand disponible) ; retirer 0.0.0.0/0.
+
+  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
+
+──────────────────────────────────────────────────────────────────────────────
+ HIGH  ·  CLD-NET-1  ·  scaleway
+ SSH (port 22) ouvert à Internet
+──────────────────────────────────────────────────────────────────────────────
+  Écarts au total : 1
+
+  Détail :
+      HIGH  scaleway_instance_security_group.web — SSH (port 22) accepté depuis Internet.
+
+  Remédiation
+    Restreindre la règle à des sources/destinations et ports légitimes (CIDR d'administration, bastion, VPN) ; ne jamais exposer un service sensible à 0.0.0.0/0.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
 
@@ -150,7 +163,8 @@
   │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
   │ CLD-CMP-9  │ Secret en clair dans les données utilisateur (u… │ HIGH     │ scaleway │ 1 │
   │ CLD-IAM-12 │ Politique IAM permettant une élévation de privi… │ HIGH     │ scaleway │ 1 │
-  │ CLD-NET-1  │ Base de données managée joignable depuis Intern… │ HIGH     │ scaleway │ 2 │
+  │ CLD-NET-1  │ Base de données managée joignable depuis Intern… │ HIGH     │ scaleway │ 1 │
+  │ CLD-NET-1  │ SSH (port 22) ouvert à Internet                  │ HIGH     │ scaleway │ 1 │
   │ CLD-NET-2  │ Politique entrante par défaut d'un groupe de sé… │ HIGH     │ scaleway │ 1 │
   │ CLD-STO-3  │ Sauvegardes automatiques d'une base managée dés… │ HIGH     │ scaleway │ 1 │
   │ CLD-GVN-1  │ Inventaire et étiquetage incomplets              │ MEDIUM   │ scaleway │ 1 │

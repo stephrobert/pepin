@@ -205,10 +205,10 @@ pepin scan scaleway --terraform examples/scaleway/terraform/plan.json
 <!-- pepin:gen provider-scaleway-scan -->
 ```text
 […]
-  │ CLD-CHF-2  │ Managed database without encryption at rest      │ HIGH     │ scaleway │ 1 │
   │ CLD-CMP-9  │ Cleartext secret in the user data (user-data)    │ HIGH     │ scaleway │ 1 │
   │ CLD-IAM-12 │ IAM policy allowing privilege escalation         │ HIGH     │ scaleway │ 1 │
-  │ CLD-NET-1  │ Managed database reachable from the internet     │ HIGH     │ scaleway │ 2 │
+  │ CLD-NET-1  │ Managed database reachable from the internet     │ HIGH     │ scaleway │ 1 │
+  │ CLD-NET-1  │ SSH (port 22) open to the internet               │ HIGH     │ scaleway │ 1 │
   │ CLD-NET-2  │ Security group inbound default policy set to "a… │ HIGH     │ scaleway │ 1 │
   │ CLD-STO-3  │ Automatic backups disabled on a managed database │ HIGH     │ scaleway │ 1 │
   │ CLD-GVN-1  │ Incomplete inventory and tagging                 │ MEDIUM   │ scaleway │ 1 │
