@@ -62,7 +62,7 @@ require (
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10
-	github.com/stephrobert/scankit v0.3.2
+	github.com/stephrobert/scankit v0.3.3
 	github.com/tchap/go-patricia/v2 v2.3.3 // indirect
 	github.com/valyala/fastjson v1.6.10 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.36 // indirect

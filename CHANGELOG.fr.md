@@ -63,6 +63,16 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un scan qui n'a rien mesuré ne se rend plus comme conforme.** Une coche verte,
+  « Aucun écart sur le périmètre audité » et quatre compteurs à zéro s'imprimaient
+  immédiatement au-dessus d'un verdict `INDÉTERMINÉ`. Trois signaux littéralement vrais
+  et collectivement trompeurs : « aucun écart trouvé » et « rien n'a été regardé » se
+  rendaient à l'identique. Le code de sortie était déjà 3, donc l'automatisation se
+  comportait correctement — le mode d'échec était la personne qui survole un terminal,
+  ou la capture collée dans un ticket. Le marqueur est désormais neutre, la ligne nomme
+  la cause, et les compteurs sont tus. Un scan réellement conforme garde les trois, et
+  le test le vérifie aussi : rendre les deux cas identiques n'aurait fait que déplacer
+  la confusion.
 - **Un groupe de sécurité ouvert à tout Internet par des plages `/2` ne produisait
   aucun finding.** `is_public_cidr` ne jugeait publique qu'une plage de préfixe ≤ 1, si
   bien que les quatre plages `0.0.0.0/2`, `64.0.0.0/2`, `128.0.0.0/2`, `192.0.0.0/2` —

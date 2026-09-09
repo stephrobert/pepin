@@ -286,6 +286,12 @@ var scanCmd = &cobra.Command{
 		res := scoring.Summarize(deviations)
 		gate := scoring.Summarize(open)
 		opts.SummaryHeadline = verdictHeadline(res, gate, asmt, exReport, asmt.Run.Source, len(degraded), len(cfg.Relaxations))
+		// RIEN n'a été mesuré. Le rendu et le code de sortie tirent la même conclusion
+		// du MÊME calcul : deux conditions écrites séparément finiraient par diverger,
+		// et celle qui divergerait serait celle qu'on lit — une coche verte au-dessus
+		// d'un verdict INDÉTERMINÉ, ce qui est exactement le défaut corrigé ici.
+		rienMesure := evaluatedNonGov(asmt) == 0
+		opts.Inconclusive = rienMesure
 
 		switch scanFormat {
 		case "json":
@@ -331,7 +337,7 @@ var scanCmd = &cobra.Command{
 		// rien de la posture : identifiants expirés, droits insuffisants, région vide ou
 		// inventaire tronqué rendraient une porte de CI verte sur un périmètre jamais regardé.
 		// Le bandeau annonce déjà « INDÉTERMINÉ » dans ce cas — le code de sortie doit le suivre.
-		if evaluatedNonGov(asmt) == 0 {
+		if rienMesure {
 			os.Exit(exitStrict)
 		}
 		// Un écart critical/high MIS DE CÔTÉ par le profil : jamais 0. Le scan a
@@ -1455,9 +1461,15 @@ func scanReportOptions(provName, path string) screport.Options {
 		// traduction inachevée et dessert le contenu. Le vocabulaire vit ICI :
 		// scankit n'a pas à connaître les langues de ses consommateurs (§9).
 		Labels: screport.Labels{
-			Mode:            tr("Mode", "Mode"),
-			Source:          tr("Source", "Source"),
-			NoDeviations:    tr("Aucun écart sur le périmètre audité.", "No deviations found in the audited scope."),
+			Mode:         tr("Mode", "Mode"),
+			Source:       tr("Source", "Source"),
+			NoDeviations: tr("Aucun écart sur le périmètre audité.", "No deviations found in the audited scope."),
+			// Il NOMME la cause. « Aucun écart » et « rien de mesuré » se lisent pareil,
+			// et c'est précisément ce qu'il faut séparer : le verdict placé dessous dit
+			// déjà les bons mots, le bloc au-dessus le contredisait.
+			NothingMeasured: tr(
+				"Aucun contrôle n'a pu être mesuré : le périmètre évalué est vide ou n'a pas été collecté.",
+				"No control could be measured: the evaluated scope is empty or was not collected."),
 			ImmediateAction: tr("⚡ Action immédiate — les %d écarts les plus graves", "⚡ Immediate action — top %d most severe deviations"),
 			TotalDeviations: tr("Écarts au total :", "Total deviations:"),
 			Details:         tr("Détail :", "Details:"),

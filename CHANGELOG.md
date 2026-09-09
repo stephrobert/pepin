@@ -59,6 +59,15 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A scan that measured nothing no longer renders as compliant.** A green tick,
+  "No deviations found in the audited scope" and four severity counters at zero were
+  printed immediately above a verdict saying `INDÉTERMINÉ`. Three signals literally true
+  and collectively misleading: "no deviation was found" and "nothing was looked at"
+  rendered identically. The exit code was already 3, so automation behaved correctly —
+  the failure mode was the person skimming a terminal, or the screenshot pasted into a
+  ticket. The marker is now neutral, the line names the cause, and the counters are
+  omitted. A genuinely compliant scan keeps all three, and the test asserts that too:
+  making the two cases identical would only have moved the confusion.
 - **A security group open to the whole internet through `/2` ranges produced no
   finding.** `is_public_cidr` called a range public only at prefix ≤ 1, so the four
   ranges `0.0.0.0/2`, `64.0.0.0/2`, `128.0.0.0/2`, `192.0.0.0/2` — which together cover
