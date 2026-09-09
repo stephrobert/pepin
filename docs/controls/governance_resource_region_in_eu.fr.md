@@ -49,25 +49,23 @@ déclaré, ou type absent de cette source ».
 | Fournisseur | Plan Terraform | Collecte live |
 |---|:-:|:-:|
 | exoscale | ✅ | ✅ |
-| outscale | ◐ | ✅ |
+| outscale | ✅ | ✅ |
 | scaleway | ✅ | ✅ |
 | kubernetes | sans objet | ✗ |
 
 Chaque case qui n'est pas ✅, **alors que le contrôle est déclaré pour ce fournisseur**,
 porte son motif :
 
-| Fournisseur | Source | Statut | Motif |
-|---|---|---|---|
-| outscale | terraform | ◐ `partial` | attribut décisif « region » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+_Aucune : toutes les cases déclarées sont pleinement observables._
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
 | `fail` | un écart a été détecté sur une ressource réelle | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | exoscale / terraform · exoscale / live · outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
-| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | outscale / terraform |
+| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | aucun |
 
 Un contrôle observable rend tout de même `not-evaluated` sur un inventaire qui ne
 contient aucune ressource du type visé : « rien à voir » n'est pas « conforme ».

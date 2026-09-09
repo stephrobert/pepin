@@ -16,6 +16,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -783,7 +784,7 @@ func lookup(v any, path string) any {
 var knownBareTransforms = map[string]bool{
 	"lower": true, "upper": true, "first": true, "range_from": true, "range_to": true,
 	"iampolicy": true, "list": true, "kv": true, "to_int": true, "nonempty": true,
-	"snake_keys": true,
+	"snake_keys": true, "region_of_zone": true,
 }
 
 // knownTransformPrefixes : préfixes de transforms paramétrés (`default:val`, `equals:val`…).
@@ -864,6 +865,8 @@ func applyTransform(v any, spec any) any {
 			return nil
 		}
 		switch t {
+		case "region_of_zone":
+			return regionOfZone(toStr(v))
 		case "lower":
 			return strings.ToLower(toStr(v))
 		case "upper":
@@ -1022,3 +1025,43 @@ func toStr(v any) string {
 		return fmt.Sprintf("%v", x)
 	}
 }
+
+// zoneSuffixe reconnaît le suffixe qu'une ZONE ajoute au nom de sa région : soit un
+// numéro (`fr-par-1`), soit une lettre (`eu-west-2a`).
+var zoneSuffixe = regexp.MustCompile(`^(.*?)(?:-\d+|[a-z])$`)
+
+// regionOfZone dérive la RÉGION d'un nom de zone, et rend "" s'il n'y arrive pas.
+//
+// Un plan Terraform localise ses ressources par la ZONE, pas par la région : Scaleway
+// écrit `fr-par-1` sur un serveur, Outscale `eu-west-2a` sur une VM. Le contrôle de
+// souveraineté, lui, raisonne sur la région — c'est l'unité sur laquelle une
+// juridiction se déclare. Sans cette dérivation, `governance_resource_region_in_eu`
+// rendait « non évalué » sur TOUT plan, alors que la localisation y est écrite en
+// clair par l'exploitant.
+//
+// Les deux formes sont celles des schémas de nommage publiés, pas une devinette : une
+// zone Scaleway suffixe sa région d'un `-<numéro>`, une sous-région Outscale d'une
+// LETTRE. La dérivation est vérifiée contre le catalogue de régions de chaque
+// descripteur par `TestEveryZoneDerivesToACataloguedRegion` : si un fournisseur
+// changeait de convention, la garde rougirait plutôt que de laisser passer une région
+// inventée.
+//
+// Ce qui ne se dérive pas rend "" — donc l'attribut n'est pas projeté, donc le verrou
+// de capacité dit « non évalué ». On ne fabrique pas une localisation (ADR-0014) : une
+// région fausse dans un rapport de souveraineté serait pire que son absence.
+func regionOfZone(zone string) string {
+	zone = strings.TrimSpace(strings.ToLower(zone))
+	if zone == "" {
+		return ""
+	}
+	m := zoneSuffixe.FindStringSubmatch(zone)
+	if m == nil || m[1] == "" {
+		return ""
+	}
+	return strings.TrimSuffix(m[1], "-")
+}
+
+// RegionOfZone expose la dérivation au test qui la confronte aux catalogues de
+// régions des descripteurs. Exposée pour être ÉPROUVÉE, pas pour être appelée : les
+// specs la demandent par le transform `region_of_zone`.
+func RegionOfZone(zone string) string { return regionOfZone(zone) }

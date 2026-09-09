@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/genprovider"
 )
 
@@ -121,4 +122,79 @@ func descripteursDuDepot(t *testing.T) map[string]genprovider.Descriptor {
 		t.Fatal("aucun descripteur chargé : la garde ne mesure rien")
 	}
 	return out
+}
+
+// TestEveryDerivedRegionIsCatalogued : tout mapping qui DÉRIVE une région d'une zone
+// doit produire un nom que le catalogue du fournisseur connaît.
+//
+// La dérivation retire un suffixe de zone (`-1`, ou une lettre). C'est le schéma de
+// nommage publié, pas une devinette — mais un fournisseur peut en changer, et une
+// région dérivée hors catalogue serait alors posée en silence dans un rapport de
+// SOUVERAINETÉ. Cette garde la fait rougir : elle confronte la dérivation aux zones
+// réelles de chaque fournisseur qui la déclare.
+//
+// Le contre-exemple compte autant : chez Exoscale une zone EST sa région, aucun
+// mapping n'y déclare la dérivation, et la garde vérifie que cela reste vrai — la lui
+// appliquer produirait `de-fra`, hors catalogue, et rendrait muet un contrôle qui
+// fonctionne.
+func TestEveryDerivedRegionIsCatalogued(t *testing.T) {
+	// Zones RÉELLES par fournisseur, une par région du catalogue.
+	zones := map[string][]string{
+		"scaleway": {"fr-par-1", "nl-ams-2", "pl-waw-1"},
+		"outscale": {"eu-west-2a", "cloudgouv-eu-west-1b", "us-east-2a", "us-west-1a", "ap-northeast-1a"},
+	}
+	descs := descripteursDuDepot(t)
+	var verifies int
+	for nom, d := range descs {
+		derive := false
+		for _, r := range d.MappingTerraform.Resources {
+			if r.Region == "" {
+				continue
+			}
+			if tr, ok := r.Transforms[r.Region]; ok && tr == "region_of_zone" {
+				derive = true
+			}
+		}
+		if !derive {
+			if _, attendu := zones[nom]; attendu {
+				t.Errorf("providers/%s.yaml ne dérive plus aucune région : la garde ne mesure plus ce fournisseur", nom)
+			}
+			continue
+		}
+		for _, z := range zones[nom] {
+			r := collect.RegionOfZone(z)
+			if r == "" {
+				t.Errorf("providers/%s.yaml : la zone %q ne dérive aucune région", nom, z)
+				continue
+			}
+			if !contient(d.Regions, r) {
+				t.Errorf("providers/%s.yaml : la zone %q dérive %q, absente du catalogue (%v).\n"+
+					"  Une région dérivée hors catalogue se poserait en silence dans un rapport de souveraineté.",
+					nom, z, r, d.Regions)
+			}
+			verifies++
+		}
+	}
+	if verifies == 0 {
+		t.Fatal("aucune dérivation vérifiée : la garde ne mesure rien")
+	}
+	// Le contre-exemple, explicite.
+	if d, ok := descs["exoscale"]; ok {
+		for _, r := range d.MappingTerraform.Resources {
+			if tr, ok := r.Transforms[r.Region]; ok && tr == "region_of_zone" {
+				t.Errorf("providers/exoscale.yaml dérive une région depuis %q : chez Exoscale une zone EST sa région "+
+					"(`de-fra-1`), et la dériver produirait `de-fra`, hors catalogue", r.Region)
+			}
+		}
+	}
+}
+
+// contient — le paquet de test EXTERNE ne voit pas le helper du paquet interne.
+func contient(l []string, v string) bool {
+	for _, e := range l {
+		if e == v {
+			return true
+		}
+	}
+	return false
 }

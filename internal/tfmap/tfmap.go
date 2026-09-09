@@ -83,10 +83,7 @@ func Apply(spec Spec, resources []tfparse.Resource) model.Inventory {
 			if rs.Items != "" {
 				items = collect.ExtractItems(res.Values, rs.Items)
 			}
-			region := ""
-			if rs.Region != "" {
-				region, _ = res.Values[rs.Region].(string)
-			}
+			region := regionOf(rs, res.Values)
 			// La source atteste le TYPE de ressource du plan, pas l'adresse : l'adresse
 			// est déjà l'identifiant de la ressource, le type est ce qui dit d'où la
 			// valeur a été lue. Une valeur issue d'un plan n'est PAS une observation de
@@ -219,4 +216,29 @@ func attestReferences(prov *model.Provenance, mapping map[string]string, res tfp
 			Derived:  true,
 		})
 	}
+}
+
+// regionOf lit la région d'une ressource du plan, en lui appliquant le transform que
+// la spec déclare pour son champ source.
+//
+// Un plan localise par la ZONE, pas par la région : Scaleway écrit `fr-par-1` sur un
+// serveur, Outscale `eu-west-2a` sur une VM. Lire la valeur brute, comme on le faisait,
+// posait donc `fr-par-1` en guise de région — un nom qu'aucun catalogue ne connaît, et
+// qui rendait le contrôle de souveraineté muet là où la localisation est pourtant
+// écrite en clair.
+//
+// Le transform se déclare sous le NOM DU CHAMP SOURCE (`transforms: {zone:
+// region_of_zone}`), parce que la région n'est pas un attribut de `map` et n'a donc pas
+// de nom commun sous lequel l'indexer.
+func regionOf(rs ResourceSpec, values map[string]any) string {
+	if rs.Region == "" {
+		return ""
+	}
+	t := map[string]any{}
+	if tr, ok := rs.Transforms[rs.Region]; ok {
+		t["region"] = tr
+	}
+	out := collect.Project(values, map[string]string{"region": rs.Region}, t)
+	r, _ := out["region"].(string)
+	return r
 }

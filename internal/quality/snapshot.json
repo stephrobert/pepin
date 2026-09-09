@@ -1,12 +1,12 @@
 {
   "controls": 58,
   "paths": 181,
-  "paths_proven": 31,
-  "obligations": 455,
+  "paths_proven": 30,
+  "obligations": 457,
   "proven": 91,
   "verdicts": {
     "fail": {
-      "required": 137,
+      "required": 138,
       "proven": 23
     },
     "not-applicable": {
@@ -18,7 +18,7 @@
       "proven": 21
     },
     "pass": {
-      "required": 137,
+      "required": 138,
       "proven": 35
     }
   },
@@ -723,8 +723,10 @@
         {
           "provider": "outscale",
           "source": "terraform",
-          "status": "partial",
+          "status": "supported",
           "required": [
+            "fail",
+            "pass",
             "not-evaluated"
           ],
           "proven": [
