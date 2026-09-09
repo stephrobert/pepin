@@ -172,6 +172,41 @@ captif), pas le fournisseur, et un lecteur ultérieur prendrait ces
 > `v*` aux administrateurs : un tag posé par quelqu'un d'autre est refusé *avant*
 > que release.yml ne démarre. À lancer dès que le remote existe ; idempotent.
 
+## Le tenant de qualification : un compte réel, appliqué et détruit
+
+```bash
+PEPIN_GATE_LIVE=1 mise run qualify        # PROVIDER=scaleway par défaut
+mise run qualify:plan                     # le même tenant, sans rien créer
+```
+
+Le canari prouve que les plans de contrôle répondent ; il ne voit jamais un tenant.
+Le tenant de qualification est la seule mesure qui déroule **la chaîne entière sur
+un compte réel** : une stack Terraform committée sous
+`references/qualification/<fournisseur>/`, délibérément mal configurée — une
+ressource par contrôle, un contre-exemple par contrôle — est appliquée, scannée en
+`--live` dans tous les formats, scellée, vérifiée et re-dérivée, rescannée en
+`--terraform` sur le même plan, **détruite**, et ses assessments sont comparés à
+l'`expected.yaml` committé (contrôle × source × sujet → statut). Toute différence est
+un NO-GO : un `fail` manquant est un faux vert, un `fail` en trop un faux positif, un
+`not-evaluated` déplacé une régression de couverture.
+
+Comme le canari, c'est un **geste de mainteneur**, jamais de CI (ADR-0012) : opt-in
+par `PEPIN_GATE_LIVE=1`, identifiants pris dans les variables natives du fournisseur
+ou son fichier de configuration seulement, et le runner **refuse de démarrer** si le
+compte que ces identifiants ouvrent — demandé à l'API, pas lu dans un profil — n'est
+pas celui qu'`expected.yaml` épingle. Il refuse de dire GO tant qu'une ressource
+survit au destroy : la preuve est un listing par famille filtré sur le tag du tenant,
+plus un delta avec l'inventaire pris avant apply. Et il casse une de ses propres
+attentes à la fin de chaque run pour vérifier qu'il sait dire NO-GO.
+
+Le rapport tombe dans `release-gate/qualification-<fournisseur>.json`, avec les
+artefacts du run à côté ; les deux sont ignorés par git, parce qu'ils portent les
+identifiants de ressources d'un compte réel. **Lire la preuve de destruction en
+premier.** [`references/qualification/README.fr.md`](references/qualification/README.fr.md)
+décrit la structure et la table des NO-GO ; le README de chaque fournisseur dit ce
+que sa stack crée, ce que son provider Terraform amont est connu pour laisser derrière
+lui au `destroy`, et ce qui a été mesuré.
+
 ## Ce que le tag déclenche
 
 `.github/workflows/release.yml`, sur `v*` :

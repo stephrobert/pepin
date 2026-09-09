@@ -168,6 +168,40 @@ control-plane regression that never happened.
 > tag pushed by anyone else is refused *before* release.yml starts. Run it once
 > the remote exists; it is idempotent.
 
+## The qualification tenant: a real account, applied and destroyed
+
+```bash
+PEPIN_GATE_LIVE=1 mise run qualify        # PROVIDER=scaleway by default
+mise run qualify:plan                     # the same tenant, nothing created
+```
+
+The canary proves that the control planes answer; it never sees a tenant. The
+qualification tenant is the one measurement that runs the **whole chain on a real
+account**: a Terraform stack committed under `references/qualification/<provider>/`,
+deliberately misconfigured — one resource per control, one counterexample per
+control — is applied, scanned with `--live` in every format, sealed, verified and
+re-derived, scanned again with `--terraform` on the same plan, **destroyed**, and its
+assessments are compared with the committed `expected.yaml` (control × source ×
+subject → status). Any difference is NO-GO: a missing `fail` is a false green, an
+extra `fail` a false positive, a moved `not-evaluated` a coverage regression.
+
+Like the canary, it is a **maintainer's gesture**, never CI (ADR-0012): opt-in by
+`PEPIN_GATE_LIVE=1`, credentials from the provider's native variables or
+configuration file only, and the runner **refuses to start** unless the account
+those credentials open — asked to the API, not read from a profile — is the one
+pinned in `expected.yaml`. It refuses to say GO while a resource survives the
+destroy: the proof is a listing per family filtered on the tenant's tag, plus a
+diff with the inventory taken before apply. And it breaks one of its own
+expectations at the end of every run to check that it can say NO-GO.
+
+The report lands in `release-gate/qualification-<provider>.json`, with the run's
+artifacts beside it; both are ignored by git, because they carry the resource
+identifiers of a real account. **Read the proof of destruction first.**
+[`references/qualification/README.md`](references/qualification/README.md) describes
+the structure and the NO-GO table; each provider's README says what its stack
+creates, what its upstream Terraform provider is known to leave behind on
+`destroy`, and what was measured.
+
 ## What the tag triggers
 
 `.github/workflows/release.yml`, on `v*`:

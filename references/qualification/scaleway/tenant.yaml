@@ -1,0 +1,84 @@
+# Tenant de QUALIFICATION Scaleway — métadonnées lues par tools/qualification/qualify.py.
+#
+# Ce tenant est le contraire d'un tenant de référence (references/tenants/) : il est
+# écrit PAR nous, POUR faire parler chaque contrôle, et il est réellement APPLIQUÉ
+# sur un compte puis détruit. Un tenant de référence prouve qu'une règle se tait sur
+# une configuration tierce correcte ; celui-ci prouve que la chaîne entière — API
+# réelle → collecteur → règles → assessment → bundle → verdict — rend, sur un vrai
+# tenant, exactement les verdicts que expected.yaml consigne.
+provider: scaleway
+title: "Tenant de qualification Scaleway : une faute par ressource, un contre-exemple par contrôle"
+title_en: "Scaleway qualification tenant: one fault per resource, one counterexample per control"
+
+region: fr-par
+zone: fr-par-1
+
+# L'étiquette posée sur toute ressource étiquetable. La preuve de destruction est un
+# listing famille par famille FILTRÉ sur elle, plus un delta avant/après pour ce qui
+# ne s'étiquette pas (volumes racine, sauvegardes RDB, clés d'API).
+tag: pepin-qual
+# Préfixe de nom de toute ressource du tenant : second filtre, pour ce dont l'API
+# ne filtre pas les étiquettes (applications et politiques IAM, buckets).
+name_prefix: pepin-qual-
+
+# Version du provider épinglée dans versions.tf : le runner refuse un lockfile qui
+# ne la porte pas, parce que la régression de destruction est arrivée par une
+# contrainte flottante (issue scaleway/terraform-provider-scaleway#4338).
+provider_version: "2.82.0"
+
+# Budget mur : au-delà, la porte dit NO-GO même si tout le reste est vert. Mesuré
+# (apply ≈ 3,5 min pour 27 ressources, attente de l'échéance de la clé ≈ 1 min,
+# scans + bundle ≈ 1 min, destroy ≈ 1 min) avec de la marge.
+budget_minutes: 25
+
+# Coût : tarifs horaires relevés le 2026-09-09 (`scw instance server-type list`,
+# page de tarification réseau Scaleway) sur ce qui est réellement APPLIQUÉ. Le
+# runner multiplie par la durée apply→destroy et l'écrit au rapport. Tout le reste
+# (IAM, groupes de sécurité, buckets vides) est gratuit. Les bases managées
+# (db-dev-s, 0,0347 €/h pièce) ne sont PAS appliquées : elles n'existent que sur le
+# plan, parce qu'aucun scan live ne les verrait.
+cost:
+  currency: EUR
+  hourly:
+    - family: servers
+      count: 5
+      unit_price: 0.008976   # DEV1-S, fr-par-1
+      source: "scw instance server-type list zone=fr-par-1 (hourly_price)"
+    - family: flexible_ips
+      count: 2
+      unit_price: 0.004      # IPv4 flexible (facturée même attachée)
+      source: "https://www.scaleway.com/en/pricing/network/"
+
+# Ce que le tenant crée, par famille, et le contrôle que chaque ressource fautive
+# exerce. Documentaire : la source de vérité est le HCL, et expected.yaml.
+resources:
+  applied:   # les cinq types que `pepin scan --live` collecte (contrat providers/scaleway.yaml)
+    - { family: iam_applications, count: 1, note: "keys : porte les 2 clés, aucune politique" }
+    - { family: iam_api_keys,     count: 2, note: "expired (échéance dépassée, encore listée) ⇒ CLD-IAM-2 ; expiring = contre-exemple" }
+    - { family: security_groups,  count: 9, note: "ssh/rdp/db/snmp/any/quartet/egress ⇒ 6 contrôles réseau en live ; default_accept ⇒ CLD-NET-2 sur le plan ; hardened = contre-exemple" }
+    - { family: flexible_ips,     count: 2 }
+    - { family: servers,          count: 5, note: "exposed ⇒ CLD-NET-3 ; untagged ⇒ CLD-GVN-1 ; secrets ⇒ CLD-CMP-9 (plan) ; private, hardened = contre-exemples" }
+    - { family: buckets,          count: 7, note: "public/policy ⇒ CLD-STO-1 ; unversioned ⇒ CLD-STO-4 ; unlocked ⇒ CLD-STO-8 ; sensitive ⇒ CLD-CHF-4 ; hardened = contre-exemple ; encrypted (SSE-ONE) = contre-exemple de CLD-CHF-2, contrôle non encore déclaré pour Scaleway" }
+  terraform_only:   # dans le plan complet scanné en --terraform, jamais provisionnés
+    - { family: iam_api_keys,     count: 1, note: "no_expiry ⇒ CLD-IAM-2 (critical) — l'organisation refuse de la créer" }
+    - { family: iam_applications, count: 1, note: "admin : porte les 2 politiques, aucune clé" }
+    - { family: iam_policies,     count: 2, note: "iam_manager ⇒ CLD-IAM-12 ; read_only = contre-exemple" }
+    - { family: vpcs,             count: 1 }
+    - { family: private_networks, count: 2, note: "undocumented ⇒ CLD-NET-5 ; documented = contre-exemple" }
+    - { family: rdb_instances,    count: 2, note: "exposed ⇒ CLD-NET-1, CLD-CHF-2, CLD-STO-3 ; hardened = contre-exemple" }
+
+# Ce que ce tenant NE PEUT PAS exercer sur Scaleway, et pourquoi. Consigné plutôt
+# que tu : une case absente d'une matrice ressemble à une case verte.
+not_exercised:
+  - control: governance_resource_region_in_eu
+    reason: "Toutes les régions Scaleway sont dans l'UE : aucun contre-exemple (écart) n'est constructible ; seul le pass est prouvé."
+  - control: iam_user_mfa_enabled
+    reason: "Un utilisateur IAM est une personne réelle invitée dans l'organisation : hors périmètre d'un tenant jetable. Le contrôle s'observe sur les utilisateurs existants, sans que leur verdict soit épinglé."
+  - control: compute_instance_has_security_group
+    reason: "Un serveur Scaleway porte toujours un groupe de sécurité (celui du projet à défaut) : l'écart n'est pas constructible en live."
+  - control: iam_no_root_access_key
+    reason: "root_owned n'est pas encore dérivé par le collecteur (contrat a_verifier) : le contrôle reste not-evaluated, et c'est ce que expected.yaml épingle — un pass ou un fail qui apparaîtrait ici serait une régression de couverture."
+  - control: iam_accesskey_expiration_set
+    reason: "La branche « clé sans échéance » (critical) n'est pas constructible en live : l'organisation impose une échéance à toute clé d'API (mesuré le 2026-09-09). Elle reste exercée sur le plan ; la branche « échéance dépassée » (high) est exercée en live."
+  - case: "machine à deux cartes (audit #E)"
+    reason: "Exigerait une scaleway_instance_private_nic, dont la destruction est cassée depuis le provider 2.81.0 (#4338, ouverte). Le modèle live Scaleway n'a de toute façon pas de type network_interface."

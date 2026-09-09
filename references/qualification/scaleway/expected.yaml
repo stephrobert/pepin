@@ -1,0 +1,284 @@
+# Ce que Pépin DOIT rendre sur le tenant de qualification Scaleway — le résultat
+# attendu, contrôle × source × sujet → statut. Lu par tools/qualification/qualify.py.
+#
+# Toute différence avec ce fichier est un NO-GO :
+#   - un `fail` attendu qui manque est un FAUX VERT ;
+#   - un `fail` sur un sujet du tenant que ce fichier n'attend pas est un FAUX POSITIF ;
+#   - un `not-evaluated` qui devient `pass` (ou l'inverse) est une RÉGRESSION DE COUVERTURE,
+#     dans un sens comme dans l'autre : un `pass` qui apparaît là où le collecteur ne lit
+#     pas encore la donnée est un pass non prouvé (ADR-0006), pas une amélioration.
+#
+# Ce fichier n'est pas une matrice verte (ADR-0010) : chaque `not-evaluated` ci-dessous
+# est une dette de collecte NOMMÉE, et il change quand — et seulement quand — le
+# collecteur apprend à lire la donnée. Un tel changement se dit au CHANGELOG, parce
+# qu'il déplace un verdict sur un tenant inchangé.
+#
+# Sujets : un littéral, ou `${output.<nom>}` résolu depuis `terraform output -json`
+# (identifiants connus après apply, forme que la collecte live emploie). Statuts :
+# `fail` / `pass` / `not-evaluated` / `not-applicable`, ou `evaluated` (pass OU fail)
+# pour un contrôle dont les sujets sont HORS du tenant (utilisateurs de l'organisation)
+# et dont on n'épingle que le fait qu'il conclut.
+#
+# Sur un contrôle qui porte des écarts, `fail:` liste les sujets fautifs — tous doivent
+# être là, aucun autre sujet du tenant ne doit l'être — et `silent:` liste les
+# CONTRE-EXEMPLES : la configuration correcte voisine, qui doit rester muette. Sans
+# contre-exemple, on ne prouve pas que la règle discrimine, seulement qu'elle parle.
+
+# Le compte sur lequel ce tenant a le droit de s'appliquer. La porte interroge l'API
+# avec les identifiants natifs (SCW_* ou ~/.config/scw/config.yaml, ADR-0012) et
+# REFUSE DE DÉMARRER si le projet et l'organisation observés ne sont pas ceux-ci :
+# un tenant délibérément mal configuré ne s'applique jamais sur un compte de
+# production par erreur.
+#
+# L'identifiant attendu vient de l'ENVIRONNEMENT, pas de ce fichier. Un
+# `organization_id` n'est pas un secret — il n'ouvre rien sans identifiants — mais
+# ce dépôt est PUBLIC, et l'y committer nommerait durablement le tenant du
+# mainteneur. Un identifiant publié ne se dépublie pas. La garde, elle, ne perd
+# rien : elle compare toujours ce que l'API répond à ce qui est attendu ; seule la
+# provenance de l'attendu change.
+#
+# Poser avant de lancer la porte :
+#     export PEPIN_QUAL_SCW_ORG=<organization_id>
+#     export PEPIN_QUAL_SCW_PROJECT=<project_id>
+account:
+  organization_id_env: PEPIN_QUAL_SCW_ORG
+  project_id_env: PEPIN_QUAL_SCW_PROJECT
+
+# Codes de sortie de `pepin scan` (ADR-0005) : 1, parce que le tenant porte des
+# écarts critical/high sur les deux sources. Un 0 ou un 3 ici serait un faux vert
+# de la porte elle-même.
+exit_codes:
+  live: 1
+  terraform: 1
+
+controls:
+  # ── IAM ────────────────────────────────────────────────────────────────────
+  iam_accesskey_expiration_set:
+    # Deux branches de la même règle. La clé SANS échéance (critical) n'existe que
+    # sur le plan : l'organisation de qualification refuse d'en créer une
+    # (« organization security settings require an expiration date for API keys »,
+    # mesuré le 2026-09-09) — un réglage préventif qui fait ce que le contrôle
+    # demande, et que Pépin pourrait lire (issue #196).
+    # La clé dont l'échéance est DÉPASSÉE (high) est réelle : elle reste listée par
+    # l'API, et le runner attend son échéance avant de scanner.
+    live:
+      fail: ["${output.api_key_expired}"]
+      silent: ["${output.api_key_expiring}"]
+    terraform:
+      # L'access key n'est connue qu'après apply : le plan désigne la ressource par
+      # son adresse (indexée pour celle qui n'existe que sur le plan).
+      fail: ["scaleway_iam_api_key.no_expiry[0]", scaleway_iam_api_key.expired]
+      silent: [scaleway_iam_api_key.expiring]
+
+  iam_no_root_access_key:
+    # `root_owned` est DÉRIVÉ et non encore projeté (contrat a_verifier, issue #195) :
+    # le verrou de capacité tient sur les deux sources. Un pass ou un fail qui apparaîtrait ici
+    # sans changement du collecteur serait une régression.
+    live: not-evaluated
+    terraform: not-evaluated
+
+  iam_user_mfa_enabled:
+    live:
+      status: evaluated
+      perimeter: organisation
+      reason: "Les utilisateurs IAM sont des personnes réelles de l'organisation, pas des ressources du tenant : le contrôle doit CONCLURE (pass ou fail) sur eux, et leur verdict ne s'épingle pas ici."
+    terraform: not-evaluated
+
+  iam_policy_no_privilege_escalation:
+    live: not-evaluated
+    terraform:
+      fail: [pepin-qual-policy-iam-manager]
+      silent: [pepin-qual-policy-read-only]
+
+  # ── Groupes de sécurité ────────────────────────────────────────────────────
+  # Sujet live = identifiant du groupe (Server/SecurityGroup ID, sans zone) ; sujet
+  # Terraform = adresse de la ressource (l'id est inconnu au stade du plan).
+  network_securitygroup_allow_ingress_from_internet_to_tcp_port_22:
+    live:
+      fail: ["${output.sg_ssh_open_id}", "${output.sg_any_open_id}", "${output.sg_quartet_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_rdp_open_id}"]
+    terraform:
+      fail: [scaleway_instance_security_group.ssh_open, scaleway_instance_security_group.any_open, scaleway_instance_security_group.quartet]
+      silent: [scaleway_instance_security_group.hardened, scaleway_instance_security_group.rdp_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389:
+    live:
+      fail: ["${output.sg_rdp_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
+    terraform:
+      fail: [scaleway_instance_security_group.rdp_open, scaleway_instance_security_group.any_open]
+      silent: [scaleway_instance_security_group.hardened, scaleway_instance_security_group.ssh_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports:
+    live:
+      fail: ["${output.sg_db_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
+    terraform:
+      fail: [scaleway_instance_security_group.db_open, scaleway_instance_security_group.any_open]
+      silent: [scaleway_instance_security_group.hardened, scaleway_instance_security_group.ssh_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports:
+    live:
+      fail: ["${output.sg_snmp_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_db_open_id}"]
+    terraform:
+      fail: [scaleway_instance_security_group.snmp_open, scaleway_instance_security_group.any_open]
+      silent: [scaleway_instance_security_group.hardened, scaleway_instance_security_group.db_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_all_ports:
+    live:
+      fail: ["${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}", "${output.sg_quartet_id}"]
+    terraform:
+      fail: [scaleway_instance_security_group.any_open]
+      silent: [scaleway_instance_security_group.hardened, scaleway_instance_security_group.ssh_open, scaleway_instance_security_group.quartet]
+
+  network_securitygroup_unrestricted_egress:
+    live:
+      fail: ["${output.sg_egress_any_id}"]
+      silent: ["${output.sg_hardened_id}"]
+    terraform:
+      fail: [scaleway_instance_security_group.egress_any]
+      silent: [scaleway_instance_security_group.hardened]
+
+  network_securitygroup_default_deny:
+    # InboundDefaultPolicy n'est pas encore projetée par la collecte live (#195).
+    live: not-evaluated
+    terraform:
+      fail: [pepin-qual-sg-default-accept]
+      silent: [pepin-qual-sg-hardened, pepin-qual-sg-ssh-open]
+
+  network_documented:
+    # Collecte live des réseaux privés en attente (contrat a_verifier, #195).
+    live: not-evaluated
+    terraform:
+      fail: [pepin-qual-pn-undocumented]
+      silent: [pepin-qual-pn-documented]
+
+  # ── Calcul ─────────────────────────────────────────────────────────────────
+  compute_instance_public_ip_with_open_securitygroup:
+    live:
+      fail: ["${output.vm_exposed_id}"]
+      silent: ["${output.vm_private_id}", "${output.vm_hardened_id}"]
+    # Le plan ne porte pas l'IP publique du serveur (ip_id est un lien, pas une adresse).
+    terraform: not-evaluated
+
+  compute_instance_has_security_group:
+    # Un serveur Scaleway porte toujours un groupe : l'écart n'est pas constructible.
+    live: pass
+    terraform: pass
+
+  compute_instance_no_secrets_in_user_data:
+    # user_data se lit par un appel séparé (GetServerUserData) que la collecte live
+    # ne fait pas encore.
+    live: not-evaluated
+    terraform:
+      fail: [scaleway_instance_server.secrets]
+      silent: [scaleway_instance_server.hardened, scaleway_instance_server.exposed]
+
+  # ── Stockage objet ─────────────────────────────────────────────────────────
+  objectstorage_bucket_public_access:
+    live:
+      # Deux vecteurs, deux buckets : l'ACL et la politique.
+      fail: ["${output.bucket_public}", "${output.bucket_policy}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_unversioned}"]
+    terraform:
+      # Le sujet est le bucket que l'ACL configure (ADR-0022), pas la ressource ACL.
+      # La politique de bucket n'est pas mappée sur le plan : `policy` y est muet.
+      fail: ["${output.bucket_public}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_policy}"]
+
+  objectstorage_bucket_versioning_enabled:
+    live:
+      fail: ["${output.bucket_unversioned}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_unlocked}"]
+    terraform: not-evaluated
+
+  objectstorage_bucket_object_lock_enabled:
+    live:
+      fail: ["${output.bucket_unlocked}", "${output.bucket_unversioned}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_public}"]
+    terraform:
+      fail: ["${output.bucket_unlocked}", "${output.bucket_unversioned}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_public}"]
+
+  objectstorage_bucket_kms_encryption:
+    live:
+      fail: ["${output.bucket_sensitive}"]
+      # `hardened` et `encrypted` sont classés public : la classification est ce qui
+      # discrimine, et SSE-ONE (clé Scaleway) n'est pas SSE-KMS (clé client).
+      silent: ["${output.bucket_hardened}", "${output.bucket_encrypted}"]
+    terraform: not-evaluated
+
+  objectstorage_bucket_default_encryption:
+    # DÉFAUT CONNU, épinglé tel que mesuré — et le défaut n'est pas le verdict. Chez
+    # Scaleway, le chiffrement au repos d'un bucket est OPT-IN (SSE-ONE, SSE-KMS ou
+    # SSE-C, doc « enable-sse-* ») : un bucket sans configuration SSE écrit en clair,
+    # et les six écarts sont VRAIS. Le défaut est la déclaration : le référentiel
+    # n'active ce contrôle que pour Outscale (`fournisseurs: [outscale]`), la matrice
+    # de couverture dit ✗ pour Scaleway en live, et rien n'a jamais prouvé son
+    # contre-exemple sur ce fournisseur — alors que le collecteur S3 commun mesure la
+    # donnée et que l'assessment publie les findings sans regarder `fournisseurs`.
+    # Activer le contrôle pour Scaleway (le bucket SSE-ONE `encrypted` est son
+    # contre-exemple, déjà muet) ou expliquer pourquoi pas : c'est l'issue #192. Le jour où la
+    # déclaration change, ce pin change avec elle, et le CHANGELOG le dit.
+    live:
+      fail: ["${output.bucket_public}", "${output.bucket_policy}", "${output.bucket_unversioned}", "${output.bucket_unlocked}", "${output.bucket_sensitive}", "${output.bucket_hardened}"]
+      # Le contre-exemple existe : SSE-ONE configuré, la règle se tait. C'est ce qui
+      # permettra d'activer le contrôle pour Scaleway avec sa preuve.
+      silent: ["${output.bucket_encrypted}"]
+      known_defect: "#192 — contrôle mesuré et juste sur Scaleway, mais déclaré pour Outscale seul (référentiel + matrice ✗)"
+    terraform: absent
+
+  # ── Bases managées (PLAN SEULEMENT : aucune collecte live RDB, et rien n'est
+  #    provisionné qu'aucun scan live ne verrait — cf. variables.tf) ────────────
+  database_service_not_open_to_internet:
+    live: not-evaluated
+    terraform:
+      # `_parent.instance_id` n'est pas comblé par les références du plan (ADR-0022,
+      # chemins simples seulement, issue #193) : le sujet est l'adresse de la
+      # ressource ACL, indexée parce que les bases n'existent que sur le plan (count).
+      fail: ["scaleway_rdb_acl.exposed[0]"]
+      silent: ["scaleway_rdb_acl.hardened[0]"]
+
+  database_encryption_at_rest_enabled:
+    live: not-evaluated
+    terraform:
+      fail: [pepin-qual-rdb-exposed]
+      silent: [pepin-qual-rdb-hardened]
+
+  database_backup_enabled:
+    live: not-evaluated
+    terraform:
+      fail: [pepin-qual-rdb-exposed]
+      silent: [pepin-qual-rdb-hardened]
+
+  # ── Gouvernance ────────────────────────────────────────────────────────────
+  governance_resource_required_tags:
+    live:
+      # Sujet live = nom de la ressource normalisée, qui est son identifiant.
+      fail: ["${output.vm_untagged_id}"]
+      silent: ["${output.vm_exposed_id}", "${output.bucket_hardened}"]
+    terraform:
+      fail: [pepin-qual-vm-untagged]
+      silent: [pepin-qual-vm-exposed, "${output.bucket_hardened}"]
+
+  governance_resource_region_in_eu:
+    # Toutes les régions Scaleway sont dans l'UE : seul le pass est constructible.
+    live: pass
+    # Le mapping Terraform ne projette pas la région des serveurs ni des buckets
+    # (issue #194).
+    terraform: not-evaluated
+
+  governance_provider_sovereignty:
+    live: pass
+    terraform: pass
+
+  # ── Déclarés non applicables par le contrat du fournisseur ─────────────────
+  blockstorage_snapshot_not_public:
+    live: not-applicable
+    terraform: not-applicable
+
+  blockstorage_volume_encryption:
+    live: not-applicable
+    terraform: not-applicable
