@@ -17,9 +17,11 @@ import rego.v1
 deny contains f if {
 	some r in resources_of_type("managed_database")
 	"ip_filter" in object.keys(r.attributes)
+
 	# L'UNION, pas chaque plage isolément : quatre `/2` ouvrent la base à tout
 	# Internet sans qu'aucune ne soit « tout Internet » (cf. unrestricted_cidrs).
-	some cidr in unrestricted_cidrs(object.get(r.attributes, "ip_filter", []))
+	cidr := unrestricted_label(object.get(r.attributes, "ip_filter", []))
+	cidr != ""
 	id := object.get(r.attributes, "database_id", r.id)
 	f := {
 		"code": "database_service_not_open_to_internet",

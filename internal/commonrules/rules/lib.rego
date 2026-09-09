@@ -209,33 +209,65 @@ sg_accepting(rule) if lower(object.get(rule, "action", "accept")) in {"accept", 
 # principe : `net.cidr_merge` rend l'expression INDÉFINIE sur une entrée malformée
 # (mesuré), ce qui rendrait la règle muette — le faux négatif exact que ce correctif
 # existe pour fermer, sur une entrée fournie par un tiers.
-unrestricted_source(cidrs) if count(unrestricted_cidrs(cidrs)) > 0
+unrestricted_source(cidrs) if unrestricted_label(cidrs) != ""
 
-# unrestricted_cidrs — les sources FAUTIVES, brutes et fusionnées confondues.
+# unrestricted_label — UNE étiquette pour la source fautive, et une seule.
 #
-# L'ensemble plutôt qu'un booléen : les messages nomment la plage en cause, et une
-# règle qui dirait « ouvert à Internet » sans dire par où laisserait l'opérateur
-# chercher. Une union fautive s'y nomme par sa forme fusionnée — `0.0.0.0/0` — ce qui
-# est exactement ce qu'il faut lire pour comprendre que quatre `/2` se recouvrent.
-unrestricted_cidrs(cidrs) := brutes | fusionnees if {
-	brutes := {c |
+# `unrestricted_cidrs` rendait un ensemble, et les règles qui l'itéraient produisaient
+# un finding PAR élément : quatre `/2` sur une base donnaient cinq écarts — les quatre
+# plages brutes, chacune déjà large, plus leur fusion — pour un seul fait. Un rapport
+# qui répète cinq fois le même problème est aussi faux qu'un rapport qui le tait, et
+# c'est le défaut que j'ai introduit en fermant l'union.
+#
+# L'ordre des trois voies est celui de ce qu'elles APPRENNENT à un lecteur :
+#
+#   1. la forme FUSIONNÉE, quand elle est fautive — `0.0.0.0/0` dit d'un coup que
+#      quatre plages se recouvrent, ce qu'aucune des quatre ne montre ;
+#   2. la forme BRUTE, qui porte les littéraux sans masque (`0.0.0.0`, `*`) que
+#      `net.cidr_is_valid` rejette et que la fusion perdrait ;
+#   3. le DÉCOMPTE, quand ni l'une ni l'autre ne suffit — le damier, dont aucune plage
+#      n'est large et dont la fusion ne rapproche rien.
+unrestricted_label(cidrs) := lbl if {
+	f := sort([m |
+		some m in _merge_ou_vide(_valid_cidrs(cidrs))
+		is_public_cidr(m)
+	])
+	count(f) > 0
+	lbl := concat(", ", f)
+} else := lbl if {
+	b := sort([c |
 		some c in cidr_list(cidrs)
 		is_public_cidr(c)
-	}
-	valides := {c |
-		some c in cidr_list(cidrs)
-		net.cidr_is_valid(c)
-	}
-	fusionnees := {m |
-		some m in _merge_ou_vide(valides)
-		is_public_cidr(m)
-	}
-}
+	])
+	count(b) > 0
+	lbl := concat(", ", b)
+} else := lbl if {
+	n := public_coverage(cidrs)
+	n >= _public_threshold
 
-# _merge_ou_vide — la fusion, ou rien. `net.cidr_merge` sur un ensemble VIDE, ou
-# portant une entrée malformée, rend l'expression indéfinie : sans ce garde-fou, une
-# donnée de tiers mal formée rendrait la règle muette, c'est-à-dire produirait le faux
-# négatif exact que ce chemin existe pour fermer.
+	# Une étiquette NEUTRE : elle est interpolée dans un message français ET dans sa
+	# contrepartie anglaise, et une phrase traduite y dirait deux choses selon la langue
+	# de celui qui a scellé le bundle.
+	lbl := sprintf("%d CIDR → %d IPv4", [count(_valid_cidrs(cidrs)), n])
+} else := ""
+
+_valid_cidrs(cidrs) := [c |
+	some c in cidr_list(cidrs)
+	net.cidr_is_valid(c)
+]
+
+# _merge_ou_vide — la fusion, ou rien.
+#
+# Le garde-fou porte sur l'entrée MALFORMÉE : `net.cidr_merge` y rend l'expression
+# indéfinie (mesuré), ce qui rendrait la règle muette sur une donnée de tiers — le faux
+# négatif exact que ce chemin existe pour fermer. Le filtrage par `net.cidr_is_valid`
+# est donc obligatoire, et il protège au passage d'un second piège : une IP NUE reçoit
+# le masque classful de Go (`1.2.3.4` deviendrait `1.0.0.0/8`), donc un hôte isolé
+# passerait pour un /8 public entier.
+#
+# Sur un ensemble VIDE, en revanche, `net.cidr_merge` rend un ensemble vide et non une
+# expression indéfinie — mesuré. Le cas est gardé quand même, parce qu'un contrat de
+# builtin qui ne change pas aujourd'hui n'est pas un contrat écrit.
 _merge_ou_vide(valides) := net.cidr_merge(valides) if count(valides) > 0
 
 _merge_ou_vide(valides) := set() if count(valides) == 0

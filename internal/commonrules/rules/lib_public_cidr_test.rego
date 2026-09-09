@@ -116,3 +116,62 @@ test_the_union_of_two_private_halves_stays_silent if {
 test_a_list_of_partner_networks_stays_silent if {
 	not unrestricted_source(["203.0.113.0/24", "198.51.100.0/24", "10.42.0.0/16"])
 }
+
+# ── LE DAMIER : ce que la fusion seule ne voit pas ─────────────────────────────
+
+# 256 plages `/9` une sur deux : la MOITIÉ d'Internet, et rien d'adjacent à fusionner.
+# `net.cidr_merge` rend les 256 blocs inchangés ; seul le décompte le voit.
+test_a_checkerboard_of_half_the_internet_is_unrestricted if {
+	damier := [c |
+		some a in numbers.range(0, 255)
+		c := sprintf("%d.0.0.0/9", [a])
+	]
+	count(damier) == 256
+	unrestricted_source(damier)
+}
+
+# Un /8 d'adresses publiques en deux morceaux NON adjacents.
+test_two_disjoint_halves_of_a_slash_eight_are_unrestricted if {
+	unrestricted_source(["8.0.0.0/9", "9.0.0.0/9"])
+}
+
+# ── Le décompte ne doit pas devenir un faux positif ────────────────────────────
+
+# Deux moitiés d'un réseau PRIVÉ : le décompte les voit, et les compte à zéro.
+test_two_private_halves_count_as_zero if {
+	public_coverage(["10.0.0.0/9", "10.128.0.0/9"]) == 0
+	not unrestricted_source(["10.0.0.0/9", "10.128.0.0/9"])
+}
+
+# Une liste de réseaux partenaires reste très en dessous du seuil.
+test_a_list_of_partner_networks_stays_below_the_threshold if {
+	public_coverage(["203.0.113.0/24", "198.51.100.0/24", "192.0.2.0/24"]) < 16777216
+	not unrestricted_source(["203.0.113.0/24", "198.51.100.0/24", "192.0.2.0/24"])
+}
+
+# Une plage SEULE ne passe jamais par le décompte : elle relève de la largeur, et la
+# compter ici produirait un second finding pour un seul fait.
+test_a_single_range_never_goes_through_the_count if {
+	public_coverage(["0.0.0.0/0"]) == 0
+	public_coverage(["1.0.0.0/8"]) == 0
+}
+
+# ── UNE étiquette, pas une par plage ───────────────────────────────────────────
+
+# La régression que la fermeture de l'union avait introduite : quatre `/2` produisaient
+# CINQ findings — les quatre plages, plus leur fusion — pour un seul fait.
+test_one_label_for_one_fact if {
+	unrestricted_label(["0.0.0.0/2", "64.0.0.0/2", "128.0.0.0/2", "192.0.0.0/2"]) == "0.0.0.0/0"
+	unrestricted_label(["10.42.0.0/16"]) == ""
+}
+
+# La forme fusionnée est PRÉFÉRÉE : elle dit d'un coup ce qu'aucune plage ne montre.
+test_the_label_prefers_the_merged_form if {
+	unrestricted_label(["0.0.0.0/1", "128.0.0.0/1"]) == "0.0.0.0/0"
+}
+
+# Un littéral sans masque n'est pas un CIDR valide : la voie brute le porte.
+test_the_label_keeps_maskless_literals if {
+	unrestricted_label(["*"]) == "*"
+	unrestricted_label(["0.0.0.0"]) == "0.0.0.0"
+}

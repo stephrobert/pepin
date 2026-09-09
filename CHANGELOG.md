@@ -76,6 +76,14 @@ belongs in `git log`.
   is not a valid CIDR and the merge would lose it; and only valid entries are merged,
   because `net.cidr_merge` goes undefined on a malformed one, which would silence the
   rule on third-party input.
+
+  The merge only brings CONTIGUOUS ranges together, so a checkerboard escaped it: 256
+  `/9` one in two — half the internet — merged to 256 unchanged blocks and stayed
+  silent. The public addresses a source list opens are now COUNTED, exactly: merged
+  blocks are disjoint, and two CIDRs are either disjoint or nested, so a block's public
+  size is its own minus the special-use blocks it contains. One finding per resource
+  names the union — `0.0.0.0/0`, or `256 CIDR → 1848508416 IPv4` — rather than one per
+  range.
 - **The root description names the providers that exist.** The first sentence a new
   user reads advertised OVH — a roadmap entry, not a provider — and omitted Kubernetes,
   which is one. The list is now derived from the registry: a copied list goes stale at
