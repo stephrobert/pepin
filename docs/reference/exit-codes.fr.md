@@ -52,7 +52,7 @@ Aucun écart critical ou high, **et** au moins un contrôle réellement mesuré.
 ```console
 $ ./pepin scan scaleway --terraform examples/scaleway/terraform-fixed/plan.json
 […]
- Summary
+ Synthèse
 
  Verdict : conforme sur le périmètre déclaré (plan Terraform, état planifié) (aucune non-conformité détectée, 12 contrôles conformes)
 
@@ -75,7 +75,7 @@ Au moins un écart `critical` ou `high`.
 ```console
 $ ./pepin scan scaleway --terraform examples/scaleway/terraform/plan.json
 […]
- Summary
+ Synthèse
 
  Verdict : NON CONFORME
 
@@ -133,7 +133,7 @@ qu'il faille demander `--strict`.
 ```console
 $ ./pepin scan scaleway empty-inventory.json
 […]
- Summary
+ Synthèse
 
  Verdict : INDÉTERMINÉ — aucun contrôle mesuré sur des ressources (le périmètre évalué est vide ou non collecté)
 
@@ -168,7 +168,7 @@ Le même inventaire, deux fois. Sans `--strict`, les écarts medium et low ne bl
 ```console
 $ ./pepin scan scaleway tagless-inventory.json
 […]
- Summary
+ Synthèse
 
  Verdict : aucun écart critique/haut, mais 1 écart(s) medium/low sur le périmètre évalué (3 conformes)
 
@@ -185,7 +185,7 @@ Avec `--strict`, ils bloquent :
 ```console
 $ ./pepin scan scaleway tagless-inventory.json --strict
 […]
- Summary
+ Synthèse
 
  Verdict : aucun écart critique/haut, mais 1 écart(s) medium/low sur le périmètre évalué (3 conformes)
 
@@ -287,7 +287,7 @@ Chaque contrôle qui lit un type de ressource alimenté par l'unité en échec d
 ```console
 $ ./pepin scan scaleway partial-inventory.json
 […]
- Summary
+ Synthèse
 
  Verdict : INCOMPLET — 7 contrôle(s) non évaluables faute d'une collecte complète, 0 écart(s) medium/low sur ce qui a pu être lu
 
@@ -370,7 +370,7 @@ $ ./pepin scan scaleway bastion-inventory.json --exceptions exceptions.yaml
   │ CLD-NET-1 │ SSH (port 22) ouvert à Internet │ HIGH │ scaleway │ 1 │
   ╰───────────┴─────────────────────────────────┴──────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
- Summary
+ Synthèse
 
  Verdict : NON CONFORME sous dérogation, 1 écart(s) critique/haut tous couverts par une dérogation datée et attribuée
 

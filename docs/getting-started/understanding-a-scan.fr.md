@@ -54,7 +54,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
 ──────────────────────────────────────────────────────────────────────────────
 
 ──────────────────────────────────────────────────────────────────────────────
- ⚡ Immediate action — top 3 most severe deviations
+ ⚡ Action immédiate — les 3 écarts les plus graves
 ──────────────────────────────────────────────────────────────────────────────
 
   1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
@@ -69,12 +69,12 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  CRITICAL  ·  CLD-STO-1  ·  scaleway
  Stockage objet exposé publiquement
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
 
-  Remediation
+  Remédiation
     Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
@@ -83,12 +83,12 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  HIGH  ·  CLD-CHF-2  ·  scaleway
  Base de données managée sans chiffrement au repos
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       HIGH  pepin-test-rdb — Base de données managée « pepin-test-rdb » sans chiffrement au repos.
 
-  Remediation
+  Remédiation
     Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
@@ -97,12 +97,12 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  HIGH  ·  CLD-CMP-9  ·  scaleway
  Secret en clair dans les données utilisateur (user-data)
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       HIGH  scaleway_instance_server.web — secret en clair dans user-data (mot de passe en clair).
 
-  Remediation
+  Remédiation
     Bannir les secrets des données utilisateur ; utiliser un coffre de secrets et l'injection au démarrage. Révoquer le secret exposé.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/compute-instances/#socle-cld-cmp-9
@@ -111,12 +111,12 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  HIGH  ·  CLD-IAM-12  ·  scaleway
  Politique IAM permettant une élévation de privilèges
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       HIGH  ci-deployer — confère la gestion de l'IAM (PermissionSet) — chemin d'élévation de privilèges.
 
-  Remediation
+  Remédiation
     Réserver la gestion IAM à une politique d'administration dédiée ; retirer le PermissionSet de gestion des politiques d'usage.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/iam-acces-cloud/#socle-cld-iam-12
@@ -125,13 +125,13 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  HIGH  ·  CLD-NET-1  ·  scaleway
  Base de données managée joignable depuis Internet
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 2
+  Écarts au total : 2
 
-  Details:
+  Détail :
       HIGH  fr-par/11111111-1111-1111-1111-111111111111 — ACL autorisant un CIDR public (0.0.0.0/0) — service exposé à Internet.
       HIGH  scaleway_instance_security_group.web — SSH (port 22) accepté depuis/vers Internet.
 
-  Remediation
+  Remédiation
     Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand disponible) ; retirer 0.0.0.0/0.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
@@ -140,12 +140,12 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  HIGH  ·  CLD-NET-2  ·  scaleway
  Politique entrante par défaut d'un groupe de sécurité en « accept »
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       HIGH  sg-open-default — politique entrante par défaut « accept » — tout trafic non filtré est admis.
 
-  Remediation
+  Remédiation
     Basculer la politique entrante par défaut sur « drop » et n'ouvrir que les flux légitimes par des règles explicites.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-2
@@ -154,12 +154,12 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  HIGH  ·  CLD-STO-3  ·  scaleway
  Sauvegardes automatiques d'une base managée désactivées
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       HIGH  pepin-test-rdb — sauvegardes automatiques désactivées.
 
-  Remediation
+  Remédiation
     Réactiver les sauvegardes automatiques et fixer une rétention adaptée au RPO.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-3
@@ -168,12 +168,12 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  MEDIUM  ·  CLD-GVN-1  ·  scaleway
  Inventaire et étiquetage incomplets
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       MED   scaleway_instance_server.web — étiquettes de gouvernance manquantes (CostCenter, Project, Env, Owner).
 
-  Remediation
+  Remédiation
     Ajouter les étiquettes obligatoires (CostCenter, Project, Env, Owner) sur la ressource.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/gouvernance-inventaire-cloud/#socle-cld-gvn-1
@@ -182,19 +182,19 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  LOW  ·  CLD-STO-8  ·  scaleway
  Object Lock (immutabilité) désactivé sur le stockage objet
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       LOW   backups-prod — objets non immuables (pas de protection WORM contre suppression/écrasement).
 
-  Remediation
+  Remédiation
     Activer l'Object Lock (mode conformité/gouvernance) sur les buckets de sauvegarde et d'objets critiques.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-8
 
-  Controls
+  Contrôles
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
-  │ Code       │ Control                                          │ Sev      │ Tier     │ # │
+  │ Code       │ Contrôle                                         │ Sév      │ Palier   │ # │
   ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
   │ CLD-STO-1  │ Stockage objet exposé publiquement               │ CRITICAL │ scaleway │ 1 │
   │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
@@ -207,7 +207,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   │ CLD-STO-8  │ Object Lock (immutabilité) désactivé sur le sto… │ LOW      │ scaleway │ 1 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
- Summary
+ Synthèse
 
  Verdict : NON CONFORME
 
@@ -253,12 +253,12 @@ premier écran d'un long rapport soit déjà actionnable.
  CRITICAL  ·  CLD-STO-1  ·  scaleway
  Stockage objet exposé publiquement
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
 
-  Remediation
+  Remédiation
     Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1

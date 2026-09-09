@@ -63,6 +63,21 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Le mode français ne laisse plus l'ossature du rapport en anglais.** Titres de
+  section, en-têtes de table et ligne « aucun écart » sortaient en anglais au milieu
+  d'un rapport français — `Total deviations: 1` au-dessus d'un finding français, se
+  refermant sur un verdict français. Les chaînes du framework aussi : gabarit d'usage,
+  `help for <cmd>`, erreurs de nombre d'arguments, drapeau inconnu. Un rapport à moitié
+  traduit se lit comme un travail inachevé plutôt que comme un choix, et le lecteur
+  visé — un auditeur francophone d'un cloud souverain — est précisément celui qui le
+  remarque.
+
+  Une chaîne reste en anglais : le `unknown command … Did you mean this?` de cobra,
+  construit au fond de `Command.Find` sans point d'accroche. La traduire exigerait de
+  reconnaître son texte anglais, donc de faire dépendre le comportement de la
+  formulation d'une dépendance. `TestTheUntranslatedCobraResidueIsKnown` tient ce
+  résidu inventorié et échoue dans les deux sens : il ne peut ni grandir, ni être
+  oublié une fois corrigé en amont.
 - **Une sous-commande inconnue ne rend plus 0, et n'exécute plus autre chose.**
   `pepin provider inexistant` lançait silencieusement `provider list` ; `pepin control
   list` — la supposition naturelle, symétrique de `provider list` — rendait un écran

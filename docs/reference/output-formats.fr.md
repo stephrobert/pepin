@@ -44,9 +44,9 @@ est précisément la raison de ne rien en parser.
 ```text
 […]
 
-  Controls
+  Contrôles
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
-  │ Code       │ Control                                          │ Sev      │ Tier     │ # │
+  │ Code       │ Contrôle                                         │ Sév      │ Palier   │ # │
   ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
   │ CLD-STO-1  │ Stockage objet exposé publiquement               │ CRITICAL │ scaleway │ 1 │
   │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
@@ -59,7 +59,7 @@ est précisément la raison de ne rien en parser.
   │ CLD-STO-8  │ Object Lock (immutabilité) désactivé sur le sto… │ LOW      │ scaleway │ 1 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
- Summary
+ Synthèse
 
  Verdict : NON CONFORME
 

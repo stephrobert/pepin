@@ -109,8 +109,12 @@ func TestTheCapturedBannerCarriesNoBuildVersion(t *testing.T) {
 	if !strings.Contains(c.vulnerable.Stderr, "v"+versionPlaceholder) {
 		t.Errorf("le bandeau capturé ne porte pas le marqueur de version : substitution muette")
 	}
-	if !strings.Contains(c.vulnerable.Stdout, "Total deviations") {
-		t.Error("la substitution de version a altéré le corps du rapport (« Total deviations » perdu)")
+	// Le TÉMOIN que la substitution n'a pas mangé le corps du rapport. La capture est
+	// prise en français, et l'ossature du rapport l'est aussi depuis #151 : un témoin
+	// anglais y aurait été absent pour la bonne raison, ce qui aurait fait de cette
+	// garde une garde qui crie sans mesurer.
+	if !strings.Contains(c.vulnerable.Stdout, "Écarts au total") {
+		t.Error("la substitution de version a altéré le corps du rapport (« Écarts au total » perdu)")
 	}
 }
 

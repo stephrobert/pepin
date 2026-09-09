@@ -80,24 +80,26 @@ Pépin — CSPM multi-cloud souverain.
 Évalue la posture d'un cloud (OVH, Scaleway, Exoscale, Outscale…) contre un
 référentiel commun ancré sur SCSL, SecNumCloud, CIS et ISO.
 
-Usage:
-  pepin [command]
+pepin [flags]
 
-Available Commands:
+Utilisation:
+  pepin [commande]
+
+Commandes disponibles:
   completion  Generate the autocompletion script for the specified shell
   control     Inspecter les contrôles du référentiel commun
-  help        Help about any command
+  help        Aide sur n'importe quelle commande
   provider    Gérer les providers déclaratifs (lister, valider, créer)
   scan        Évaluer la posture d'un cloud contre les politiques
   scsl        Vérifier la cohérence avec l'index SCSL et piloter la roadmap
   verify      Vérifier l'intégrité (et la signature) d'un bundle de preuve
   version     Afficher la version
 
-Flags:
-  -h, --help          help for pepin
+Drapeaux:
+  -h, --help          aide pour pepin
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 
-Use "pepin [command] --help" for more information about a command.
+Lancer « pepin [commande] --help » pour en savoir plus sur une commande.
 ```
 <!-- /pepin:gen cli-help-root -->
 
@@ -112,14 +114,14 @@ modèle normalisé, et rend un rapport.
 externes via --policy-dir). Trois sources : un export JSON normalisé, un plan
 Terraform (--terraform), ou une collecte live de l'API (--live).
 
-Usage:
-  pepin scan <provider> [export.json] [flags]
+pepin scan <provider> [export.json] [flags]
 
-Flags:
+
+Drapeaux:
       --exceptions fichier               fichier YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme
   -f, --format string                    format de sortie : table | json | assessment | oscal | sarif (default "table")
       --gate string                      GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
-  -h, --help                             help for scan
+  -h, --help                             aide pour scan
       --kubeconfig string                chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)
       --live                             collecter l'inventaire en direct via l'API du provider (identifiants requis)
       --policy fichier                   fichier YAML de politique : réglages des contrôles (`controls:`) ET dérogations (`exceptions:`) — un seul fichier, nom moderne de --exceptions
@@ -132,7 +134,7 @@ Flags:
       --strict                           porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance), s'il subsiste un écart medium/low, ou si un réglage assoupli a fait tomber une correspondance normative
   -t, --terraform terraform show -json   auditer un plan Terraform (terraform show -json) au lieu d'un export d'inventaire
 
-Global Flags:
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-scan -->
@@ -190,17 +192,17 @@ peut régénérer fichiers + checksums. Avec --pubkey, la SIGNATURE cosign de ch
 est vérifiée (non-répudiation) — l'opérateur ayant scellé le bundle avec (cosign 3.x) :
   cosign sign-blob --key cosign.key --bundle checksums.txt.bundle checksums.txt
 
-Usage:
-  pepin verify <dossier-bundle> [flags]
+pepin verify <dossier-bundle> [flags]
 
-Flags:
+
+Drapeaux:
       --bundle string       bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)
-  -h, --help                help for verify
+  -h, --help                aide pour verify
       --pubkey string       clé publique cosign pour vérifier la signature de checksums.txt
       --re-derive           rejouer les règles sur input.json et vérifier que l'assessment scellé en découle (opposabilité forte)
       --require-signature   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
 
-Global Flags:
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-verify -->
@@ -219,25 +221,26 @@ Trois niveaux d'assurance, qui ne sont pas interchangeables :
 ```text
 Gérer les providers déclaratifs (lister, valider, créer)
 
-Usage:
-  pepin provider [flags]
-  pepin provider [command]
+pepin provider [flags]
 
-Aliases:
+Utilisation:
+  pepin provider [commande]
+
+Alias:
   provider, providers
 
-Available Commands:
+Commandes disponibles:
   list        Lister les providers cloud disponibles
   new         Créer le squelette d'un provider (providers/<nom>.yaml)
   validate    Valider les providers d'un dossier (défaut : providers/) contre le contrat
 
-Flags:
-  -h, --help   help for provider
+Drapeaux:
+  -h, --help   aide pour provider
 
-Global Flags:
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 
-Use "pepin provider [command] --help" for more information about a command.
+Lancer « pepin provider [commande] --help » pour en savoir plus sur une commande.
 ```
 <!-- /pepin:gen cli-help-provider -->
 
@@ -247,16 +250,16 @@ Use "pepin provider [command] --help" for more information about a command.
 ```text
 Lister les providers cloud disponibles
 
-Usage:
-  pepin provider list [flags]
+pepin provider list [flags]
 
-Aliases:
+
+Alias:
   list, ls
 
-Flags:
-  -h, --help   help for list
+Drapeaux:
+  -h, --help   aide pour list
 
-Global Flags:
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-provider-list -->
@@ -282,13 +285,13 @@ utilisable sur une contribution qui ajoute un fournisseur.
 ```text
 Valider les providers d'un dossier (défaut : providers/) contre le contrat
 
-Usage:
-  pepin provider validate [dossier] [flags]
+pepin provider validate [dossier] [flags]
 
-Flags:
-  -h, --help   help for validate
 
-Global Flags:
+Drapeaux:
+  -h, --help   aide pour validate
+
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-provider-validate -->
@@ -299,13 +302,13 @@ Global Flags:
 ```text
 Créer le squelette d'un provider (providers/<nom>.yaml)
 
-Usage:
-  pepin provider new <nom> [flags]
+pepin provider new <nom> [flags]
 
-Flags:
-  -h, --help   help for new
 
-Global Flags:
+Drapeaux:
+  -h, --help   aide pour new
+
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-provider-new -->
@@ -320,14 +323,14 @@ ne crée jamais d'exigence.
 ```text
 Vérifier la cohérence avec l'index SCSL et piloter la roadmap
 
-Usage:
-  pepin scsl [flags]
+pepin scsl [flags]
 
-Flags:
-  -h, --help           help for scsl
+
+Drapeaux:
+  -h, --help           aide pour scsl
       --index string   chemin de l'API SCSL (api/v1/exigences.json du framework) (default "../framework-scsl/api/v1/exigences.json")
 
-Global Flags:
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-scsl -->
@@ -338,20 +341,21 @@ Global Flags:
 ```text
 Inspecter les contrôles du référentiel commun
 
-Usage:
-  pepin control [flags]
-  pepin control [command]
+pepin control [flags]
 
-Available Commands:
+Utilisation:
+  pepin control [commande]
+
+Commandes disponibles:
   explain     Expliquer d'où vient le verdict d'un contrôle, et ce qui l'éprouve
 
-Flags:
-  -h, --help   help for control
+Drapeaux:
+  -h, --help   aide pour control
 
-Global Flags:
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 
-Use "pepin control [command] --help" for more information about a command.
+Lancer « pepin control [commande] --help » pour en savoir plus sur une commande.
 ```
 <!-- /pepin:gen cli-help-control -->
 
@@ -388,14 +392,14 @@ Les chiffres de couverture viennent de la MÊME source que la carte de qualité
 de détection (docs/detection-quality.md) : deux calculs divergeraient, et celui
 qui diverge est celui qu'on lit.
 
-Usage:
-  pepin control explain <code> [flags]
+pepin control explain <code> [flags]
 
-Flags:
-  -h, --help              help for explain
+
+Drapeaux:
+  -h, --help              aide pour explain
       --provider string   limiter l'explication à un fournisseur
 
-Global Flags:
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-control-explain -->
@@ -406,13 +410,13 @@ Global Flags:
 ```text
 Afficher la version
 
-Usage:
-  pepin version [flags]
+pepin version [flags]
 
-Flags:
-  -h, --help   help for version
 
-Global Flags:
+Drapeaux:
+  -h, --help   aide pour version
+
+Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 ```
 <!-- /pepin:gen cli-help-version -->

@@ -287,7 +287,7 @@ pepin scan outscale --terraform examples/outscale/terraform/plan.json
   │ CLD-NET-5  │ Réseau sans étiquettes de cartographie           │ LOW      │ outscale │ 1 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
- Summary
+ Synthèse
 
  Verdict : NON CONFORME
 

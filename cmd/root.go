@@ -30,6 +30,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	i18n.Set(i18n.Resolve(langFromArgs(os.Args[1:]), os.Getenv))
 	localize()
+	localizeCobra(rootCmd)
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, errStyle.Render(tr("erreur : ", "error: "))+err.Error())
 		os.Exit(exitErreur)

@@ -28,7 +28,7 @@ func displayVersion() string { return "v" + bareVersion() }
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Afficher la version",
-	Args:  cobra.NoArgs,
+	Args:  noArgs(),
 	Run: func(_ *cobra.Command, _ []string) {
 		// L'accent tombe en anglais : `pepin version` est la sortie la plus
 		// susceptible d'être coupée, collée et comparée par un script.
