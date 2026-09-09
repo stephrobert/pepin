@@ -4,7 +4,7 @@
 
 One Go binary, no daemon, no dependency. Four ways in, each verified before
 anything runs: the released binary, the container image, the GitHub action,
-the GitLab template. `0.1.0` below names a released version — a mutable
+the GitLab template. `0.3.0` below names a released version — a mutable
 `latest` installs whatever is newest, which is a binary nobody can name
 afterwards.
 
@@ -14,7 +14,7 @@ Needs `cosign` (or `gh`, below) and nothing else. Every file is fetched to
 disk and verified before anything runs it.
 
 ```bash
-base=https://github.com/stephrobert/pepin/releases/download/v0.1.0
+base=https://github.com/stephrobert/pepin/releases/download/v0.3.0
 
 case "$(uname -s)-$(uname -m)" in
   Linux-x86_64)  asset=pepin-linux-amd64 ;;
@@ -46,7 +46,7 @@ With `gh`, which checks the build provenance instead — it proves which
 workflow and which commit produced the binary:
 
 ```bash
-gh release download v0.1.0 --repo stephrobert/pepin --pattern 'pepin-linux-amd64'
+gh release download v0.3.0 --repo stephrobert/pepin --pattern 'pepin-linux-amd64'
 gh attestation verify pepin-linux-amd64 --repo stephrobert/pepin \
   --signer-workflow stephrobert/pepin/.github/workflows/release.yml
 ```
@@ -70,12 +70,12 @@ manager), and the release workflow refuses to push an image whose
 One tag per release, no `latest`. Verify, then run:
 
 ```bash
-cosign verify ghcr.io/stephrobert/pepin:v0.1.0 \
+cosign verify ghcr.io/stephrobert/pepin:v0.3.0 \
   --certificate-identity-regexp '^https://github\.com/stephrobert/pepin/\.github/workflows/release\.yml@refs/tags/v' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 
 # audit a Terraform plan: no credential, nothing provisioned
-docker run --rm -v "$PWD:/work" ghcr.io/stephrobert/pepin:v0.1.0 \
+docker run --rm -v "$PWD:/work" ghcr.io/stephrobert/pepin:v0.3.0 \
   scan scaleway --terraform /work/plan.json
 ```
 
@@ -83,7 +83,7 @@ Three practical points, all measured:
 
 - **Credentials never enter the image.** For `--live`, pass the provider's
   own variables at run time and nothing else:
-  `docker run --rm -e OSC_ACCESS_KEY -e OSC_SECRET_KEY -e OSC_REGION ghcr.io/stephrobert/pepin:v0.1.0 scan outscale --live`
+  `docker run --rm -e OSC_ACCESS_KEY -e OSC_SECRET_KEY -e OSC_REGION ghcr.io/stephrobert/pepin:v0.3.0 scan outscale --live`
   (naming the variables without `=` forwards them from your environment
   without putting their values in the command line or your shell history).
 - **Sealing a bundle into a mounted volume needs your uid**, because the
@@ -99,12 +99,17 @@ Three practical points, all measured:
 The composite action downloads the released binary, **verifies its SHA-256
 against the release's checksum list before anything runs it** (a CI job in
 this repository corrupts one byte of that download and requires the refusal),
-scans, and turns the exit codes into a gate:
+scans, and turns the exit codes into a gate.
+
+**Pin v0.2.0 or later.** In v0.1.0 and v0.1.1 the installer called
+`gh attestation verify` without a token, which refused *every* installation.
+Since v0.2.0 the caller passes no token: the action verifies the checksum on
+its own, and the attestation when a token happens to be available.
 
 ```yaml
-- uses: stephrobert/pepin/.github/actions/pepin-scan@v0.1.0
+- uses: stephrobert/pepin/.github/actions/pepin-scan@v0.3.0
   with:
-    version: 0.1.0
+    version: 0.3.0
     provider: scaleway
     terraform-plan: plan.json
 ```
@@ -124,7 +129,7 @@ Same doctrine, as an includable template — binary verified in
 
 ```yaml
 include:
-  - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.1.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
+  - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.3.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
 ```
 
 Full example: [`examples/gitlab-ci/`](../examples/gitlab-ci/).

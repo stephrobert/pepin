@@ -4,6 +4,18 @@ name: exoscale
 description: "Exoscale (CH) — instances, security groups, block storage, SKS, SOS"
 region_key: zone
 
+# Catalogue des régions connues de ce fournisseur.
+#
+# Recopié du catalogue de souveraineté (internal/commonrules/rules/lib.rego) :
+# c'est la MÊME connaissance, et `TestTheRegionCatalogueMatchesTheRules` refuse
+# qu'elles divergent. Elle est ici parce que la CLI ne lit pas de Rego, et là-bas
+# parce qu'une règle ne lit pas de descripteur.
+#
+# Sert à AVERTIR qu'un `--region` n'y figure pas, jamais à refuser : la liste
+# appartient au fournisseur, et une région ajoutée demain doit rester scannable.
+regions: [at-vie-1, at-vie-2, bg-sof-1, ch-dk-2, ch-gva-2, de-fra-1, de-muc-1, hr-zag-1]
+
+
 # Souveraineté du fournisseur (CLD-GVN-4) — faits ancrés, projetés en ressource
 # governance_provider. Siège en Suisse (hors UE) → écart GVN-4 attendu.
 souverainete:

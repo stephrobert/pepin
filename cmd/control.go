@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 
@@ -54,7 +55,27 @@ var controlExplainCmd = &cobra.Command{
 		code := args[0]
 		ctl, ok := referentiel.Lookup(code)
 		if !ok {
-			return fmt.Errorf(tr("contrôle inconnu : %s", "unknown control: %s"), code)
+			// Le rapport n'imprime JAMAIS l'identifiant de check : sa colonne « Code »
+			// et ses en-têtes de bloc portent l'exigence SCSL, et `--format json` la
+			// porte dans `code`. Un lecteur qui vient de lire « CLD-NET-3 » et veut
+			// savoir pourquoi ce verdict est opposable tapait donc, très logiquement,
+			// ce que le rapport lui avait montré — et la commande le refusait.
+			//
+			// Une exigence couvre parfois PLUSIEURS contrôles. Un seul : on explique,
+			// sans faire deviner. Plusieurs : on les nomme, parce que choisir à la
+			// place du lecteur, c'est en cacher un.
+			portés := referentiel.BySCSL(code)
+			switch len(portés) {
+			case 0:
+				return fmt.Errorf(tr(
+					"contrôle inconnu : %s\n  Attendu : un identifiant de check (ex. objectstorage_bucket_public_access)\n  ou une exigence SCSL telle que le rapport l'imprime (ex. CLD-STO-1).",
+					"unknown control: %s\n  Expected: a check identifier (e.g. objectstorage_bucket_public_access)\n  or an SCSL requirement as the report prints it (e.g. CLD-STO-1)."), code)
+			case 1:
+				ctl = portés[0]
+			default:
+				return expliquerLesquels(cmd.OutOrStdout(), code, portés)
+			}
+			code = ctl.Code
 		}
 		snap, err := quality.Embedded()
 		if err != nil {
@@ -349,4 +370,25 @@ func init() {
 	controlExplainCmd.Flags().StringVar(&explainProvider, "provider", "",
 		"limiter l'explication à un fournisseur")
 	controlCmd.AddCommand(controlExplainCmd)
+}
+
+// expliquerLesquels rend la liste des contrôles qu'une exigence SCSL couvre.
+//
+// Rendre `nil` — donc 0 — est délibéré : la question posée a reçu sa réponse. Ce
+// n'est pas une erreur d'appel, c'est une exigence qui couvre plusieurs contrôles, et
+// c'est d'ailleurs ce même partage qui fait que le rapport terminal les regroupe.
+func expliquerLesquels(out io.Writer, scsl string, ctls []referentiel.Control) error {
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, eyebrow.Render(brandEyebrow())+muted.Render("  "+tr(
+		"une exigence, plusieurs contrôles", "one requirement, several controls")))
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "%s %s\n\n", titre.Render(scsl), muted.Render(tr(
+		"couvre les contrôles suivants :", "covers the following controls:")))
+	for _, c := range ctls {
+		_, _ = fmt.Fprintf(out, "  %s\n    %s\n", titre.Render(c.Code), c.TitreIn(i18n.Current()))
+	}
+	_, _ = fmt.Fprintf(out, "\n  %s\n", muted.Render(tr(
+		"Reprendre l'un de ces codes : pepin control explain <code>",
+		"Take one of these codes: pepin control explain <code>")))
+	return nil
 }

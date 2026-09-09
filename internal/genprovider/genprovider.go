@@ -38,7 +38,20 @@ type Descriptor struct {
 	Description string `yaml:"description"`
 	Scope       string `yaml:"scope"`      // "cloud" (défaut) | "in-cluster" : une portée différente ne se compare pas en parité
 	RegionKey   string `yaml:"region_key"` // clé logique alimentée par --region (défaut "region" ; Exoscale: "zone")
-	Auth        struct {
+	// Regions : le catalogue des régions CONNUES de ce fournisseur, celui-là même que
+	// les règles de souveraineté cataloguent (internal/commonrules/rules/lib.rego :
+	// `_eu_regions`, `_trusted_regions`, `_noneu_regions`). Il sert à prévenir tôt
+	// qu'un `--region` n'y figure pas — une faute de frappe se payait autrement d'une
+	// minute de résolutions DNS qui échouent, puis de dix-sept unités « service
+	// indisponible » à lire avant d'en deviner la cause.
+	//
+	// Il ne REFUSE pas : la liste appartient au fournisseur, pas à Pépin, et une
+	// région ajoutée demain doit rester scannable le jour même. C'est ce qui le
+	// distingue d'un `--gate` inconnu, dont le vocabulaire est celui de Pépin.
+	//
+	// Vide = aucun catalogue, donc aucun avertissement.
+	Regions []string `yaml:"regions"`
+	Auth    struct {
 		Type    string `yaml:"type"`    // header | sigv4 | exoscale-hmac
 		Header  string `yaml:"header"`  // header : nom de l'en-tête
 		Value   string `yaml:"value"`   // header : valeur (ex. "{secret_key}")

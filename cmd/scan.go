@@ -89,9 +89,30 @@ var scanCmd = &cobra.Command{
 				"unknown provider: %q (see `pepin providers`)"), name)
 		}
 		if !scanLive && path == "" {
+			// `--kubeconfig` ne sert QUE la collecte live : sans `--live`, il est
+			// silencieusement ignoré et le message d'erreur proposait deux sources
+			// qui ne sont pas celle que l'appelant vient de nommer. Le dire, plutôt
+			// que de faire répéter la question.
+			if scanKubeconfig != "" {
+				return errors.New(tr(
+					"--kubeconfig audite un cluster EN DIRECT : l'ajouter à --live.\n"+
+						"  Sans --live, un scan lit un fichier (export JSON ou plan Terraform), que --kubeconfig ne fournit pas.",
+					"--kubeconfig audits a LIVE cluster: pass it together with --live.\n"+
+						"  Without --live a scan reads a file (JSON export or Terraform plan), which --kubeconfig does not provide."))
+			}
 			return errors.New(tr(
 				"préciser un fichier (export JSON ou plan Terraform), ou utiliser --live",
 				"give a file (JSON export or Terraform plan), or use --live"))
+		}
+		avertirRegionInconnue(os.Stderr, name, scanRegion, scanLive)
+		// Les dossiers de politiques externes sont vérifiés ICI, où le chemin DONNÉ est
+		// encore connu. Plus bas, `os.DirFS(dir)` en fait une racine, et l'erreur du
+		// parcours désigne alors « . » : le lecteur cherche dans son répertoire courant
+		// une faute qu'il a faite dans un argument.
+		for _, dir := range policyDirs {
+			if err := doitEtreUnDossier(dir, tr("dossier de politiques", "policy directory")); err != nil {
+				return err
+			}
 		}
 		if !slices.Contains(scanFormats, scanFormat) {
 			return fmt.Errorf(tr(
@@ -643,7 +664,7 @@ func init() {
 	scanCmd.Flags().BoolVar(&scanLive, "live", false,
 		"collecter l'inventaire en direct via l'API du provider (identifiants requis)")
 	scanCmd.Flags().StringVar(&scanRegion, "region", "", "région cible pour la collecte live")
-	scanCmd.Flags().StringVar(&scanKubeconfig, "kubeconfig", "", "chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)")
+	scanCmd.Flags().StringVar(&scanKubeconfig, "kubeconfig", "", "chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (exige --live ; utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)")
 	scanCmd.Flags().StringVar(&scanProfile, "profile", "", "profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)")
 	// `--profile` désigne DÉJÀ le profil d'identifiants. Celui-ci s'appelle donc
 	// `--gate`, et le nom dit mieux ce qu'il fait : il ne filtre pas le rapport, il
@@ -1554,4 +1575,52 @@ func renderGateProfile(w io.Writer, gate string, codes []string, severe bool) {
 			"       dont au moins un critical/high : le scan sort en 3 (« n'établit pas la conformité »), jamais 0.",
 			"       at least one of them critical/high: the scan exits 3 (\"does not establish compliance\"), never 0."))
 	}
+}
+
+// doitEtreUnDossier refuse un chemin absent ou qui n'est pas un dossier, en NOMMANT
+// le chemin reçu.
+//
+// Le défaut qu'elle corrige est mince et coûteux : `os.DirFS(x)` ne vérifie rien, et
+// la première erreur vient du parcours, qui ne connaît plus que sa racine — « . ».
+// L'appelant lit alors un message qui ne contient pas ce qu'il a tapé.
+func doitEtreUnDossier(chemin, quoi string) error {
+	fi, err := os.Stat(chemin)
+	if err != nil {
+		return fmt.Errorf(tr("%s introuvable : %s", "%s not found: %s"), quoi, chemin)
+	}
+	if !fi.IsDir() {
+		return fmt.Errorf(tr("%s : %s est un fichier, un dossier est attendu",
+			"%s: %s is a file, a directory is expected"), quoi, chemin)
+	}
+	return nil
+}
+
+// avertirRegionInconnue prévient qu'une région n'est pas au catalogue du fournisseur.
+//
+// Le défaut corrigé n'est pas un verdict : `--region eu-nowhere-9` rendait dix-sept
+// unités « service indisponible » (`lookup api.eu-nowhere-9.…: no such host`) et un
+// verdict INDÉTERMINÉ — honnête, mais après une minute d'attente et dix-sept lignes à
+// lire avant de deviner qu'on avait mal tapé.
+//
+// C'est un AVERTISSEMENT, pas un refus, et la distinction se défend. Un `--gate`
+// inconnu est refusé parce que ce vocabulaire est celui de Pépin : il est clos, et
+// rien d'extérieur ne l'élargit. Une liste de régions appartient au FOURNISSEUR ; il
+// en ajoute quand il veut, et refuser la première scannerait un jour moins que ce que
+// le tenant contient — un outil qui refuse ce qui existe est pire qu'un outil bavard.
+func avertirRegionInconnue(w io.Writer, provider, region string, live bool) {
+	if !live || region == "" {
+		return
+	}
+	connues := genprovider.Descriptors()[provider].Regions
+	if len(connues) == 0 || slices.Contains(connues, region) {
+		return
+	}
+	_, _ = fmt.Fprintf(w, tr(
+		"attention : la région %q n'est pas au catalogue de %s (%s).\n"+
+			"  Le scan continue — le catalogue peut avoir pris du retard sur le fournisseur —, mais\n"+
+			"  une région inexistante rend chaque appel indisponible, et le verdict INDÉTERMINÉ.\n",
+		"warning: region %q is not in the %s catalogue (%s).\n"+
+			"  The scan continues — the catalogue may lag behind the provider — but a region that\n"+
+			"  does not exist makes every call unavailable, and the verdict INCONCLUSIVE.\n"),
+		region, provider, strings.Join(connues, ", "))
 }

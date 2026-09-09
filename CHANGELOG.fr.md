@@ -63,6 +63,37 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **La page d'installation épinglait `v0.1.0`, la version dont ce dépôt écrit lui-même
+  qu'elle refuse toute installation.** `examples/github-actions/pepin.yml` le dit en
+  toutes lettres : en v0.1.0 et v0.1.1, l'installeur de l'action appelait
+  `gh attestation verify` sans jeton, ce qui refusait *toute* installation. La page
+  d'installation est la première qu'on recopie. Chaque épinglage nomme désormais la
+  dernière release, une phrase dit que l'appelant ne passe aucun jeton depuis v0.2.0, et
+  une garde exige que les versions épinglées soient celle que le CHANGELOG déclare —
+  lue dans le dépôt plutôt que dans les tags git, pour qu'un `clone` de CI sans tags ne
+  puisse pas la faire dériver.
+- **Quatre messages de la CLI désignaient la mauvaise chose.** `--policy-dir
+  /inexistant` et `provider validate <fichier>` rapportaient tous deux `.` — la racine
+  de la vue de système de fichiers qu'ils venaient de construire — au lieu de l'argument
+  reçu ; un fichier passé là où un dossier est attendu est maintenant refusé comme tel.
+  `--kubeconfig` sans `--live` proposait deux sources qui ne sont pas celle que
+  l'appelant venait de nommer ; l'erreur et l'aide du drapeau disent désormais qu'il
+  exige `--live`.
+- **Une `--region` inconnue est signalée avant que la collecte n'échoue.** `--region
+  eu-nowhere-9` coûtait une minute de résolutions DNS en échec et dix-sept unités
+  « service indisponible » à lire avant d'en deviner la cause. C'est un
+  **avertissement**, pas un refus : la liste des régions appartient au fournisseur, et
+  une région ajoutée demain doit rester scannable le jour même — ce qui la sépare d'un
+  `--gate` inconnu, dont le vocabulaire est celui de Pépin. Le catalogue vit auprès du
+  descripteur du fournisseur, et une garde exige qu'il coïncide avec celui que les
+  règles de souveraineté portent déjà.
+- **`control explain` accepte le code que le rapport imprime.** La colonne « Code » du
+  rapport terminal et chaque en-tête de bloc portent l'exigence SCSL (`CLD-STO-1`), et
+  `--format json` la porte dans `code` ; la commande n'acceptait que l'identifiant de
+  check, que le rapport n'imprime jamais. Un lecteur qui venait de lire un verdict
+  devait deviner. Les deux formes fonctionnent désormais, sans distinction de casse, et
+  une exigence couvrant plusieurs contrôles les nomme tous plutôt que d'en choisir un en
+  silence.
 - **Une clé d'accès dont l'expiration est dépassée ne compte plus comme conforme.** La
   règle ne refusait qu'une date ABSENTE, si bien qu'une clé encore `ACTIVE` deux ans
   après son échéance passait — mesuré sur un tenant réel. Les deux lectures de cet état
