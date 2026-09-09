@@ -40,6 +40,15 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une sous-commande inconnue ne rend plus 0, et n'exécute plus autre chose.**
+  `pepin provider inexistant` lançait silencieusement `provider list` ; `pepin control
+  list` — la supposition naturelle, symétrique de `provider list` — rendait un écran
+  d'aide et réussissait. Une étape de pipeline écrite `pepin control list --json >
+  controls.json` écrivait donc l'aide dans le fichier et passait au vert. Chaque
+  commande valide désormais ses arguments et rend **2** sur un argument qu'elle ne
+  comprend pas. Une garde parcourt l'ARBRE des commandes plutôt qu'une liste écrite à
+  la main, et elle a trouvé un cinquième cas que le rapport n'avait pas : `provider
+  list` ignorait tout argument.
 - **Un inventaire dont l'origine contredit le jeu de règles demandé est désormais
   refusé.** Scanner un inventaire Scaleway avec les règles Exoscale était accepté sans
   un mot et produisait six verdicts `pass`. Ces `pass` n'étaient pas faux par accident :

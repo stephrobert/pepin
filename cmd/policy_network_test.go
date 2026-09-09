@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
@@ -147,7 +145,7 @@ func TestAProviderMismatchIsRefused(t *testing.T) {
 			t.Fatalf("fixture %s absente : le test ne mesurerait rien", f)
 		}
 		for lu := range fixtures {
-			code := exitCodeOf(t, bin, "scan", lu, f)
+			code := exitCodeOfArgs(t, bin, "scan", lu, f)
 			if lu == propre {
 				if code == exitErreur {
 					t.Errorf("%s lu par son PROPRE fournisseur rend %d : la correction refuse tout",
@@ -167,20 +165,4 @@ func TestAProviderMismatchIsRefused(t *testing.T) {
 		t.Fatal("aucun croisement éprouvé : la porte ne mesure rien")
 	}
 	t.Logf("%d croisement(s) fournisseur × inventaire refusé(s)", croises)
-}
-
-// exitCodeOf lance le binaire et rend son code de sortie, sans faire échouer le test :
-// ici, le code EST la mesure.
-func exitCodeOf(t *testing.T, bin string, args ...string) int {
-	t.Helper()
-	cmd := exec.Command(bin, args...)
-	cmd.Dir = repoRoot
-	if err := cmd.Run(); err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) {
-			return ee.ExitCode()
-		}
-		t.Fatalf("exécution de %v : %v", args, err)
-	}
-	return 0
 }
