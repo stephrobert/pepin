@@ -193,7 +193,7 @@ func TestNoRuleReadsProvenance(t *testing.T) {
 			t.Fatalf("lecture de %s : %v", e.Name(), err)
 		}
 		lues++
-		if strings.Contains(string(b), "provenance") {
+		if strings.Contains(codeSansCommentaires(string(b)), "provenance") {
 			t.Errorf("%s lit `provenance`.\n"+
 				"  L'ADR-0007 a choisi un index PARALLÈLE pour que l'entrée des règles ne bouge\n"+
 				"  pas, et l'ADR-0017 n'a levé cette borne pour personne : la distinction\n"+
@@ -205,4 +205,41 @@ func TestNoRuleReadsProvenance(t *testing.T) {
 		t.Fatal("aucune règle lue : la garde ne mesure rien")
 	}
 	t.Logf("%d fichier(s) de règles vérifié(s)", lues)
+}
+
+// codeSansCommentaires retire les commentaires Rego avant de chercher un accès.
+//
+// La garde cherchait le MOT dans tout le fichier, commentaires compris. Elle a donc
+// rougi sur une règle dont le commentaire expliquait qu'elle ne lit PAS la
+// provenance — et l'incitation qui en découle est mauvaise : pour rester vert, un
+// auteur devrait éviter de nommer l'invariant qu'il respecte, donc renoncer à
+// l'expliquer là où il compte.
+//
+// Retirer les commentaires RESSERRE la garde plutôt que de la relâcher : un
+// commentaire ne lit rien, et tout accès réel reste dans le code. Rego commente du
+// `#` à la fin de ligne, et il n'y a pas de forme block, donc la coupe est exacte.
+func codeSansCommentaires(src string) string {
+	var b strings.Builder
+	for _, ligne := range strings.Split(src, "\n") {
+		if i := strings.Index(ligne, "#"); i >= 0 {
+			ligne = ligne[:i]
+		}
+		b.WriteString(ligne)
+		b.WriteByte('\n')
+	}
+	return b.String()
+}
+
+// TestTheProvenanceGuardStillCatchesARealAccess : une garde assouplie doit prouver
+// qu'elle mord encore. Celle-ci ignore désormais les commentaires ; si elle ignorait
+// aussi le code, elle passerait en ne mesurant rien.
+func TestTheProvenanceGuardStillCatchesARealAccess(t *testing.T) {
+	hostile := "package pepin.rules\n\n# ceci ne lit pas la provenance\ndeny contains x if {\n\tsome r in input.resources\n\tr.provenance.description.observed\n\tx := 1\n}\n"
+	if !strings.Contains(codeSansCommentaires(hostile), "provenance") {
+		t.Error("la garde ne verrait plus un accès RÉEL à la provenance")
+	}
+	commentaire := "package pepin.rules\n\n# la provenance ne se lit pas ici, et c'est le sujet\ndeny contains x if { x := 1 }\n"
+	if strings.Contains(codeSansCommentaires(commentaire), "provenance") {
+		t.Error("la garde rougit encore sur un simple commentaire")
+	}
 }
