@@ -233,6 +233,20 @@ belongs in `git log`.
 
 ### Added
 
+- **The fuzzing corpus survives a campaign.** Interesting entries accumulated in
+  `GOCACHE`, which disappears with the machine — and a CI runner always starts cold.
+  Measured here: 125 interesting entries in twenty-five seconds against two versioned
+  seeds, so every campaign restarted from two and re-walked the ground the previous one
+  had already covered. That is lost *work*, repeated every run. `mise run fuzz-promote`
+  promotes entries into the versioned corpus under three written rules: a deterministic
+  capped sample (a random one would make the diff unreadable and the result
+  irreproducible), a cap that bounds the **corpus** rather than the run (each seed is
+  replayed by every `go test`, so a corpus that swells is a permanent cost that swells
+  with it), and — the one that matters — **each candidate is run against the current
+  tree before it is accepted**. A seed that brings its target down is set aside and
+  named: it enters with the fix it motivates, never before. The campaign workflow now
+  keeps what it explored on every run, not only on failure, and prints the seed count it
+  started from.
 - **`iam_accesskey_rotated`: the rotation half of CLD-IAM-2, which nothing measured.**
   The requirement asks for long-lived keys "with an expiry AND a rotation". The expiry
   reads off a field; the rotation reads nowhere — it is deduced from the key's age,

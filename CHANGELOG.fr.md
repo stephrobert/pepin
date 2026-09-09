@@ -255,6 +255,21 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Le corpus de fuzzing survit à une campagne.** Les entrées intéressantes
+  s'accumulaient dans `GOCACHE`, qui disparaît avec la machine — et un runner de CI
+  démarre toujours à froid. Mesuré ici : 125 entrées intéressantes en vingt-cinq
+  secondes contre deux graines versionnées, si bien que chaque campagne repartait de
+  deux et refaisait le chemin que la précédente avait déjà parcouru. C'est du *travail*
+  perdu, à chaque exécution. `mise run fuzz-promote` promeut les entrées vers le corpus
+  versionné selon trois règles écrites : un échantillon plafonné DÉTERMINISTE (un tirage
+  au hasard rendrait le diff illisible et le résultat irreproductible), un plafond qui
+  borne le **corpus** et non l'exécution (chaque graine est rejouée par chaque
+  `go test`, donc un corpus qui enfle est un coût permanent qui enfle avec lui), et —
+  celle qui compte — **chaque candidate est éprouvée contre l'arbre courant avant d'être
+  acceptée**. Une graine qui fait tomber sa cible est écartée et nommée : elle entre avec
+  la correction qu'elle motive, jamais avant. Le workflow de campagne conserve désormais
+  ce qu'il a exploré à chaque exécution, pas seulement à l'échec, et imprime le nombre de
+  graines dont il est parti.
 - **`iam_accesskey_rotated` : la moitié « rotation » de CLD-IAM-2, que rien ne
   mesurait.** L'exigence demande des clés longue durée « assorties d'une expiration ET
   d'une rotation ». L'expiration se lit sur un champ ; la rotation ne se lit nulle part —

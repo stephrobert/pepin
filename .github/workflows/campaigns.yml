@@ -48,6 +48,12 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Corpus de départ
+        run: |
+          for d in internal/tfparse/testdata/fuzz/FuzzParsePlan cmd/testdata/fuzz/FuzzInventoryWalk; do
+            echo "$d : $(find "$d" -type f | wc -l) graine(s) versionnée(s)"
+          done
+
       - name: Campagne de fuzzing
         env:
           FUZZTIME: ${{ github.event.inputs.fuzztime || '10m' }}
@@ -55,14 +61,32 @@ jobs:
           go test ./internal/tfparse/ -run '^$' -fuzz 'FuzzParsePlan'    -fuzztime="$FUZZTIME"
           go test ./cmd/            -run '^$' -fuzz 'FuzzInventoryWalk' -fuzztime="$FUZZTIME"
 
-      # Une trouvaille est un fichier écrit par Go. Sans cette étape, elle
-      # disparaît avec le runner et la campagne n'aurait servi à rien.
-      - name: Conserver l'entrée qui a fait tomber une cible
-        if: failure()
+      # Les trouvailles d'une campagne vivent dans GOCACHE, qui disparaît avec le
+      # runner. Mesuré sur ce dépôt : 125 entrées intéressantes en vingt-cinq
+      # secondes, deux graines versionnées — chaque campagne repartait donc de deux
+      # graines et refaisait le chemin de la précédente. On les conserve TOUJOURS,
+      # pas seulement à l'échec : une campagne qui passe a exploré, et cette
+      # exploration est le travail qu'on perdait.
+      #
+      # Conserver n'est pas promouvoir. Ce que le corpus VERSIONNÉ accepte se décide
+      # par `mise run fuzz-promote`, qui éprouve chaque graine avant de l'accepter —
+      # parce qu'une graine qui fait tomber sa cible rendrait `main` rouge, et
+      # qu'elle doit entrer avec la correction qu'elle motive, jamais avant.
+      - name: Conserver ce que la campagne a exploré
+        if: always()
+        run: |
+          cache="$(go env GOCACHE)/fuzz"
+          mkdir -p /tmp/fuzz-cache
+          [ -d "$cache" ] && cp -r "$cache/." /tmp/fuzz-cache/ || true
+          find /tmp/fuzz-cache -type f | wc -l | xargs echo "entrées conservées :"
+
+      - name: Publier le corpus exploré
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: fuzz-corpus
           path: |
+            /tmp/fuzz-cache/
             internal/tfparse/testdata/fuzz/
             cmd/testdata/fuzz/
           if-no-files-found: ignore
