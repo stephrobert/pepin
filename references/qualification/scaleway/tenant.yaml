@@ -26,6 +26,15 @@ name_prefix: pepin-qual-
 # contrainte flottante (issue scaleway/terraform-provider-scaleway#4338).
 provider_version: "2.82.0"
 
+# Outil requis par le chemin de SECOURS du nettoyage (jamais par la preuve, qui
+# passe par l'API) : le runner refuse de démarrer sans lui.
+required_tools: [scw]
+
+# Les `-var` de la stack APPLIQUÉE (le plan complet n'en reçoit aucun) : ce qui n'est
+# lu que sur un plan reste hors du compte réel — cf. variables.tf.
+applied_vars:
+  terraform_only_resources: false
+
 # Budget mur : au-delà, la porte dit NO-GO même si tout le reste est vert. Mesuré
 # (apply ≈ 3,5 min pour 27 ressources, attente de l'échéance de la clé ≈ 1 min,
 # scans + bundle ≈ 1 min, destroy ≈ 1 min) avec de la marge.

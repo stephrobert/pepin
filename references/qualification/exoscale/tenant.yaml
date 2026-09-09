@@ -1,0 +1,48 @@
+# Tenant de QUALIFICATION Exoscale — métadonnées lues par tools/qualification/qualify.py.
+#
+# PLAN SEUL : aucun compte Exoscale n'est disponible. Ce tenant épingle la source
+# Terraform — ce que `pepin scan exoscale --terraform` rend sur son plan —, ce qui a
+# déjà de la valeur (c'est le chemin qu'un utilisateur emploie sans compte, ADR-0012).
+# La moitié live (apply, scan --live, bundle, destroy, preuve de destruction)
+# attend un compte ; `mise run qualify` sur ce tenant est REFUSÉ tant que
+# `live: unavailable` est là.
+provider: exoscale
+title: "Tenant de qualification Exoscale : une faute par ressource, source Terraform seulement (pas de compte)"
+title_en: "Exoscale qualification tenant: one fault per resource, Terraform source only (no account)"
+
+live: unavailable
+live_reason: "Aucun compte Exoscale disponible (2026-09-09). La moitié live n'est ni construite ni prouvée : hooks.py refuse identity/inventory/cleanup."
+
+region: de-fra-1
+zone: de-fra-1
+
+tag: pepin-qual
+name_prefix: pepin-qual-
+
+provider_version: "0.71.0"
+
+applied_vars:
+  terraform_only_resources: false
+
+budget_minutes: 5
+
+resources:
+  plan:
+    - { family: security_groups, count: 9, note: "ssh/rdp/db/snmp/any/quartet/egress_any ⇒ 6 contrôles réseau ; undocumented_flow ⇒ CLD-NET-5 (matrice des flux) ; hardened = contre-exemple" }
+    - { family: private_networks, count: 2, note: "undocumented ⇒ CLD-NET-5 ; documented = contre-exemple" }
+    - { family: instances, count: 4, note: "untagged ⇒ CLD-GVN-1 ; secrets ⇒ CLD-CMP-9 ; swiss (ch-gva-2) ⇒ CLD-GVN-3 mineur ; hardened = contre-exemple" }
+    - { family: block_volumes, count: 1, note: "chiffré par construction (CLD-CHF-2 pass) ; CLD-STO-3 attend le live" }
+    - { family: sks_clusters, count: 2, note: "weak (starter, sans auto-upgrade, sans audit) ⇒ CLD-K8S-2, CLD-K8S-3, CLD-LOG-1 ; strong = contre-exemple" }
+    - { family: iam_roles, count: 4, note: "admin ⇒ iam_role_no_admin_privileges ; no_source_ip ⇒ iam_role_source_ip_restricted ; unbounded ⇒ iam_role_key_lifetime_bounded ; restricted = contre-exemple" }
+
+not_exercised:
+  - control: compute_instance_public_ip_with_open_securitygroup
+    reason: "L'IP publique d'une instance est calculée à l'apply : le plan ne peut pas conclure. Attend la moitié live."
+  - control: blockstorage_volume_snapshots_exist
+    reason: "L'état d'usage d'un volume (attached) est calculé à l'apply. Attend la moitié live."
+  - control: objectstorage_bucket_*
+    reason: "Le provider exoscale/exoscale n'a pas de ressource de bucket SOS (seulement exoscale_sos_bucket_policy) : les buckets seront créés par un crochet `extra`, comme chez Outscale, quand un compte existera."
+  - control: iam_user_mfa_enabled
+    reason: "Les utilisateurs IAM ne sont pas des ressources Terraform, et ce sont des personnes réelles de l'organisation."
+  - control: governance_provider_sovereignty
+    reason: "Écart par construction des faits du descripteur (siège en Suisse, contrôle capitalistique extra-UE) : épinglé fail, ce n'est pas le tenant qui le construit."

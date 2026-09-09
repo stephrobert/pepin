@@ -1,0 +1,168 @@
+# Ce que Pépin DOIT rendre sur le tenant de qualification Exoscale — source
+# TERRAFORM seulement : aucun compte, donc aucune source live (tenant.yaml
+# `live: unavailable`). Lu par tools/qualification/qualify.py en `--plan-only`.
+#
+# Sujets : adresse de la ressource quand l'identifiant n'est pas connu au stade du
+# plan (ADR-0022), nom sinon. Le compte n'est pas épinglé : il n'y en a pas — le
+# jour où il y en aura un, `account:` nommera sa variable d'environnement, et le
+# runner refusera de tourner sans elle.
+account: {}
+
+exit_codes:
+  terraform: 1
+
+controls:
+  # ── IAM : rôles (politique lue sur le plan) ───────────────────────────────────
+  iam_role_no_admin_privileges:
+    terraform:
+      fail: [pepin-qual-role-admin]
+      silent: [pepin-qual-role-restricted, pepin-qual-role-no-source-ip]
+
+  iam_role_source_ip_restricted:
+    terraform:
+      fail: [pepin-qual-role-no-source-ip]
+      silent: [pepin-qual-role-restricted, pepin-qual-role-admin]
+
+  iam_role_key_lifetime_bounded:
+    terraform:
+      fail: [pepin-qual-role-unbounded]
+      silent: [pepin-qual-role-restricted, pepin-qual-role-admin]
+
+  iam_user_mfa_enabled:
+    # Les utilisateurs ne sont pas des ressources Terraform.
+    terraform: not-evaluated
+
+  # ── Groupes de sécurité ───────────────────────────────────────────────────────
+  # Sujet = adresse du groupe (les règles y désignent leur groupe par référence).
+  network_securitygroup_allow_ingress_from_internet_to_tcp_port_22:
+    terraform:
+      fail: [exoscale_security_group.ssh_open, exoscale_security_group.any_open, exoscale_security_group.quartet]
+      silent: [exoscale_security_group.hardened, exoscale_security_group.rdp_open, exoscale_security_group.undocumented_flow]
+
+  network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389:
+    terraform:
+      fail: [exoscale_security_group.rdp_open, exoscale_security_group.any_open]
+      silent: [exoscale_security_group.hardened, exoscale_security_group.ssh_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports:
+    terraform:
+      fail: [exoscale_security_group.db_open, exoscale_security_group.any_open]
+      silent: [exoscale_security_group.hardened, exoscale_security_group.ssh_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports:
+    terraform:
+      fail: [exoscale_security_group.snmp_open, exoscale_security_group.any_open]
+      silent: [exoscale_security_group.hardened, exoscale_security_group.db_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_all_ports:
+    # NON CONSTRUCTIBLE chez Exoscale : une règle n'a pas de protocole « tout »
+    # (tcp, udp, icmp, icmpv6, ah, esp, gre, ipip), et la règle commune exige
+    # `protocol == all`. `any_open` ouvre tout TCP et tout UDP : les quatre autres
+    # contrôles d'entrée parlent, celui-ci ne peut pas. Un pass par absence, donc —
+    # issue #202 (ce contrôle est actif pour Exoscale au référentiel, et la matrice
+    # de couverture le dit ✅).
+    terraform: pass
+
+  network_securitygroup_unrestricted_egress:
+    # Même limite, même raison : `protocol == all` n'existe pas chez Exoscale (#202).
+    terraform: pass
+
+  network_flow_matrix_documented:
+    # DÉFAUT CONNU, épinglé tel que mesuré : la règle `undocumented_flow` n'a pas de
+    # description, et le contrôle rend PASS. Sur un plan, une description absente
+    # est « connue après apply » (computed) : l'attribut n'est pas projeté, la garde
+    # de capacité se tait — et l'assessment conclut « conforme » alors qu'une règle
+    # du type n'a pas l'attribut décisif. C'est le faux vert que l'intersection de
+    # l'ADR-0006 (#102) existe pour empêcher. Issue #201.
+    terraform:
+      status: pass
+      known_defect: "#201 — faux vert sur le plan : la règle sans description est invisible (secours de provenance), le contrôle conclut pass"
+
+  # ── Réseau ────────────────────────────────────────────────────────────────────
+  network_documented:
+    terraform:
+      fail: [pepin-qual-pn-undocumented]
+      silent: [pepin-qual-pn-documented]
+
+  # ── Calcul ────────────────────────────────────────────────────────────────────
+  compute_instance_public_ip_with_open_securitygroup:
+    # L'IP publique est calculée à l'apply : attend la moitié live.
+    terraform: not-evaluated
+
+  compute_instance_has_security_group:
+    terraform: pass
+
+  compute_instance_no_secrets_in_user_data:
+    terraform:
+      fail: [exoscale_compute_instance.secrets]
+      silent: [exoscale_compute_instance.hardened, exoscale_compute_instance.untagged]
+
+  # ── Stockage ──────────────────────────────────────────────────────────────────
+  blockstorage_volume_encryption:
+    # Chiffré par construction (mapping `encrypted: true`).
+    terraform: pass
+
+  blockstorage_volume_snapshots_exist:
+    # L'état d'usage est calculé à l'apply : attend la moitié live.
+    terraform: not-evaluated
+
+  blockstorage_snapshot_not_public:
+    terraform: not-applicable
+
+  objectstorage_bucket_public_access:
+    # Pas de ressource de bucket dans le provider : crochet `extra` à écrire avec le compte.
+    terraform: not-evaluated
+
+  objectstorage_bucket_versioning_enabled:
+    terraform: not-evaluated
+
+  objectstorage_bucket_object_lock_enabled:
+    terraform: not-evaluated
+
+  objectstorage_bucket_kms_encryption:
+    terraform: not-applicable
+
+  # ── SKS ───────────────────────────────────────────────────────────────────────
+  kubernetes_cluster_control_plane_highly_available:
+    terraform:
+      fail: [pepin-qual-sks-weak]
+      silent: [pepin-qual-sks-strong]
+
+  kubernetes_cluster_auto_upgrade_enabled:
+    terraform:
+      fail: [pepin-qual-sks-weak]
+      silent: [pepin-qual-sks-strong]
+
+  kubernetes_cluster_audit_logging_enabled:
+    terraform:
+      fail: [pepin-qual-sks-weak]
+      silent: [pepin-qual-sks-strong]
+
+  # ── Répartiteurs de charge : absents de l'API Exoscale (contrat) ──────────────
+  loadbalancer_ssl_listeners:
+    terraform: not-applicable
+
+  loadbalancer_logging_enabled:
+    terraform: not-applicable
+
+  loadbalancer_http_redirect_to_https:
+    terraform: not-applicable
+
+  # ── Gouvernance ───────────────────────────────────────────────────────────────
+  governance_resource_required_tags:
+    terraform:
+      fail: [pepin-qual-vm-untagged]
+      silent: [pepin-qual-vm-hardened, pepin-qual-vm-secrets]
+
+  governance_resource_region_in_eu:
+    # ch-gva-2 : hors UE, espace européen de confiance — l'écart MINEUR (low), le
+    # seul constructible ici. de-fra-1 est l'UE.
+    terraform:
+      fail: [pepin-qual-vm-swiss]
+      silent: [pepin-qual-vm-hardened]
+
+  governance_provider_sovereignty:
+    # Écart par construction des faits du descripteur (siège en Suisse, contrôle
+    # capitalistique extra-UE) : le sujet est le fournisseur lui-même.
+    terraform:
+      fail: [exoscale]

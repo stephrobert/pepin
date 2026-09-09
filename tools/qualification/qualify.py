@@ -158,8 +158,14 @@ def compare(expected, results, source, exit_code, outputs, prefix, owned=None):
         # Il est dit à chaque run, pour ne jamais passer pour une attente ordinaire.
         if isinstance(want, dict) and want.get("known_defect"):
             v.info(f"[{source}] {code} : épinglé comme DÉFAUT CONNU — {want['known_defect']}")
-        tenant_fails = [r for r in got if r["status"] == "fail" and tenant_subject(r.get("subject", ""), prefix, owned)]
-        foreign_fails = [r for r in got if r["status"] == "fail" and not tenant_subject(r.get("subject", ""), prefix, owned)]
+        # Un sujet que l'attente NOMME est du tenant, même sans préfixe : le
+        # fournisseur lui-même, sujet du contrôle de souveraineté, en est le cas.
+        named = set()
+        if isinstance(want, dict):
+            for key in ("fail", "silent", "inconclusive"):
+                named |= {resolve_subject(s, outputs) for s in (want.get(key) or [])} - {None}
+        tenant_fails = [r for r in got if r["status"] == "fail" and (tenant_subject(r.get("subject", ""), prefix, owned) or r.get("subject", "") in named)]
+        foreign_fails = [r for r in got if r["status"] == "fail" and r not in tenant_fails]
         for r in foreign_fails:
             v.info(f"[{source}] {code} : écart HORS tenant sur « {r.get('subject')} » (non gardé)")
 
@@ -210,7 +216,24 @@ def compare(expected, results, source, exit_code, outputs, prefix, owned=None):
         for s in want_silent:
             if s in failing:
                 v.problem(f"[{source}] {code} : le CONTRE-EXEMPLE « {s} » parle — la règle ne discrimine pas")
-        others = {r["status"] for r in got if r["status"] != "fail"}
+        # `inconclusive:` — les sujets du tenant sur lesquels la règle DIT ne pas savoir
+        # conclure (ADR-0015 : un finding inconcluant devient un not-evaluated à sujet).
+        # Chacun doit être là, et aucun autre sujet du tenant ne doit l'être.
+        want_inc = []
+        for s in want.get("inconclusive") or []:
+            r = resolve_subject(s, outputs)
+            if r is None:
+                v.problem(f"[{source}] {code} : sujet irrésoluble {s} (sortie Terraform absente)")
+            else:
+                want_inc.append(r)
+        inconclusive = {r.get("subject", "") for r in got
+                        if r["status"] == "not-evaluated" and tenant_subject(r.get("subject", ""), prefix, owned)}
+        for s in want_inc:
+            if s not in inconclusive:
+                v.problem(f"[{source}] {code} : attendu « ne sait pas conclure » sur « {s} », rien d'inconcluant")
+        for s in sorted(inconclusive - set(want_inc)):
+            v.problem(f"[{source}] {code} : « ne sait pas conclure » sur « {s} », que rien n'attend")
+        others = {r["status"] for r in got if r["status"] != "fail" and r.get("subject", "") not in inconclusive}
         if others and not tenant_fails and not foreign_fails:
             v.problem(f"[{source}] {code} : attendu des écarts, obtenu {published_status(got)}")
     return v
@@ -262,6 +285,7 @@ class Run:
         self.t0 = time.time()
         self.applied = False
         self.destroyed = False
+        self.wait_until = None
         self.tenant = yaml.safe_load((self.tenant_dir / "tenant.yaml").read_text())
         self.expected = yaml.safe_load((self.tenant_dir / "expected.yaml").read_text())
         self.outputs = {}
@@ -302,9 +326,18 @@ class Run:
 
     # ─── étapes ────────────────────────────────────────────────────────────
     def preflight(self):
-        for tool in ("terraform", "go", "scw"):
+        # Un tenant dont tenant.yaml dit `live: unavailable` n'a pas de compte : il
+        # s'éprouve en plan seul, et un run réel est REFUSÉ — il n'y aurait ni
+        # identité à confronter ni preuve de destruction possible.
+        self.no_account = str(self.tenant.get("live", "")).lower() == "unavailable"
+        if self.no_account and not self.plan_only:
+            raise StageFailed("REFUS : tenant.yaml déclare `live: unavailable` (aucun compte) — seul `--plan-only` est possible")
+        for tool in ("terraform", "go"):
             if not shutil.which(tool):
-                raise StageFailed(f"{tool} absent du PATH ({'chemin de secours du nettoyage' if tool == 'scw' else 'requis'})")
+                raise StageFailed(f"{tool} absent du PATH (requis)")
+        for tool in self.tenant.get("required_tools") or []:
+            if not shutil.which(tool):
+                raise StageFailed(f"{tool} absent du PATH (tenant.yaml `required_tools` : chemin de secours du nettoyage)")
         lock = self.tenant_dir / ".terraform.lock.hcl"
         want = str(self.tenant["provider_version"])
         if not lock.exists() or f'version     = "{want}"' not in lock.read_text() and f'version = "{want}"' not in lock.read_text():
@@ -315,26 +348,41 @@ class Run:
         return f"pepin {ver} · terraform {tf} · provider {want}"
 
     def identity(self):
+        """Le compte que les identifiants natifs ouvrent, demandé à l'API par le crochet
+        du tenant, confronté champ par champ à ce que l'environnement attend. Les champs
+        sont ceux qu'`expected.yaml` nomme (`organization_id`/`project_id` chez Scaleway,
+        `account_id` chez Outscale…) : le runner n'en connaît aucun par avance."""
+        if self.no_account:
+            (self.run_dir / "identity.json").write_text("{}")
+            return "sauté : aucun compte (tenant.yaml `live: unavailable`), plan seul"
         who = self.hook("identity")
+        (self.run_dir / "identity.json").write_text(json.dumps(who, indent=2, sort_keys=True))
         acct = self.compte_attendu()
-        if who["project_id"] != acct["project_id"] or who["organization_id"] != acct["organization_id"]:
-            raise StageFailed(
-                "REFUS : les identifiants natifs désignent le projet "
-                f"{who['project_id']} (org {who['organization_id']}), et le compte attendu est "
-                f"{acct['project_id']} (org {acct['organization_id']}). Rien n'a été appliqué.")
-        self.env["TF_VAR_project_id"] = acct["project_id"]
-        self.env["TF_VAR_organization_id"] = acct["organization_id"]
-        now = dt.datetime.now(dt.timezone.utc)
-        rfc = "%Y-%m-%dT%H:%M:%SZ"
-        self.env["TF_VAR_key_expires_at"] = (now + dt.timedelta(days=2)).strftime(rfc)
-        # La clé « expirée » : une échéance que l'apply précède et que le scan suit —
-        # le runner attend qu'elle soit passée. En mode plan seul, rien n'est appliqué
-        # et le scan du plan a lieu tout de suite : l'échéance est posée dans le passé.
-        self.key_expired_at = now + (dt.timedelta(minutes=3) if not self.plan_only else -dt.timedelta(minutes=1))
-        self.env["TF_VAR_key_expired_at"] = self.key_expired_at.strftime(rfc)
-        self.env["TF_VAR_bucket_policy_principal"] = who["principal"]
-        self.env["TF_VAR_rdb_password"] = secrets.token_urlsafe(24) + "Aa1!"
-        return f"compte confirmé par l'API : projet « {who.get('project_name')} » {who['project_id']} (porteur : {who['bearer']})"
+        for champ, attendu in acct.items():
+            observe = str(who.get(champ, ""))
+            if observe != attendu:
+                raise StageFailed(
+                    f"REFUS : les identifiants natifs désignent {champ}={observe or '?'}, et le "
+                    f"compte attendu est {champ}={attendu}. Rien n'a été appliqué.")
+            self.env[f"TF_VAR_{champ}"] = attendu
+        return "compte confirmé par l'API : " + ", ".join(f"{k}={v}" for k, v in acct.items()) \
+            + (f" ({who['label']})" if who.get("label") else "")
+
+    def variables(self):
+        """Les variables PROPRES au tenant (échéances, secrets jetables, principaux…),
+        calculées par son crochet `variables` et passées à Terraform par
+        l'environnement. Le crochet peut aussi demander une ATTENTE avant le scan
+        (`wait_until`, RFC 3339) : une clé qui doit être expirée au moment du scan,
+        par exemple. Rien de tout cela n'est écrit ni journalisé."""
+        got = self.hook("variables", "--plan-only" if self.plan_only else "--live", str(self.run_dir / "identity.json"))
+        for k, v in (got.get("tf_vars") or {}).items():
+            self.env[f"TF_VAR_{k}"] = str(v)
+        for k, v in (got.get("env") or {}).items():
+            self.env[k] = str(v)
+        self.wait_until = None
+        if got.get("wait_until"):
+            self.wait_until = dt.datetime.fromisoformat(got["wait_until"].replace("Z", "+00:00"))
+        return got.get("note") or f"{len(got.get('tf_vars') or {})} variable(s) posée(s)"
 
     def compte_attendu(self):
         """Le compte sur lequel la porte accepte de tourner, lu dans l'ENVIRONNEMENT.
@@ -350,14 +398,13 @@ class Run:
         appliquer un tenant délibérément fautif sur un compte non confirmé est
         exactement ce que cette étape existe pour empêcher.
         """
-        acct = self.expected["account"]
+        acct = self.expected.get("account") or {}
         out = {}
-        for champ in ("organization_id", "project_id"):
-            var = acct.get(f"{champ}_env")
-            if not var:
-                raise StageFailed(
-                    f"expected.yaml ne nomme pas la variable qui fournit {champ} "
-                    f"(clé attendue : {champ}_env)")
+        champs = [k[:-4] for k in acct if k.endswith("_env")]
+        if not champs:
+            raise StageFailed("expected.yaml ne nomme aucune variable de compte (clés `<champ>_env`)")
+        for champ in champs:
+            var = acct[f"{champ}_env"]
             val = os.environ.get(var, "").strip()
             if not val:
                 raise StageFailed(
@@ -368,6 +415,8 @@ class Run:
         return out
 
     def snapshot_before(self):
+        if self.no_account:
+            return "sauté : aucun compte, rien à inventorier"
         inv = self.hook("inventory", str(self.tenant_dir / "tenant.yaml"))
         (self.run_dir / "inventory-before.json").write_text(json.dumps(inv, indent=2, sort_keys=True))
         owned = {f: v["tenant"] for f, v in inv.items() if v["tenant"]}
@@ -379,7 +428,10 @@ class Run:
 
     def plan(self):
         state = self.run_dir / "terraform.tfstate"
-        self.sh(["terraform", "init", "-input=false", "-lockfile=readonly",
+        # `-reconfigure` : le backend local pointe vers le dossier du run ; un init
+        # précédent (à la main, dans le dossier du tenant) aurait laissé une autre
+        # configuration, et Terraform refuserait de la changer sans le dire.
+        self.sh(["terraform", "init", "-input=false", "-lockfile=readonly", "-reconfigure",
                  f"-backend-config=path={state}"], log="terraform-init.log")
         self.sh(["terraform", "validate"])
 
@@ -405,9 +457,19 @@ class Run:
                 self.outputs[name] = o["value"]
         note = f"plan complet : {sum(self.counts.values())} ressources (" + ", ".join(f"{t}×{n}" for t, n in sorted(self.counts.items())) + ")"
         if not self.plan_only:
-            _, self.counts_applied = one("applied", ["-var", "terraform_only_resources=false"], "tfplan.bin", "plan-applied.json")
+            _, self.counts_applied = one("applied", self.applied_vars(), "tfplan.bin", "plan-applied.json")
             note += f" ; plan appliqué : {sum(self.counts_applied.values())} ressources"
         return note
+
+    def applied_vars(self, extra=None):
+        """Les `-var` de la stack APPLIQUÉE (tenant.yaml `applied_vars`), plus ceux
+        d'une étape (pré-destroy). Le plan complet, lui, n'en reçoit aucun."""
+        vals = dict(self.tenant.get("applied_vars") or {})
+        vals.update(extra or {})
+        out = []
+        for k, v in vals.items():
+            out += ["-var", f"{k}={json.dumps(v) if isinstance(v, bool) else v}"]
+        return out
 
     def apply(self):
         self.applied = True  # dès qu'on tente : un apply à moitié fait se détruit aussi
@@ -418,19 +480,40 @@ class Run:
         (self.run_dir / "outputs.json").write_text(json.dumps(self.outputs, indent=2, sort_keys=True))
         return f"{len(self.outputs)} sorties capturées"
 
+    def extra_apply(self):
+        """Ce que Terraform ne sait pas exprimer chez ce fournisseur (un bucket OOS, une
+        politique EIM inline…), créé par le crochet `extra` du tenant, APRÈS l'apply et
+        à partir de ses sorties. Le crochet rend la liste de ce qu'il a créé ; la preuve
+        de destruction le relit comme le reste."""
+        self.extra_applied = True
+        got = self.hook("extra", "apply", str(self.run_dir / "outputs.json"))
+        created = got.get("created") or []
+        (self.run_dir / "extra.json").write_text(json.dumps(got, indent=2, sort_keys=True))
+        return f"{len(created)} ressource(s) hors Terraform" + (" : " + ", ".join(created[:8]) if created else "")
+
+    def extra_destroy(self):
+        got = self.hook("extra", "destroy", str(self.run_dir / "outputs.json"))
+        left = got.get("left") or []
+        if left:
+            raise StageFailed("le crochet n'a pas pu supprimer : " + ", ".join(left))
+        return f"{len(got.get('deleted') or [])} ressource(s) hors Terraform supprimée(s)"
+
     def scan(self, args, out, log):
         r = self.sh([str(self.pepin), "scan", self.provider, *args], cwd=ROOT, check=False)
         (self.run_dir / out).write_text(r.stdout)
         (self.run_dir / log).write_text(r.stderr)
         return r.returncode
 
-    def wait_for_expiry(self):
-        """La clé « expirée » doit l'être AVANT le scan : on attend l'échéance, plus une marge."""
-        target = self.key_expired_at + dt.timedelta(seconds=20)
+    def wait_for(self):
+        """Ce que le crochet `variables` a demandé d'attendre avant de scanner (une
+        échéance de clé, par exemple), plus une marge."""
+        if not self.wait_until:
+            return "rien à attendre"
+        target = self.wait_until + dt.timedelta(seconds=20)
         delay = (target - dt.datetime.now(dt.timezone.utc)).total_seconds()
         if delay > 0:
             time.sleep(delay)
-        return f"échéance {self.key_expired_at.strftime('%H:%M:%SZ')} passée" + (f" (attente {round(delay)}s)" if delay > 0 else "")
+        return f"échéance {self.wait_until.strftime('%H:%M:%SZ')} passée" + (f" (attente {round(delay)}s)" if delay > 0 else "")
 
     def scan_live(self):
         region = self.tenant["region"]
@@ -472,13 +555,21 @@ class Run:
     def destroy(self):
         if not self.applied:
             return "rien n'a été appliqué"
-        r = self.sh(["terraform", "destroy", "-input=false", "-auto-approve"], check=False, log="terraform-destroy.log")
-        note = f"terraform destroy rc={r.returncode}"
+        note = ""
+        # Ce qu'il faut DÉFAIRE avant de détruire : une protection contre la suppression
+        # (Outscale refuse de supprimer une VM protégée, provider #88) se lève par un
+        # apply, jamais par le destroy. tenant.yaml le déclare (`pre_destroy_vars`).
+        pre = self.tenant.get("pre_destroy_vars") or {}
+        if pre:
+            r0 = self.sh(["terraform", "apply", "-input=false", "-auto-approve", *self.applied_vars(pre)], check=False, log="terraform-pre-destroy.log")
+            note += f"pré-destroy ({', '.join(f'{k}={v}' for k, v in pre.items())}) rc={r0.returncode} ; "
+        r = self.sh(["terraform", "destroy", "-input=false", "-auto-approve", *self.applied_vars(pre)], check=False, log="terraform-destroy.log")
+        note += f"terraform destroy rc={r.returncode}"
         if r.returncode != 0:
             print("  ✘ destroy en échec : nettoyage de secours par l'API, puis second destroy")
             rescue = subprocess.run([sys.executable, str(self.tenant_dir / "hooks.py"), "cleanup",
                                      str(self.tenant_dir / "tenant.yaml")], cwd=ROOT, env=self.env)
-            r2 = self.sh(["terraform", "destroy", "-input=false", "-auto-approve", "-refresh=true"], check=False, log="terraform-destroy-2.log")
+            r2 = self.sh(["terraform", "destroy", "-input=false", "-auto-approve", "-refresh=true", *self.applied_vars(pre)], check=False, log="terraform-destroy-2.log")
             note += f" ; cleanup rc={rescue.returncode} ; second destroy rc={r2.returncode}"
         left = self.sh(["terraform", "state", "list"], check=False).stdout.strip().splitlines()
         self.destroy_finished = time.time()
@@ -494,22 +585,51 @@ class Run:
         return note + f" ; état vide ; {purged} fichier(s) d'état purgé(s)"
 
     def leftovers(self):
-        inv = self.hook("inventory", str(self.tenant_dir / "tenant.yaml"))
-        (self.run_dir / "inventory-after.json").write_text(json.dumps(inv, indent=2, sort_keys=True))
         before = json.loads((self.run_dir / "inventory-before.json").read_text())
-        owned = {f: v["tenant"] for f, v in inv.items() if v["tenant"]}
-        delta = {}
-        for f, v in inv.items():
-            new = sorted(set(v["all"]) - set(before.get(f, {}).get("all", [])))
-            if new:
-                delta[f] = new
+
+        def measure():
+            inv = self.hook("inventory", str(self.tenant_dir / "tenant.yaml"))
+            owned = {f: v["tenant"] for f, v in inv.items() if v["tenant"]}
+            delta = {}
+            for f, v in inv.items():
+                new = sorted(set(v["all"]) - set(before.get(f, {}).get("all", [])))
+                if new:
+                    delta[f] = new
+            return inv, owned, delta
+
+        # Une suppression est ASYNCHRONE chez plus d'un fournisseur : mesuré chez Outscale,
+        # load balancers, volumes et snapshots restaient listés 26 s après un destroy
+        # réussi et « n'existaient plus » deux minutes plus tard. Le vide se constate
+        # donc en relisant, bornée : ce qui reste au bout du délai est un reste.
+        deadline = time.time() + (self.tenant.get("settle_seconds") or 240)
+        waited = 0
+        while True:
+            inv, owned, delta = measure()
+            if not owned and not delta or time.time() >= deadline:
+                break
+            time.sleep(20)
+            waited += 20
+        (self.run_dir / "inventory-after.json").write_text(json.dumps(inv, indent=2, sort_keys=True))
         self.leftover_report = {"tagged": owned, "delta": delta}
         if owned or delta:
+            # Un reste est un défaut du chemin de destruction, donc un NO-GO. Mais il
+            # coûte à l'heure : le crochet de nettoyage est tenté sur ce qui porte le tag
+            # ET sur ce qui est apparu pendant le run, puis le compte est relu.
+            (self.run_dir / "leftovers.json").write_text(json.dumps(self.leftover_report, indent=2, sort_keys=True))
+            rescue = subprocess.run([sys.executable, str(self.tenant_dir / "hooks.py"), "cleanup",
+                                     str(self.tenant_dir / "tenant.yaml"), str(self.run_dir / "leftovers.json")], cwd=ROOT, env=self.env)
+            after = self.hook("inventory", str(self.tenant_dir / "tenant.yaml"))
+            still = {f: v["tenant"] for f, v in after.items() if v["tenant"]}
+            still_delta = {f: sorted(set(v["all"]) - set(before.get(f, {}).get("all", []))) for f, v in after.items()}
+            still_delta = {f: v for f, v in still_delta.items() if v}
+            self.leftover_report["after_cleanup"] = {"tagged": still, "delta": still_delta, "cleanup_rc": rescue.returncode}
             raise StageFailed("RESTES après destroy — " + "; ".join(
                 [f"{f} (tag) : {[x['id'] for x in v]}" for f, v in owned.items()]
-                + [f"{f} (delta) : {v}" for f, v in delta.items()]))
+                + [f"{f} (delta) : {v}" for f, v in delta.items()])
+                + (" — nettoyage de secours : compte propre" if not still and not still_delta
+                   else f" — nettoyage de secours INCOMPLET : {still} {still_delta}"))
         families = sum(1 for _ in inv)
-        return f"{families} familles listées, aucune ressource du tenant, aucun delta avant/après"
+        return f"{families} familles listées, aucune ressource du tenant, aucun delta avant/après" + (f" (après {waited}s de suppressions asynchrones)" if waited else "")
 
     def compare_all(self):
         prefix = self.tenant["name_prefix"]
@@ -588,16 +708,20 @@ class Run:
         try:
             ok &= self.stage("préflight : outils, lockfile, binaire", self.preflight)
             ok = ok and self.stage("identité : le compte que les identifiants désignent", self.identity)
+            ok = ok and self.stage("variables du tenant", self.variables)
             ok = ok and self.stage("inventaire AVANT", self.snapshot_before)
             ok = ok and self.stage("plan", self.plan)
             if ok and not self.plan_only:
                 ok = ok and self.stage("apply", self.apply)
-                ok = ok and self.stage("attente de l'échéance de la clé expirée", self.wait_for_expiry)
+                ok = ok and self.stage("hors Terraform : ce que le crochet crée", self.extra_apply)
+                ok = ok and self.stage("attente demandée par le tenant", self.wait_for)
                 ok = ok and self.stage("scan --live, 5 formats, bundle scellé", self.scan_live)
                 ok = ok and self.stage("bundle : verify --re-derive, refus de l'altération", self.bundle)
             if ok:
                 ok = ok and self.stage("scan --terraform sur le même plan", self.scan_terraform)
         finally:
+            if getattr(self, "extra_applied", False):
+                ok = self.stage("hors Terraform : ce que le crochet supprime", self.extra_destroy) and ok
             if self.applied:
                 ok = self.stage("destroy", self.destroy) and ok
                 ok = self.stage("preuve de destruction : listing par famille + delta", self.leftovers) and ok
@@ -633,6 +757,7 @@ def selftest():
             "e_na": {"live": "not-applicable"},
             "f_absent": {"live": "absent"},
             "g_defect": {"live": {"fail": ["pepin-qual-vm-defect"], "known_defect": "#0 exemple"}},
+            "h_inc": {"live": {"fail": ["pepin-qual-vm-prod"], "inconclusive": ["pepin-qual-vm-noenv"]}},
         },
     }
     good = [
@@ -642,6 +767,8 @@ def selftest():
         {"control": "d_eval", "status": "fail", "subject": "someone@example.org"},
         {"control": "e_na", "status": "not-applicable", "subject": "scaleway"},
         {"control": "g_defect", "status": "fail", "subject": "pepin-qual-vm-defect"},
+        {"control": "h_inc", "status": "fail", "subject": "pepin-qual-vm-prod"},
+        {"control": "h_inc", "status": "not-evaluated", "subject": "pepin-qual-vm-noenv"},
     ]
 
     def mutate(fn):
@@ -664,6 +791,8 @@ def selftest():
         ("« evaluated » refuse un not-evaluated", expected, mutate(lambda r: r.__setitem__(3, {"control": "d_eval", "status": "not-evaluated", "subject": "scaleway"})), 1, False),
         ("« absent » refuse un contrôle qui apparaît", expected, good + [{"control": "f_absent", "status": "pass", "subject": "scaleway"}], 1, False),
         ("un défaut connu corrigé rend NO-GO (la correction se dit)", expected, mutate(lambda r: r.__setitem__(5, {"control": "g_defect", "status": "pass", "subject": "scaleway"})), 1, False),
+        ("un inconcluant attendu qui disparaît rend NO-GO", expected, mutate(lambda r: r.__setitem__(7, {"control": "h_inc", "status": "fail", "subject": "pepin-qual-vm-noenv"})), 1, False),
+        ("un inconcluant que rien n'attend rend NO-GO", expected, good + [{"control": "a_fail", "status": "not-evaluated", "subject": "pepin-qual-vm-x"}], 1, False),
     ]
     failures = 0
     for case in cases:
