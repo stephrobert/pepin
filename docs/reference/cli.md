@@ -337,6 +337,7 @@ Global Flags:
 Inspect the controls of the common reference
 
 Usage:
+  pepin control [flags]
   pepin control [command]
 
 Available Commands:

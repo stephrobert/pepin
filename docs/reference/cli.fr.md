@@ -338,6 +338,7 @@ Global Flags:
 Inspecter les contrôles du référentiel commun
 
 Usage:
+  pepin control [flags]
   pepin control [command]
 
 Available Commands:

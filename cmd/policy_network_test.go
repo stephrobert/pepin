@@ -119,3 +119,50 @@ func TestNoResultCarriesAnEmptyProof(t *testing.T) {
 		}
 	}
 }
+
+// TestAProviderMismatchIsRefused — l'issue #148, un faux vert P0.
+//
+// Scanner un inventaire Scaleway avec les règles Exoscale était accepté SANS UN MOT et
+// produisait six verdicts `pass`. Ces `pass` ne sont pas faux par accident : ils sont
+// vides de sens, les formes de ressources se recouvrant juste assez pour que des règles
+// s'évaluent et concluent. Le mode d'échec est silencieux et réaliste — une faute de
+// frappe dans un pipeline, un job copié-collé — et le rapport a l'air normal, avec un
+// code de sortie non nul qui suggère même que le scan a travaillé.
+//
+// La matrice CROISÉE est ce qui compte : chaque fixture lue par chaque AUTRE
+// fournisseur doit sortir en 2, et lue par le sien doit scanner normalement. Ne
+// vérifier qu'un seul couple laisserait passer une correction qui refuserait tout.
+func TestAProviderMismatchIsRefused(t *testing.T) {
+	fixtures := map[string]string{
+		"scaleway": "examples/scaleway/inventory.json",
+		"outscale": "examples/outscale/inventory.json",
+		"exoscale": "examples/exoscale/inventory.json",
+	}
+	bin := buildPepin(t)
+	var croises int
+	for propre, f := range fixtures {
+		if _, err := os.Stat(filepath.Join(repoRoot, f)); err != nil {
+			t.Fatalf("fixture %s absente : le test ne mesurerait rien", f)
+		}
+		for lu := range fixtures {
+			code := exitCodeOfArgs(t, bin, "scan", lu, f)
+			if lu == propre {
+				if code == exitErreur {
+					t.Errorf("%s lu par son PROPRE fournisseur rend %d : la correction refuse tout",
+						f, code)
+				}
+				continue
+			}
+			croises++
+			if code != exitErreur {
+				t.Errorf("%s (fournisseur %q) lu par %q rend %d, attendu %d.\n"+
+					"  Un jeu de règles rendrait des verdicts sur un inventaire qu'il n'a jamais eu\n"+
+					"  à lire : un « conforme » y serait vide de sens.", f, propre, lu, code, exitErreur)
+			}
+		}
+	}
+	if croises == 0 {
+		t.Fatal("aucun croisement éprouvé : la porte ne mesure rien")
+	}
+	t.Logf("%d croisement(s) fournisseur × inventaire refusé(s)", croises)
+}
