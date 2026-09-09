@@ -16,7 +16,7 @@ with no measurement behind it is a false green moved into a dashboard, and it is
 worse there than anywhere else: nobody re-reads a dashboard.
 
 The figures are therefore ugly, and that is the point. "58 controls" says nothing
-about the quality of a detection; "86 verdicts proven out of 461" says where the
+about the quality of a detection; "89 verdicts proven out of 461" says where the
 product stands, and shrinks the right way with every scenario written.
 
 ## The figures
@@ -25,9 +25,9 @@ product stands, and shrinks the right way with every scenario written.
 |---|---:|
 | Controls in the reference | 58 |
 | Control x provider x source paths on which Pépin concludes | 179 |
-| Paths whose EVERY reachable verdict is proven end to end | 25 |
+| Paths whose EVERY reachable verdict is proven end to end | 26 |
 | Verdicts to prove in total | 461 |
-| Verdicts proven | 86 |
+| Verdicts proven | 89 |
 
 ## Veracity coverage, by verdict
 
@@ -37,11 +37,11 @@ inventing a non-applicability.
 
 | Verdict | What it stages | To prove | Proven | % |
 |---|---|---:|---:|---:|
-| `fail` | a vulnerable configuration is detected | 141 | 22 | 15 |
-| `pass` | a genuinely correct configuration is confirmed | 141 | 34 | 24 |
-| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 157 | 19 | 12 |
+| `fail` | a vulnerable configuration is detected | 141 | 23 | 16 |
+| `pass` | a genuinely correct configuration is confirmed | 141 | 35 | 24 |
+| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 157 | 20 | 12 |
 | `not-applicable` | the provider's contract declares the mechanism non-existent | 22 | 11 | 50 |
-| **Total** | | **461** | **86** | **18** |
+| **Total** | | **461** | **89** | **19** |
 
 ## Validated live
 
@@ -84,8 +84,8 @@ in `internal/veracity/testdata/counterexamples-debt.txt`.
 | Figure | Count |
 |---|---:|
 | Active high/critical controls | 43 |
-| Of which a detection path is proven end to end | 19 |
-| Of which a legitimate counterexample is proven | 17 |
+| Of which a detection path is proven end to end | 20 |
+| Of which a legitimate counterexample is proven | 18 |
 | False positives measured on the counter-witnesses | 0 |
 
 There is no "false negatives" row, and its absence is the most honest figure on

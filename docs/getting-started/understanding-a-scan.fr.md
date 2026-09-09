@@ -129,7 +129,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
 
   Détail :
       HIGH  fr-par/11111111-1111-1111-1111-111111111111 — ACL autorisant un CIDR public (0.0.0.0/0) — service exposé à Internet.
-      HIGH  scaleway_instance_security_group.web — SSH (port 22) accepté depuis/vers Internet.
+      HIGH  scaleway_instance_security_group.web — SSH (port 22) accepté depuis Internet.
 
   Remédiation
     Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand disponible) ; retirer 0.0.0.0/0.

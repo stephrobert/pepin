@@ -180,11 +180,22 @@ collecte:
         security_group_name: _parent.SecurityGroupName
         protocol: IpProtocol
         cidrs: IpRanges
+        # Une règle entrante admet une source par CIDR (`IpRanges`) OU par GROUPE
+        # (`SecurityGroupsMembers`). Sans ce second champ, une règle sans CIDR est un
+        # trou : on ne sait pas si elle n'admet personne, ou si elle admet un groupe
+        # qu'on n'a pas lu. Le contrôle du SG « default » a besoin de la différence pour
+        # nommer ce qu'il a trouvé, et la DÉDUIRE d'une absence serait la fabrication que
+        # l'ADR-0014 refuse. Contrat : osc-sdk-go v2.24.0
+        # SecurityGroupRule.SecurityGroupsMembers []SecurityGroupsMember{SecurityGroupId}.
+        # Mappé sur l'ENTRANT seul : rien ne lit la contrepartie sortante, et le dépôt ne
+        # collecte pas un attribut que personne ne relit.
+        peer_security_group_ids: SecurityGroupsMembers
         port_from: FromPortRange
         port_to: ToPortRange
       transforms:
         protocol: [lower, { "-1": all, any: all, "": all, "1": icmp, "6": tcp, "17": udp }]
         cidrs: list
+        peer_security_group_ids: pluck:SecurityGroupId
     - type: security_group_rule
       path: /ReadSecurityGroups
       method: POST
@@ -576,7 +587,9 @@ contrat:
         port_from: FromPortRange (*int32)
         port_to: ToPortRange (*int32)
         cidrs: IpRanges (*[]string)
+        peer_security_group_ids: SecurityGroupsMembers (*[]SecurityGroupsMember) → pluck SecurityGroupId ; ENTRANT seulement
         security_group_id: SecurityGroupId
+        security_group_name: SecurityGroupName (du SG parent)
     compute_instance:
       etat: verifie
       source: Vm

@@ -43,7 +43,7 @@ séparément :
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
-| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v5** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v6** |
 <!-- /pepin:gen surface-versions -->
 
 Un numéro monte à **tout** changement de forme, ajout compris : il signifie « la surface a

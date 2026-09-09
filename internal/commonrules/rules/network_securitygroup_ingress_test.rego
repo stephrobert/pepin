@@ -140,3 +140,54 @@ test_provider_from_resource if {
 	f.code == _ssh
 	f.labels.provider == "scaleway"
 }
+
+# ── La confiance de la SORTIE n'est pas celle de l'ENTRÉE ──────────────────────
+
+# Une sortie ouverte est un chemin d'exfiltration réel, mais des architectures
+# défendables la laissent ouverte et filtrent en aval, sur un plan que le scan ne voit
+# pas. L'écart reste au rapport et dans la porte par défaut ; il cesse de casser une
+# chaîne `--gate security`, ce que la dimension de confiance existe pour permettre.
+test_egress_is_contextual_not_confirmed if {
+	some f in deny with input as _sgr({"direction": "outbound", "action": "accept", "protocol": "all", "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"})
+	f.code == _egr
+	f.labels.confidence == "contextual"
+}
+
+# LE CONTRE-EXEMPLE : l'entrée, elle, ne bouge pas. Il n'existe pas d'architecture qui
+# rende SSH ouvert à tout Internet défendable, et réétiqueter la sortie ne doit pas
+# emporter l'entrée avec elle — c'est exactement ce qu'un constructeur partagé rend
+# facile, et ce que ce test empêche.
+test_ingress_stays_confirmed if {
+	every code in [_ssh, _rdp, _all] {
+		some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "all", "cidrs": ["0.0.0.0/0"], "port_from": 0, "port_to": 65535, "security_group_id": "sg-1"})
+		f.code == code
+		f.labels.confidence == "confirmed"
+	}
+}
+
+# La sévérité et le code de la sortie ne bougent pas : seule l'étiquette de confiance
+# change, et un consommateur qui filtre sur le code lit la même chose qu'avant.
+test_egress_keeps_its_code_and_severity if {
+	some f in deny with input as _sgr({"direction": "outbound", "action": "accept", "protocol": "all", "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"})
+	f.code == _egr
+	f.severity == "medium"
+	f.labels.category == "security"
+}
+
+# La préposition suit la direction. Écrit dans les DEUX sens : une règle sortante
+# n'accepte rien « depuis » Internet, et une règle entrante rien « vers ».
+test_the_preposition_follows_the_direction if {
+	some f in deny with input as _sgr({"direction": "outbound", "action": "accept", "protocol": "all", "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"})
+	f.code == _egr
+	contains(f.message, "accepté vers Internet")
+	contains(f.labels.message_en, "accepted to the internet")
+	not contains(f.message, "depuis")
+}
+
+test_an_inbound_rule_says_depuis if {
+	some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "cidrs": ["0.0.0.0/0"], "port_from": 22, "port_to": 22, "security_group_id": "sg-1"})
+	f.code == _ssh
+	contains(f.message, "accepté depuis Internet")
+	contains(f.labels.message_en, "accepted from the internet")
+	not contains(f.message, "vers")
+}

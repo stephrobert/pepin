@@ -260,6 +260,29 @@ belongs in `git log`.
 
 ### Changed
 
+- **The two findings a freshly created network produced now say which of them the
+  operator did.** On a brand-new Outscale Net, a live scan reported a `high` on the
+  default security group — "carries an inbound rule" — and the operator went looking for
+  a rule they had written. The rule found is the one the provider creates with the
+  network: its only accepted source is the group itself. The finding stands (two
+  resources started without an explicit SG land in it and talk freely, which is what
+  CLD-NET-4 refuses), but it now names the shape it found, and carries
+  `confidence: contextual` rather than `confirmed`. The distinction is **observed**, not
+  deduced from a missing CIDR: an inbound rule accepts a source by CIDR **or** by group,
+  and the group source is now collected (`peer_security_group_ids`). Where the field is
+  absent the rule falls back to the general wording and to `confirmed` — not knowing must
+  not take a deviation out of a CI gate.
+- **Unrestricted egress is `contextual`, not `confirmed`.** The label was inherited from
+  the shared constructor, whose justification is about ingress: there is no legitimate
+  reason to open SSH to the whole internet. That argument does not transfer to the way
+  out. An open egress is a real exfiltration path, but defensible architectures leave it
+  open and filter downstream — gateway, proxy, perimeter firewall — on a plane the scan
+  does not see. The finding keeps its code, its `medium` severity and its `security`
+  category; it leaves `--gate security` without leaving the report. **Default behaviour
+  is unchanged**: `--gate all` still exits `1`.
+- Exposure messages now pick their preposition from the rule's direction. An outbound
+  rule accepts nothing "from" the internet, and a reader who corrects what the sentence
+  describes was looking in the wrong place.
 - **Sovereignty is now measured on the resources that host data, and only those.** The
   EU-location control asserted compliance from a *neighbour*: one resource carrying a
   region opened a `pass` for every other, including types the rule never examines — an

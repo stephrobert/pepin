@@ -434,7 +434,7 @@ exception, c'est-à-dire le même faux vert avec une étape de plus.
 {
   "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
   "evidence": {
-    "observed": "SSH (port 22) accepté depuis/vers Internet.",
+    "observed": "SSH (port 22) accepté depuis Internet.",
     "source": "export"
   },
   "labels": {

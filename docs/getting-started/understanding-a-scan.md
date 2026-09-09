@@ -130,7 +130,7 @@ large tenant, you want to know the tool started. The closing line is
 
   Details:
       HIGH  fr-par/11111111-1111-1111-1111-111111111111 — Managed database "fr-par/11111111-1111-1111-1111-111111111111": ACL allowing a public CIDR (0.0.0.0/0) — the service is exposed to the internet.
-      HIGH  scaleway_instance_security_group.web — Security group "scaleway_instance_security_group.web": SSH (port 22) accepted from/to the internet.
+      HIGH  scaleway_instance_security_group.web — Security group "scaleway_instance_security_group.web": SSH (port 22) accepted from the internet.
 
   Remediation
     Restrict the database ACL to the application CIDRs only (a private network where one is available); remove 0.0.0.0/0.

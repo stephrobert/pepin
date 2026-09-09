@@ -1,13 +1,13 @@
 {
   "controls": 58,
   "paths": 179,
-  "paths_proven": 25,
+  "paths_proven": 26,
   "obligations": 461,
-  "proven": 86,
+  "proven": 89,
   "verdicts": {
     "fail": {
       "required": 141,
-      "proven": 22
+      "proven": 23
     },
     "not-applicable": {
       "required": 22,
@@ -15,11 +15,11 @@
     },
     "not-evaluated": {
       "required": 157,
-      "proven": 19
+      "proven": 20
     },
     "pass": {
       "required": 141,
-      "proven": 34
+      "proven": 35
     }
   },
   "live_paths": 101,
@@ -2199,6 +2199,11 @@
             "fail",
             "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
           ]
         },
         {
@@ -2212,6 +2217,9 @@
             "not-evaluated"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/default-sg-restrict-outscale-live.yaml"
       ],
       "tenants": [
         "outscale/ztiac-two-tier"
@@ -2592,8 +2600,8 @@
   },
   "precision": {
     "controls": 43,
-    "detection_proven": 19,
-    "with_counterexample": 17,
+    "detection_proven": 20,
+    "with_counterexample": 18,
     "false_positives": 0,
     "counterwitnesses": 2
   }
