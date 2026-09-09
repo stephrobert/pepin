@@ -57,8 +57,8 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
  ⚡ Action immédiate — les 3 écarts les plus graves
 ──────────────────────────────────────────────────────────────────────────────
 
-  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
-     subject: scaleway_object_bucket_acl.backups
+  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket.backups » accessible publiqueme…
+     subject: scaleway_object_bucket.backups
   2. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
      subject: scaleway_instance_server.web
   3. 🟠 HIGH  CLD-STO-3 — sauvegardes automatiques désactivées.
@@ -72,7 +72,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Écarts au total : 1
 
   Détail :
-      CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
+      CRIT  scaleway_object_bucket.backups — Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique).
 
   Remédiation
     Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
@@ -256,7 +256,7 @@ premier écran d'un long rapport soit déjà actionnable.
   Écarts au total : 1
 
   Détail :
-      CRIT  scaleway_object_bucket_acl.backups — Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).
+      CRIT  scaleway_object_bucket.backups — Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique).
 
   Remédiation
     Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
@@ -391,7 +391,7 @@ mot.
   "control": "objectstorage_bucket_public_access",
   "evidence": {
     "attribute": "acl",
-    "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
+    "observed": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique).",
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -434,7 +434,7 @@ mot.
   "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
   "severity": "critical",
   "status": "fail",
-  "subject": "scaleway_object_bucket_acl.backups",
+  "subject": "scaleway_object_bucket.backups",
   "title": "Stockage objet exposé publiquement"
 }
 ```

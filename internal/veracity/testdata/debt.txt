@@ -26,7 +26,7 @@ compute_instance_deletion_protection outscale live fail,pass,not-evaluated
 compute_instance_has_security_group exoscale live fail,pass,not-evaluated
 compute_instance_has_security_group exoscale terraform fail,pass,not-evaluated
 compute_instance_has_security_group outscale live fail,pass,not-evaluated
-compute_instance_has_security_group outscale terraform fail,pass
+compute_instance_has_security_group outscale terraform fail,not-evaluated
 compute_instance_has_security_group scaleway live fail,pass,not-evaluated
 compute_instance_has_security_group scaleway terraform fail,pass,not-evaluated
 compute_instance_no_secrets_in_user_data exoscale live fail,pass,not-evaluated

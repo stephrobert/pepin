@@ -7,6 +7,7 @@ package tenants_test
 // sa façon mesurerait sa propre copie de la chaîne.
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -342,6 +343,39 @@ func TestTheSubstantiveFilterRejectsAnEmptyNotEvaluated(t *testing.T) {
 	for _, st := range []string{"fail", "pass", "not-applicable"} {
 		if !tenants.Substantive(code, st, empty) {
 			t.Errorf("un %q conclut sur une donnée réelle : il compte toujours", st)
+		}
+	}
+}
+
+// TestNoReferenceTenantPlanCarriesAConstantValue : un plan de tenant porte les
+// RÉFÉRENCES déclarées par sa configuration, jamais ses valeurs constantes.
+//
+// La distinction est la raison d'être de la réduction, et elle est facile à perdre :
+// `configuration` porte les deux côte à côte, dans la même structure, et il suffit
+// d'élargir la réduction d'un cran pour republier la configuration applicative d'un
+// tiers. Une référence est une ADRESSE de ressource — structurelle, déjà lisible dans
+// `planned_values`, et sans elle la corrélation VM ↔ groupe de sécurité ne fonctionne
+// sur aucun plan modulaire. Une `constant_value`, elle, est le contenu écrit par
+// l'exploitant : c'est là que vit un mot de passe en dur dans un `user_data`.
+//
+// La garde porte sur le TEXTE des plans committés plutôt que sur le script qui les
+// écrit : c'est le fichier au dépôt qui est publié, pas l'intention du script.
+func TestNoReferenceTenantPlanCarriesAConstantValue(t *testing.T) {
+	plans, err := filepath.Glob(filepath.Join(repoRoot, tenants.Dir, "*", "*", "plan.json"))
+	if err != nil {
+		t.Fatalf("recherche des plans : %v", err)
+	}
+	if len(plans) == 0 {
+		t.Fatal("aucun plan de tenant : la garde ne mesure rien")
+	}
+	for _, p := range plans {
+		raw, rerr := os.ReadFile(p) // #nosec G304 -- fixture du dépôt.
+		if rerr != nil {
+			t.Fatalf("lecture de %s : %v", p, rerr)
+		}
+		if bytes.Contains(raw, []byte(`"constant_value"`)) {
+			t.Errorf("%s porte une `constant_value` : la réduction republie la configuration d'un tiers.\n"+
+				"  Seules les `references` de `configuration` sont conservées (scripts/tenant-plan.py, reduce_config).", p)
 		}
 	}
 }

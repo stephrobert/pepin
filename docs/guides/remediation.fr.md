@@ -53,7 +53,7 @@ Avant, sur `examples/scaleway/terraform/plan.json` :
   "control": "objectstorage_bucket_public_access",
   "evidence": {
     "attribute": "acl",
-    "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
+    "observed": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique).",
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -96,7 +96,7 @@ Avant, sur `examples/scaleway/terraform/plan.json` :
   "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
   "severity": "critical",
   "status": "fail",
-  "subject": "scaleway_object_bucket_acl.backups",
+  "subject": "scaleway_object_bucket.backups",
   "title": "Stockage objet exposé publiquement"
 }
 ```

@@ -102,10 +102,10 @@ Forme gelée : `{"findings": [...], "summary": {...}}`.
     "tf_file": "main.tf",
     "tf_line": "81"
   },
-  "message": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
+  "message": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique).",
   "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
   "severity": "critical",
-  "subject": "scaleway_object_bucket_acl.backups",
+  "subject": "scaleway_object_bucket.backups",
   "title": "Stockage objet exposé publiquement"
 }
 ```
@@ -255,7 +255,7 @@ Un résultat :
   "control": "objectstorage_bucket_public_access",
   "evidence": {
     "attribute": "acl",
-    "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
+    "observed": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique).",
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -298,7 +298,7 @@ Un résultat :
   "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
   "severity": "critical",
   "status": "fail",
-  "subject": "scaleway_object_bucket_acl.backups",
+  "subject": "scaleway_object_bucket.backups",
   "title": "Stockage objet exposé publiquement"
 }
 ```
@@ -416,7 +416,7 @@ SARIF 2.1.0, le format que lit l'onglet Code Scanning de GitHub. C'est celui à 
             }
           ],
           "message": {
-            "text": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique)."
+            "text": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique)."
           },
 […]
 ```
@@ -441,7 +441,7 @@ Un résultat :
     }
   ],
   "message": {
-    "text": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique)."
+    "text": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique)."
   },
   "ruleId": "CLD-STO-1"
 }

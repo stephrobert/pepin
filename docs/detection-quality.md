@@ -38,8 +38,8 @@ inventing a non-applicability.
 | Verdict | What it stages | To prove | Proven | % |
 |---|---|---:|---:|---:|
 | `fail` | a vulnerable configuration is detected | 141 | 23 | 16 |
-| `pass` | a genuinely correct configuration is confirmed | 141 | 35 | 24 |
-| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 157 | 20 | 12 |
+| `pass` | a genuinely correct configuration is confirmed | 141 | 36 | 25 |
+| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 157 | 19 | 12 |
 | `not-applicable` | the provider's contract declares the mechanism non-existent | 22 | 11 | 50 |
 | **Total** | | **461** | **89** | **19** |
 

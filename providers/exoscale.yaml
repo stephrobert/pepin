@@ -263,6 +263,10 @@ mapping_terraform:
         tags: labels
       transforms:
         tags: kv                   # map labels -> [{key,value}]
+        # Idempotent, et requis pour la même raison que chez les autres fournisseurs :
+        # un plan qui ne connaît pas encore les identifiants fait porter à ce champ
+        # l'ADRESSE du security group référencé, donc un scalaire.
+        security_group_ids: list
   
     # Cluster Kubernetes managé SKS. service_level "pro" = control plane HA (doc
     # officielle containers/overview). SKS n'expose pas de liste d'IP sur l'API.
