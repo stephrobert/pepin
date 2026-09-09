@@ -194,4 +194,3 @@ _secret_patterns(s) := patterns if {
 	}
 	patterns := by_regex | private_key
 }
-

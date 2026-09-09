@@ -12,12 +12,42 @@ import rego.v1
 # Le collecteur live et le parseur Terraform projettent tous deux vers ces types.
 resources_of_type(t) := [r | some r in input.resources; r.type == t]
 
-# is_public_cidr — le CIDR couvre l'Internet public (IPv4 ou IPv6). On PARSE la longueur de
-# préfixe au lieu de comparer des littéraux : un préfixe /0 couvre tout l'espace d'adressage
-# quelle que soit l'écriture (`0.0.0.0/0`, `::/0`, `::0/0`, `0000::/0`). Un /1 (IPv4
-# `0.0.0.0/1`|`128.0.0.0/1`, ou IPv6 `::/1`) couvre la MOITIÉ de l'espace d'adressage :
-# contournement CSPM connu, jamais légitime comme source « restreinte » → également public.
-is_public_cidr(cidr) if _cidr_prefix(trim_space(cidr)) <= 1
+# is_public_cidr — le CIDR est une source NON RESTREINTE : une plage assez large pour
+# valoir « l'Internet », et qui n'est pas un espace privé.
+#
+# # Le défaut que ce seuil corrige, mesuré sur un tenant réel
+#
+# La règle exigeait un préfixe <= 1. Or quatre plages `/2` couvrent tout l'espace IPv4 :
+#
+#	0.0.0.0/2, 64.0.0.0/2, 128.0.0.0/2, 192.0.0.0/2
+#
+# RDP ouvert à TOUT Internet ne produisait donc aucun finding, pendant que la règle
+# `tcp 22 [0.0.0.0/1, 128.0.0.0/1]` du même groupe était bien attrapée. Un `/3`, ou une
+# liste de `/8`, passaient de même. Pour un outil dont c'est la raison d'être, un faux
+# négatif silencieux est le pire des défauts.
+#
+# # Le seuil, et pourquoi /8
+#
+# Deux conditions, et il faut les DEUX : la plage est large (préfixe <= 8, soit au moins
+# 16,7 millions d'adresses) ET elle n'est pas un espace privé. Le second garde-fou est ce
+# qui empêche la correction de devenir un faux positif : `10.0.0.0/8` est un `/8`, et il
+# doit rester silencieux — c'est le contre-exemple que ce contrôle ne doit jamais perdre.
+#
+# Pourquoi ne pas signaler TOUTE plage externe : `203.0.113.0/24`, le réseau d'un
+# partenaire, est externe et parfaitement légitime. « Ouvert à Internet » et « ouvert à
+# quelqu'un d'autre que moi » sont deux affirmations différentes, et la seconde n'est pas
+# ce que ces contrôles mesurent.
+#
+# # # L'UNION, et non plus seulement chaque plage prise isolément
+#
+# Une plage isolée ne dit pas tout : 512 `/9` couvrent l'espace sans qu'aucune ne
+# franchisse le seuil. `unrestricted_source` fusionne donc la liste d'une règle avant de
+# la juger — `net.cidr_merge` collapse ces 512 plages en `0.0.0.0/0`, mesuré.
+is_public_cidr(cidr) if {
+	t := trim_space(cidr)
+	_cidr_prefix(t) <= 8
+	not _private_v4(t)
+}
 
 # Littéraux « toute origine » SANS masque (certaines API/UI : une source vide/`0.0.0.0`/`*`).
 is_public_cidr(cidr) if trim_space(cidr) in {"0.0.0.0", "::", "::0", "*"}
@@ -40,6 +70,21 @@ is_public_cidr(cidr) if {
 	t := lower(trim_space(cidr))
 	startswith(t, "2000::")
 	_cidr_prefix(t) <= 3
+}
+
+# _private_v4 — la plage appartient à un espace privé ou réservé, donc elle n'est pas
+# « Internet » quelle que soit sa largeur. RFC 1918, RFC 6598 (CGNAT), lien-local,
+# bouclage, et « ce réseau » (0.0.0.0/8 hors le /0 déjà traité par le préfixe).
+#
+# Le préfixe doit valoir EXACTEMENT 8. Une plage plus large n'est pas CONTENUE dans le
+# bloc privé : elle l'englobe et déborde sur l'espace public. C'est ce qui distingue
+# `0.0.0.0/8` (« ce réseau », silencieux) de `0.0.0.0/2` (un quart d'Internet, à
+# signaler) — un test sur le seul octet de tête aurait rendu muet `0.0.0.0/0` lui-même,
+# et c'est exactement ce qu'il a fait au premier essai.
+_private_v4(t) if {
+	_cidr_prefix(t) == 8
+	octet := split(split(t, "/")[0], ".")[0]
+	octet in {"10", "127", "0"}
 }
 
 _cidr_prefix(cidr) := n if {
@@ -147,13 +192,92 @@ proto_covers(rule, _) if {
 # drop » — un `deny`/`reject` d'un futur provider serait alors compté à tort comme ouvert.
 sg_accepting(rule) if lower(object.get(rule, "action", "accept")) in {"accept", "allow", ""}
 
+# unrestricted_source — la LISTE de sources d'une règle est-elle non restreinte ?
+#
+# Juger chaque plage isolément laissait passer une UNION : quatre `/2` couvrent tout
+# IPv4 sans qu'aucune ne soit « tout Internet », et 512 `/9` font de même sous n'importe
+# quel seuil de largeur. La liste est donc FUSIONNÉE avant d'être jugée — `net.cidr_merge`
+# rend la plus petite couverture équivalente, et les 512 `/9` y deviennent `0.0.0.0/0`.
+#
+# Les deux chemins coexistent, et il faut les deux :
+#
+#   - les entrées BRUTES portent les littéraux sans masque (`0.0.0.0`, `*`), que
+#     `net.cidr_is_valid` rejette et que la fusion perdrait ;
+#   - les entrées FUSIONNÉES portent l'union, qu'aucune entrée brute ne montre.
+#
+# Le filtrage par `net.cidr_is_valid` avant la fusion n'est pas de la prudence de
+# principe : `net.cidr_merge` rend l'expression INDÉFINIE sur une entrée malformée
+# (mesuré), ce qui rendrait la règle muette — le faux négatif exact que ce correctif
+# existe pour fermer, sur une entrée fournie par un tiers.
+unrestricted_source(cidrs) if unrestricted_label(cidrs) != ""
+
+# unrestricted_label — UNE étiquette pour la source fautive, et une seule.
+#
+# `unrestricted_cidrs` rendait un ensemble, et les règles qui l'itéraient produisaient
+# un finding PAR élément : quatre `/2` sur une base donnaient cinq écarts — les quatre
+# plages brutes, chacune déjà large, plus leur fusion — pour un seul fait. Un rapport
+# qui répète cinq fois le même problème est aussi faux qu'un rapport qui le tait, et
+# c'est le défaut que j'ai introduit en fermant l'union.
+#
+# L'ordre des trois voies est celui de ce qu'elles APPRENNENT à un lecteur :
+#
+#   1. la forme FUSIONNÉE, quand elle est fautive — `0.0.0.0/0` dit d'un coup que
+#      quatre plages se recouvrent, ce qu'aucune des quatre ne montre ;
+#   2. la forme BRUTE, qui porte les littéraux sans masque (`0.0.0.0`, `*`) que
+#      `net.cidr_is_valid` rejette et que la fusion perdrait ;
+#   3. le DÉCOMPTE, quand ni l'une ni l'autre ne suffit — le damier, dont aucune plage
+#      n'est large et dont la fusion ne rapproche rien.
+unrestricted_label(cidrs) := lbl if {
+	f := sort([m |
+		some m in _merge_ou_vide(_valid_cidrs(cidrs))
+		is_public_cidr(m)
+	])
+	count(f) > 0
+	lbl := concat(", ", f)
+} else := lbl if {
+	b := sort([c |
+		some c in cidr_list(cidrs)
+		is_public_cidr(c)
+	])
+	count(b) > 0
+	lbl := concat(", ", b)
+} else := lbl if {
+	n := public_coverage(cidrs)
+	n >= _public_threshold
+
+	# Une étiquette NEUTRE : elle est interpolée dans un message français ET dans sa
+	# contrepartie anglaise, et une phrase traduite y dirait deux choses selon la langue
+	# de celui qui a scellé le bundle.
+	lbl := sprintf("%d CIDR → %d IPv4", [count(_valid_cidrs(cidrs)), n])
+} else := ""
+
+_valid_cidrs(cidrs) := [c |
+	some c in cidr_list(cidrs)
+	net.cidr_is_valid(c)
+]
+
+# _merge_ou_vide — la fusion, ou rien.
+#
+# Le garde-fou porte sur l'entrée MALFORMÉE : `net.cidr_merge` y rend l'expression
+# indéfinie (mesuré), ce qui rendrait la règle muette sur une donnée de tiers — le faux
+# négatif exact que ce chemin existe pour fermer. Le filtrage par `net.cidr_is_valid`
+# est donc obligatoire, et il protège au passage d'un second piège : une IP NUE reçoit
+# le masque classful de Go (`1.2.3.4` deviendrait `1.0.0.0/8`), donc un hôte isolé
+# passerait pour un /8 public entier.
+#
+# Sur un ensemble VIDE, en revanche, `net.cidr_merge` rend un ensemble vide et non une
+# expression indéfinie — mesuré. Le cas est gardé quand même, parce qu'un contrat de
+# builtin qui ne change pas aujourd'hui n'est pas un contrat écrit.
+_merge_ou_vide(valides) := net.cidr_merge(valides) if count(valides) > 0
+
+_merge_ou_vide(valides) := set() if count(valides) == 0
+
 # sg_inbound_from_internet — règle entrante acceptante dont la source couvre
-# Internet ; renvoie true si au moins un CIDR public est présent.
+# Internet ; renvoie true si la liste de sources est non restreinte.
 sg_inbound_from_internet(rule) if {
 	lower(object.get(rule, "direction", "")) == "inbound"
 	sg_accepting(rule)
-	some cidr in cidr_list(object.get(rule, "cidrs", []))
-	is_public_cidr(cidr)
+	unrestricted_source(object.get(rule, "cidrs", []))
 }
 
 # cidr_list — accepte la liste du modele normalise AUSSI BIEN qu'un scalaire.
