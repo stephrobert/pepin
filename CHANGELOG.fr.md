@@ -49,6 +49,16 @@ l'une ni l'autre appartient au `git log`.
   comprend pas. Une garde parcourt l'ARBRE des commandes plutôt qu'une liste écrite à
   la main, et elle a trouvé un cinquième cas que le rapport n'avait pas : `provider
   list` ignorait tout argument.
+- **Un inventaire dont l'origine contredit le jeu de règles demandé est désormais
+  refusé.** Scanner un inventaire Scaleway avec les règles Exoscale était accepté sans
+  un mot et produisait six verdicts `pass`. Ces `pass` n'étaient pas faux par accident :
+  ils étaient **vides de sens**, les formes de ressources se recouvrant juste assez pour
+  que des règles s'évaluent et concluent. Le mode d'échec était silencieux et réaliste —
+  une faute de frappe dans un pipeline, un job copié-collé — et le rapport avait l'air
+  parfaitement normal, avec un code de sortie non nul qui suggérait même que le scan
+  avait travaillé. La déclaration est lue à la racine de l'export et sur ses ressources,
+  et une discordance sort en **2**, le code déjà employé pour un export illisible. Un
+  inventaire qui ne déclare rien n'est pas refusé : une origine absente ne s'invente pas.
 - **`evidence.proves` ne voyage plus en `["","",""]` sur chaque résultat.** `omitempty`
   sur un tableau de taille fixe est sans effet, si bien qu'un lecteur ne pouvait pas
   distinguer « aucune preuve enregistrée » de « trois preuves enregistrées, toutes

@@ -46,6 +46,16 @@ belongs in `git log`.
   and exits **2** on one it does not understand. A guard walks the command tree rather
   than checking a hand-written list, and it found a fifth case the report had not:
   `provider list` ignored any argument.
+- **An inventory whose origin contradicts the requested ruleset is now refused.**
+  Scanning a Scaleway inventory with the Exoscale rules was accepted without a word and
+  produced six `pass` verdicts. Those passes were not wrong by accident, they were
+  meaningless: the resource shapes overlap just enough for rules to evaluate and
+  conclude. The failure mode was quiet and realistic — a typo in a pipeline, a
+  copy-pasted job — and the report looked entirely normal, with a non-zero exit code
+  that even suggested the scan had done its job. The declaration is read from the root
+  of the export and from its resources, and a mismatch exits **2**, the code already
+  used for an unreadable export. An inventory that declares nothing is not refused: an
+  absent origin is not invented.
 - **`evidence.proves` no longer travels as `["","",""]` on every result.** `omitempty`
   on a fixed-size array is a no-op, so a reader could not tell "no proof recorded" from
   "three proofs recorded, all blank" — including inside sealed bundles archived for

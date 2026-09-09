@@ -93,8 +93,11 @@ func TestAnUnknownSubcommandExitsTwo(t *testing.T) {
 	}
 }
 
-// exitCodeOfArgs lance le binaire et rend son code de sortie : ici, le code EST la
-// mesure, donc une erreur d'exécution ne doit pas faire échouer le test.
+// exitCodeOfArgs lance le binaire et rend son code de sortie.
+//
+// Le code EST la mesure dans plusieurs gardes de ce paquet — sous-commande inconnue,
+// discordance de fournisseur, profil de porte —, donc une sortie non nulle ne doit pas
+// faire échouer le test. Un seul exemplaire : deux helpers identiques divergent.
 func exitCodeOfArgs(t *testing.T, bin string, args ...string) int {
 	t.Helper()
 	c := exec.Command(bin, args...)
