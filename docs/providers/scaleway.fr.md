@@ -182,7 +182,7 @@ fournisseur.
 | Contrôle | Observable uniquement via | Motif du côté aveugle |
 |---|---|---|
 | `compute_instance_no_secrets_in_user_data` | terraform | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_encryption_at_rest_enabled` | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | terraform | cette source ne produit aucune ressource de type « managed_database » |

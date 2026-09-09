@@ -134,7 +134,7 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `blockstorage_volume_snapshots_exist` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « blockstorage_volume » |
 | `compute_instance_deletion_protection` | outscale | terraform | ◐ `partial` | attribut décisif « deletion_protection » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_no_secrets_in_user_data` | scaleway | live | ◐ `partial` | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | attribut décisif « public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |
 | `database_encryption_at_rest_enabled` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |

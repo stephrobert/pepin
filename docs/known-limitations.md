@@ -86,7 +86,7 @@ actually decide them. The reason given is the one that applies to the source tha
 | `blockstorage_volume_snapshots_exist` | outscale | live | this source produces no resource of type "blockstorage_volume" |
 | `compute_instance_deletion_protection` | outscale | live | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_no_secrets_in_user_data` | scaleway | terraform | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_encryption_at_rest_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
@@ -206,9 +206,9 @@ What is not yet proven is **counted**, not hidden:
 | Figure | Count |
 |---|---:|
 | Control x provider x source paths on which Pépin concludes | 179 |
-| Paths whose every reachable verdict is proven end to end | 26 |
+| Paths whose every reachable verdict is proven end to end | 27 |
 | Verdicts to prove in total | 461 |
-| Verdicts left to prove | 372 |
+| Verdicts left to prove | 369 |
 <!-- /pepin:gen veracity-debt -->
 
 The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a
@@ -251,6 +251,20 @@ it on stderr at seal time.
 resources created outside the code, and nothing about attributes still unknown at plan time.
 The verdict says *"declared scope (Terraform plan, planned state)"* rather than "compliant" for
 that reason. Use `--live` for the effective configuration.
+
+### A scan covers ONE region, and so does a qualification
+
+`--region` names one region (on Exoscale, one zone: `region_key: zone`). Everything a report
+says holds for THAT region, and an account spread over several regions needs as many scans as it
+has regions. **Evidence bundles do not merge**: each seals its own scope, and adding them up
+would fabricate a scan that never happened.
+
+The consequence easiest to miss is about SecNumCloud. A qualification covers a scope of regions,
+not a whole provider: Outscale's covers `cloudgouv-eu-west-1` and that one only. A tenant in
+`eu-west-2` is therefore not inside the qualified scope, and the descriptor declares it
+(`secnumcloud_regions`) so the scan stops transcribing "qualified" about it — it reports
+`hors_perimetre`. Without `--region` it reports `perimetre_inconnu`: a scan that does not know
+where it applies does not decide.
 
 ### `--live` sees exactly what your credentials see
 

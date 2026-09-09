@@ -16,7 +16,7 @@ d'ouvrir ce fichier pour comprendre la couverture.
 | Juridiction du siège | FR |
 | Établi dans l'UE | oui |
 | Contrôle capitalistique | FR |
-| SecNumCloud | `qualifie` |
+| SecNumCloud | `qualifie` — périmètre : `cloudgouv-eu-west-1` |
 | Exposition extraterritoriale | non |
 | Sources de l'ancrage | 3ds.com/newsroom (Outscale 1er cloud SecNumCloud 3.2) ; en.outscale.com/our-certifications |
 <!-- /pepin:gen provider-outscale-identity -->
@@ -25,6 +25,13 @@ Outscale est le seul des trois dont le descripteur consigne `secnumcloud: qualif
 qualification porte sur le **prestataire**, jamais sur votre tenant : un rapport Pépin n'en dit
 rien, ni dans un sens ni dans l'autre
 ([Périmètre et non-objectifs](../concepts/scope.fr.md)).
+
+Elle porte aussi sur un **périmètre** : la région `cloudgouv-eu-west-1`, et elle seule. Un
+tenant hébergé ailleurs — `eu-west-2`, par exemple — n'est pas dans le périmètre qualifié, et
+le scan le dit : l'attribut `secnumcloud` de la ressource de gouvernance vaut alors
+`hors_perimetre` plutôt que `qualifie`. Sans `--region`, il vaut `perimetre_inconnu` : un scan
+qui ne sait pas où il porte ne tranche pas. La qualification ne vaut donc pas immunité
+extraterritoriale hors de son périmètre.
 
 ## Authentification
 
@@ -72,6 +79,7 @@ Chaque endpoint, y compris la liste parente d'une jointure. Tous les appels OAPI
 | `iam_policy` | `POST /ReadPolicyVersion` | — |
 | `load_balancer` | `POST /ReadLoadBalancers` | — |
 | `network` | `POST /ReadNets` | — |
+| `network_interface` | `POST /ReadVms` | — |
 | `network_peering` | `POST /ReadNetPeerings` | — |
 | `security_group_rule` | `POST /ReadSecurityGroups` | — |
 | `subnet` | `POST /ReadSubnets` | — |
@@ -112,6 +120,7 @@ API de fournisseur.
 | Unité de collecte | Droit minimal | Confirmé | Source |
 |---|---|:-:|---|
 | `security_group_rule` | `api:Read* (EIM) — ReadSecurityGroups` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
+| `network_interface` | `api:Read* (EIM) — ReadVms` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
 | `compute_instance` | `api:Read* (EIM) — ReadVms` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
 | `access_key` | `api:Read* (EIM) — ReadAccounts, ReadAccessKeys` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
 | `api_access_rule` | `api:Read* (EIM) — ReadApiAccessRules` | non | docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html |
@@ -132,6 +141,7 @@ API de fournisseur.
 **Réserves, dites plutôt que masquées.**
 
 - **`security_group_rule`, `compute_instance`, `access_key`, `api_access_rule`, `api_access_summary`, `api_access_policy`, `blockstorage_volume`, `blockstorage_snapshot`, `iam_policy`, `iam_policy_inline`, `network`, `network_peering`, `subnet`, `load_balancer`, `compute_image`** — La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue.
+- **`network_interface`** — Les cartes réseau sont lues DANS la réponse de ReadVms (Vm.Nics[]) : aucun appel ni droit supplémentaire. La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue.
 - **`object_storage_bucket`** — Aucun code de service de stockage objet n'apparaît dans les éléments de politique EIM. Avec les clés du propriétaire du compte, l'accès OOS vient avec le compte ; comment l'accorder à un utilisateur EIM n'est PAS vérifié. Par politique de bucket, les actions de lecture documentées sont s3:ListBucket, s3:HeadBucket, s3:GetBucketAcl, s3:GetBucketPolicy, s3:GetBucketTagging, s3:GetBucketVersioning, s3:GetEncryptionConfiguration, s3:GetBucketObjectLockConfiguration — sans action pour LISTER les buckets d'un compte, qui est pourtant le premier appel.
 - **`kubernetes_cluster`** — Le modèle de permission de GET /api/v2/clusters/all n'est PAS vérifié. Un appel refusé dégrade proprement : les contrôles Kubernetes reviennent « non évalués ».
 <!-- /pepin:gen provider-outscale-permissions -->

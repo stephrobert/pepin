@@ -523,7 +523,7 @@ documented in
 {
   "control": "compute_instance_public_ip_with_open_securitygroup",
   "evidence": {
-    "observed": "attribute \"public_ip\" not collected on the resources of type \"compute_instance\" (capability guard)",
+    "observed": "attribute \"nic_public_ips / public_ip\" not collected on the resources of type \"compute_instance\" (capability guard)",
     "source": "terraform-plan"
   },
   "references": [

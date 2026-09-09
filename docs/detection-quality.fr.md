@@ -16,7 +16,7 @@ pourcentage sans mesure derrière est un faux vert déplacé dans un tableau de
 bord, et il y est pire qu'ailleurs : personne ne relit un tableau de bord.
 
 Les chiffres sont donc laids, et c'est le point. « 58 contrôles » ne dit rien de
-la qualité d'une détection ; « 89 verdicts prouvés sur 461 » dit où en est le
+la qualité d'une détection ; « 92 verdicts prouvés sur 461 » dit où en est le
 produit, et rétrécit dans le bon sens à chaque scénario écrit.
 
 ## Les chiffres
@@ -25,9 +25,9 @@ produit, et rétrécit dans le bon sens à chaque scénario écrit.
 |---|---:|
 | Contrôles au référentiel | 58 |
 | Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 179 |
-| Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 26 |
+| Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 27 |
 | Verdicts à prouver au total | 461 |
-| Verdicts prouvés | 89 |
+| Verdicts prouvés | 92 |
 
 ## Couverture de véracité, par verdict
 
@@ -37,11 +37,11 @@ demanderait d'inventer une non-applicabilité.
 
 | Verdict | Ce qu'il met en scène | À prouver | Prouvés | % |
 |---|---|---:|---:|---:|
-| `fail` | une configuration vulnérable est détectée | 141 | 23 | 16 |
-| `pass` | une configuration réellement correcte est confirmée | 141 | 36 | 25 |
-| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 157 | 19 | 12 |
+| `fail` | une configuration vulnérable est détectée | 141 | 24 | 17 |
+| `pass` | une configuration réellement correcte est confirmée | 141 | 37 | 26 |
+| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 157 | 20 | 12 |
 | `not-applicable` | le contrat du fournisseur déclare le mécanisme inexistant | 22 | 11 | 50 |
-| **Total** | | **461** | **89** | **19** |
+| **Total** | | **461** | **92** | **19** |
 
 ## Validé en live
 

@@ -15,7 +15,7 @@
 | Sévérité | `critical` |
 | Exigence SCSL (index gelé) | `CLD-NET-3` |
 | Type de ressource lu | `compute_instance` |
-| Attribut décisif | `public_ip` |
+| Attribut décisif | `nic_public_ips` / `public_ip` |
 | État | actif |
 | Déclaré pour | `exoscale`, `outscale`, `scaleway` |
 | Preuves de remédiation | 1 / 3 |
@@ -61,7 +61,7 @@ porte son motif :
 
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
-| scaleway | terraform | ◐ `partial` | attribut décisif « public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| scaleway | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 
@@ -78,7 +78,7 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 ## Comment enquêter
 
 - Type de ressource normalisé lu par la règle : `compute_instance`
-- Attribut dont la décision dépend : `public_ip`
+- Attribut dont la décision dépend : `nic_public_ips` / `public_ip`
 - Sans cet attribut sur une ressource du type visé, le scan rend `not-evaluated` et non `pass` (`internal/assess`, table `requiredAttr`).
 - Ce que chaque source projette se lit dans le descripteur : [`providers/exoscale.yaml`](../../providers/exoscale.yaml) · [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - La règle qui émet ce code vit dans [`internal/commonrules/rules/`](../../internal/commonrules/rules) : elle est **commune** à tous les fournisseurs, seule la source change.

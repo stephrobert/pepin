@@ -63,6 +63,30 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une VM publique par sa carte secondaire, SSH ouvert sur cette carte, ne produisait
+  aucun finding.** Le collecteur projetait l'union des IP publiques des cartes, donc la
+  machine comptait pour publique — mais il la confrontait à `Vm.SecurityGroups`, que
+  l'OAPI documente comme les groupes de la carte **primaire**. Mesuré sur un tenant
+  réel : SSH répondait sur l'adresse publique et le rapport ne disait rien. L'exposition
+  est une propriété de la **carte** : une ressource `network_interface` est désormais
+  collectée par NIC (`nic_id`, `vm_id`, `public_ip`, `security_group_ids`) et la règle
+  apparie une adresse avec les groupes **de la même carte**. L'aplatissement est fautif
+  dans les deux sens, et c'est pourquoi le correctif n'est pas une union plus large :
+  une carte publique au groupe fermé plus une carte privée au groupe ouvert se liraient,
+  une fois réunies, comme « publique et ouverte » — un écart que la machine ne porte
+  pas. Là où les cartes ne sont pas collectées (un plan Terraform), la machine reste
+  jugée sur ses propres attributs : un repli muet aurait fait DISPARAÎTRE des écarts.
+- **SecNumCloud était déclaré par fournisseur, alors qu'une qualification couvre un
+  périmètre de régions.** Celle d'Outscale couvre `cloudgouv-eu-west-1` et elle seule ;
+  un tenant en `eu-west-2` lisait « SecNumCloud qualifié » dans un `pass` de
+  souveraineté, ce qui est la première affirmation qu'un auditeur conteste. Le
+  descripteur déclare désormais le périmètre (`secnumcloud_regions`, sourcé), et
+  l'attribut `secnumcloud` est rendu **pour la région réellement scannée** : `qualifie`
+  dans le périmètre, `hors_perimetre` en dehors, `perimetre_inconnu` quand le scan n'a
+  pas de région — un scan qui ne sait pas où il porte ne tranche pas. La qualification ne
+  vaut donc plus immunité extraterritoriale hors de son périmètre, et la page du
+  fournisseur ne peut plus imprimer le statut sans lui. Aucun écart nouveau n'est émis,
+  aucun code de sortie ne bouge.
 - **La page d'installation épinglait `v0.1.0`, la version dont ce dépôt écrit lui-même
   qu'elle refuse toute installation.** `examples/github-actions/pepin.yml` le dit en
   toutes lettres : en v0.1.0 et v0.1.1, l'installeur de l'action appelait

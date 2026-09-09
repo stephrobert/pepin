@@ -103,7 +103,25 @@ import (
 //	différence pour nommer ce qu'il a trouvé, et la DÉDUIRE d'une absence serait la
 //	fabrication que l'ADR-0014 refuse. Mappé sur l'entrant seul : rien ne lit la
 //	contrepartie sortante.
-const InventoryFormat = "pepin-inventory/v6"
+//
+// v7 : un nouveau type, `network_interface` — une ressource par carte réseau, portant
+//
+//	`nic_id`, `vm_id`, `public_ip` et `security_group_ids` (contrat osc-sdk-go
+//	v2.24.0 Vm.Nics []NicLight). Ajout PUR : aucun type ni attribut existant ne bouge.
+//	Il est nécessaire parce que l'exposition est une propriété de la CARTE, et que
+//	l'aplatir sur la machine perd l'APPARIEMENT — une carte publique au groupe fermé
+//	plus une carte privée au groupe ouvert se lisent, une fois réunies, comme
+//	« publique et ouverte ». Un consommateur qui l'ignore lit ce qu'il lisait déjà.
+//
+//	La même version porte un second ajout PUR : `governance_provider` peut porter
+//	`secnumcloud_regions`, le périmètre de régions que la qualification COUVRE. Il
+//	est là parce qu'une qualification ne porte pas sur un fournisseur entier :
+//	celle d'Outscale couvre `cloudgouv-eu-west-1` et elle seule, et un tenant en
+//	`eu-west-2` lisait « qualifié » à son sujet. L'attribut `secnumcloud` est
+//	désormais rendu POUR la région scannée (`qualifie` | `hors_perimetre` |
+//	`perimetre_inconnu`), et le périmètre voyage à côté pour qu'un consommateur
+//	puisse le vérifier plutôt que de croire le statut sur parole.
+const InventoryFormat = "pepin-inventory/v7"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

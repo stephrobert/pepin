@@ -59,6 +59,28 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A VM public through a secondary NIC, with SSH open on that NIC, produced no
+  finding.** The collector projected the union of the NICs' public IPs, so the machine
+  counted as public — but it confronted that with `Vm.SecurityGroups`, which the OAPI
+  documents as the **primary** NIC's groups. Measured on a real tenant: SSH answered on
+  the public address and the report said nothing. Exposure is a property of the
+  **interface**, so a `network_interface` resource is now collected per NIC (`nic_id`,
+  `vm_id`, `public_ip`, `security_group_ids`) and the rule pairs an address with the
+  groups **of the same card**. Flattening is wrong in both directions, which is why the
+  fix is not a wider union: a public NIC with a closed group plus a private NIC with an
+  open one would read, once merged, as "public and open" — a deviation the machine does
+  not carry. Where NICs are not collected (a Terraform plan), the machine is still judged
+  on its own attributes: a silent fallback would have made deviations disappear.
+- **SecNumCloud was declared per provider, while a qualification covers a scope of
+  regions.** Outscale's covers `cloudgouv-eu-west-1` and that one only; an `eu-west-2`
+  tenant read "SecNumCloud qualifié" inside a sovereignty `pass`, which is the first
+  claim an auditor contests. The descriptor now declares the scope
+  (`secnumcloud_regions`, sourced), and the `secnumcloud` attribute is rendered **for the
+  region actually scanned**: `qualifie` inside the scope, `hors_perimetre` outside it,
+  `perimetre_inconnu` when the scan has no region — a scan that does not know where it
+  applies does not decide. The qualification therefore no longer grants extraterritorial
+  immunity outside its scope, and the provider page can no longer print the status
+  without it. No new deviation is emitted and no exit code moves.
 - **The install page pinned `v0.1.0`, the version this repository itself declares
   refuses every installation.** `examples/github-actions/pepin.yml` says it in as many
   words: in v0.1.0 and v0.1.1 the action's installer called `gh attestation verify`

@@ -22,7 +22,7 @@ package genprovider
 // dérivation, non.
 var extraControlTypes = map[string][]string{
 	"blockstorage_volume_snapshots_exist":                {"blockstorage_snapshot"},
-	"compute_instance_public_ip_with_open_securitygroup": {"security_group_rule"},
+	"compute_instance_public_ip_with_open_securitygroup": {"network_interface", "security_group_rule"},
 	"iam_apiaccesspolicy_max_key_expiration":             {"api_access_rule", "api_access_summary"},
 	"iam_apiaccessrule_defined":                          {"api_access_policy", "api_access_rule", "api_access_summary"},
 	"iam_apiaccessrule_no_public_cidr":                   {"api_access_policy", "api_access_summary"},

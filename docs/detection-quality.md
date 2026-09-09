@@ -16,7 +16,7 @@ with no measurement behind it is a false green moved into a dashboard, and it is
 worse there than anywhere else: nobody re-reads a dashboard.
 
 The figures are therefore ugly, and that is the point. "58 controls" says nothing
-about the quality of a detection; "89 verdicts proven out of 461" says where the
+about the quality of a detection; "92 verdicts proven out of 461" says where the
 product stands, and shrinks the right way with every scenario written.
 
 ## The figures
@@ -25,9 +25,9 @@ product stands, and shrinks the right way with every scenario written.
 |---|---:|
 | Controls in the reference | 58 |
 | Control x provider x source paths on which Pépin concludes | 179 |
-| Paths whose EVERY reachable verdict is proven end to end | 26 |
+| Paths whose EVERY reachable verdict is proven end to end | 27 |
 | Verdicts to prove in total | 461 |
-| Verdicts proven | 89 |
+| Verdicts proven | 92 |
 
 ## Veracity coverage, by verdict
 
@@ -37,11 +37,11 @@ inventing a non-applicability.
 
 | Verdict | What it stages | To prove | Proven | % |
 |---|---|---:|---:|---:|
-| `fail` | a vulnerable configuration is detected | 141 | 23 | 16 |
-| `pass` | a genuinely correct configuration is confirmed | 141 | 36 | 25 |
-| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 157 | 19 | 12 |
+| `fail` | a vulnerable configuration is detected | 141 | 24 | 17 |
+| `pass` | a genuinely correct configuration is confirmed | 141 | 37 | 26 |
+| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 157 | 20 | 12 |
 | `not-applicable` | the provider's contract declares the mechanism non-existent | 22 | 11 | 50 |
-| **Total** | | **461** | **89** | **19** |
+| **Total** | | **461** | **92** | **19** |
 
 ## Validated live
 

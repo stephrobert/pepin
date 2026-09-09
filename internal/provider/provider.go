@@ -60,6 +60,10 @@ type TerraformMapper interface {
 // CLD-GVN-4. Optionnel : ok=false si la souveraineté n'est pas renseignée.
 type GovernanceProvider interface {
 	GovernanceResource() (model.Resource, bool)
+	// GovernanceResourceIn projette la souveraineté pour la région RÉELLEMENT
+	// scannée : un fait de souveraineté peut dépendre du périmètre (une
+	// qualification porte sur des régions, pas sur un fournisseur entier).
+	GovernanceResourceIn(region string) (model.Resource, bool)
 }
 
 var registry = map[string]Provider{}

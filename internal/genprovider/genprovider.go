@@ -109,12 +109,24 @@ type Permission struct {
 // sources officielles (cf. `sources`). Indépendants de la collecte : projetés en
 // ressource synthétique `governance_provider` évaluée par CLD-GVN-4.
 type Souverainete struct {
-	EUEtabli                    *bool  `yaml:"eu_etabli"`                    // siège du fournisseur établi dans l'UE
-	Juridiction                 string `yaml:"juridiction"`                  // pays du siège (ex. FR, CH)
-	ControleCapitalistique      string `yaml:"controle_capitalistique"`      // juridiction du contrôle ultime (FR, UE, extra_ue, a_verifier)
-	SecNumCloud                 string `yaml:"secnumcloud"`                  // qualifie | en_cours | non
-	ExpositionExtraterritoriale *bool  `yaml:"exposition_extraterritoriale"` // soumis à une loi extraterritoriale (ex. Cloud Act)
-	Sources                     string `yaml:"sources"`                      // URLs/justification de l'ancrage
+	EUEtabli               *bool  `yaml:"eu_etabli"`               // siège du fournisseur établi dans l'UE
+	Juridiction            string `yaml:"juridiction"`             // pays du siège (ex. FR, CH)
+	ControleCapitalistique string `yaml:"controle_capitalistique"` // juridiction du contrôle ultime (FR, UE, extra_ue, a_verifier)
+	SecNumCloud            string `yaml:"secnumcloud"`             // qualifie | en_cours | non
+	// SecNumCloudRegions : les régions que la qualification COUVRE.
+	//
+	// Une qualification SecNumCloud porte sur un périmètre, et ce périmètre est une
+	// liste de régions — pas le fournisseur entier. Chez Outscale, la qualification
+	// couvre `cloudgouv-eu-west-1` et elle seule ; un tenant en `eu-west-2` lisait
+	// pourtant « SecNumCloud qualifié » dans un `pass` de souveraineté. C'est la
+	// première affirmation qu'un auditeur conteste, et l'outil n'a rien à affirmer
+	// de plus que ce qu'il a observé.
+	//
+	// Vide = périmètre non renseigné : la qualification est alors transcrite telle
+	// quelle, comme avant. On ne DÉDUIT pas un périmètre d'une absence.
+	SecNumCloudRegions          []string `yaml:"secnumcloud_regions"`
+	ExpositionExtraterritoriale *bool    `yaml:"exposition_extraterritoriale"` // soumis à une loi extraterritoriale (ex. Cloud Act)
+	Sources                     string   `yaml:"sources"`                      // URLs/justification de l'ancrage
 }
 
 // Contrat : ancrage sur l'API native (état de chaque type) et applicabilité des
@@ -248,6 +260,17 @@ func (g GenericProvider) MapTerraform(resources []tfparse.Resource) (model.Inven
 // évaluée par la règle CLD-GVN-4. Le second retour est faux si la souveraineté
 // n'est pas renseignée pour ce provider.
 func (g GenericProvider) GovernanceResource() (model.Resource, bool) {
+	return g.GovernanceResourceIn("")
+}
+
+// GovernanceResourceIn projette la souveraineté pour la région RÉELLEMENT scannée.
+//
+// La région entre dans la projection parce qu'un des faits en dépend : une
+// qualification porte sur un périmètre, et transcrire « qualifié » pour un tenant
+// hébergé hors de ce périmètre serait affirmer plus que ce qui a été observé.
+// `GovernanceResource` reste la forme sans région, pour le catalogue — qui décrit le
+// fournisseur, pas un scan.
+func (g GenericProvider) GovernanceResourceIn(region string) (model.Resource, bool) {
 	s := g.desc.Souverainete
 	if s.EUEtabli == nil && s.Juridiction == "" && s.ControleCapitalistique == "" {
 		return model.Resource{}, false
@@ -263,7 +286,14 @@ func (g GenericProvider) GovernanceResource() (model.Resource, bool) {
 		attrs["capital_control"] = s.ControleCapitalistique
 	}
 	if s.SecNumCloud != "" {
-		attrs["secnumcloud"] = s.SecNumCloud
+		attrs["secnumcloud"] = secNumCloudPour(s, region)
+	}
+	if len(s.SecNumCloudRegions) > 0 {
+		regions := make([]any, len(s.SecNumCloudRegions))
+		for i, r := range s.SecNumCloudRegions {
+			regions[i] = r
+		}
+		attrs["secnumcloud_regions"] = regions
 	}
 	if s.ExpositionExtraterritoriale != nil {
 		attrs["extraterritorial_exposure"] = *s.ExpositionExtraterritoriale
@@ -423,4 +453,35 @@ func subst(s string, vars map[string]string) string {
 		s = strings.ReplaceAll(s, "{"+k+"}", v)
 	}
 	return s
+}
+
+// Les trois valeurs que `secnumcloud` peut prendre une fois confrontée à la région.
+const (
+	// SecNumCloudHorsPerimetre : la région scannée est CONNUE et hors du périmètre
+	// qualifié. Ce n'est pas « non qualifié » — le fournisseur l'est —, c'est « pas
+	// ici », et la nuance est exactement celle qu'un auditeur vérifie.
+	SecNumCloudHorsPerimetre = "hors_perimetre"
+	// SecNumCloudPerimetreInconnu : la qualification a un périmètre, et le scan ne
+	// sait pas dans quelle région il porte (un plan Terraform n'en a pas). On ne
+	// conclut donc ni dans un sens ni dans l'autre.
+	SecNumCloudPerimetreInconnu = "perimetre_inconnu"
+)
+
+// secNumCloudPour rend le statut de qualification POUR la région scannée.
+//
+// Sans périmètre déclaré, ou pour un statut autre que `qualifie`, rien ne change :
+// on ne fabrique pas une restriction que le descripteur n'énonce pas (ADR-0014).
+func secNumCloudPour(s Souverainete, region string) string {
+	if s.SecNumCloud != "qualifie" || len(s.SecNumCloudRegions) == 0 {
+		return s.SecNumCloud
+	}
+	if region == "" {
+		return SecNumCloudPerimetreInconnu
+	}
+	for _, r := range s.SecNumCloudRegions {
+		if r == region {
+			return s.SecNumCloud
+		}
+	}
+	return SecNumCloudHorsPerimetre
 }

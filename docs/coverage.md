@@ -133,7 +133,7 @@ already shows them, and they add nothing.
 | `blockstorage_volume_snapshots_exist` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "blockstorage_volume" |
 | `compute_instance_deletion_protection` | outscale | terraform | ◐ `partial` | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_no_secrets_in_user_data` | scaleway | live | ◐ `partial` | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | deciding attribute "public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `database_encryption_at_rest_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
