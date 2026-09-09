@@ -12,6 +12,7 @@ import (
 	"maps"
 	"os"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -55,6 +56,19 @@ var (
 	scanGate       string // profil de PORTE : ce qui pèse dans le code de sortie, jamais dans le rapport
 )
 
+// scanFormats : les formats de sortie acceptés, source UNIQUE de la validation et du
+// texte d'aide.
+//
+// Une valeur inconnue retombait silencieusement sur la table : `--format oscal2` dans
+// un pipeline publiait un tableau colorié à la place de l'artefact OSCAL que toute la
+// chaîne en aval croyait recevoir, en gardant le code de sortie d'un scan réussi. Le
+// cas dangereux n'est pas l'humain qui tape `xml` et le voit ; c'est l'étape éditée à
+// une lettre près, ou la variable qui s'évalue à autre chose que prévu.
+//
+// Un format inconnu appartient à la famille de l'export illisible et du fournisseur
+// inconnu : une erreur d'INVOCATION, pas un résultat de scan. Donc le code 2.
+var scanFormats = []string{"table", "json", "assessment", "oscal", "sarif"}
+
 var scanCmd = &cobra.Command{
 	Use:   "scan <provider> [export.json]",
 	Short: "Évaluer la posture d'un cloud contre les politiques",
@@ -78,6 +92,11 @@ var scanCmd = &cobra.Command{
 			return errors.New(tr(
 				"préciser un fichier (export JSON ou plan Terraform), ou utiliser --live",
 				"give a file (JSON export or Terraform plan), or use --live"))
+		}
+		if !slices.Contains(scanFormats, scanFormat) {
+			return fmt.Errorf(tr(
+				"format de sortie inconnu : %q (valeurs : %s)",
+				"unknown output format: %q (values: %s)"), scanFormat, strings.Join(scanFormats, ", "))
 		}
 		if !profile.Valid(scanGate) {
 			return fmt.Errorf(tr("profil de porte inconnu : %q (valeurs : %s)",
@@ -609,7 +628,8 @@ func evaluatedNonGov(asmt assessment.Assessment) int {
 }
 
 func init() {
-	scanCmd.Flags().StringVarP(&scanFormat, "format", "f", "table", "format de sortie : table | json | assessment | oscal | sarif")
+	scanCmd.Flags().StringVarP(&scanFormat, "format", "f", "table",
+		tr("format de sortie : ", "output format: ")+strings.Join(scanFormats, " | "))
 	scanCmd.Flags().StringArrayVarP(&policyDirs, "policy-dir", "p", nil,
 		"répertoire de règles externes (.rego), répétable — chargé sans recompilation")
 	scanCmd.Flags().BoolVarP(&scanTF, "terraform", "t", false,

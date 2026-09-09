@@ -75,6 +75,14 @@ l'une ni l'autre appartient au `git log`.
   sous-module oublié, ou un projet interne. `--index` est désormais requis, et le
   message dit ce qu'est le fichier, que la commande est un outil de **maintenance** dont
   un scan n'a pas besoin, et donne un exemple.
+- **Une valeur inconnue de `--format` est refusée au lieu de retomber sur la table.**
+  Le scan tournait et imprimait le rapport table, avec le code de sortie d'un scan
+  réussi. Le cas dangereux n'est pas l'humain qui tape `xml` à un prompt et le
+  remarque : c'est l'étape de pipeline écrite `--format oscal` éditée en
+  `--format oscal2`, qui publie un tableau colorié là où toute la chaîne en aval croit
+  recevoir de l'OSCAL. Un format inconnu appartient à la famille de l'export illisible
+  et du fournisseur inconnu — une erreur d'invocation, code **2**, pas un résultat de
+  scan.
 - **Le mode français ne laisse plus l'ossature du rapport en anglais.** Titres de
   section, en-têtes de table et ligne « aucun écart » sortaient en anglais au milieu
   d'un rapport français — `Total deviations: 1` au-dessus d'un finding français, se
