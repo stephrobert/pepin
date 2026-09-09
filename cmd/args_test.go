@@ -111,3 +111,36 @@ func exitCodeOfArgs(t *testing.T, bin string, args ...string) int {
 	}
 	return 0
 }
+
+// TestAnUnknownFormatIsRefused — l'issue #149.
+//
+// Une valeur inconnue de `--format` était ignorée sans un mot : le scan tournait et
+// imprimait la table. Le cas dangereux n'est pas l'humain qui tape `xml` à un prompt et
+// le remarque ; c'est l'étape de pipeline écrite `--format oscal` éditée en
+// `--format oscal2`, ou la variable qui s'évalue à autre chose que prévu. Le job garde
+// sa sémantique de code de sortie, publie un fichier, et l'artefact de conformité que
+// toute la chaîne en aval croit être de l'OSCAL est un tableau colorié.
+//
+// La liste des formats valides est LUE depuis le code, pas recopiée : une liste
+// recopiée se périme au premier format ajouté, et le format oublié serait justement
+// celui que personne n'éprouve.
+func TestAnUnknownFormatIsRefused(t *testing.T) {
+	bin := buildPepin(t)
+	const fixture = "examples/scaleway/inventory.json"
+
+	if len(scanFormats) == 0 {
+		t.Fatal("aucun format déclaré : le test ne mesure rien")
+	}
+	for _, f := range scanFormats {
+		if code := exitCodeOfArgs(t, bin, "scan", "scaleway", fixture, "--format", f); code == exitErreur {
+			t.Errorf("le format valide %q rend %d : la correction refuse ce qu'elle doit accepter", f, code)
+		}
+	}
+	for _, f := range []string{"xml", "oscal2", "TABLE", "", "jsonl"} {
+		if code := exitCodeOfArgs(t, bin, "scan", "scaleway", fixture, "--format", f); code != exitErreur {
+			t.Errorf("le format inconnu %q rend %d, attendu %d.\n"+
+				"  Un pipeline publierait un tableau colorié là où il croit écrire de l'OSCAL,\n"+
+				"  avec le code de sortie d'un scan réussi.", f, code, exitErreur)
+		}
+	}
+}
