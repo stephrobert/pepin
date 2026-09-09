@@ -260,6 +260,10 @@ description = "Détecte la dérive de forme entre les ADR et le dépôt"
 # Un rapport vide ne dispense pas de relire.
 run = "python3 tools/adr/drift.py"
 
+[tasks.fuzz-promote]
+description = "Promeut les entrées d'une campagne de fuzzing vers le corpus versionné (éprouve chaque graine avant de l'accepter)"
+run = "python3 tools/fuzz/promote.py"
+
 [tasks.falsify]
 description = "Rejoue une falsification, ou prouve le harnais sur son propre historique : mise run falsify -- --selftest"
 # Porté de feint (Apache-2.0, même auteur). La procédure était une COUTUME : chaque
