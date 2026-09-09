@@ -59,6 +59,13 @@ belongs in `git log`.
 
 ### Fixed
 
+- **An unknown `--format` value is refused instead of falling back to the table.** The
+  scan ran and printed the table report, with the exit code of a successful scan. The
+  dangerous case is not someone typing `xml` at a prompt and noticing: it is a pipeline
+  step written `--format oscal` edited to `--format oscal2`, publishing a coloured table
+  where the whole downstream chain believes it is receiving OSCAL. An unknown format
+  belongs with an unreadable export and an unknown provider — an invocation error, exit
+  **2**, not a scan result.
 - **French mode no longer leaves the report scaffolding in English.** Section titles,
   table headers and the "no deviations" line came out English inside an otherwise
   French report — `Total deviations: 1` above a French finding, closing on a French
