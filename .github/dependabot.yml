@@ -4,8 +4,17 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    # La carence laisse le temps qu'une version fraiche montre ses defauts. Appliquee
+    # UNIFORMEMENT, elle retarde aussi les correctifs de securite : celui de
+    # scankit v0.2.3 fermait une exfiltration silencieuse et a attendu, faute d'avis
+    # CVE qui l'aurait distingue d'une montee ordinaire (ADR-0021).
+    #
+    # La carence des versions de CORRECTIF est donc courte : c'est la que les
+    # correctifs de securite arrivent, et c'est aussi la montee dont la regression
+    # coute le moins cher a annuler.
     cooldown:
       default-days: 7
+      semver-patch-days: 1
     open-pull-requests-limit: 10
     groups:
       go-dependencies:
