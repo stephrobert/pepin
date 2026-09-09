@@ -81,6 +81,14 @@ l'une ni l'autre appartient au `git log`.
   sans masque (`0.0.0.0`, `*`) n'est pas un CIDR valide et que la fusion le perdrait ; et
   seules les entrées valides sont fusionnées, parce que `net.cidr_merge` devient indéfini
   sur une entrée malformée, ce qui rendrait la règle muette sur une donnée de tiers.
+
+  La fusion ne rapproche que le CONTIGU, si bien qu'un damier lui échappait : 256 `/9`
+  une sur deux — la moitié d'Internet — donnaient 256 blocs inchangés et restaient
+  muettes. Les adresses publiques qu'une liste de sources ouvre sont désormais
+  **comptées**, exactement : les blocs fusionnés sont disjoints, et deux CIDR sont soit
+  disjoints soit emboîtés, donc la taille publique d'un bloc est la sienne moins celle
+  des espaces à usage spécial qu'il contient. Un seul finding par ressource nomme
+  l'union — `0.0.0.0/0`, ou `256 CIDR → 1848508416 IPv4` — au lieu d'un par plage.
 - **La description racine nomme les fournisseurs qui existent.** La première phrase
   qu'un nouvel utilisateur lit annonçait OVH — une entrée de feuille de route, pas un
   fournisseur — et omettait Kubernetes, qui en est un. La liste est désormais dérivée du
