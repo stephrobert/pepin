@@ -229,7 +229,7 @@ pepin scan exoscale --terraform examples/exoscale/terraform/plan.json
   │ CLD-GVN-3  │ Ressource hébergée hors Union européenne         │ LOW      │ exoscale │ 3 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
- Summary
+ Synthèse
 
  Verdict : NON CONFORME
 

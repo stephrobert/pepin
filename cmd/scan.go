@@ -61,7 +61,7 @@ var scanCmd = &cobra.Command{
 	Long: "Évalue un inventaire contre les règles embarquées du provider (+ règles\n" +
 		"externes via --policy-dir). Trois sources : un export JSON normalisé, un plan\n" +
 		"Terraform (--terraform), ou une collecte live de l'API (--live).",
-	Args: cobra.RangeArgs(1, 2),
+	Args: rangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		path := ""
@@ -1430,6 +1430,25 @@ func scanReportOptions(provName, path string) screport.Options {
 		Brand:   lipgloss.Color("#C792EA"),
 		TierOf:  func(f finding.Finding) string { return f.Label("provider") },
 		DocURL:  docURL,
+		// L'OSSATURE du rapport — titres, en-têtes, ligne « aucun écart ». Elle
+		// restait en anglais au milieu d'un rapport français, ce qui se lit comme une
+		// traduction inachevée et dessert le contenu. Le vocabulaire vit ICI :
+		// scankit n'a pas à connaître les langues de ses consommateurs (§9).
+		Labels: screport.Labels{
+			Mode:            tr("Mode", "Mode"),
+			Source:          tr("Source", "Source"),
+			NoDeviations:    tr("Aucun écart sur le périmètre audité.", "No deviations found in the audited scope."),
+			ImmediateAction: tr("⚡ Action immédiate — les %d écarts les plus graves", "⚡ Immediate action — top %d most severe deviations"),
+			TotalDeviations: tr("Écarts au total :", "Total deviations:"),
+			Details:         tr("Détail :", "Details:"),
+			Remediation:     tr("Remédiation", "Remediation"),
+			Controls:        tr("Contrôles", "Controls"),
+			ColCode:         tr("Code", "Code"),
+			ColControl:      tr("Contrôle", "Control"),
+			ColSeverity:     tr("Sév", "Sev"),
+			ColTier:         tr("Palier", "Tier"),
+			Summary:         tr("Synthèse", "Summary"),
+		},
 	}
 }
 

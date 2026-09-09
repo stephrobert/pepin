@@ -73,7 +73,7 @@ actionnable.
 ──────────────────────────────────────────────────────────────────────────────
 
 ──────────────────────────────────────────────────────────────────────────────
- ⚡ Immediate action — top 3 most severe deviations
+ ⚡ Action immédiate — les 3 écarts les plus graves
 ──────────────────────────────────────────────────────────────────────────────
 
   1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
@@ -97,9 +97,9 @@ Il se referme sur le tableau par contrôle et le verdict :
 ```text
 […]
 
-  Controls
+  Contrôles
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
-  │ Code       │ Control                                          │ Sev      │ Tier     │ # │
+  │ Code       │ Contrôle                                         │ Sév      │ Palier   │ # │
   ├────────────┼──────────────────────────────────────────────────┼──────────┼──────────┼───┤
   │ CLD-STO-1  │ Stockage objet exposé publiquement               │ CRITICAL │ scaleway │ 1 │
   │ CLD-CHF-2  │ Base de données managée sans chiffrement au rep… │ HIGH     │ scaleway │ 1 │
@@ -112,7 +112,7 @@ Il se referme sur le tableau par contrôle et le verdict :
   │ CLD-STO-8  │ Object Lock (immutabilité) désactivé sur le sto… │ LOW      │ scaleway │ 1 │
   ╰────────────┴──────────────────────────────────────────────────┴──────────┴──────────┴───╯
 ──────────────────────────────────────────────────────────────────────────────
- Summary
+ Synthèse
 
  Verdict : NON CONFORME
 
@@ -139,12 +139,12 @@ Son bloc, extrait du run ci-dessus :
  HIGH  ·  CLD-CHF-2  ·  scaleway
  Base de données managée sans chiffrement au repos
 ──────────────────────────────────────────────────────────────────────────────
-  Total deviations: 1
+  Écarts au total : 1
 
-  Details:
+  Détail :
       HIGH  pepin-test-rdb — Base de données managée « pepin-test-rdb » sans chiffrement au repos.
 
-  Remediation
+  Remédiation
     Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
 
   ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
@@ -203,10 +203,10 @@ sans le PermissionSet `IAMManager`, et les quatre étiquettes de gouvernance sur
  Source    examples/scaleway/terraform-fixed/plan.json
 ──────────────────────────────────────────────────────────────────────────────
 
-  ✓ No deviations found in the audited scope.
+  ✓ Aucun écart sur le périmètre audité.
 
 ──────────────────────────────────────────────────────────────────────────────
- Summary
+ Synthèse
 
  Verdict : conforme sur le périmètre déclaré (plan Terraform, état planifié) (aucune non-conformité détectée, 12 contrôles conformes)
 

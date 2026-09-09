@@ -24,7 +24,7 @@ var providerCmd = &cobra.Command{
 	// et rendait 0 : la sous-commande demandée n'était pas comprise, et rien ne le
 	// disait. Dans un pipeline, l'étape passait au vert en écrivant une liste que
 	// personne n'avait demandée.
-	Args: cobra.NoArgs,
+	Args: noArgs(),
 	Run:  func(_ *cobra.Command, _ []string) { listProviders() },
 }
 
@@ -97,7 +97,7 @@ var providerValidateCmd = &cobra.Command{
 var providerNewCmd = &cobra.Command{
 	Use:   "new <nom>",
 	Short: "Créer le squelette d'un provider (providers/<nom>.yaml)",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(_ *cobra.Command, args []string) error {
 		name := args[0]
 		path := filepath.Join("providers", name+".yaml")

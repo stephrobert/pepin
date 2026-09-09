@@ -59,6 +59,19 @@ belongs in `git log`.
 
 ### Fixed
 
+- **French mode no longer leaves the report scaffolding in English.** Section titles,
+  table headers and the "no deviations" line came out English inside an otherwise
+  French report — `Total deviations: 1` above a French finding, closing on a French
+  verdict. The framework's own strings did too: usage template, `help for <cmd>`,
+  argument-count errors, unknown-flag errors. A report half-translated reads as
+  unfinished work rather than a choice, and the intended reader — a French-speaking
+  auditor of a sovereign cloud — is exactly the one who notices.
+
+  One string stays English: cobra's `unknown command … Did you mean this?`, built deep
+  in `Command.Find` with no hook. Translating it would mean matching its English text,
+  making behaviour depend on a dependency's wording.
+  `TestTheUntranslatedCobraResidueIsKnown` keeps that residue inventoried and fails in
+  both directions, so it can neither grow nor be forgotten once fixed upstream.
 - **An unknown subcommand no longer exits 0, and no longer runs something else.**
   `pepin provider inexistant` silently ran `provider list`; `pepin control list` — the
   natural guess, symmetric with `provider list` — printed a help screen and succeeded.

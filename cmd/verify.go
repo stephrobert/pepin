@@ -46,7 +46,7 @@ var verifyCmd = &cobra.Command{
 		"peut régénérer fichiers + checksums. Avec --pubkey, la SIGNATURE cosign de checksums.txt\n" +
 		"est vérifiée (non-répudiation) — l'opérateur ayant scellé le bundle avec (cosign 3.x) :\n" +
 		"  cosign sign-blob --key cosign.key --bundle checksums.txt.bundle checksums.txt",
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
 		if err := assess.VerifyBundle(dir); err != nil {

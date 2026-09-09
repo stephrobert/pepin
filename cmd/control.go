@@ -38,7 +38,7 @@ var controlCmd = &cobra.Command{
 	// l'utilisateur deviner seul que la sous-commande est `control explain`. Une étape
 	// `pepin control list --json > controls.json` réussissait, écrivait l'aide dans le
 	// fichier, et le job passait au vert.
-	Args: cobra.NoArgs,
+	Args: noArgs(),
 	// `Args` ne suffit PAS sur une commande non exécutable : cobra rend l'aide et
 	// s'arrête AVANT de valider les arguments. Un `RunE`, même trivial, la rend
 	// exécutable et remet la validation dans le chemin — sans quoi `control list`
@@ -49,7 +49,7 @@ var controlCmd = &cobra.Command{
 var controlExplainCmd = &cobra.Command{
 	Use:   "explain <code>",
 	Short: "Expliquer d'où vient le verdict d'un contrôle, et ce qui l'éprouve",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		code := args[0]
 		ctl, ok := referentiel.Lookup(code)

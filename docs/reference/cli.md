@@ -79,6 +79,8 @@ Pepin — sovereign multi-cloud CSPM.
 Assesses the posture of a cloud (OVH, Scaleway, Exoscale, Outscale…) against a
 common reference anchored on SCSL, SecNumCloud, CIS and ISO.
 
+pepin [flags]
+
 Usage:
   pepin [command]
 
@@ -111,8 +113,8 @@ Assesses an inventory against the embedded common rules (plus external rules
 through --policy-dir). Three sources: a normalized JSON export, a Terraform
 plan (--terraform), or a live collection from the provider API (--live).
 
-Usage:
-  pepin scan <provider> [export.json] [flags]
+pepin scan <provider> [export.json] [flags]
+
 
 Flags:
       --exceptions file                  exemptions YAML file (control, justification, expires_at, owner, approved_by) — a covered deviation becomes exempted, never compliant
@@ -189,8 +191,8 @@ regenerate both files and checksums. With --pubkey, the cosign SIGNATURE of chec
 is verified (non-repudiation) — the operator having sealed the bundle with (cosign 3.x):
   cosign sign-blob --key cosign.key --bundle checksums.txt.bundle checksums.txt
 
-Usage:
-  pepin verify <dossier-bundle> [flags]
+pepin verify <dossier-bundle> [flags]
+
 
 Flags:
       --bundle string       cosign signature bundle (default: <directory>/checksums.txt.bundle)
@@ -218,8 +220,9 @@ Three levels of assurance, and they are not interchangeable:
 ```text
 Manage the declarative providers (list, validate, create)
 
+pepin provider [flags]
+
 Usage:
-  pepin provider [flags]
   pepin provider [command]
 
 Aliases:
@@ -246,8 +249,8 @@ Use "pepin provider [command] --help" for more information about a command.
 ```text
 List the available cloud providers
 
-Usage:
-  pepin provider list [flags]
+pepin provider list [flags]
+
 
 Aliases:
   list, ls
@@ -281,8 +284,8 @@ contribution that adds a provider.
 ```text
 Validate the providers of a directory (default: providers/) against the contract
 
-Usage:
-  pepin provider validate [dossier] [flags]
+pepin provider validate [dossier] [flags]
+
 
 Flags:
   -h, --help   help for validate
@@ -298,8 +301,8 @@ Global Flags:
 ```text
 Create the skeleton of a provider (providers/<name>.yaml)
 
-Usage:
-  pepin provider new <nom> [flags]
+pepin provider new <nom> [flags]
+
 
 Flags:
   -h, --help   help for new
@@ -319,8 +322,8 @@ it never creates a requirement.
 ```text
 Check consistency with the SCSL index and drive the roadmap
 
-Usage:
-  pepin scsl [flags]
+pepin scsl [flags]
+
 
 Flags:
   -h, --help           help for scsl
@@ -337,8 +340,9 @@ Global Flags:
 ```text
 Inspect the controls of the common reference
 
+pepin control [flags]
+
 Usage:
-  pepin control [flags]
   pepin control [command]
 
 Available Commands:
@@ -386,8 +390,8 @@ The coverage figures come from the SAME source as the detection quality map
 (docs/detection-quality.md): two computations would diverge, and the one that
 diverges is the one people read.
 
-Usage:
-  pepin control explain <code> [flags]
+pepin control explain <code> [flags]
+
 
 Flags:
   -h, --help              help for explain
@@ -404,8 +408,8 @@ Global Flags:
 ```text
 Print the version
 
-Usage:
-  pepin version [flags]
+pepin version [flags]
+
 
 Flags:
   -h, --help   help for version

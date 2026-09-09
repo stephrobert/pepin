@@ -71,12 +71,18 @@ func asExitError(err error, target **exec.ExitError) bool {
 }
 
 // TestFrenchScanOutputHasNotMovedOneCharacter compare la sortie française à une
-// capture prise AVANT l'internationalisation (binaire de `main`, committée sous
-// testdata/lang/). Le français est la langue de référence : le rendre bilingue ne
-// devait rien y changer, et « rien » se prouve octet par octet.
+// capture committée sous testdata/lang/. Le français est la langue de RÉFÉRENCE :
+// ce qui la déplace doit être une décision, jamais un effet de bord, et « rien n'a
+// bougé » se prouve octet par octet.
 //
-// La référence n'est pas une capture du code d'aujourd'hui, ce qui reviendrait à
-// se comparer à soi-même. C'est la sortie de la version publiée.
+// La référence était à l'origine une capture prise AVANT l'internationalisation, et
+// sa prémisse — rendre l'outil bilingue ne devait rien changer au français — a tenu
+// jusqu'à l'issue #151. Celle-ci a délibérément traduit l'OSSATURE du rapport, qui
+// restait en anglais au milieu d'un rapport français : la référence a donc été
+// régénérée, et ce test a repris son rôle à partir de là.
+//
+// Ce qu'il continue de garantir : aucune évolution ne déplace le français sans que
+// quelqu'un ait regardé le diff et décidé.
 func TestFrenchScanOutputHasNotMovedOneCharacter(t *testing.T) {
 	bin := buildPepin(t)
 	// LANG seul, sans PEPIN_LANG ni LC_ALL : c'est le chemin de résolution du poste
@@ -250,4 +256,97 @@ func itoa(n int) string {
 		n /= 10
 	}
 	return string(b)
+}
+
+// TestNoEnglishScaffoldingSurvivesInFrenchMode — l'issue #151.
+//
+// Le README promet le français « de tout l'outil et pas de la moitié ». L'ossature du
+// rapport — titres de section, en-têtes de table, ligne « aucun écart » — restait en
+// anglais au milieu d'un rapport français :
+//
+//	Total deviations: 1
+//	Détail :
+//	↳ Clé d'accès « SCW… » sans date d'expiration
+//
+// Un rapport à moitié traduit se lit comme un travail inachevé plutôt que comme un
+// choix, et il dessert un contenu qui travaille dur à gagner sa rigueur. Le lecteur
+// visé — un auditeur francophone d'un cloud souverain — est précisément celui qui le
+// remarquera.
+func TestNoEnglishScaffoldingSurvivesInFrenchMode(t *testing.T) {
+	bin := buildPepin(t)
+	// Les deux chemins : celui qui trouve des écarts, et celui qui n'en trouve pas.
+	// Le second portait sa propre chaîne anglaise, juste au-dessus d'un verdict
+	// français — c'est le contraste le plus visible des deux.
+	for _, fixture := range []string{
+		"examples/scaleway/inventory.json",
+		"examples/scaleway/inventory-ok.json",
+	} {
+		stdout, stderr := runPepin(t, bin, []string{"LANG=fr_FR.UTF-8"}, "scan", "scaleway", fixture)
+		sortie := stdout + stderr
+		for _, anglais := range []string{
+			"Immediate action", "most severe deviations", "Total deviations",
+			"Details:", "Remediation", "Controls", "Summary",
+			"No deviations found",
+		} {
+			if strings.Contains(sortie, anglais) {
+				t.Errorf("%s : l'ossature anglaise %q subsiste en mode français.\n"+
+					"  Le README promet le français de TOUT l'outil ; un rapport à moitié\n"+
+					"  traduit se lit comme un travail inachevé.", fixture, anglais)
+			}
+		}
+	}
+}
+
+// TestTheUntranslatedCobraResidueIsKnown inventorie ce qui RESTE en anglais, et le
+// tient à un seul cas.
+//
+// Une garde qui n'exigerait que « rien d'anglais » serait décochée le jour où le
+// résidu grandit ; celle-ci échoue dans les DEUX sens — un résidu de plus, ou un
+// résidu disparu sans que le registre bouge.
+//
+// Le cas restant : « unknown command … Did you mean this? », construit au fond de
+// `cobra.Command.Find`, sans point d'accroche. Le traduire exigerait de reconnaître
+// son texte ANGLAIS, donc de faire dépendre le comportement de la formulation d'une
+// dépendance — ce qui casserait silencieusement à sa prochaine version. Le prix de la
+// traduction serait ici supérieur à celui du résidu.
+func TestTheUntranslatedCobraResidueIsKnown(t *testing.T) {
+	bin := buildPepin(t)
+	fr := []string{"LANG=fr_FR.UTF-8"}
+
+	// Le résidu CONNU, et sa raison. Une entrée qui cesserait d'être vraie doit
+	// être retirée du registre, sinon il ne dit plus rien.
+	residu := []struct {
+		args    []string
+		anglais string
+	}{
+		{[]string{"scann"}, "unknown command"},
+	}
+	for _, r := range residu {
+		_, stderr := runPepin(t, bin, fr, r.args...)
+		if !strings.Contains(stderr, r.anglais) {
+			t.Errorf("pepin %v : le résidu %q a disparu.\n"+
+				"  Bonne nouvelle, mais le registre doit suivre : retirer cette entrée.",
+				r.args, r.anglais)
+		}
+	}
+
+	// Et tout le reste doit être traduit. La liste est celle des libellés que cobra
+	// imprime, chacun ayant été routé.
+	cas := [][]string{
+		{"--help"}, {"scan", "--help"}, {"scan"}, {"control", "list"},
+		{"version", "parasite"}, {"scan", "--nimportequoi"},
+	}
+	for _, args := range cas {
+		stdout, stderr := runPepin(t, bin, fr, args...)
+		sortie := stdout + stderr
+		for _, anglais := range []string{
+			"Usage:", "Available Commands:", "Flags:", "Global Flags:",
+			"help for ", "accepts between", "accepts exactly", "unknown flag:",
+			"Use \"pepin", "Help about any command",
+		} {
+			if strings.Contains(sortie, anglais) {
+				t.Errorf("pepin %v : %q subsiste en mode français", args, anglais)
+			}
+		}
+	}
 }
