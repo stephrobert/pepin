@@ -24,6 +24,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(b),
 			"category": "compliance",
+			"confidence": "contextual",
 			"message_en": sprintf("Bucket \"%s\" has no Object Lock: objects are mutable (no WORM protection against deletion or overwrite).", [name]),
 			"remediation_en": "Enable Object Lock (compliance or governance mode) on backup buckets and critical objects.",
 		},

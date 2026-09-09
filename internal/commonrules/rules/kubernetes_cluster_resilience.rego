@@ -22,6 +22,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(c),
 			"category": "compliance",
+			"confidence": "contextual",
 			"message_en": sprintf("OKS cluster \"%s\": control plane is not multi-AZ — losing one zone means an outage.", [name]),
 			"remediation_en": "Enable a multi-AZ / multi-master control plane on the cluster.",
 		},
@@ -42,6 +43,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(c),
 			"category": "compliance",
+			"confidence": "contextual",
 			"message_en": sprintf("OKS cluster \"%s\": automatic upgrades disabled — fixes are not applied.", [name]),
 			"remediation_en": "Enable automatic maintenance and upgrades on the cluster.",
 		},
@@ -62,6 +64,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(c),
 			"category": "compliance",
+			"confidence": "contextual",
 			"message_en": sprintf("OKS cluster \"%s\" has no deletion protection.", [name]),
 			"remediation_en": "Enable deletion protection on the cluster.",
 		},

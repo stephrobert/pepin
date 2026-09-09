@@ -39,6 +39,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(p),
 			"category": "security",
+			"confidence": "heuristic",
 			"message_en": sprintf("Policy \"%s\": allows an identity management action that enables privilege escalation (%s).", [name, a]),
 			"remediation_en": "Remove identity management actions (attach/create a policy, create a key) from everyday policies; reserve them for a dedicated, scoped administration role.",
 		},
@@ -81,6 +82,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "heuristic",
 			"message_en": sprintf("IAM role \"%s\": its policy allows managing IAM roles — a privilege escalation path.", [name]),
 			"remediation_en": "Reserve IAM role and key management for a dedicated administration role; remove those permissions from everyday roles.",
 		},
@@ -102,6 +104,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(p),
 			"category": "security",
+			"confidence": "heuristic",
 			"message_en": sprintf("Policy \"%s\": grants IAM management (PermissionSet) — a privilege escalation path.", [name]),
 			"remediation_en": "Reserve IAM management for a dedicated administration policy; remove the management PermissionSet from everyday policies.",
 		},

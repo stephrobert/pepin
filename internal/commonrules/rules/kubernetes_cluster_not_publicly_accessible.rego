@@ -22,6 +22,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(c),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("OKS cluster \"%s\": admin_whitelist contains %s — the Kubernetes API is exposed to the internet.", [name, cidr]),
 			"remediation_en": "Restrict admin_whitelist to administration CIDRs (bastion, CI runners, VPN); remove 0.0.0.0/0 and ::/0.",
 		},

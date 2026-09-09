@@ -23,6 +23,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(p),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("EIM policy \"%s\": Allow statement using NotAction/NotResource (dangerous inversion).", [name]),
 			"remediation_en": "Rewrite it as an explicit allow list (Action/Resource); NotAction/NotResource is only acceptable with an Effect Deny.",
 		},

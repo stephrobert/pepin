@@ -23,6 +23,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Security group \"%s\": default inbound policy set to \"accept\" — any unfiltered traffic is admitted.", [id]),
 			"remediation_en": "Switch the default inbound policy to \"drop\" and open only the legitimate flows through explicit rules.",
 		},

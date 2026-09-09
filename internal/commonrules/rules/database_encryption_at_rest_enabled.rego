@@ -23,6 +23,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Managed database \"%s\" has no encryption at rest.", [id]),
 			"remediation_en": "Enable encryption at rest on the instance (at creation time, or through an upgrade).",
 		},

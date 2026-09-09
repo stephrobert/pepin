@@ -24,6 +24,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(lb),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Internet-facing LBU \"%s\" has no HTTPS/SSL listener — traffic in cleartext.", [name]),
 			"remediation_en": "Add an HTTPS/SSL listener (TLS 1.2 or above) with a certificate; redirect cleartext traffic to HTTPS.",
 		},
@@ -68,6 +69,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(lb),
 			"category": "security",
+			"confidence": "confirmed",
 			# La règle CONSTATE son incapacité à conclure ; l'assessment en fait un
 			# `not-evaluated`. Compter ce listener comme sécurisé était un FAUX VERT
 			# (ADR-0015) : un port n'est pas un protocole.
@@ -104,6 +106,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(lb),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("LBU \"%s\": listener %s:%d serves cleartext while another listener is encrypted — the protection is not what it looks like.", [name, object.get(l, "load_balancer_protocol", ""), port]),
 			"remediation_en": "Encrypt or remove that listener: an HTTPS listener elsewhere does not protect the traffic going through this one.",
 		},

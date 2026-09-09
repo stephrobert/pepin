@@ -24,6 +24,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "contextual",
 			"message_en": sprintf("Bucket \"%s\" has no versioning enabled (status %q) — a deletion or an overwrite is irreversible.", [bucket, versioning]),
 			"remediation_en": "Enable versioning on the bucket, at least for critical data.",
 		},

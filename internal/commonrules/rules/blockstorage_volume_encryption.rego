@@ -36,6 +36,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(v),
 			"category": "compliance",
+			"confidence": "confirmed",
 			"message_en": sprintf("Block storage volume \"%s\": encryption at rest is disabled (data in cleartext on the platform side).", [name]),
 			"remediation_en": "Enable encryption at rest on the volume (depending on the provider: transparent, provider-managed key, or client-side encryption).",
 		},

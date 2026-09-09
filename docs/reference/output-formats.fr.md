@@ -97,6 +97,7 @@ Forme gelée : `{"findings": [...], "summary": {...}}`.
   "labels": {
     "category": "security",
     "check": "objectstorage_bucket_public_access",
+    "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
     "tf_line": "81"
@@ -130,9 +131,40 @@ qu'un pipeline lise ce qu'il accepte au lieu de le déduire :
   projette. Sa forme est décrite dans
   [l'inventaire normalisé](inventory.fr.md#létat-de-collecte).
 
-Un finding de détection de secret porte en outre `labels.confidence` (`high` | `medium` |
-`low`), pour qu'un pipeline trie les heuristiques génériques à part des secrets confirmés sans
-changer le scan. La valeur détectée, elle, n'apparaît jamais, quel que soit le niveau.
+### Trier un rapport : la confiance, distincte de la sévérité
+
+Trois dimensions voyagent dans `labels`, et les confondre est ce qui rend un premier
+scan irritant :
+
+| Label | Ce qu'il dit | Valeurs |
+|---|---|---|
+| `severity` (champ, pas label) | la **conséquence** si le problème est réel | `critical` `high` `medium` `low` |
+| `labels.confidence` | la **certitude** que Pépin a correctement établi le problème | `confirmed` `probable` `heuristic` `contextual` |
+| `labels.category` | la **nature** du problème | `security` `compliance` `sovereignty` `hygiene` |
+
+Un volume sans sauvegarde récente et une VM dont SSH est ouvert à Internet sont tous
+deux `high`. Le premier est `contextual` — la règle le documente elle-même, un volume
+peut être sauvegardé autrement —, le second `confirmed`. Leur donner le même poids
+dans une porte de CI fait douter des deux.
+
+```bash
+# Ne bloquer que sur ce qui est établi, et voir le reste sans qu'il bloque
+pepin scan scaleway inv.json -f json \
+  | jq '[.findings[] | select(.labels.confidence == "confirmed")]'
+
+# Ce qui relève de la souveraineté, quelle que soit la sévérité
+pepin scan scaleway inv.json -f json \
+  | jq '[.findings[] | select(.labels.category == "sovereignty")]'
+```
+
+`confidence` et `category` voyagent dans `labels` plutôt qu'en champs de premier rang
+parce que le modèle `Finding` vient du module partagé `scankit` : y ajouter un champ
+imposerait le vocabulaire de Pépin à pitstop. C'est le même choix que pour les
+messages bilingues et l'origine Terraform.
+
+Pour la détection de secrets, la confiance est celle du MOTIF qui a déclenché, et le
+seuil de signalement est réglable (`secrets.min_confidence`). La valeur détectée, elle,
+n'apparaît jamais, quel que soit le niveau.
 
 **Ce que ce format ne sait pas dire** : il liste des écarts, donc un tableau `findings` vide
 signifie « aucun écart trouvé », ce qui recouvre aussi bien « le tenant est propre » que « rien
@@ -233,6 +265,7 @@ Un résultat :
   },
   "labels": {
     "category": "security",
+    "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
     "tf_line": "81"

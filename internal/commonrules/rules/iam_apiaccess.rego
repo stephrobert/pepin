@@ -26,6 +26,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("API access rule \"%s\": calls allowed from %s (public CIDR).", [object.get(r.attributes, "api_access_rule_id", r.id), cidr]),
 			"remediation_en": "Restrict the rule's IP ranges to legitimate addresses; remove any rule open to 0.0.0.0/0 or ::/0.",
 		},
@@ -50,6 +51,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": "No API access rule is defined: the account's API is reachable from anywhere with a valid key.",
 			"remediation_en": "Create at least one API access rule restricting calls to legitimate IP ranges.",
 		},
@@ -70,6 +72,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "contextual",
 			"message_en": "API access policy: no maximum expiry is enforced on access keys.",
 			"remediation_en": "Configure a maximum access key expiry (90 days, for instance).",
 		},

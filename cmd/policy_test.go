@@ -111,7 +111,7 @@ func TestADefaultScanDeclaresItsConfiguration(t *testing.T) {
 	if len(doc.Config.Relaxations) != 0 {
 		t.Errorf("un scan par défaut ne doit annoncer AUCUN assouplissement, obtenu %d", len(doc.Config.Relaxations))
 	}
-	if doc.Config.Effective.Snapshots.MaxAgeDays != 7 || doc.Config.Effective.Secrets.MinConfidence != "low" {
+	if doc.Config.Effective.Snapshots.MaxAgeDays != 7 || doc.Config.Effective.Secrets.MinConfidence != "heuristic" {
 		t.Errorf("la configuration effective publiée ne correspond pas au profil par défaut : %+v", doc.Config.Effective)
 	}
 }
@@ -358,7 +358,10 @@ func TestASecretConfidenceTravelsInTheParsableFormats(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &doc); err != nil {
 		t.Fatalf("sortie JSON illisible : %v", err)
 	}
-	levels := map[string]bool{"low": true, "medium": true, "high": true}
+	// Le vocabulaire est COMMUN à tous les findings depuis #111 : cette règle portait
+	// auparavant le sien (`high`/`medium`/`low`), et deux mots pour une même idée
+	// rendaient un filtre `confidence=` dépendant de la règle qu'on regardait.
+	levels := map[string]bool{"heuristic": true, "probable": true, "confirmed": true}
 	found := 0
 	for _, f := range doc.Findings {
 		if f.Labels["check"] != "compute_instance_no_secrets_in_user_data" {

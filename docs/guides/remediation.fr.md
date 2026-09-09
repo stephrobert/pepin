@@ -63,6 +63,7 @@ Avant, sur `examples/scaleway/terraform/plan.json` :
   },
   "labels": {
     "category": "security",
+    "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
     "tf_line": "81"

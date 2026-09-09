@@ -24,6 +24,23 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Un finding déclare désormais sa CONFIANCE, distincte de sa sévérité.** La sévérité
+  dit la conséquence si le problème est réel ; la confiance dit à quel point Pépin est
+  sûr de l'avoir établi. Un volume sans sauvegarde récente et une VM dont SSH est ouvert
+  à Internet étaient tous deux `high` et indiscernables — le premier est `contextual`
+  (la règle le documente elle-même : un volume peut être sauvegardé autrement), le
+  second `confirmed`. `labels.confidence` vaut `confirmed`, `probable`, `heuristic` ou
+  `contextual`, déclarée règle par règle, et une règle sans confiance casse la CI.
+- **`labels.category` gagne `sovereignty` et `hygiene`.** La souveraineté est la raison
+  d'être de ce produit et était rangée sous `compliance`, où un filtre ne pouvait pas la
+  trouver ; l'hygiène documentaire n'est ni une faille ni un manquement normatif, et la
+  confondre avec l'un des deux est ce qui rend un premier scan irritant. Sept findings
+  passent en `sovereignty`, trois en `hygiene`.
+- **Le vocabulaire de confiance de la détection de secrets rejoint le vocabulaire
+  commun** : `high`/`medium`/`low` deviennent `confirmed`/`probable`/`heuristic`, sans
+  perdre de granularité. Un `secrets.min_confidence` écrit avec les anciens mots reste
+  accepté, au même rang, et normalisé dans la configuration résolue — une politique
+  committée ne change pas de sens en silence.
 - **La carte de qualité publie désormais la précision, dérivée du corpus de
   contre-exemples.** « 42 contrôles » est une phrase que tous les CSPM prononcent.
   Détecter et se TAIRE sont deux mesures différentes, et elles s'impriment maintenant

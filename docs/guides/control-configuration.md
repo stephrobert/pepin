@@ -34,7 +34,7 @@ controls:
     max_age_days: 7
     accepted_states: [completed, created]
   secrets:
-    min_confidence: low
+    min_confidence: heuristic
 
 exceptions:
   - control: objectstorage_bucket_public_access
@@ -71,7 +71,7 @@ for what, at which stage, who is accountable — never the exact words.
 | `tagging.resource_types` | 8 types, listed below | where tagging is required |
 | `snapshots.max_age_days` | `7` | freshness window of a snapshot |
 | `snapshots.accepted_states` | `completed, created` | native states of a usable snapshot |
-| `secrets.min_confidence` | `low` | report everything, including generic heuristics |
+| `secrets.min_confidence` | `heuristic` | report everything, including generic heuristics |
 
 **The comparison ignores case and separators.** `cost-center`, `cost_center`, `Cost Center`
 and `CostCenter` are the same requirement — a tool that cries wolf over typography gets
@@ -164,11 +164,11 @@ Secret detection carries a confidence level on every finding, in `labels.confide
 
 | Level | Basis | Example |
 |---|---|---|
-| `high` | confirmed by its shape | `-----BEGIN … PRIVATE KEY-----` |
-| `medium` | recognized prefix and expected format | `ghp_…`, `AKIA…`, `SCW…`, `glpat-…`, JWT |
-| `low` | generic heuristic | `password=…`, `api_key=…` |
+| `confirmed` | confirmed by its shape | `-----BEGIN … PRIVATE KEY-----` |
+| `probable` | recognized prefix and expected format | `ghp_…`, `AKIA…`, `SCW…`, `glpat-…`, JWT |
+| `heuristic` | generic heuristic | `password=…`, `api_key=…` |
 
-The default is `low`: everything is reported. That is the only defensible default for a
+The default is `heuristic`: everything is reported. That is the only defensible default for a
 secret detector — silencing by default what you cannot confirm trades a false positive for a
 false negative, on the one subject where a false negative is paid in a leak.
 
@@ -185,7 +185,7 @@ Make the scan itself quieter — and accept the cost:
 ```yaml
 controls:
   secrets:
-    min_confidence: medium   # generic heuristics are no longer reported
+    min_confidence: probable   # generic heuristics are no longer reported
 ```
 
 This drops the CLD-CMP-9 / SecNumCloud 10.5 mapping, and the report says so. "No cleartext

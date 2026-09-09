@@ -29,6 +29,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Managed database \"%s\": ACL allowing a public CIDR (%s) — the service is exposed to the internet.", [id, cidr]),
 			"remediation_en": "Restrict the database ACL to the application CIDRs only (a private network where one is available); remove 0.0.0.0/0.",
 		},

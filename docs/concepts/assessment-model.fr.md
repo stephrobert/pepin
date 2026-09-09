@@ -219,6 +219,7 @@ ressources, pas une liste à cocher de contrôles.
   },
   "labels": {
     "category": "security",
+    "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
     "tf_line": "81"
@@ -462,6 +463,7 @@ exception, c'est-à-dire le même faux vert avec une étape de plus.
   },
   "labels": {
     "category": "security",
+    "confidence": "confirmed",
     "exemption_approved_by": "security@example.org",
     "exemption_expires_at": "2099-12-31",
     "exemption_owner": "platform-security",

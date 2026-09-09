@@ -52,10 +52,28 @@ type ResolvedSecrets struct {
 // ConfidenceLevels énumère les niveaux de confiance d'une détection de secret,
 // du plus faible au plus fort. L'ORDRE est signifiant : c'est lui qui décide
 // qu'un seuil plus haut est un assouplissement.
-var ConfidenceLevels = []string{"low", "medium", "high"}
+//
+// Le vocabulaire est celui de TOUS les findings depuis #111 : un même mot doit
+// signifier la même chose partout, sans quoi filtrer un rapport sur
+// `labels.confidence` n'aurait pas de sens stable.
+var ConfidenceLevels = []string{"heuristic", "probable", "confirmed"}
+
+// legacyConfidence — les valeurs d'AVANT #111, acceptées au rang de leur
+// équivalent. Une politique déjà committée ne doit pas changer de SENS en silence :
+// refuser `low` casserait un pipeline, l'ignorer appliquerait un autre seuil que
+// celui écrit. Elles sont dépréciées, pas ignorées, et `pepin control explain`
+// affiche le nom courant.
+var legacyConfidence = map[string]string{
+	"low":    "heuristic",
+	"medium": "probable",
+	"high":   "confirmed",
+}
 
 // rankOfConfidence rend le rang d'un niveau de confiance, -1 s'il est inconnu.
 func rankOfConfidence(level string) int {
+	if moderne, ok := legacyConfidence[level]; ok {
+		level = moderne
+	}
 	for i, l := range ConfidenceLevels {
 		if strings.EqualFold(strings.TrimSpace(level), l) {
 			return i
@@ -151,7 +169,7 @@ var (
 	// qui les porte ne restaure rien.
 	defaultSnapshotStates = []string{"completed", "created"}
 
-	// defaultMinConfidence : `low`, c'est-à-dire TOUT signaler. C'est le
+	// defaultMinConfidence : `heuristic`, c'est-à-dire TOUT signaler. C'est le
 	// comportement d'avant ce lot, et c'est le seul défaut défendable pour un
 	// détecteur de secrets : taire par défaut ce qu'on ne sait pas confirmer,
 	// c'est choisir le faux négatif contre le faux positif, sur le seul sujet où
@@ -219,7 +237,15 @@ func Resolve(c *Controls) Resolved {
 		}
 	}
 	if s := c.Secrets; s != nil && s.MinConfidence != "" {
-		out.Secrets.MinConfidence = strings.ToLower(strings.TrimSpace(s.MinConfidence))
+		// NORMALISÉ au vocabulaire courant : une politique écrite `low` et une écrite
+		// `heuristic` disent la même chose, et doivent produire la MÊME configuration
+		// résolue. Sans ça, le bundle scellé porterait deux orthographes pour un seul
+		// réglage, et `verify --re-derive` verrait diverger deux dossiers identiques.
+		niveau := strings.ToLower(strings.TrimSpace(s.MinConfidence))
+		if moderne, deprecie := legacyConfidence[niveau]; deprecie {
+			niveau = moderne
+		}
+		out.Secrets.MinConfidence = niveau
 	}
 	return out
 }

@@ -20,6 +20,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(k),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Access key \"%s\" has no expiry date — a leak would stay exploitable indefinitely.", [id]),
 			"remediation_en": "Set an expiry date on the key and put a rotation in place; prefer a short-lived identity (OIDC).",
 		},

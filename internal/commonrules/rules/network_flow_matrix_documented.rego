@@ -24,7 +24,8 @@ deny contains f if {
 		"remediation": "Documenter chaque règle de security group (service, raison) via sa description ; tenir la matrice des flux à jour.",
 		"labels": {
 			"provider": provider_of(r),
-			"category": "compliance",
+			"category": "hygiene",
+			"confidence": "contextual",
 			"message_en": sprintf("Allowed inbound flow (port %v) with no justification: the flow matrix requires a description per rule.", [port]),
 			"remediation_en": "Document every security group rule (service, reason) in its description; keep the flow matrix up to date.",
 		},

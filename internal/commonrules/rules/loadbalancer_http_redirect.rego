@@ -34,6 +34,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(lb),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("LBU \"%s\": HTTP listener (port %d) with no redirect to HTTPS — cleartext traffic is possible.", [name, object.get(l, "load_balancer_port", 0)]),
 			"remediation_en": "Set up a 301 redirect from the HTTP:80 listener to HTTPS.",
 		},

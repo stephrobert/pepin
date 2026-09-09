@@ -467,3 +467,78 @@ func TestEnglishControlFieldsCarryNoAccent(t *testing.T) {
 		}
 	}
 }
+
+// confidenceValues — le vocabulaire COMMUN d'une confiance de finding (issue #111).
+//
+// La confiance dit la certitude que Pépin a correctement ÉTABLI le problème ; la
+// sévérité dit la conséquence s'il est réel. Les confondre est ce qui rend un premier
+// scan irritant : un volume peut être sauvegardé autrement, et lui donner le poids
+// d'un SSH ouvert à Internet fait douter des deux.
+var confidenceValues = map[string]bool{
+	// La configuration fautive est OBSERVÉE, directement et sans ambiguïté.
+	"confirmed": true,
+	// Préfixe reconnu ET format attendu : très vraisemblable, pas certain.
+	"probable": true,
+	// La règle INFÈRE depuis un signal qui peut ne pas vouloir dire ce qu'il paraît.
+	"heuristic": true,
+	// L'écart dépend d'un contexte que le scan ne voit pas : une sauvegarde ailleurs,
+	// un environnement de développement, une politique interne.
+	"contextual": true,
+}
+
+// TestEveryFindingDeclaresItsConfidence — la porte de l'issue #111.
+//
+// Une règle sans confiance déclarée publierait un écart dont personne ne peut dire
+// s'il faut le croire, et la valeur par défaut qu'on serait tenté de lui donner
+// rendrait le label décoratif — ce qui est pire que son absence, puisqu'on cesserait
+// de s'en méfier.
+func TestEveryFindingDeclaresItsConfidence(t *testing.T) {
+	entries, err := os.ReadDir(rulesDir)
+	if err != nil {
+		t.Fatalf("lecture de %s : %v", rulesDir, err)
+	}
+	// La confiance se déclare dans le MÊME bloc `labels` que la catégorie, qui est
+	// présente sur chaque finding : c'est donc `category` qui sert d'ancre, et un
+	// finding qui perdrait sa catégorie serait attrapé par ailleurs.
+	reCat := regexp.MustCompile(`"category":\s*"([a-z]+)",`)
+	reConf := regexp.MustCompile(`"confidence":\s*(?:"([a-z]+)"|[a-z_]+[.(])`)
+	var vus int
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".rego") || strings.HasSuffix(e.Name(), "_test.rego") {
+			continue
+		}
+		b, rerr := os.ReadFile(filepath.Join(rulesDir, e.Name()))
+		if rerr != nil {
+			t.Fatalf("lecture de %s : %v", e.Name(), rerr)
+		}
+		text := string(b)
+		cats := reCat.FindAllStringIndex(text, -1)
+		confs := reConf.FindAllStringSubmatchIndex(text, -1)
+		if len(cats) == 0 {
+			continue // fichier sans finding
+		}
+		vus += len(cats)
+		if len(confs) < len(cats) {
+			t.Errorf("%s : %d finding(s) portent une catégorie, %d une confiance.\n"+
+				"  Un écart sans confiance déclarée ne dit pas s'il faut le croire.\n"+
+				"  Ajouter `\"confidence\": \"confirmed\" | \"probable\" | \"heuristic\" | \"contextual\"`\n"+
+				"  dans le bloc `labels`, choisie pour CETTE règle.", e.Name(), len(cats), len(confs))
+			continue
+		}
+		for _, m := range confs {
+			if m[2] < 0 {
+				continue // valeur calculée (ex. pattern.confidence) : vérifiée par opa test
+			}
+			if v := text[m[2]:m[3]]; !confidenceValues[v] {
+				t.Errorf("%s : confiance %q inconnue.\n"+
+					"  Le vocabulaire est commun à tous les findings : un même mot doit\n"+
+					"  signifier la même chose partout, sans quoi filtrer un rapport sur\n"+
+					"  `labels.confidence` n'a pas de sens stable.", e.Name(), v)
+			}
+		}
+	}
+	if vus == 0 {
+		t.Fatal("aucun finding vu : la porte ne mesure rien")
+	}
+	t.Logf("%d finding(s) porteurs d'une confiance vérifié(s)", vus)
+}

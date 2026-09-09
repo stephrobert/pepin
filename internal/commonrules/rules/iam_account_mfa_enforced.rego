@@ -25,6 +25,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": "The API access policy does not enforce MFA for all users (trusted environment disabled).",
 			"remediation_en": "Enable the trusted environment requirement (RequireTrustedEnv) to enforce MFA on every account; configure WebAuthn/OTP.",
 		},

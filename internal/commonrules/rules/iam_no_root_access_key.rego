@@ -44,6 +44,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("API key \"%s\" attached to the root account — it bypasses IAM policies.", [name]),
 			"remediation_en": "Create a dedicated least-privilege IAM application, then revoke the root key.",
 		},

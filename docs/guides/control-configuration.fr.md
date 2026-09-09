@@ -36,7 +36,7 @@ controls:
     max_age_days: 7
     accepted_states: [completed, created]
   secrets:
-    min_confidence: low
+    min_confidence: heuristic
 
 exceptions:
   - control: objectstorage_bucket_public_access
@@ -74,7 +74,7 @@ répondre** — qui paye, pour quoi, à quel stade, qui répond —, jamais des 
 | `tagging.resource_types` | 8 types, listés plus bas | où l'étiquetage est exigé |
 | `snapshots.max_age_days` | `7` | fenêtre de fraîcheur d'une snapshot |
 | `snapshots.accepted_states` | `completed, created` | états natifs d'une snapshot exploitable |
-| `secrets.min_confidence` | `low` | tout signaler, heuristiques génériques comprises |
+| `secrets.min_confidence` | `heuristic` | tout signaler, heuristiques génériques comprises |
 
 **La comparaison est insensible à la casse et aux séparateurs.** `cost-center`,
 `cost_center`, `Cost Center` et `CostCenter` sont la même exigence — un outil qui crie au loup
@@ -170,11 +170,11 @@ Chaque détection porte son niveau de confiance, dans `labels.confidence` :
 
 | Niveau | Fondement | Exemple |
 |---|---|---|
-| `high` | confirmé par sa forme | `-----BEGIN … PRIVATE KEY-----` |
-| `medium` | préfixe reconnu et format attendu | `ghp_…`, `AKIA…`, `SCW…`, `glpat-…`, JWT |
-| `low` | heuristique générique | `password=…`, `api_key=…` |
+| `confirmed` | confirmé par sa forme | `-----BEGIN … PRIVATE KEY-----` |
+| `probable` | préfixe reconnu et format attendu | `ghp_…`, `AKIA…`, `SCW…`, `glpat-…`, JWT |
+| `heuristic` | heuristique générique | `password=…`, `api_key=…` |
 
-Le défaut est `low` : tout est signalé. C'est le seul défaut défendable pour un détecteur de
+Le défaut est `heuristic` : tout est signalé. C'est le seul défaut défendable pour un détecteur de
 secrets — taire par défaut ce qu'on ne sait pas confirmer, c'est échanger un faux positif
 contre un faux négatif, sur le seul sujet où le faux négatif se paye en fuite.
 
@@ -191,7 +191,7 @@ Rendre le scan lui-même plus silencieux — et en assumer le prix :
 ```yaml
 controls:
   secrets:
-    min_confidence: medium   # les heuristiques génériques ne sont plus signalées
+    min_confidence: probable   # les heuristiques génériques ne sont plus signalées
 ```
 
 Cela fait tomber la correspondance CLD-CMP-9 / SecNumCloud 10.5, et le rapport le dit.

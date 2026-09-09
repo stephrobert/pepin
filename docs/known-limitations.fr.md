@@ -404,7 +404,7 @@ dans les deux langues, et le référentiel le consigne dans la description du co
 
 Les heuristiques génériques (`password=…`, `api_key=…`) ne distinguent pas
 `password=changeme123456` d'un vrai secret. Chaque finding porte `labels.confidence`
-(`high` | `medium` | `low`) pour qu'un pipeline puisse trier, et le seuil de signalement est
+(`confirmed` | `probable` | `heuristic`) pour qu'un pipeline puisse trier, et le seuil de signalement est
 configurable. Le relever est un assouplissement : « aucun secret en clair » ne se prouve plus
 dès lors qu'on a choisi de ne pas regarder une partie de ce qui a été trouvé, donc la
 correspondance CLD-CMP-9 tombe et le rapport le dit. La valeur détectée, elle, n'apparaît

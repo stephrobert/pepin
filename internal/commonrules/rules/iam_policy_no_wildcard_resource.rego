@@ -27,6 +27,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(p),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("EIM policy \"%s\": Allow statement carrying Resource=\"*\" (every resource of the account).", [name]),
 			"remediation_en": "Restrict Resource to the identifiers (ORN) the policy must actually cover.",
 		},

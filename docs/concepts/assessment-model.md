@@ -219,6 +219,7 @@ resources, not a checklist of controls.
   },
   "labels": {
     "category": "security",
+    "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
     "tf_line": "81"
@@ -457,6 +458,7 @@ with one more step.
   },
   "labels": {
     "category": "security",
+    "confidence": "confirmed",
     "exemption_approved_by": "security@example.org",
     "exemption_expires_at": "2099-12-31",
     "exemption_owner": "platform-security",
