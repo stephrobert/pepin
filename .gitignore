@@ -11,6 +11,10 @@ dist/
 # pepin's examples only need the .tf sources, the sanitized plan.json and inventory.json.
 **/.terraform/
 **/.terraform.lock.hcl
+# Exception : le lockfile du tenant de QUALIFICATION est versionné. Il épingle les
+# empreintes du provider validé — la régression de destruction (#4338 amont) est
+# arrivée par une contrainte flottante, et un lockfile absent la laisse revenir.
+!references/qualification/*/.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 *.tfplan
@@ -38,3 +42,9 @@ references/docs/*/
 # tenant ils portent son inventaire. Ce qui entre au dépôt le fait seulement
 # après relecture valeur par valeur, dans internal/genprovider/testdata/.
 .trace/
+
+# Sortie de la porte de release (issue #178) : artefacts d'une qualification —
+# plan, état Terraform, assessments et bundle d'un tenant réel appliqué puis
+# détruit. Ils portent les identifiants de ressources d'un compte ; rien n'en
+# entre au dépôt sans relecture (ADR-0012).
+release-gate/

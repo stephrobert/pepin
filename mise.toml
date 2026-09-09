@@ -299,7 +299,7 @@ go test ./cmd/ -run '^$' -fuzz 'FuzzInventoryWalk' -fuzztime="$t"
 
 [tasks.prepush]
 description = "Tout ce sur quoi une PR échouera, qui coûte des secondes et n'exige aucun compte"
-depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftest", "falsify:lint"]
+depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftest", "falsify:lint", "qualify:selftest"]
 # Ce que c'est, et ce que ce n'est délibérément PAS.
 #
 # Chacune de ces portes est déterministe, hors ligne, et tient en quelques
@@ -312,6 +312,36 @@ depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftes
 # fournisseur. Ces choses vivent en nocturne ou à la qualification de release,
 # précisément pour ne pas rendre ce chemin-ci trop lent pour être suivi.
 run = "echo 'prepush : toutes les portes locales sont vertes'"
+
+# Le TENANT DE QUALIFICATION (issue #178, étape 3) : une stack Terraform par
+# fournisseur, délibérément mal configurée — une ressource par contrôle, un
+# contre-exemple par contrôle —, APPLIQUÉE sur un compte réel, scannée en live dans
+# tous les formats, scellée, vérifiée, rescannée sur le même plan, DÉTRUITE, puis
+# comparée à `expected.yaml` (contrôle × source × sujet → statut). Toute différence
+# est un NO-GO : un fail manquant est un faux vert, un fail en trop un faux positif,
+# un not-evaluated déplacé une régression de couverture.
+#
+# Un geste de MAINTENEUR, jamais de CI (ADR-0012) : opt-in par PEPIN_GATE_LIVE=1,
+# identifiants natifs du fournisseur seulement, et la porte refuse de démarrer si le
+# compte que la clé désigne n'est pas celui qu'expected.yaml épingle. Elle refuse de
+# dire GO si une ressource survit au destroy (listing par famille sur le tag du
+# tenant, plus delta avant/après), et si une attente cassée en mémoire ne la fait
+# pas rougir. Sortie dans release-gate/, ignoré par git.
+[tasks.qualify]
+description = "Applique, scanne, scelle, détruit et compare le tenant de qualification d'un fournisseur (compte réel, opt-in) : PEPIN_GATE_LIVE=1 mise run qualify"
+run = "python3 tools/qualification/qualify.py run ${PROVIDER:-scaleway}"
+
+[tasks."qualify:plan"]
+description = "Le même tenant, sans rien créer : plan + scan --terraform + comparaison de la source terraform"
+run = "python3 tools/qualification/qualify.py run ${PROVIDER:-scaleway} --plan-only"
+
+[tasks."qualify:compare"]
+description = "Recompare le dernier run de qualification à expected.yaml (ou à un autre fichier : EXPECTED=…)"
+run = "python3 tools/qualification/qualify.py compare --run-dir release-gate/qualification-${PROVIDER:-scaleway} ${EXPECTED:+--expected $EXPECTED}"
+
+[tasks."qualify:selftest"]
+description = "La comparaison de la porte de qualification se prouve sur des cas synthétiques (faux vert, faux positif, couverture déplacée)"
+run = "python3 tools/qualification/qualify.py selftest"
 
 [tasks."falsify:lint"]
 description = "Les specs de falsification visent-elles encore du code qui existe"

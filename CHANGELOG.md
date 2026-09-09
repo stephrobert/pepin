@@ -21,6 +21,22 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+### Added
+
+- **A qualification tenant, applied and destroyed on a real account** (issue #178,
+  stage 3). `PEPIN_GATE_LIVE=1 mise run qualify` applies the Terraform stack committed
+  under `references/qualification/scaleway/` — 40 resources in the plan, 29 of them
+  applied: the five types a live scan collects; managed databases, private networks
+  and IAM policies exist only in the plan, because no live scan would see them —,
+  one fault per resource, one counterexample per control, scans it with `--live` in every format, seals and
+  verifies the bundle, scans the same plan with `--terraform`, destroys it, proves the
+  destruction (a listing per family on the tenant's tag, plus a before/after diff of
+  the account), and compares both assessments with the committed `expected.yaml`
+  (control × source × subject → status). The runner refuses to start on an account
+  other than the one pinned there, and breaks one of its own expectations at the end
+  of every run to prove it can say NO-GO. A maintainer's gesture with native
+  credentials only, never CI.
+
 ### Security
 
 - **`verify` no longer accepts a bundle that contradicts itself.** Rewriting four

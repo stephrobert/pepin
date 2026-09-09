@@ -22,6 +22,22 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Non publié]
 
+### Ajouté
+
+- **Un tenant de qualification, appliqué et détruit sur un compte réel** (issue #178,
+  étape 3). `PEPIN_GATE_LIVE=1 mise run qualify` applique la stack Terraform committée
+  sous `references/qualification/scaleway/` — 40 ressources dans le plan, dont 29
+  appliquées : les cinq types qu'un scan live collecte ; bases managées, réseaux
+  privés et politiques IAM n'existent que sur le plan, parce qu'aucun scan live ne
+  les verrait —, une faute par ressource, un contre-exemple par contrôle, la scanne en `--live` dans tous les formats,
+  scelle et vérifie le bundle, scanne le même plan en `--terraform`, la détruit,
+  prouve la destruction (listing par famille sur le tag du tenant, plus un delta
+  avant/après du compte), et compare les deux assessments à l'`expected.yaml`
+  committé (contrôle × source × sujet → statut). Le runner refuse de démarrer sur un
+  autre compte que celui qui y est épinglé, et casse une de ses propres attentes à la
+  fin de chaque run pour prouver qu'il sait dire NO-GO. Un geste de mainteneur, avec
+  les seuls identifiants natifs, jamais de CI.
+
 ### Sécurité
 
 - **`verify` n'accepte plus un bundle qui se contredit.** Réécrire quatre résultats
