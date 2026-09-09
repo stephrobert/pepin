@@ -1,48 +1,97 @@
 # Tenant de QUALIFICATION Exoscale — métadonnées lues par tools/qualification/qualify.py.
 #
-# PLAN SEUL : aucun compte Exoscale n'est disponible. Ce tenant épingle la source
-# Terraform — ce que `pepin scan exoscale --terraform` rend sur son plan —, ce qui a
-# déjà de la valeur (c'est le chemin qu'un utilisateur emploie sans compte, ADR-0012).
-# La moitié live (apply, scan --live, bundle, destroy, preuve de destruction)
-# attend un compte ; `mise run qualify` sur ce tenant est REFUSÉ tant que
-# `live: unavailable` est là.
+# Même doctrine que les tenants Scaleway et Outscale (references/qualification/README.fr.md) :
+# une faute par ressource, un contre-exemple par contrôle, appliqué puis détruit,
+# comparé à expected.yaml. Ce qui est propre à Exoscale : les ressources sont
+# ZONALES et le scan live ne lit qu'une zone (`--region de-fra-1`) — l'instance de
+# ch-gva-2 n'existe que pour la source Terraform ; les groupes de sécurité et
+# l'IAM sont d'organisation ; les buckets SOS n'ont pas de ressource Terraform
+# (crochet `extra`) ; et rien n'a de protocole « tout ».
 provider: exoscale
-title: "Tenant de qualification Exoscale : une faute par ressource, source Terraform seulement (pas de compte)"
-title_en: "Exoscale qualification tenant: one fault per resource, Terraform source only (no account)"
+title: "Tenant de qualification Exoscale : une faute par ressource, un contre-exemple par contrôle"
+title_en: "Exoscale qualification tenant: one fault per resource, one counterexample per control"
 
-live: unavailable
-live_reason: "Aucun compte Exoscale disponible (2026-09-09). La moitié live n'est ni construite ni prouvée : hooks.py refuse identity/inventory/cleanup."
-
+# La zone scannée, et celles que l'inventaire de la preuve de destruction parcourt :
+# ce que la stack crée en ch-gva-2 (pour la source Terraform) doit être prouvé
+# détruit comme le reste.
 region: de-fra-1
 zone: de-fra-1
+zones: [de-fra-1, ch-gva-2]
 
+# Étiquette posée sur toute ressource étiquetable (`labels` Exoscale) ; préfixe des
+# noms pour ce qui ne s'étiquette pas (groupes de sécurité, buckets).
 tag: pepin-qual
 name_prefix: pepin-qual-
 
 provider_version: "0.71.0"
 
+# Outil requis par le crochet `extra` (les buckets SOS passent par `exo storage`,
+# la CLI de référence du fournisseur) et par le nettoyage de secours des buckets.
+required_tools: [exo]
+
+# Rien n'est « plan seulement » chez Exoscale : la variable est passée pour
+# l'uniformité du runner.
 applied_vars:
   terraform_only_resources: false
 
-budget_minutes: 5
+# Budget mur. Les clusters SKS (~2-3 min chacun à créer, ~1 min à détruire) sont
+# l'étape lente.
+budget_minutes: 20
+
+# Coût : tarifs horaires de l'API de tarification du portail (portal.exoscale.com/
+# api/pricing/{opencompute,blockstorage,sks}, EUR, 2026-09-09) sur ce qui est appliqué.
+cost:
+  currency: EUR
+  hourly:
+    - family: instances_micro
+      count: 2
+      unit_price: 0.00729    # standard.micro (exposed, untagged)
+      source: "pricing/opencompute running_micro"
+    - family: instances_small
+      count: 2
+      unit_price: 0.02333    # standard.small : la taille minimale pour un volume block storage (secrets, hardened)
+      source: "pricing/opencompute running_small"
+    - family: local_storage_gb
+      count: 40              # 4 disques racine de 10 Go
+      unit_price: 0.00014
+      source: "pricing/opencompute volume (par Go.h)"
+    - family: block_storage_gb
+      count: 30              # 2 volumes de 10 Go + 1 snapshot de 10 Go
+      unit_price: 0.00014
+      source: "pricing/blockstorage volume / snapshot (par Go.h)"
+    - family: sks_pro
+      count: 1
+      unit_price: 0.054995   # plan de contrôle Pro (strong) ; starter (weak) est gratuit
+      source: "pricing/sks pro_cluster"
 
 resources:
-  plan:
-    - { family: security_groups, count: 9, note: "ssh/rdp/db/snmp/any/quartet/egress_any ⇒ 6 contrôles réseau ; undocumented_flow ⇒ CLD-NET-5 (matrice des flux) ; hardened = contre-exemple" }
+  applied:
+    - { family: security_groups, count: 9, note: "ssh/rdp/db/snmp/any/quartet ⇒ 5 contrôles d'entrée ; egress_any (TCP 1-65535 sortant) ⇒ CLD-NET-4 ; undocumented_flow ⇒ CLD-NET-5 (matrice des flux) ; hardened = contre-exemple — 15 règles" }
     - { family: private_networks, count: 2, note: "undocumented ⇒ CLD-NET-5 ; documented = contre-exemple" }
-    - { family: instances, count: 4, note: "untagged ⇒ CLD-GVN-1 ; secrets ⇒ CLD-CMP-9 ; swiss (ch-gva-2) ⇒ CLD-GVN-3 mineur ; hardened = contre-exemple" }
-    - { family: block_volumes, count: 1, note: "chiffré par construction (CLD-CHF-2 pass) ; CLD-STO-3 attend le live" }
-    - { family: sks_clusters, count: 2, note: "weak (starter, sans auto-upgrade, sans audit) ⇒ CLD-K8S-2, CLD-K8S-3, CLD-LOG-1 ; strong = contre-exemple" }
+    - { family: instances, count: 4, note: "le quota de l'organisation (GET /quota : instance 4) ; exposed (IP publique + SSH ouvert) ⇒ CLD-NET-3 ; untagged ⇒ CLD-GVN-1, et sans IP publique derrière le même SSH ouvert = contre-exemple de NET-3 ; secrets ⇒ CLD-CMP-9 ; hardened = contre-exemple" }
+    - { family: block_volumes, count: 2, note: "unsnapshotted (attaché à secrets) ⇒ CLD-STO-3 ; snapshotted (attaché à hardened, une snapshot) = contre-exemple ; chiffrés par construction (CLD-CHF-2 pass)" }
+    - { family: block_snapshots, count: 1, note: "la snapshot du contre-exemple" }
+    - { family: sks_clusters, count: 2, note: "weak (starter, sans auto-upgrade, sans audit) ⇒ CLD-K8S-2, CLD-K8S-3, CLD-LOG-1 ; strong (pro, auto-upgrade, audit) = contre-exemple ; sans nodepool" }
     - { family: iam_roles, count: 4, note: "admin ⇒ iam_role_no_admin_privileges ; no_source_ip ⇒ iam_role_source_ip_restricted ; unbounded ⇒ iam_role_key_lifetime_bounded ; restricted = contre-exemple" }
+  terraform_only:   # sur le plan complet seulement (`terraform_only_resources`), jamais appliqué
+    - { family: instances, count: 1, note: "swiss (ch-gva-2) ⇒ CLD-GVN-3 mineur — hors de la zone scannée en live, et hors quota" }
+  extra:   # hors Terraform (crochet `extra`) : le provider 0.71.0 n'a pas de ressource de bucket
+    - { family: buckets, count: 3, note: "public (ACL public-read, versionné) ⇒ CLD-STO-1 et STO-8 ; unversioned ⇒ CLD-STO-4 et STO-8 ; hardened (Object Lock à la création, par S3) = contre-exemple ; aucun n'est étiquetable (SOS ne persiste pas les tags de bucket) ⇒ CLD-GVN-1 sur les trois, par construction" }
 
 not_exercised:
-  - control: compute_instance_public_ip_with_open_securitygroup
-    reason: "L'IP publique d'une instance est calculée à l'apply : le plan ne peut pas conclure. Attend la moitié live."
-  - control: blockstorage_volume_snapshots_exist
-    reason: "L'état d'usage d'un volume (attached) est calculé à l'apply. Attend la moitié live."
-  - control: objectstorage_bucket_*
-    reason: "Le provider exoscale/exoscale n'a pas de ressource de bucket SOS (seulement exoscale_sos_bucket_policy) : les buckets seront créés par un crochet `extra`, comme chez Outscale, quand un compte existera."
+  - control: network_securitygroup_allow_ingress_from_internet_to_all_ports
+    reason: "Non applicable chez Exoscale : une règle n'a pas de protocole « tout » (tcp, udp, icmp, icmpv6, ah, esp, gre, ipip). any_open ouvre tout TCP et tout UDP, et ce sont les contrôles par famille de ports qui parlent."
+  - control: governance_resource_region_in_eu
+    reason: "En live, la collecte ne projette `region` sur aucun type : not-evaluated sur toute organisation (dette nommée, issue #210). Et le scan ne lit qu'une zone (de-fra-1, UE) : une instance de ch-gva-2 lui serait invisible, l'organisation n'a droit qu'à quatre instances. `swiss` n'existe que sur le plan complet ; l'écart (mineur : hors UE, espace de confiance) n'est prouvé que sur la source Terraform."
   - control: iam_user_mfa_enabled
-    reason: "Les utilisateurs IAM ne sont pas des ressources Terraform, et ce sont des personnes réelles de l'organisation."
+    reason: "Les utilisateurs de l'organisation sont des personnes réelles, pas des ressources du tenant : le contrôle est observé tel quel, hors tenant (`evaluated`)."
+  - control: iam_role_*
+    reason: "Le rôle de la clé qui qualifie (deny par défaut, sans règle CEL) et les rôles sks-ccm-<cluster> que SKS crée pour chaque cluster (éditables, sans borne) sont hors tenant : ils portent leurs propres écarts d'origine et de durée, observés et non gardés (issue #213 pour les rôles SKS)."
+  - control: compute_instance_has_security_group
+    reason: "Le contre-exemple de NET-3 (`untagged`, private = true) n'a pas de groupe : l'API ignore ceux qu'on déclare sur une instance sans interface publique (security-groups: []). L'écart est épinglé tel que mesuré, faux positif à remédiation inexécutable (issue #212)."
+  - control: kubernetes_cluster_audit_logging_enabled (live)
+    reason: "Faux vert live épinglé comme défaut connu : l'API rend audit {} sans audit, la collecte dérive audit_enabled de audit.endpoint et ne projette rien sur le cluster fautif (issue #209). Le plan, lui, l'attrape."
+  - control: governance_resource_required_tags
+    reason: "Buckets SOS : SOS accepte PutBucketTagging (200) et ne persiste rien (GetBucketTagging → NoSuchTagSet, mesuré par SigV4 et par la CLI aws) : un bucket SOS n'a jamais d'étiquette, le contre-exemple n'existe pas, l'écart sur les trois buckets est un faux positif par construction, épinglé tel quel (issue #208). Instances : la collecte live ne projette pas labels, `untagged` passe en silence — faux vert, issue #211 ; le plan l'attrape."
   - control: governance_provider_sovereignty
     reason: "Écart par construction des faits du descripteur (siège en Suisse, contrôle capitalistique extra-UE) : épinglé fail, ce n'est pas le tenant qui le construit."

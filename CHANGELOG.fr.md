@@ -33,6 +33,27 @@ l'une ni l'autre appartient au `git log`.
   effectives. Exoscale : plan seul, 37 ressources, sans compte — la source Terraform
   est épinglée, la moitié live attend un compte.
 
+- **Tenant de qualification Exoscale, moitié live** (issue #198) : 40 ressources dans
+  le plan complet, 39 appliquées (le quota de l'organisation est de quatre instances ;
+  l'instance suisse n'est que sur le plan, par `terraform_only_resources`), plus 3
+  buckets SOS créés par le crochet `extra` (dont un avec Object Lock, par l'API S3),
+  appliqués, scannés en `--live` dans les cinq formats, scellés, détruits et prouvés
+  détruits sur deux zones (15 familles d'API + buckets, delta avant/après).
+  L'organisation attendue vient de `PEPIN_QUAL_EXO_ORG`, confirmée par
+  `GET /api-key/{key}` → `org-id` avant tout apply. Ce que la passe live a trouvé,
+  épinglé tel que mesuré et consigné : SOS accepte `PutBucketTagging` et ne persiste
+  rien (#208, tout bucket SOS échoue `governance_resource_required_tags`) ;
+  `kubernetes_cluster_audit_logging_enabled` passe en live sur un cluster dont l'audit
+  est désactivé (#209, faux vert : l'API rend `audit: {}` et `audit_enabled` est dérivé
+  de `audit.endpoint`) ; `region` n'est projetée sur aucune ressource live (#210,
+  `governance_resource_region_in_eu` not-evaluated) ; les labels des instances ne sont
+  pas collectés en live (#211, une instance sans étiquette passe) ; une instance privée
+  n'a pas de groupe de sécurité par construction (#212, `compute_instance_has_security_group`
+  parle avec une remédiation inexécutable) ; chaque cluster SKS crée un rôle IAM
+  `sks-ccm-*` qui échoue deux contrôles `iam_role_*` (#213). Les deux changements de
+  règle de #206 sont épinglés : `…_all_ports` est `not-applicable` chez Exoscale,
+  `network_securitygroup_unrestricted_egress` échoue sur `tcp 1-65535`.
+
 - **Un tenant de qualification, appliqué et détruit sur un compte réel** (issue #178,
   étape 3). `PEPIN_GATE_LIVE=1 mise run qualify` applique la stack Terraform committée
   sous `references/qualification/scaleway/` — 40 ressources dans le plan, dont 29

@@ -1,162 +1,273 @@
-# Ce que Pépin DOIT rendre sur le tenant de qualification Exoscale — source
-# TERRAFORM seulement : aucun compte, donc aucune source live (tenant.yaml
-# `live: unavailable`). Lu par tools/qualification/qualify.py en `--plan-only`.
+# Ce que Pépin DOIT rendre sur le tenant de qualification Exoscale, source par
+# source. Lu par tools/qualification/qualify.py ; toute différence est NO-GO.
 #
-# Sujets : adresse de la ressource quand l'identifiant n'est pas connu au stade du
-# plan (ADR-0022), nom sinon. Le compte n'est pas épinglé : il n'y en a pas — le
-# jour où il y en aura un, `account:` nommera sa variable d'environnement, et le
-# runner refusera de tourner sans elle.
-account: {}
+# Sujets : en live, l'identifiant natif que la collecte prend pour sujet (instance,
+# volume, groupe de sécurité, réseau privé, rôle), connu après apply — cité sous la
+# forme `${output.<nom>}` ; le nom quand c'est lui le sujet (clusters SKS, buckets).
+# Sur le plan, l'adresse de la ressource quand l'identifiant n'est pas connu au
+# stade du plan (ADR-0022), le nom sinon.
+#
+# Le compte : l'organisation que l'API rattache à la clé (`GET /api-key/{key}` →
+# org-id), confirmée AVANT tout apply contre PEPIN_QUAL_EXO_ORG. La variable
+# absente est un refus (ADR-0012 : aucun identifiant de compte committé).
+account:
+  organization_id_env: PEPIN_QUAL_EXO_ORG
 
 exit_codes:
+  live: 1
   terraform: 1
 
 controls:
-  # ── IAM : rôles (politique lue sur le plan) ───────────────────────────────────
+  # ── IAM : rôles (sujet = le nom du rôle, sur les deux sources) ──────────────────
+  # En live, le rôle de la clé qui qualifie (« deny » par défaut, sans règle CEL) et
+  # les rôles `sks-ccm-<cluster>` que SKS crée pour chaque cluster portent leurs
+  # propres écarts d'origine et de durée : hors tenant, observés, non gardés.
   iam_role_no_admin_privileges:
+    live:
+      fail: [pepin-qual-role-admin]
+      silent: [pepin-qual-role-restricted, pepin-qual-role-no-source-ip]
     terraform:
       fail: [pepin-qual-role-admin]
       silent: [pepin-qual-role-restricted, pepin-qual-role-no-source-ip]
 
   iam_role_source_ip_restricted:
+    live:
+      fail: [pepin-qual-role-no-source-ip]
+      silent: [pepin-qual-role-restricted, pepin-qual-role-admin]
     terraform:
       fail: [pepin-qual-role-no-source-ip]
       silent: [pepin-qual-role-restricted, pepin-qual-role-admin]
 
   iam_role_key_lifetime_bounded:
+    live:
+      fail: [pepin-qual-role-unbounded]
+      silent: [pepin-qual-role-restricted, pepin-qual-role-admin]
     terraform:
       fail: [pepin-qual-role-unbounded]
       silent: [pepin-qual-role-restricted, pepin-qual-role-admin]
 
   iam_user_mfa_enabled:
-    # Les utilisateurs ne sont pas des ressources Terraform.
+    # Les utilisateurs de l'organisation sont des personnes, pas des ressources du
+    # tenant : le contrôle conclut sur eux (pass ou fail), et ce n'est pas gardé.
+    live: evaluated
     terraform: not-evaluated
 
   # ── Groupes de sécurité ───────────────────────────────────────────────────────
-  # Sujet = adresse du groupe (les règles y désignent leur groupe par référence).
+  # Sujet = le groupe (identifiant en live, adresse sur le plan : les règles y
+  # désignent leur groupe par référence).
   network_securitygroup_allow_ingress_from_internet_to_tcp_port_22:
+    live:
+      fail: ["${output.sg_ssh_open_id}", "${output.sg_any_open_id}", "${output.sg_quartet_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_rdp_open_id}", "${output.sg_undocumented_flow_id}"]
     terraform:
       fail: [exoscale_security_group.ssh_open, exoscale_security_group.any_open, exoscale_security_group.quartet]
       silent: [exoscale_security_group.hardened, exoscale_security_group.rdp_open, exoscale_security_group.undocumented_flow]
 
   network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389:
+    live:
+      fail: ["${output.sg_rdp_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
     terraform:
       fail: [exoscale_security_group.rdp_open, exoscale_security_group.any_open]
       silent: [exoscale_security_group.hardened, exoscale_security_group.ssh_open]
 
   network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports:
+    live:
+      fail: ["${output.sg_db_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
     terraform:
       fail: [exoscale_security_group.db_open, exoscale_security_group.any_open]
       silent: [exoscale_security_group.hardened, exoscale_security_group.ssh_open]
 
   network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports:
+    live:
+      fail: ["${output.sg_snmp_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_db_open_id}"]
     terraform:
       fail: [exoscale_security_group.snmp_open, exoscale_security_group.any_open]
       silent: [exoscale_security_group.hardened, exoscale_security_group.db_open]
 
   network_securitygroup_allow_ingress_from_internet_to_all_ports:
-    # NON CONSTRUCTIBLE chez Exoscale : une règle n'a pas de protocole « tout »
-    # (tcp, udp, icmp, icmpv6, ah, esp, gre, ipip), et la règle commune exige
-    # `protocol == all`. `any_open` ouvre tout TCP et tout UDP : les quatre autres
-    # contrôles d'entrée parlent, celui-ci ne peut pas. Un pass par absence, donc —
-    # issue #202 (ce contrôle est actif pour Exoscale au référentiel, et la matrice
-    # de couverture le dit ✅).
-    terraform: pass
+    # NON APPLICABLE chez Exoscale : une règle n'a pas de protocole « tout » (tcp,
+    # udp, icmp, icmpv6, ah, esp, gre, ipip), donc la conjonction any/any que ce
+    # contrôle mesure ne se déclare pas ; `any_open` ouvre tout TCP et tout UDP, et
+    # ce sont les quatre contrôles par famille de ports qui parlent (#202, #206).
+    live: not-applicable
+    terraform: not-applicable
 
   network_securitygroup_unrestricted_egress:
-    # Même limite, même raison : `protocol == all` n'existe pas chez Exoscale (#202).
-    terraform: pass
+    # Chez Exoscale, « tout sortant » s'écrit tcp/udp 1-65535 → 0.0.0.0/0, et la
+    # règle commune reconnaît cette forme (#202, #206) ; `hardened` ne sort qu'en 443.
+    live:
+      fail: ["${output.sg_egress_any_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
+    terraform:
+      fail: [exoscale_security_group.egress_any]
+      silent: [exoscale_security_group.hardened, exoscale_security_group.ssh_open]
 
   network_flow_matrix_documented:
-    # DÉFAUT CONNU, épinglé tel que mesuré : la règle `undocumented_flow` n'a pas de
-    # description, et le contrôle rend PASS. Sur un plan, une description absente
-    # est « connue après apply » (computed) : l'attribut n'est pas projeté, la garde
-    # de capacité se tait — et l'assessment conclut « conforme » alors qu'une règle
-    # du type n'a pas l'attribut décisif. C'est le faux vert que l'intersection de
-    # l'ADR-0006 (#102) existe pour empêcher. Issue #201.
+    # Une règle sans description est un écart (#201, corrigé par #205) — y compris sur
+    # le plan, où une description non écrite est « connue après apply ».
+    live:
+      fail: ["${output.sg_undocumented_flow_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
     terraform:
-      status: pass
-      known_defect: "#201 — faux vert sur le plan : la règle sans description est invisible (secours de provenance), le contrôle conclut pass"
+      fail: [exoscale_security_group.undocumented_flow]
+      silent: [exoscale_security_group.hardened, exoscale_security_group.ssh_open]
 
   # ── Réseau ────────────────────────────────────────────────────────────────────
   network_documented:
+    live:
+      fail: [pepin-qual-pn-undocumented]
+      silent: [pepin-qual-pn-documented]
     terraform:
       fail: [pepin-qual-pn-undocumented]
       silent: [pepin-qual-pn-documented]
 
   # ── Calcul ────────────────────────────────────────────────────────────────────
   compute_instance_public_ip_with_open_securitygroup:
-    # L'IP publique est calculée à l'apply : attend la moitié live.
+    # L'IP publique est un fait d'apply : `exposed` en a une derrière un groupe SSH
+    # ouvert, `untagged` (private = true) n'en a pas derrière le même groupe, et
+    # `hardened` en a une derrière un groupe fermé.
+    live:
+      fail: ["${output.vm_exposed_id}"]
+      silent: ["${output.vm_untagged_id}", "${output.vm_hardened_id}"]
     terraform: not-evaluated
 
   compute_instance_has_security_group:
+    # MESURÉ, FAUX POSITIF : `untagged` est privée (`private = true`, public-ip-assignment
+    # none) ; l'API ignore les groupes déclarés et rend `security-groups: []` — un
+    # groupe ne s'attache pas à une instance sans interface publique. La règle en fait
+    # un écart, avec une remédiation inexécutable. Issue #212 ; sa
+    # correction fera rougir cette porte sciemment.
+    live:
+      fail: ["${output.vm_untagged_id}"]
+      silent: ["${output.vm_exposed_id}", "${output.vm_hardened_id}"]
     terraform: pass
 
   compute_instance_no_secrets_in_user_data:
+    live:
+      fail: ["${output.vm_secrets_id}"]
+      silent: ["${output.vm_hardened_id}", "${output.vm_untagged_id}"]
     terraform:
       fail: [exoscale_compute_instance.secrets]
       silent: [exoscale_compute_instance.hardened, exoscale_compute_instance.untagged]
 
   # ── Stockage ──────────────────────────────────────────────────────────────────
   blockstorage_volume_encryption:
-    # Chiffré par construction (mapping `encrypted: true`).
+    # Chiffré par construction (contrat et mapping `encrypted: true`).
+    live: pass
     terraform: pass
 
   blockstorage_volume_snapshots_exist:
-    # L'état d'usage est calculé à l'apply : attend la moitié live.
+    # `unsnapshotted` est attaché (à `secrets`, en usage) sans snapshot ; `snapshotted`
+    # est attaché (à `hardened`) avec une snapshot terminée du jour. Sur le plan,
+    # l'état d'usage est calculé à l'apply.
+    live:
+      fail: ["${output.volume_unsnapshotted_id}"]
+      silent: ["${output.volume_snapshotted_id}"]
     terraform: not-evaluated
 
   blockstorage_snapshot_not_public:
+    live: not-applicable
     terraform: not-applicable
 
   objectstorage_bucket_public_access:
-    # Pas de ressource de bucket dans le provider : crochet `extra` à écrire avec le compte.
+    # Buckets SOS : créés par le crochet `extra`, hors Terraform (le provider n'a pas
+    # de ressource de bucket) — donc rien sur le plan.
+    live:
+      fail: ["${output.bucket_public}"]
+      silent: ["${output.bucket_unversioned}", "${output.bucket_hardened}"]
     terraform: not-evaluated
 
   objectstorage_bucket_versioning_enabled:
+    live:
+      fail: ["${output.bucket_unversioned}"]
+      silent: ["${output.bucket_public}", "${output.bucket_hardened}"]
     terraform: not-evaluated
 
   objectstorage_bucket_object_lock_enabled:
+    # `hardened` est créé verrouillé (CreateBucket + x-amz-bucket-object-lock-enabled,
+    # la seule façon : `exo storage` ne le sait pas).
+    live:
+      fail: ["${output.bucket_public}", "${output.bucket_unversioned}"]
+      silent: ["${output.bucket_hardened}"]
     terraform: not-evaluated
 
   objectstorage_bucket_kms_encryption:
+    live: not-applicable
     terraform: not-applicable
 
   # ── SKS ───────────────────────────────────────────────────────────────────────
   kubernetes_cluster_control_plane_highly_available:
+    live:
+      fail: [pepin-qual-sks-weak]
+      silent: [pepin-qual-sks-strong]
     terraform:
       fail: [pepin-qual-sks-weak]
       silent: [pepin-qual-sks-strong]
 
   kubernetes_cluster_auto_upgrade_enabled:
+    live:
+      fail: [pepin-qual-sks-weak]
+      silent: [pepin-qual-sks-strong]
     terraform:
       fail: [pepin-qual-sks-weak]
       silent: [pepin-qual-sks-strong]
 
   kubernetes_cluster_audit_logging_enabled:
+    # DÉFAUT CONNU, épinglé tel que mesuré : FAUX VERT en live. L'API rend `audit: {}`
+    # pour un cluster dont l'audit est désactivé ; la collecte dérive `audit_enabled`
+    # de `audit.endpoint` (absent), ne projette rien sur `weak`, et le contrôle conclut
+    # « conforme » sur le seul cluster observé (`observed=1/2`). Le plan, lui, échoue
+    # sur `weak`. Issue #209.
+    live:
+      status: pass
+      known_defect: "#209 — faux vert live : audit_enabled dérivé de audit.endpoint, absent quand l'audit est désactivé (API : audit {}) ; le cluster sans audit n'est pas évalué, le contrôle rend pass"
     terraform:
       fail: [pepin-qual-sks-weak]
       silent: [pepin-qual-sks-strong]
 
   # ── Répartiteurs de charge : absents de l'API Exoscale (contrat) ──────────────
   loadbalancer_ssl_listeners:
+    live: not-applicable
     terraform: not-applicable
 
   loadbalancer_logging_enabled:
+    live: not-applicable
     terraform: not-applicable
 
   loadbalancer_http_redirect_to_https:
+    live: not-applicable
     terraform: not-applicable
 
   # ── Gouvernance ───────────────────────────────────────────────────────────────
   governance_resource_required_tags:
+    # Les trois buckets SOS sont fautifs PAR CONSTRUCTION : SOS accepte
+    # PutBucketTagging et ne persiste rien (NoSuchTagSet juste après, mesuré par SigV4
+    # et par la CLI aws). Un bucket SOS n'a jamais d'étiquette, quoi qu'on fasse ;
+    # épinglé tel que mesuré, faux positif non remédiable — issue #208.
+    # Et FAUX VERT sur `untagged` : la collecte live ne projette pas `labels` sur les
+    # instances (ni volumes, ni clusters), la règle les saute en silence, seuls les
+    # buckets sont jugés — issue #211 ; sa correction ajoutera
+    # `${output.vm_untagged_id}` au `fail` et fera rougir cette porte.
+    live:
+      fail: ["${output.bucket_public}", "${output.bucket_unversioned}", "${output.bucket_hardened}"]
+      silent: ["${output.vm_hardened_id}", "${output.vm_secrets_id}", "${output.volume_unsnapshotted_id}", pepin-qual-sks-weak]
     terraform:
       fail: [pepin-qual-vm-untagged]
       silent: [pepin-qual-vm-hardened, pepin-qual-vm-secrets]
 
   governance_resource_region_in_eu:
     # ch-gva-2 : hors UE, espace européen de confiance — l'écart MINEUR (low), le
-    # seul constructible ici. de-fra-1 est l'UE.
+    # seul constructible. `swiss` n'est que sur le plan (`terraform_only_resources`) :
+    # en live, le scan lit de-fra-1 (UE), elle y serait invisible, et l'organisation
+    # n'a droit qu'à quatre instances.
+    # DETTE DE COLLECTE NOMMÉE (ADR-0010) : en live, la collecte Exoscale ne projette
+    # `region` sur aucun type (instances, volumes, snapshots, clusters) — la zone
+    # scannée n'est pas reportée sur les ressources —, et la garde de capacité rend
+    # not-evaluated. Le jour où le collecteur le fait, cette ligne devient `pass`.
+    live: not-evaluated
     terraform:
       fail: [pepin-qual-vm-swiss]
       silent: [pepin-qual-vm-hardened]
@@ -164,5 +275,7 @@ controls:
   governance_provider_sovereignty:
     # Écart par construction des faits du descripteur (siège en Suisse, contrôle
     # capitalistique extra-UE) : le sujet est le fournisseur lui-même.
+    live:
+      fail: [exoscale]
     terraform:
       fail: [exoscale]
