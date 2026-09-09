@@ -83,6 +83,18 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A security group rule with no description got `pass` — from the control that
+  exists to catch exactly that.** The rule guarded itself with `"description" in
+  object.keys(...)`, meant to answer "does this provider expose the field at all", but
+  asked **per resource**. On a Terraform plan an operator who writes no description
+  simply produces no field, so the rule stayed silent — and the silence became a
+  `pass`, because the capability lock saw `description` collected on the type (another
+  rule carried it) and let the assessment conclude with no finding. A `pass` nothing
+  established, on the very deviation the control targets. The question is now asked of
+  the **inventory**: if any rule carries the key, the provider exposes the field, and a
+  rule without one is undocumented. No rule reads the provenance — ADR-0017 forbids it —
+  and the counterexample the original guard protected still holds: a provider that
+  exposes the field nowhere still fires nothing.
 - **A subject at fault by several routes no longer reads as several deviations.** Three
   `deny` blocks of `objectstorage_bucket_public_access` — a canned ACL, a grant, a bucket
   policy — conclude on the same bucket, and each cause is real. But a public bucket is

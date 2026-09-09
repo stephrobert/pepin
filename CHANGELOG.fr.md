@@ -88,6 +88,19 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une règle de security group sans description obtenait `pass` — du contrôle qui
+  existe pour attraper exactement ça.** La règle se gardait par
+  `"description" in object.keys(...)`, censé répondre « ce fournisseur expose-t-il le
+  champ », mais posé **par ressource**. Sur un plan Terraform, un exploitant qui n'écrit
+  aucune description ne produit tout simplement pas le champ : la règle se taisait — et
+  le silence devenait un `pass`, le verrou de capacité voyant `description` collectée
+  sur le type (une autre règle la portait) et laissant l'assessment conclure faute de
+  finding. Un `pass` que rien n'établissait, sur l'écart même que le contrôle vise. La
+  question se pose désormais à l'échelle de l'**inventaire** : si une règle porte la
+  clé, le fournisseur expose le champ, et une règle qui n'en a pas n'est pas
+  documentée. Aucune règle ne lit la provenance — l'ADR-0017 l'interdit — et le
+  contre-exemple que la garde d'origine protégeait tient toujours : un fournisseur qui
+  n'expose ce champ nulle part ne déclenche rien.
 - **Un sujet fautif par plusieurs voies ne se lit plus comme plusieurs écarts.** Trois
   blocs `deny` d'`objectstorage_bucket_public_access` — ACL prédéfinie, grant, politique
   de bucket — concluent sur le même bucket, et chaque cause est réelle. Mais un bucket
