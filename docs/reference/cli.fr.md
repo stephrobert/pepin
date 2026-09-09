@@ -24,7 +24,7 @@ de drapeaux viennent de la surface gelée ; chaque aide ci-dessous est la sortie
 | `pepin provider list` | _(aucun drapeau propre)_ |
 | `pepin provider new` | _(aucun drapeau propre)_ |
 | `pepin provider validate` | _(aucun drapeau propre)_ |
-| `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
+| `pepin scan` | `--exceptions`, `--format` / `-f`, `--gate`, `--kubeconfig`, `--lang`, `--live`, `--policy`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
 | `pepin scsl` | `--index` |
 | `pepin verify` | `--bundle`, `--pubkey`, `--re-derive`, `--require-signature` |
 | `pepin version` | _(aucun drapeau propre)_ |
@@ -39,7 +39,7 @@ séparément :
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v6** |
+| `cli` | verbes, drapeaux et codes de sortie | **v7** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
@@ -118,6 +118,7 @@ Usage:
 Flags:
       --exceptions fichier               fichier YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme
   -f, --format string                    format de sortie : table | json | assessment | oscal | sarif (default "table")
+      --gate string                      GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
   -h, --help                             help for scan
       --kubeconfig string                chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)
       --live                             collecter l'inventaire en direct via l'API du provider (identifiants requis)

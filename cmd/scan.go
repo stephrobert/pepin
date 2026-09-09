@@ -25,6 +25,7 @@ import (
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
+	"github.com/stephrobert/pepin/internal/profile"
 	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/internal/scoring"
 	"github.com/stephrobert/pepin/internal/tfparse"
@@ -51,6 +52,7 @@ var (
 	scanRedact     bool   // caviarder les valeurs sensibles de l'input.json embarqué
 	scanStrict     bool   // porte CI stricte : échec sur couverture nulle ou écart medium/low
 	scanTimestamp  string // instant d'évaluation (RFC3339 UTC), partagé input.evaluated_at + Run.Timestamp
+	scanGate       string // profil de PORTE : ce qui pèse dans le code de sortie, jamais dans le rapport
 )
 
 var scanCmd = &cobra.Command{
@@ -76,6 +78,10 @@ var scanCmd = &cobra.Command{
 			return errors.New(tr(
 				"préciser un fichier (export JSON ou plan Terraform), ou utiliser --live",
 				"give a file (JSON export or Terraform plan), or use --live"))
+		}
+		if !profile.Valid(scanGate) {
+			return fmt.Errorf(tr("profil de porte inconnu : %q (valeurs : %s)",
+				"unknown gate profile: %q (values: %s)"), scanGate, strings.Join(profile.Names(), ", "))
 		}
 		scanTimestamp = time.Now().UTC().Format(time.RFC3339) // un seul instant, partagé input + run
 
@@ -250,6 +256,12 @@ var scanCmd = &cobra.Command{
 		// sévérité, donc il ne peut pas rendre 1 (ADR-0015). Le sortir ICI, et non
 		// à la collecte des findings, garde le rapport complet.
 		deviations, _ := assess.SplitInconclusive(findings)
+		// Le PROFIL, au même endroit et pour la même raison : il ne retire rien du
+		// rapport, il change ce qui PÈSE dans la porte. Un écart hors profil reste
+		// imprimé, exporté et scellé — seul son poids dans le code de sortie change,
+		// et un écart grave mis de côté empêche de rendre 0 (cf. plus bas).
+		deviations, setAside := profile.Split(scanGate, deviations)
+		asideCodes, asideSevere := profile.SetAside(setAside)
 		open := openFindings(deviations, exemptedKeys(asmt))
 		enrichFromReferentiel(findings)
 		res := scoring.Summarize(deviations)
@@ -287,6 +299,10 @@ var scanCmd = &cobra.Command{
 		}
 		// Portée prestataire/commanditaire : obligatoire pour l'opposabilité (un rapport pepin
 		// ne prouve pas une qualification, seulement la posture d'un tenant).
+		// Ce que le profil a mis de côté se DIT, toujours. Un profil qui allégerait
+		// une porte sans nommer ce qu'il n'a plus regardé serait le faux vert que ce
+		// projet combat, simplement déplacé dans un réglage — donc invisible.
+		renderGateProfile(os.Stderr, scanGate, asideCodes, asideSevere)
 		_, _ = fmt.Fprintf(os.Stderr, "\nⓘ %s\n", assess.ScopeDisclaimer())
 		if !gate.Conforme {
 			os.Exit(exitNonConformite)
@@ -297,6 +313,14 @@ var scanCmd = &cobra.Command{
 		// inventaire tronqué rendraient une porte de CI verte sur un périmètre jamais regardé.
 		// Le bandeau annonce déjà « INDÉTERMINÉ » dans ce cas — le code de sortie doit le suivre.
 		if evaluatedNonGov(asmt) == 0 {
+			os.Exit(exitStrict)
+		}
+		// Un écart critical/high MIS DE CÔTÉ par le profil : jamais 0. Le scan a
+		// délibérément regardé moins que tout, ce qui est la définition même de « le
+		// scan n'établit pas la conformité ». Placé APRÈS le test de conformité : un
+		// écart resté visible rend 1, et l'ordre de précédence de l'ADR-0005 tient —
+		// une mise de côté n'efface jamais un écart observé.
+		if asideSevere {
 			os.Exit(exitStrict)
 		}
 		// Périmètre PARTIELLEMENT lu : jamais 0 non plus. Le code 3 est réutilisé, et
@@ -595,6 +619,12 @@ func init() {
 	scanCmd.Flags().StringVar(&scanRegion, "region", "", "région cible pour la collecte live")
 	scanCmd.Flags().StringVar(&scanKubeconfig, "kubeconfig", "", "chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)")
 	scanCmd.Flags().StringVar(&scanProfile, "profile", "", "profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)")
+	// `--profile` désigne DÉJÀ le profil d'identifiants. Celui-ci s'appelle donc
+	// `--gate`, et le nom dit mieux ce qu'il fait : il ne filtre pas le rapport, il
+	// filtre ce qui pèse dans le code de sortie.
+	scanCmd.Flags().StringVar(&scanGate, "gate", profile.All,
+		tr("profil de PORTE ("+strings.Join(profile.Names(), " | ")+") : ce qui pèse dans le code de sortie. Le rapport reste COMPLET quel que soit le profil ; un écart critical/high mis de côté rend 3, jamais 0",
+			"GATE profile ("+strings.Join(profile.Names(), " | ")+"): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0"))
 	scanCmd.Flags().StringVar(&scanS3Endpoint, "s3-endpoint", "", "endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)")
 	scanCmd.Flags().StringVar(&scanSeal, "seal", "", "écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier")
 	scanCmd.Flags().StringVar(&scanExceptions, "exceptions", "", "`fichier` YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme")
@@ -1447,4 +1477,30 @@ func renderJSON(findings []finding.Finding, res scoring.Result, ex exempt.Report
 	}
 	_, _ = fmt.Println(string(b))
 	return nil
+}
+
+// renderGateProfile dit ce que le profil de porte a mis de côté.
+//
+// Il l'écrit MÊME quand rien n'a été mis de côté, dès qu'un profil est demandé : un
+// opérateur doit pouvoir vérifier que sa porte regarde ce qu'il croit, et l'absence
+// de message se lirait « le profil n'a rien changé » aussi bien que « le profil n'a
+// pas été pris en compte ».
+func renderGateProfile(w io.Writer, gate string, codes []string, severe bool) {
+	if gate == profile.All {
+		return
+	}
+	_, _ = fmt.Fprintf(w, tr("\npepin: porte « %s » — le rapport ci-dessus reste COMPLET, seul le code de sortie est filtré.\n",
+		"\npepin: gate \"%s\" — the report above stays COMPLETE, only the exit code is filtered.\n"), gate)
+	if len(codes) == 0 {
+		_, _ = fmt.Fprintln(w, tr("       aucun écart mis de côté : la porte a pesé tout ce qui a été trouvé.",
+			"       nothing set aside: the gate weighed everything that was found."))
+		return
+	}
+	_, _ = fmt.Fprintf(w, tr("       %d contrôle(s) mis de côté, hors du profil : %s\n",
+		"       %d control(s) set aside, outside the profile: %s\n"), len(codes), strings.Join(codes, ", "))
+	if severe {
+		_, _ = fmt.Fprintln(w, tr(
+			"       dont au moins un critical/high : le scan sort en 3 (« n'établit pas la conformité »), jamais 0.",
+			"       at least one of them critical/high: the scan exits 3 (\"does not establish compliance\"), never 0."))
+	}
 }

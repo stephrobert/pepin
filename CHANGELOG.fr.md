@@ -90,6 +90,19 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **`scan --gate <all|security|compliance|sovereignty>` : un profil pour la porte de
+  CI, qui ne cache rien.** Un premier scan doit provoquer « ah oui, ça c'est
+  intéressant », pas « oui, je sais que ma VM de test n'a pas de protection contre la
+  suppression ». Le rapport reste COMPLET dans tous les formats — c'est la règle déjà
+  appliquée aux dérogations et aux constats d'incertitude : le rapport dit tout, seule
+  la porte filtre. Ce qui change est ce qui pèse dans le **code de sortie**, et chaque
+  scan imprime ce qui a été mis de côté et pourquoi.
+  **Aucun profil ne peut faire passer une chaîne de rouge à vert** : un `1` devient au
+  pire un `3` — « n'établit pas la conformité », la lecture honnête d'un scan
+  volontairement partiel (ADR-0005, et toujours pas de cinquième code) —, jamais un
+  `0`. Le défaut reste `all`, donc rien ne change sans le drapeau. Surface CLI v5 → v6.
+  Le drapeau ne s'appelle pas `--profile` : ce nom désigne déjà le profil
+  d'identifiants de la collecte live.
 - **Un finding déclare désormais sa CONFIANCE, distincte de sa sévérité.** La sévérité
   dit la conséquence si le problème est réel ; la confiance dit à quel point Pépin est
   sûr de l'avoir établi. Un volume sans sauvegarde récente et une VM dont SSH est ouvert
