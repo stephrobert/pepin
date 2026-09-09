@@ -59,6 +59,13 @@ belongs in `git log`.
 
 ### Fixed
 
+- **An access key whose expiry has already passed no longer counts as compliant.** The
+  rule only refused a MISSING date, so a key still `ACTIVE` two years past its expiry
+  passed — measured on a real tenant. Both readings of that state are bad, which is why
+  the pass was wrong: either the provider still honours the key and the expiry protects
+  nothing, or it does not and a dead key is still declared active. The scan does not
+  need to settle which to know that "compliant" is false. The reference instant is the
+  EVALUATION time, not the clock, so replaying a sealed bundle yields the same verdict.
 - **A scan that measured nothing no longer renders as compliant.** A green tick,
   "No deviations found in the audited scope" and four severity counters at zero were
   printed immediately above a verdict saying `INDÉTERMINÉ`. Three signals literally true

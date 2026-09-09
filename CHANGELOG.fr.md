@@ -63,6 +63,14 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une clé d'accès dont l'expiration est dépassée ne compte plus comme conforme.** La
+  règle ne refusait qu'une date ABSENTE, si bien qu'une clé encore `ACTIVE` deux ans
+  après son échéance passait — mesuré sur un tenant réel. Les deux lectures de cet état
+  sont mauvaises, et c'est pourquoi le `pass` était faux : soit le fournisseur honore
+  encore la clé et l'expiration ne protège rien, soit il ne l'honore plus et une clé
+  morte reste déclarée active. Le scan n'a pas à trancher laquelle pour savoir que
+  « conforme » est faux. L'instant de référence est celui de l'ÉVALUATION, pas
+  l'horloge : le rejeu d'un bundle scellé rend donc le même verdict.
 - **Un scan qui n'a rien mesuré ne se rend plus comme conforme.** Une coche verte,
   « Aucun écart sur le périmètre audité » et quatre compteurs à zéro s'imprimaient
   immédiatement au-dessus d'un verdict `INDÉTERMINÉ`. Trois signaux littéralement vrais
