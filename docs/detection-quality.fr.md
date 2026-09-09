@@ -38,8 +38,8 @@ demanderait d'inventer une non-applicabilité.
 | Verdict | Ce qu'il met en scène | À prouver | Prouvés | % |
 |---|---|---:|---:|---:|
 | `fail` | une configuration vulnérable est détectée | 141 | 23 | 16 |
-| `pass` | une configuration réellement correcte est confirmée | 141 | 35 | 24 |
-| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 157 | 20 | 12 |
+| `pass` | une configuration réellement correcte est confirmée | 141 | 36 | 25 |
+| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 157 | 19 | 12 |
 | `not-applicable` | le contrat du fournisseur déclare le mécanisme inexistant | 22 | 11 | 50 |
 | **Total** | | **461** | **89** | **19** |
 

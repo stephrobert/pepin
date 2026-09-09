@@ -210,17 +210,66 @@ def reduce_module(m, allow):
     return out
 
 
-def reduce_config(m):
+def reduce_config(m, allow):
+    """Réduit `configuration` à ce que ParsePlan lit : la `source` de chaque appel de
+    module, et les RÉFÉRENCES déclarées par chaque ressource.
+
+    Les références sont ce que le plan garde de la relation quand `planned_values` a
+    un trou : un identifiant que le plan va créer n'y est pas résolu, il est absent.
+    Sans elles, aucun tenant de référence ne peut exercer la corrélation VM ↔ groupe
+    de sécurité, c'est-à-dire la moitié des contrôles réseau.
+
+    `constant_value` est délibérément JETÉ, et c'est le point de sécurité de cette
+    fonction. Une référence est une adresse de ressource — structurelle, déjà lisible
+    dans `planned_values`. Une valeur constante, elle, est le contenu écrit par
+    l'exploitant : c'est là que vit un mot de passe en dur dans un `user_data`. Garder
+    l'une n'apprend rien à personne ; garder l'autre republierait la configuration
+    applicative d'un tiers, ce que ce script existe pour empêcher.
+    """
+    out = {}
     calls = {}
     for name, call in (m.get("module_calls") or {}).items():
         c = {}
         if "source" in call:
             c["source"] = call["source"]
-        sub = reduce_config(call.get("module") or {})
+        # Les ARGUMENTS de l'appel, références seules : c'est par eux qu'un `var.x`
+        # utilisé dans le module se rattache à la ressource que l'appelant a passée.
+        # Sans eux, aucun plan MODULAIRE ne joint une VM à son groupe de sécurité —
+        # c'est-à-dire aucun plan réel.
+        exprs = {}
+        for nom, e in (call.get("expressions") or {}).items():
+            if not isinstance(e, dict):
+                continue
+            refs = e.get("references")
+            if isinstance(refs, list) and refs:
+                exprs[nom] = {"references": [x for x in refs if isinstance(x, str)]}
+        if exprs:
+            c["expressions"] = exprs
+        sub = reduce_config(call.get("module") or {}, allow)
         if sub:
             c["module"] = sub
         calls[name] = c
-    return {"module_calls": calls} if calls else {}
+    if calls:
+        out["module_calls"] = calls
+    res = []
+    for r in m.get("resources") or []:
+        champs = allow.get(r.get("type") or "")
+        if not champs:
+            continue
+        exprs = {}
+        for nom, e in (r.get("expressions") or {}).items():
+            # Seuls les champs que les descripteurs lisent, et seules les références :
+            # tout le reste est écarté sans être regardé.
+            if nom not in champs or not isinstance(e, dict):
+                continue
+            refs = e.get("references")
+            if isinstance(refs, list) and refs:
+                exprs[nom] = {"references": [x for x in refs if isinstance(x, str)]}
+        if exprs and r.get("address"):
+            res.append({"address": r["address"], "expressions": exprs})
+    if res:
+        out["resources"] = res
+    return out
 
 
 def cmd_reduce(src, dst):
@@ -233,7 +282,7 @@ def cmd_reduce(src, dst):
     pv = doc.get("planned_values") or doc.get("values")
     if pv:
         out["planned_values"] = {"root_module": reduce_module(pv.get("root_module") or {}, allow)}
-    cfg = reduce_config((doc.get("configuration") or {}).get("root_module") or {})
+    cfg = reduce_config((doc.get("configuration") or {}).get("root_module") or {}, allow)
     if cfg:
         out["configuration"] = {"root_module": cfg}
     pathlib.Path(dst).write_text(json.dumps(out, separators=(",", ":"), sort_keys=True) + "\n")

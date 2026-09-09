@@ -102,10 +102,10 @@ Frozen shape: `{"findings": [...], "summary": {...}}`.
     "tf_file": "main.tf",
     "tf_line": "81"
   },
-  "message": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL).",
+  "message": "Bucket \"scaleway_object_bucket.backups\" is publicly accessible (public ACL).",
   "remediation": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
   "severity": "critical",
-  "subject": "scaleway_object_bucket_acl.backups",
+  "subject": "scaleway_object_bucket.backups",
   "title": "Object storage publicly exposed"
 }
 ```
@@ -252,7 +252,7 @@ One result:
   "control": "objectstorage_bucket_public_access",
   "evidence": {
     "attribute": "acl",
-    "observed": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL).",
+    "observed": "Bucket \"scaleway_object_bucket.backups\" is publicly accessible (public ACL).",
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -295,7 +295,7 @@ One result:
   "remediation": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
   "severity": "critical",
   "status": "fail",
-  "subject": "scaleway_object_bucket_acl.backups",
+  "subject": "scaleway_object_bucket.backups",
   "title": "Object storage publicly exposed"
 }
 ```
@@ -412,7 +412,7 @@ SARIF 2.1.0, the format GitHub's Code Scanning tab reads. This is the one to upl
             }
           ],
           "message": {
-            "text": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL)."
+            "text": "Bucket \"scaleway_object_bucket.backups\" is publicly accessible (public ACL)."
           },
 […]
 ```
@@ -437,7 +437,7 @@ One result:
     }
   ],
   "message": {
-    "text": "Bucket \"scaleway_object_bucket_acl.backups\" is publicly accessible (public ACL)."
+    "text": "Bucket \"scaleway_object_bucket.backups\" is publicly accessible (public ACL)."
   },
   "ruleId": "CLD-STO-1"
 }

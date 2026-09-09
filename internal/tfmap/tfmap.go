@@ -93,7 +93,9 @@ func Apply(spec Spec, resources []tfparse.Resource) model.Inventory {
 			// la configuration effective, et l'origine `terraform-plan` le porte.
 			src := collect.Source{Origin: model.OriginTerraform, Ref: res.Type}
 			for _, it := range items {
+				it = withReferences(it, rs.Map, res.References)
 				attrs, prov := collect.ProjectAttested(it, rs.Map, rs.Transforms, src)
+				attestReferences(&prov, rs.Map, res)
 				for k, v := range rs.Const {
 					attrs[k] = v
 				}
@@ -130,4 +132,91 @@ func sourceRefOf(o tfparse.Origin) *model.SourceRef {
 		return nil
 	}
 	return &model.SourceRef{File: o.File, Line: o.Line, Module: o.Module}
+}
+
+// withReferences complète un item du plan avec les ADRESSES que l'exploitant a
+// référencées là où le plan n'a pas encore de valeur.
+//
+// L'injection se fait AVANT la projection, plutôt qu'à côté : la spec, ses
+// transforms et l'attestation s'appliquent alors sans rien savoir de la manœuvre, et
+// il n'existe qu'un seul chemin de projection à maintenir.
+//
+// Trois bornes, et chacune retire un moyen de se tromper :
+//
+//   - on ne complète QUE ce que le plan n'a pas. Une valeur présente gagne toujours,
+//     donc un plan appliqué (`values`, tout résolu) est strictement inchangé ;
+//   - on ne complète que les chemins SIMPLES. `_parent.x` ou `a.b` désignent une
+//     structure, pas un argument de la configuration : les compléter mêlerait deux
+//     espaces de noms ;
+//   - une seule adresse est projetée comme SCALAIRE, plusieurs comme LISTE. C'est la
+//     forme que la spec attend de la source native, et le transform `list` de la spec
+//     retombe sur ses pieds dans les deux cas.
+func withReferences(item any, mapping map[string]string, refs map[string][]string) any {
+	if len(refs) == 0 {
+		return item
+	}
+	valeurs, ok := item.(map[string]any)
+	if !ok {
+		return item
+	}
+	var complete map[string]any
+	for _, chemin := range mapping {
+		if chemin == "" || strings.ContainsAny(chemin, ".[") {
+			continue
+		}
+		if _, present := valeurs[chemin]; present {
+			continue
+		}
+		adresses := refs[chemin]
+		if len(adresses) == 0 {
+			continue
+		}
+		if complete == nil {
+			complete = make(map[string]any, len(valeurs)+1)
+			for k, v := range valeurs {
+				complete[k] = v
+			}
+		}
+		if len(adresses) == 1 {
+			complete[chemin] = adresses[0]
+			continue
+		}
+		liste := make([]any, len(adresses))
+		for i, a := range adresses {
+			liste[i] = a
+		}
+		complete[chemin] = liste
+	}
+	if complete == nil {
+		return item
+	}
+	return complete
+}
+
+// attestReferences corrige l'attestation des attributs COMPLÉTÉS par une référence.
+//
+// Sans cela, la provenance dirait que la valeur a été lue dans `planned_values` à
+// l'attribut du même nom, ce qui est faux : elle vient de `configuration`, et elle
+// porte une adresse plutôt que la valeur du champ. Une traçabilité qui désigne le
+// mauvais endroit est pire que son absence — c'est la règle que le modèle de
+// provenance énonce lui-même pour les appels d'API.
+func attestReferences(prov *model.Provenance, mapping map[string]string, res tfparse.Resource) {
+	for attr, chemin := range mapping {
+		if chemin == "" || strings.ContainsAny(chemin, ".[") {
+			continue
+		}
+		if _, present := res.Values[chemin]; present {
+			continue
+		}
+		if len(res.References[chemin]) == 0 {
+			continue
+		}
+		prov.Attest(attr, model.Attestation{
+			Origin:   model.OriginTerraform,
+			Source:   "configuration:" + res.Type,
+			Path:     chemin + ".references",
+			Observed: true,
+			Derived:  true,
+		})
+	}
 }

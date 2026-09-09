@@ -535,6 +535,13 @@ mapping_terraform:
         state: state
         user_data: user_data              # Outscale UserData (base64) : secrets en clair (CLD-CMP-9)
         tags: tags
+      transforms:
+        # `list` est IDEMPOTENT (liste gardée, scalaire -> [scalaire]). Il est requis
+        # ici parce qu'un plan qui ne connaît pas encore les identifiants fait porter à
+        # ce champ l'ADRESSE du security group référencé — une seule, donc un scalaire.
+        # Sans lui, la règle qui itère la liste ne verrait rien, et le silence
+        # ressemblerait exactement à une VM sans groupe.
+        security_group_ids: list
   
     - tf_type: outscale_policy
       type: iam_policy

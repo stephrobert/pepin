@@ -15,11 +15,11 @@
     },
     "not-evaluated": {
       "required": 157,
-      "proven": 20
+      "proven": 19
     },
     "pass": {
       "required": 141,
-      "proven": 35
+      "proven": 36
     }
   },
   "live_paths": 101,
@@ -336,7 +336,7 @@
             "not-evaluated"
           ],
           "proven": [
-            "not-evaluated"
+            "pass"
           ]
         },
         {

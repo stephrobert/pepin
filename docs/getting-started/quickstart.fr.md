@@ -76,8 +76,8 @@ actionnable.
  ⚡ Action immédiate — les 3 écarts les plus graves
 ──────────────────────────────────────────────────────────────────────────────
 
-  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket_acl.backups » accessible publiq…
-     subject: scaleway_object_bucket_acl.backups
+  1. 🔴 CRIT  CLD-STO-1 — Bucket « scaleway_object_bucket.backups » accessible publiqueme…
+     subject: scaleway_object_bucket.backups
   2. 🟠 HIGH  CLD-CMP-9 — secret en clair dans user-data (mot de passe en clair).
      subject: scaleway_instance_server.web
   3. 🟠 HIGH  CLD-STO-3 — sauvegardes automatiques désactivées.

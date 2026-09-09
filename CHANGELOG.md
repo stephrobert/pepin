@@ -260,6 +260,28 @@ belongs in `git log`.
 
 ### Changed
 
+- **Terraform plans: a declared reference now closes the correlation that never worked.**
+  A plan cannot know the id of a resource it is about to create — that attribute is not
+  resolved, it is **absent**. Measured on a reference tenant built from third-party HCL:
+  `vm_id`, `public_ip` and `security_group_ids` were absent on 5/5 VMs, and
+  `security_group_id` on 14/14 rules — everything the rules join on. The verdict stayed
+  honest (`not-evaluated`, never a `pass`), but no real plan correlated anything; only
+  hand-written test plans did, where the id is a literal. The plan carries the relation
+  elsewhere: `configuration` keeps the reference the operator wrote, and that reference
+  is an observation, not an estimate (ADR-0022). It is followed across module
+  boundaries, because inside a module the argument reads `var.x`. An **ambiguous**
+  reference — a declaration multiplied by `count` — resolves to nothing: joining VM #0
+  to security group #1 would be a deviation posted on a resource that does not carry it.
+- One verdict moves on the reference corpus: `compute_instance_has_security_group` from
+  `not-evaluated` to `pass` on outscale/terraform.
+- **A finding's subject can change on the Terraform source.** A resolved address becomes
+  an identity, so a descriptor whose `id:` reads a now-filled field names the resource it
+  points at: on a Scaleway plan, a bucket ACL's subject is the **bucket it configures**
+  rather than the ACL resource. That is the subject one looks for, and it matches the
+  live source — but **a derogation written against the old subject stops matching**.
+- Reference tenant plans now carry the `references` of their `configuration`, and never
+  its `constant_value` — the latter is where a hard-coded secret lives. A guard holds it
+  on the committed text.
 - **The two findings a freshly created network produced now say which of them the
   operator did.** On a brand-new Outscale Net, a live scan reported a `high` on the
   default security group — "carries an inbound rule" — and the operator went looking for

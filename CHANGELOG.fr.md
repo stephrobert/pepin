@@ -278,6 +278,31 @@ l'une ni l'autre appartient au `git log`.
 
 ### Modifié
 
+- **Plans Terraform : une référence déclarée ferme la corrélation qui n'a jamais
+  fonctionné.** Un plan ne peut pas connaître l'identifiant d'une ressource qu'il va
+  créer — cet attribut n'est pas résolu, il est **absent**. Mesuré sur un tenant de
+  référence construit depuis du HCL tiers : `vm_id`, `public_ip` et
+  `security_group_ids` absents sur 5/5 VM, `security_group_id` sur 14/14 règles — tout
+  ce sur quoi les règles se joignent. Le verdict restait honnête (`not-evaluated`,
+  jamais un `pass`), mais aucun plan réel ne corrélait quoi que ce soit ; seuls les
+  plans écrits à la main pour les tests le faisaient, où l'identifiant est un littéral.
+  Le plan porte la relation ailleurs : `configuration` garde la référence que
+  l'exploitant a écrite, et cette référence est une observation, pas une estimation
+  (ADR-0022). Elle est suivie à travers les frontières de module, parce qu'à
+  l'intérieur d'un module l'argument lit `var.x`. Une référence **ambiguë** — une
+  déclaration démultipliée par `count` — ne résout rien : joindre la VM n° 0 au groupe
+  de sécurité n° 1 serait un écart posé sur une ressource qui ne le porte pas.
+- Un verdict bouge sur le corpus de référence : `compute_instance_has_security_group`
+  passe de `not-evaluated` à `pass` sur outscale/terraform.
+- **Le sujet d'un finding peut changer sur la source Terraform.** Une adresse résolue
+  devient une identité, donc un descripteur dont l'`id:` lit un champ désormais comblé
+  nomme la ressource qu'il désigne : sur un plan Scaleway, le sujet d'une ACL de bucket
+  est le **bucket qu'elle configure** plutôt que la ressource ACL. C'est le sujet que
+  l'on cherche, et il rejoint celui de la source live — mais **une dérogation écrite
+  sur l'ancien sujet cesse de correspondre**.
+- Les plans des tenants de référence portent désormais les `references` de leur
+  `configuration`, et jamais ses `constant_value` — c'est là que vit un secret en dur.
+  Une garde le tient sur le texte committé.
 - **Les deux findings d'un réseau tout juste créé disent maintenant lequel vient de
   l'exploitant.** Sur un Net Outscale neuf, un scan live signalait un `high` sur le
   security group « default » — « porte une règle entrante » — et l'exploitant allait
