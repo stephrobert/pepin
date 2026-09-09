@@ -59,6 +59,17 @@ belongs in `git log`.
 
 ### Fixed
 
+- **The root description names the providers that exist.** The first sentence a new
+  user reads advertised OVH — a roadmap entry, not a provider — and omitted Kubernetes,
+  which is one. The list is now derived from the registry: a copied list goes stale at
+  the first provider added or removed, and nobody rereads a welcome sentence.
+- **`pepin scsl --index` no longer defaults to a maintainer's checkout layout.** The
+  default was a relative path climbing out of the working directory into a repository
+  the reader has never heard of. The error was correct and said nothing: one could not
+  tell whether `framework-scsl` was something to install, a submodule left
+  uninitialised, or an internal project. `--index` is now required, and the message says
+  what the file is, that the command is a **maintenance** tool a scan does not need, and
+  gives an example.
 - **French mode no longer leaves the report scaffolding in English.** Section titles,
   table headers and the "no deviations" line came out English inside an otherwise
   French report — `Total deviations: 1` above a French finding, closing on a French

@@ -76,7 +76,7 @@ bundle's digest: see [Evidence bundles](../guides/evidence-bundles.md#the-digest
 ```text
 Pepin — sovereign multi-cloud CSPM.
 
-Assesses the posture of a cloud (OVH, Scaleway, Exoscale, Outscale…) against a
+Assesses the posture of a cloud (exoscale, kubernetes, outscale, scaleway) against a
 common reference anchored on SCSL, SecNumCloud, CIS and ISO.
 
 pepin [flags]
@@ -327,7 +327,7 @@ pepin scsl [flags]
 
 Flags:
   -h, --help           help for scsl
-      --index string   path to the SCSL API (the framework's api/v1/exigences.json) (default "../framework-scsl/api/v1/exigences.json")
+      --index string   path to the SCSL API (the framework's api/v1/exigences.json)
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)

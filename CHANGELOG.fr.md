@@ -63,6 +63,18 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **La description racine nomme les fournisseurs qui existent.** La première phrase
+  qu'un nouvel utilisateur lit annonçait OVH — une entrée de feuille de route, pas un
+  fournisseur — et omettait Kubernetes, qui en est un. La liste est désormais dérivée du
+  registre : une liste recopiée se périme au premier fournisseur ajouté ou retiré, et
+  personne ne relit une phrase d'accueil.
+- **`pepin scsl --index` ne pointe plus par défaut vers la disposition locale d'un
+  mainteneur.** Le défaut était un chemin relatif remontant hors du répertoire courant
+  vers un dépôt dont le lecteur n'a jamais entendu parler. L'erreur était juste et ne
+  disait rien : impossible de savoir si `framework-scsl` était à installer, un
+  sous-module oublié, ou un projet interne. `--index` est désormais requis, et le
+  message dit ce qu'est le fichier, que la commande est un outil de **maintenance** dont
+  un scan n'a pas besoin, et donne un exemple.
 - **Le mode français ne laisse plus l'ossature du rapport en anglais.** Titres de
   section, en-têtes de table et ligne « aucun écart » sortaient en anglais au milieu
   d'un rapport français — `Total deviations: 1` au-dessus d'un finding français, se

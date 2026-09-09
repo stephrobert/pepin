@@ -77,7 +77,7 @@ concerné. La même précaution vaut pour l'empreinte d'un bundle scellé : voir
 ```text
 Pépin — CSPM multi-cloud souverain.
 
-Évalue la posture d'un cloud (OVH, Scaleway, Exoscale, Outscale…) contre un
+Évalue la posture d'un cloud (exoscale, kubernetes, outscale, scaleway) contre un
 référentiel commun ancré sur SCSL, SecNumCloud, CIS et ISO.
 
 pepin [flags]
@@ -328,7 +328,7 @@ pepin scsl [flags]
 
 Drapeaux:
   -h, --help           aide pour scsl
-      --index string   chemin de l'API SCSL (api/v1/exigences.json du framework) (default "../framework-scsl/api/v1/exigences.json")
+      --index string   chemin de l'API SCSL (api/v1/exigences.json du framework)
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)

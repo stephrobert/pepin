@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/stephrobert/pepin/internal/i18n"
+	"github.com/stephrobert/pepin/internal/provider"
 )
 
 // langFlag porte --lang. Déclaré en persistant sur la racine : la langue vaut
@@ -57,6 +58,15 @@ func langFromArgs(args []string) string {
 // setUsage remplace le texte d'aide d'un drapeau déjà enregistré. Silencieux si
 // le drapeau n'existe pas : `localize` ne doit jamais être la raison d'une panique
 // au démarrage.
+// providerNames rend les fournisseurs ENREGISTRÉS, dans l'ordre du registre.
+func providerNames() string {
+	noms := make([]string, 0, 8)
+	for _, p := range provider.All() {
+		noms = append(noms, p.Name())
+	}
+	return strings.Join(noms, ", ")
+}
+
 func setUsage(c *cobra.Command, name, usage string) {
 	if f := c.Flags().Lookup(name); f != nil {
 		f.Usage = usage
@@ -69,12 +79,18 @@ func localize() {
 	rootCmd.Short = tr(
 		"Pépin — trouve les pépins de votre cloud souverain",
 		"Pepin — finds the flaws in your sovereign cloud")
+	// La liste des clouds est DÉRIVÉE du registre, jamais écrite à la main.
+	//
+	// Elle l'était, et elle avait dérivé : la première phrase qu'un nouvel utilisateur
+	// lit annonçait OVH — qui est une entrée de feuille de route, pas un fournisseur —
+	// et omettait Kubernetes, qui en est un. Une liste recopiée se périme au premier
+	// fournisseur ajouté ou retiré, et personne ne relit une phrase d'accueil.
 	rootCmd.Long = tr(
 		"Pépin — CSPM multi-cloud souverain.\n\n"+
-			"Évalue la posture d'un cloud (OVH, Scaleway, Exoscale, Outscale…) contre un\n"+
+			"Évalue la posture d'un cloud ("+providerNames()+") contre un\n"+
 			"référentiel commun ancré sur SCSL, SecNumCloud, CIS et ISO.",
 		"Pepin — sovereign multi-cloud CSPM.\n\n"+
-			"Assesses the posture of a cloud (OVH, Scaleway, Exoscale, Outscale…) against a\n"+
+			"Assesses the posture of a cloud ("+providerNames()+") against a\n"+
 			"common reference anchored on SCSL, SecNumCloud, CIS and ISO.")
 	if f := rootCmd.PersistentFlags().Lookup("lang"); f != nil {
 		f.Usage = tr(
