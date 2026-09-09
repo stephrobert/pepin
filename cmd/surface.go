@@ -58,7 +58,14 @@ const (
 // aucun drapeau et aucun code de sortie existant ne bouge. L'incrément est dû
 // quand même — la surface est la liste de ce qu'un intégrateur a le droit de
 // brancher, et elle vient de s'allonger.
-const cliSurfaceVersion = 5
+// v6 : ajout de `verify --require-signature`, qui refuse un bundle dont aucune
+// signature n'a été vérifiée. Un appelant qui script `verify` recevait 0 pour un
+// dossier que l'outil qualifie lui-même de NON opposable : l'avertissement est sur
+// stdout, le code disait « réussi », et l'automatisation lit le code. Le drapeau est
+// OPT-IN — changer le défaut ferait échouer en silence des chaînes qui passent
+// aujourd'hui —, d'où un ajout pur, et l'incrément est dû quand même : la surface est
+// la liste de ce qu'un intégrateur a le droit de brancher.
+const cliSurfaceVersion = 6
 
 // findingsSurfaceVersion est la version de FORME de `--format json`
 // ({"findings": [...], "summary": {...}}), la sortie qu'un pipeline parse le

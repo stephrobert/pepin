@@ -24,6 +24,29 @@ l'une ni l'autre appartient au `git log`.
 
 ### Sécurité
 
+- **`verify` n'accepte plus un bundle qui se contredit.** Réécrire quatre résultats
+  `fail` en `pass` puis recalculer l'empreinte du fichier touché produisait un bundle
+  déclaré « cohérent en interne », code 0 — alors que son propre `manifest.json`
+  annonçait encore `"fail": 4`. Le bundle portait déjà l'information qui le
+  contredisait, et rien ne comparait les deux. Trois recoupements le font désormais,
+  aucun n'exigeant de clé : le résumé du manifeste est confronté aux statuts réellement
+  présents dans `assessment.json`, la **taille** déclarée de chaque artefact est
+  vérifiée à côté de son empreinte, et `checksums.txt` est lu **strictement** — une
+  ligne illisible ou dupliquée est un refus, là où un octet ajouté passait inaperçu.
+- **`verify --require-signature`** échoue si aucune signature n'a été vérifiée. Un
+  appelant qui script `verify` recevait 0 pour un bundle que l'outil qualifie lui-même
+  de non opposable : l'avertissement était sur stdout, le code disait « réussi », et
+  l'automatisation lit le code. Opt-in, donc aucune chaîne existante ne change. Surface
+  CLI v5 → v6.
+
+  Ce que cela ne fait **pas**, et la limite mérite d'être dite : fermer la chaîne
+  d'empreintes. Rien dans un bundle ne peut ancrer `checksums.txt`, puisque qui réécrit
+  un fichier réécrit aussi l'ancre. Seule la signature détachée cosign le peut. Ces
+  recoupements attrapent la corruption et la contradiction interne, pas un
+  falsificateur déterminé.
+
+### Sécurité
+
 - **Une politique tierce pouvait exfiltrer l'inventaire audité, en silence.** Les règles
   chargées à chaud via `--policy-dir` sont du code tiers, exécuté sur tout ce que le
   scan a collecté. Le moteur avait retiré `http.send`, `net.lookup_ip_addr` et

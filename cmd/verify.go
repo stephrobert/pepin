@@ -30,6 +30,11 @@ var (
 	verifyPubKey   string // clé publique cosign (vérification par clé)
 	verifyBundle   string // bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)
 	verifyReDerive bool   // rejouer le Rego sur input.json et comparer à l'assessment scellé
+	// verifyRequireSig : refuser un bundle dont aucune signature n'a été vérifiée.
+	// Un appelant qui script `verify` recevait 0 pour un bundle que l'outil qualifie
+	// lui-même de NON opposable : l'avertissement est sur stdout, le code disait
+	// « réussi », et l'automatisation lit le code.
+	verifyRequireSig bool
 )
 
 var verifyCmd = &cobra.Command{
@@ -54,6 +59,11 @@ var verifyCmd = &cobra.Command{
 			_, _ = fmt.Fprintf(os.Stdout, tr(
 				"⚠ bundle cohérent en interne : %s\n  (intégrité ACCIDENTELLE seulement — NON opposable sans --pubkey pour la signature cosign)\n",
 				"⚠ bundle internally consistent: %s\n  (ACCIDENTAL integrity only — NOT defensible without --pubkey for the cosign signature)\n"), dir)
+			if verifyRequireSig {
+				return errors.New(tr(
+					"--require-signature : aucune signature vérifiée. Un bundle cohérent en interne ne prouve que l'absence d'altération ACCIDENTELLE — l'auteur d'une falsification régénère fichiers et empreintes ensemble. Fournir --pubkey.",
+					"--require-signature: no signature verified. An internally consistent bundle only proves the absence of ACCIDENTAL corruption — whoever forges it regenerates files and digests together. Provide --pubkey."))
+			}
 		} else {
 			if err := verifyCosign(dir, verifyPubKey, verifyBundle); err != nil {
 				return err
@@ -319,5 +329,10 @@ func init() {
 	verifyCmd.Flags().StringVar(&verifyPubKey, "pubkey", "", "clé publique cosign pour vérifier la signature de checksums.txt")
 	verifyCmd.Flags().StringVar(&verifyBundle, "bundle", "", "bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)")
 	verifyCmd.Flags().BoolVar(&verifyReDerive, "re-derive", false, "rejouer les règles sur input.json et vérifier que l'assessment scellé en découle (opposabilité forte)")
+	// OPT-IN : changer le défaut ferait échouer, en silence, des chaînes qui passent
+	// aujourd'hui — exactement ce que ce dépôt refuse par ailleurs.
+	verifyCmd.Flags().BoolVar(&verifyRequireSig, "require-signature", false,
+		tr("échouer si aucune signature n'a été vérifiée : un bundle « cohérent en interne » mais non signé n'est pas opposable",
+			"fail when no signature was verified: a bundle that is \"internally consistent\" but unsigned is not defensible"))
 	rootCmd.AddCommand(verifyCmd)
 }

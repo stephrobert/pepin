@@ -272,10 +272,24 @@ func VerifyBundle(dir string) error {
 		return fmt.Errorf(i18n.T("lecture de checksums.txt : %w", "reading checksums.txt: %w"), err)
 	}
 	summed := map[string]string{} // nom -> empreinte attendue (checksums.txt)
-	for _, line := range splitLines(string(raw)) {
-		if want, name, ok := parseChecksum(line); ok {
-			summed[name] = want
+	// Parsing STRICT : une ligne illisible était silencieusement ignorée, si bien
+	// qu'ajouter un octet à checksums.txt passait inaperçu et que `verify` rendait 0.
+	// Rien ne couvre checksums.txt — c'est structurel, seule la signature détachée
+	// peut l'ancrer —, mais une CORRUPTION s'y voit à la lecture, et se taire dessus
+	// revenait à ne pas regarder ce qu'on avait sous les yeux.
+	for i, line := range splitLines(string(raw)) {
+		want, name, ok := parseChecksum(line)
+		if !ok {
+			return fmt.Errorf(i18n.T(
+				"checksums.txt, ligne %d : illisible (%q). Le fichier a été modifié ou tronqué.",
+				"checksums.txt, line %d: unreadable (%q). The file was modified or truncated."), i+1, line)
 		}
+		if _, deja := summed[name]; deja {
+			return fmt.Errorf(i18n.T(
+				"checksums.txt : %q listé deux fois — une empreinte en masquerait une autre",
+				"checksums.txt: %q listed twice — one digest would mask another"), name)
+		}
+		summed[name] = want
 	}
 	if len(summed) == 0 {
 		return fmt.Errorf(i18n.T("aucune empreinte à vérifier dans %s", "no digest to verify in %s"), dir)
@@ -320,6 +334,65 @@ func VerifyBundle(dir string) error {
 		got := sha256.Sum256(data)
 		if hex.EncodeToString(got[:]) != want {
 			return fmt.Errorf(i18n.T("empreinte invalide pour %s (fichier altéré)", "invalid digest for %s (tampered file)"), name)
+		}
+	}
+	// La TAILLE déclarée au manifeste, recoupée elle aussi. Elle est gratuite, et
+	// elle est un second témoin : réécrire un artefact oblige à recalculer SON
+	// empreinte dans checksums.txt ET sa taille au manifeste, alors qu'un seul des
+	// deux vient naturellement à l'esprit.
+	for _, a := range man.Artifacts {
+		data, rerr := os.ReadFile(filepath.Join(dir, filepath.Base(a.File))) // #nosec G304 -- nom contraint plus haut.
+		if rerr != nil {
+			return fmt.Errorf("%s : %w", a.File, rerr)
+		}
+		if a.Bytes != len(data) {
+			return fmt.Errorf(i18n.T(
+				"taille invalide pour %s : le manifeste déclare %d octets, le fichier en fait %d (fichier altéré)",
+				"invalid size for %s: the manifest declares %d bytes, the file has %d (tampered file)"),
+				a.File, a.Bytes, len(data))
+		}
+	}
+	return checkSummaryMatchesAssessment(dir, man)
+}
+
+// checkSummaryMatchesAssessment recoupe le RÉSUMÉ du manifeste avec les statuts
+// réellement présents dans l'assessment scellé.
+//
+// Le bundle portait déjà l'information qui se contredisait, et personne ne la
+// regardait : réécrire quatre `fail` en `pass` puis recalculer l'empreinte du fichier
+// touché produisait un bundle que `verify` déclarait « cohérent en interne », avec un
+// manifeste disant encore `"fail": 4`.
+//
+// Ce recoupement ne coûte qu'un parcours des résultats, n'exige aucune clé, et attrape
+// exactement cette altération — la plus tentante de toutes, puisque c'est celle qui
+// change le verdict.
+func checkSummaryMatchesAssessment(dir string, man Manifest) error {
+	if len(man.Summary) == 0 {
+		return nil // manifeste d'une forme antérieure : on ne fabrique pas ce qu'il ne dit pas
+	}
+	raw, err := os.ReadFile(filepath.Join(dir, "assessment.json")) // #nosec G304 -- dossier de bundle de l'opérateur.
+	if err != nil {
+		return fmt.Errorf(i18n.T("lecture de assessment.json : %w", "reading assessment.json: %w"), err)
+	}
+	var a assessment.Assessment
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return fmt.Errorf(i18n.T("assessment.json invalide : %w", "invalid assessment.json: %w"), err)
+	}
+	got := summaryOf(a)
+	for statut, veut := range man.Summary {
+		if got[statut] != veut {
+			return fmt.Errorf(i18n.T(
+				"le bundle se contredit : le manifeste annonce %d résultat(s) « %s », l'assessment en porte %d (fichier altéré)",
+				"the bundle contradicts itself: the manifest announces %d \"%s\" result(s), the assessment holds %d (tampered file)"),
+				veut, statut, got[statut])
+		}
+	}
+	for statut, n := range got {
+		if _, declare := man.Summary[statut]; !declare {
+			return fmt.Errorf(i18n.T(
+				"le bundle se contredit : l'assessment porte %d résultat(s) « %s » que le manifeste n'annonce pas (fichier altéré)",
+				"the bundle contradicts itself: the assessment holds %d \"%s\" result(s) the manifest does not announce (tampered file)"),
+				n, statut)
 		}
 	}
 	return nil

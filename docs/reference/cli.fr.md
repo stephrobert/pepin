@@ -26,7 +26,7 @@ de drapeaux viennent de la surface gelée ; chaque aide ci-dessous est la sortie
 | `pepin provider validate` | _(aucun drapeau propre)_ |
 | `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
 | `pepin scsl` | `--index` |
-| `pepin verify` | `--bundle`, `--pubkey`, `--re-derive` |
+| `pepin verify` | `--bundle`, `--pubkey`, `--re-derive`, `--require-signature` |
 | `pepin version` | _(aucun drapeau propre)_ |
 <!-- /pepin:gen cli-verbs -->
 
@@ -39,7 +39,7 @@ séparément :
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v5** |
+| `cli` | verbes, drapeaux et codes de sortie | **v6** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
@@ -193,10 +193,11 @@ Usage:
   pepin verify <dossier-bundle> [flags]
 
 Flags:
-      --bundle string   bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)
-  -h, --help            help for verify
-      --pubkey string   clé publique cosign pour vérifier la signature de checksums.txt
-      --re-derive       rejouer les règles sur input.json et vérifier que l'assessment scellé en découle (opposabilité forte)
+      --bundle string       bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)
+  -h, --help                help for verify
+      --pubkey string       clé publique cosign pour vérifier la signature de checksums.txt
+      --re-derive           rejouer les règles sur input.json et vérifier que l'assessment scellé en découle (opposabilité forte)
+      --require-signature   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
 
 Global Flags:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)

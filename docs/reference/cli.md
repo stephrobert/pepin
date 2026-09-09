@@ -26,7 +26,7 @@ by running the binary. A public flag that is missing here fails
 | `pepin provider validate` | _(no flag of its own)_ |
 | `pepin scan` | `--exceptions`, `--format` / `-f`, `--kubeconfig`, `--lang`, `--live`, `--policy`, `--policy-dir` / `-p`, `--profile`, `--redact`, `--region`, `--s3-endpoint`, `--seal`, `--strict`, `--terraform` / `-t` |
 | `pepin scsl` | `--index` |
-| `pepin verify` | `--bundle`, `--pubkey`, `--re-derive` |
+| `pepin verify` | `--bundle`, `--pubkey`, `--re-derive`, `--require-signature` |
 | `pepin version` | _(no flag of its own)_ |
 <!-- /pepin:gen cli-verbs -->
 
@@ -39,7 +39,7 @@ independently:
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v5** |
+| `cli` | verbs, flags and exit codes | **v6** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
@@ -192,10 +192,11 @@ Usage:
   pepin verify <dossier-bundle> [flags]
 
 Flags:
-      --bundle string   cosign signature bundle (default: <directory>/checksums.txt.bundle)
-  -h, --help            help for verify
-      --pubkey string   cosign public key used to verify the signature of checksums.txt
-      --re-derive       replay the rules on input.json and check that the sealed assessment follows from it (strong defensibility)
+      --bundle string       cosign signature bundle (default: <directory>/checksums.txt.bundle)
+  -h, --help                help for verify
+      --pubkey string       cosign public key used to verify the signature of checksums.txt
+      --re-derive           replay the rules on input.json and check that the sealed assessment follows from it (strong defensibility)
+      --require-signature   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
