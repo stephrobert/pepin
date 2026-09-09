@@ -19,15 +19,25 @@ var providerCmd = &cobra.Command{
 	Use:     "provider",
 	Aliases: []string{"providers"},
 	Short:   "Gérer les providers déclaratifs (lister, valider, créer)",
-	Run:     func(_ *cobra.Command, _ []string) { listProviders() },
+	// Sans sous-commande, il liste — mais un argument QU'IL NE COMPREND PAS est une
+	// erreur, pas un silence. `pepin provider inexistant` exécutait `provider list`
+	// et rendait 0 : la sous-commande demandée n'était pas comprise, et rien ne le
+	// disait. Dans un pipeline, l'étape passait au vert en écrivant une liste que
+	// personne n'avait demandée.
+	Args: cobra.NoArgs,
+	Run:  func(_ *cobra.Command, _ []string) { listProviders() },
 }
 
 // providerListCmd liste les providers enregistrés (descripteurs chargés).
 var providerListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
-	Short:   "Lister les providers cloud disponibles",
-	Run:     func(_ *cobra.Command, _ []string) { listProviders() },
+	// Trouvée par la garde qui parcourt l'arbre, et non par l'issue : elle ignorait
+	// tout argument. `pepin provider list scaleway` se lit comme « décris scaleway »
+	// et rendait la liste entière, sans un mot.
+	Args:  cobra.NoArgs,
+	Short: "Lister les providers cloud disponibles",
+	Run:   func(_ *cobra.Command, _ []string) { listProviders() },
 }
 
 // listProviders affiche les providers enregistrés (nom + description).

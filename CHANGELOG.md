@@ -38,6 +38,14 @@ belongs in `git log`.
 
 ### Fixed
 
+- **An unknown subcommand no longer exits 0, and no longer runs something else.**
+  `pepin provider inexistant` silently ran `provider list`; `pepin control list` — the
+  natural guess, symmetric with `provider list` — printed a help screen and succeeded.
+  A pipeline step written `pepin control list --json > controls.json` therefore wrote a
+  help screen into the file and went green. Every command now validates its arguments
+  and exits **2** on one it does not understand. A guard walks the command tree rather
+  than checking a hand-written list, and it found a fifth case the report had not:
+  `provider list` ignored any argument.
 - **`evidence.proves` no longer travels as `["","",""]` on every result.** `omitempty`
   on a fixed-size array is a no-op, so a reader could not tell "no proof recorded" from
   "three proofs recorded, all blank" — including inside sealed bundles archived for

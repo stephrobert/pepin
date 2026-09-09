@@ -22,6 +22,9 @@ var scslIndex string
 var scslCmd = &cobra.Command{
 	Use:   "scsl",
 	Short: "Vérifier la cohérence avec l'index SCSL et piloter la roadmap",
+	// Aucune sous-commande : tout argument est donc une faute de frappe, et l'ignorer
+	// ferait exécuter autre chose que ce qui a été tapé.
+	Args: cobra.NoArgs,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		exs, err := referentiel.ParseCLDExigences(scslIndex)
 		if err != nil {
