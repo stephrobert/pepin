@@ -1117,7 +1117,67 @@ func loadInput(ctx context.Context, p provider.Provider, path string) (any, erro
 	if err := json.Unmarshal(raw, &input); err != nil {
 		return nil, fmt.Errorf(tr("export JSON invalide : %w", "invalid JSON export: %w"), err)
 	}
+	if err := checkProviderMatches(p.Name(), input); err != nil {
+		return nil, err
+	}
 	return input, nil
+}
+
+// checkProviderMatches refuse un inventaire dont l'ORIGINE contredit le jeu de règles
+// demandé.
+//
+// Un export porte son fournisseur, à la racine et sur chaque ressource, et cette
+// déclaration était ignorée. Scanner un inventaire Scaleway avec les règles Exoscale
+// était donc accepté sans un mot, et produisait six verdicts `pass` — asseoir un
+// « conforme » sur des données que ce jeu de règles n'a jamais eu à lire. Ces `pass`
+// ne sont pas faux par accident : ils sont VIDES DE SENS, les formes de ressources se
+// recouvrant juste assez pour que des règles s'évaluent et concluent.
+//
+// Le mode d'échec est silencieux et réaliste : une faute de frappe dans un pipeline,
+// un job copié-collé, et le rapport a l'air parfaitement normal — un mélange crédible
+// de statuts et un code de sortie non nul qui suggère même que le scan a travaillé.
+//
+// On REFUSE plutôt qu'on avertit, et le code 2 (erreur technique) est celui d'un export
+// illisible : un inventaire dont l'origine ne correspond pas n'est pas un scan aux
+// résultats surprenants, c'est un scan qui n'aurait pas dû tourner.
+//
+// Un inventaire qui ne déclare RIEN n'est pas refusé : on ne peut pas inventer une
+// origine, et l'exiger casserait tout export écrit à la main (ADR-0014, une donnée
+// absente se déclare, elle ne se fabrique pas).
+func checkProviderMatches(want string, input any) error {
+	m, ok := input.(map[string]any)
+	if !ok {
+		return nil
+	}
+	refus := func(got, ou string) error {
+		return fmt.Errorf(tr(
+			"cet inventaire déclare le fournisseur %q (%s), et le scan demande %q.\n"+
+				"  Les verdicts seraient rendus par un jeu de règles qui n'a jamais eu à lire ces\n"+
+				"  ressources : un « conforme » y serait vide de sens. Corriger le fournisseur de la\n"+
+				"  ligne de commande, ou scanner l'inventaire du bon tenant.",
+			"this inventory declares provider %q (%s), and the scan asks for %q.\n"+
+				"  The verdicts would be rendered by a ruleset that was never meant to read these\n"+
+				"  resources: a \"pass\" there is meaningless. Fix the provider on the command line,\n"+
+				"  or scan the inventory of the right tenant."), got, ou, want)
+	}
+	// La déclaration RACINE : l'affirmation explicite de l'export.
+	if got, _ := m["provider"].(string); got != "" && got != want {
+		return refus(got, tr("racine de l'export", "root of the export"))
+	}
+	// Les RESSOURCES portent la même information, et un export peut n'avoir que
+	// celle-là. Une seule suffit à trancher : un inventaire panaché n'existe pas,
+	// chaque scan porte sur un tenant.
+	rs, _ := m["resources"].([]any)
+	for _, it := range rs {
+		rm, ok := it.(map[string]any)
+		if !ok {
+			continue
+		}
+		if got, _ := rm["provider"].(string); got != "" && got != want {
+			return refus(got, tr("ressources de l'export", "resources of the export"))
+		}
+	}
+	return nil
 }
 
 // withGovernance ajoute, le cas échéant, la ressource synthétique de souveraineté
