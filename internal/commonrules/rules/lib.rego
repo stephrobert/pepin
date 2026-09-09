@@ -12,12 +12,43 @@ import rego.v1
 # Le collecteur live et le parseur Terraform projettent tous deux vers ces types.
 resources_of_type(t) := [r | some r in input.resources; r.type == t]
 
-# is_public_cidr — le CIDR couvre l'Internet public (IPv4 ou IPv6). On PARSE la longueur de
-# préfixe au lieu de comparer des littéraux : un préfixe /0 couvre tout l'espace d'adressage
-# quelle que soit l'écriture (`0.0.0.0/0`, `::/0`, `::0/0`, `0000::/0`). Un /1 (IPv4
-# `0.0.0.0/1`|`128.0.0.0/1`, ou IPv6 `::/1`) couvre la MOITIÉ de l'espace d'adressage :
-# contournement CSPM connu, jamais légitime comme source « restreinte » → également public.
-is_public_cidr(cidr) if _cidr_prefix(trim_space(cidr)) <= 1
+# is_public_cidr — le CIDR est une source NON RESTREINTE : une plage assez large pour
+# valoir « l'Internet », et qui n'est pas un espace privé.
+#
+# # Le défaut que ce seuil corrige, mesuré sur un tenant réel
+#
+# La règle exigeait un préfixe <= 1. Or quatre plages `/2` couvrent tout l'espace IPv4 :
+#
+#	0.0.0.0/2, 64.0.0.0/2, 128.0.0.0/2, 192.0.0.0/2
+#
+# RDP ouvert à TOUT Internet ne produisait donc aucun finding, pendant que la règle
+# `tcp 22 [0.0.0.0/1, 128.0.0.0/1]` du même groupe était bien attrapée. Un `/3`, ou une
+# liste de `/8`, passaient de même. Pour un outil dont c'est la raison d'être, un faux
+# négatif silencieux est le pire des défauts.
+#
+# # Le seuil, et pourquoi /8
+#
+# Deux conditions, et il faut les DEUX : la plage est large (préfixe <= 8, soit au moins
+# 16,7 millions d'adresses) ET elle n'est pas un espace privé. Le second garde-fou est ce
+# qui empêche la correction de devenir un faux positif : `10.0.0.0/8` est un `/8`, et il
+# doit rester silencieux — c'est le contre-exemple que ce contrôle ne doit jamais perdre.
+#
+# Pourquoi ne pas signaler TOUTE plage externe : `203.0.113.0/24`, le réseau d'un
+# partenaire, est externe et parfaitement légitime. « Ouvert à Internet » et « ouvert à
+# quelqu'un d'autre que moi » sont deux affirmations différentes, et la seconde n'est pas
+# ce que ces contrôles mesurent.
+#
+# # Ce qui reste ouvert, et c'est écrit plutôt que tu
+#
+# Une UNION de plages plus étroites que /8 — 512 `/9`, par exemple — couvre l'espace sans
+# qu'aucune ne franchisse le seuil. Le détecter demande une arithmétique d'intervalles
+# que le Rego rend coûteuse, et les trois formes réellement mesurées (des `/2`, un `/3`,
+# une liste de `/8`) sont fermées. Suivi en #169.
+is_public_cidr(cidr) if {
+	t := trim_space(cidr)
+	_cidr_prefix(t) <= 8
+	not _private_v4(t)
+}
 
 # Littéraux « toute origine » SANS masque (certaines API/UI : une source vide/`0.0.0.0`/`*`).
 is_public_cidr(cidr) if trim_space(cidr) in {"0.0.0.0", "::", "::0", "*"}
@@ -40,6 +71,21 @@ is_public_cidr(cidr) if {
 	t := lower(trim_space(cidr))
 	startswith(t, "2000::")
 	_cidr_prefix(t) <= 3
+}
+
+# _private_v4 — la plage appartient à un espace privé ou réservé, donc elle n'est pas
+# « Internet » quelle que soit sa largeur. RFC 1918, RFC 6598 (CGNAT), lien-local,
+# bouclage, et « ce réseau » (0.0.0.0/8 hors le /0 déjà traité par le préfixe).
+#
+# Le préfixe doit valoir EXACTEMENT 8. Une plage plus large n'est pas CONTENUE dans le
+# bloc privé : elle l'englobe et déborde sur l'espace public. C'est ce qui distingue
+# `0.0.0.0/8` (« ce réseau », silencieux) de `0.0.0.0/2` (un quart d'Internet, à
+# signaler) — un test sur le seul octet de tête aurait rendu muet `0.0.0.0/0` lui-même,
+# et c'est exactement ce qu'il a fait au premier essai.
+_private_v4(t) if {
+	_cidr_prefix(t) == 8
+	octet := split(split(t, "/")[0], ".")[0]
+	octet in {"10", "127", "0"}
 }
 
 _cidr_prefix(cidr) := n if {

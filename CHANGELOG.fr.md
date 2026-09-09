@@ -63,6 +63,17 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un groupe de sécurité ouvert à tout Internet par des plages `/2` ne produisait
+  aucun finding.** `is_public_cidr` ne jugeait publique qu'une plage de préfixe ≤ 1, si
+  bien que les quatre plages `0.0.0.0/2`, `64.0.0.0/2`, `128.0.0.0/2`, `192.0.0.0/2` —
+  qui couvrent ensemble tout l'IPv4 — passaient inaperçues, pendant que `0.0.0.0/1` du
+  même groupe était attrapé. Mesuré sur un tenant Outscale réel : RDP ouvert à tout
+  Internet, et le rapport muet. Un `/3`, ou une liste de `/8`, passaient de même. Une
+  source est désormais non restreinte quand elle est **large** (préfixe ≤ 8) **et non
+  privée** — la seconde condition est ce qui garde `10.0.0.0/8` sur le port 22
+  silencieux, et le réseau d'un partenaire comme `203.0.113.0/24` n'est délibérément pas
+  signalé : « ouvert à Internet » et « ouvert à quelqu'un d'autre » sont deux
+  affirmations différentes.
 - **La description racine nomme les fournisseurs qui existent.** La première phrase
   qu'un nouvel utilisateur lit annonçait OVH — une entrée de feuille de route, pas un
   fournisseur — et omettait Kubernetes, qui en est un. La liste est désormais dérivée du
