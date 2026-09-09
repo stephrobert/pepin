@@ -1,0 +1,103 @@
+# Tenant de QUALIFICATION Outscale — métadonnées lues par tools/qualification/qualify.py.
+#
+# Même doctrine que le tenant Scaleway (references/qualification/README.fr.md) : une
+# faute par ressource, un contre-exemple par contrôle, appliqué puis détruit, comparé
+# à expected.yaml. La différence : chez Outscale, la collecte live lit tout ce que la
+# stack crée (16 types au contrat), donc les deux passes voient à peu près la même
+# chose, et c'est ici que se trouvent les cas que Scaleway ne sait pas exercer — la
+# VM à deux cartes, la clé root, la famille iam_policy_* par les documents EIM, les
+# snapshots, l'image publique.
+provider: outscale
+title: "Tenant de qualification Outscale : une faute par ressource, un contre-exemple par contrôle"
+title_en: "Outscale qualification tenant: one fault per resource, one counterexample per control"
+
+region: eu-west-2
+zone: eu-west-2a
+
+# Étiquette posée sur toute ressource étiquetable (bloc `tags` Outscale) ; préfixe
+# des noms pour ce qui ne s'étiquette pas (utilisateurs, politiques, clés, buckets,
+# règles d'accès API).
+tag: pepin-qual
+name_prefix: pepin-qual-
+
+provider_version: "1.8.0"
+
+# Outil requis par le crochet `extra` (les buckets OOS, que le provider Terraform ne
+# sait pas créer, passent par la CLI `aws` sur oos.<région>.outscale.com). La preuve
+# de destruction et le nettoyage de secours passent par l'OAPI : `octl`, la CLI de
+# référence du fournisseur, sert aux listings qu'un mainteneur rejoue à la main.
+required_tools: [aws]
+
+# Rien n'est « plan seulement » chez Outscale (variables.tf) : la variable est passée
+# pour l'uniformité du runner.
+applied_vars:
+  terraform_only_resources: false
+
+# À appliquer AVANT le destroy : la protection contre la suppression de la VM
+# `hardened` (issue #88 du provider, ouverte — une VM protégée ne se détruit pas).
+pre_destroy_vars:
+  deletion_protection: false
+
+# Budget mur. Les images (création depuis une VM, ~3-5 min) et les load balancers
+# sont les étapes lentes de l'apply et du destroy.
+budget_minutes: 40
+
+# Coût : tarifs horaires du catalogue (ReadCatalog, 2026-09-09) sur ce qui est
+# appliqué. Le type de VM est celui que le mainteneur a donné pour son compte.
+cost:
+  currency: EUR
+  hourly:
+    - family: vms
+      count: 8
+      unit_price: 0.09       # tinav6.c2r4p2 : 2 × CustomCore:v6-p2 (0,035) + 4 × CustomRam (0,005)
+      source: "ReadCatalog TinaOS-FCU RunInstances-OD CustomCore:v6-p2 / CustomRam"
+    - family: load_balancers
+      count: 2
+      unit_price: 0.03       # LBU:Usage
+      source: "ReadCatalog TinaOS-LBU CreateLoadBalancer LBU:Usage"
+    - family: public_ips
+      count: 4
+      unit_price: 0.005      # ElasticIP (IdleAddress/AdditionalAddress)
+      source: "ReadCatalog TinaOS-FCU AssociateAddress ElasticIP"
+    - family: volumes_gb
+      count: 100             # ~8 volumes racine de 10 Go + 2 volumes de données
+      unit_price: 0.00015    # gp2 : 0,11 EUR/Go/mois ≈ 0,00015 EUR/Go/h
+      source: "ReadCatalog TinaOS-FCU CreateVolume BSU:VolumeUsage:gp2 (PER_MONTH)"
+
+resources:
+  applied:
+    - { family: security_groups, count: 10, note: "8 en cloud public (ssh/rdp/db/snmp/any/quartet/egress_any ⇒ 7 contrôles ; hardened = contre-exemple) + 2 dans le Net (net_ssh_open, net_closed) ; le SG « default » du Net ⇒ CLD-NET-4 (règle d'usine) et egress par défaut" }
+    - { family: vms, count: 8, note: "exposed ⇒ CLD-NET-3 ; two_nics ⇒ CLD-NET-3 par la carte secondaire ; untagged ⇒ CLD-GVN-1 ; secrets ⇒ CLD-CMP-9 ; unprotected ⇒ CLD-CMP-10 ; private, hardened (protégée, Env=prod), two_nics_inverse = contre-exemples" }
+    - { family: nics, count: 2, note: "cartes secondaires des deux VM à deux cartes (outscale_nic + outscale_nic_link)" }
+    - { family: public_ips, count: 4 }
+    - { family: volumes, count: 2, note: "unsnapshotted ⇒ CLD-STO-3 ; snapshotted (snapshot privée) = contre-exemple ; les volumes racine des 8 VM ⇒ CLD-STO-3 aussi" }
+    - { family: snapshots, count: 2, note: "public (GlobalPermission) ⇒ CLD-STO-2 ; private = contre-exemple" }
+    - { family: images, count: 2, note: "public (launch permission globale) ⇒ CLD-STO-2 ; private = contre-exemple" }
+    - { family: nets, count: 2, note: "undocumented ⇒ CLD-NET-5 ; documented = contre-exemple ; peering entre les deux (même compte) = contre-exemple de CLD-NET-7" }
+    - { family: subnets, count: 2, note: "public (MapPublicIpOnLaunch) ⇒ CLD-NET-3 ; private = contre-exemple" }
+    - { family: load_balancers, count: 2, note: "http (écouteur HTTP seul, sans journal) ⇒ CLD-CHF-1 et CLD-LOG-1 ; tcp443 (passthrough TLS) ⇒ CLD-CHF-1 non concluant" }
+    - { family: iam, count: 9, note: "1 utilisateur ; 3 clés (no_expiry ⇒ CLD-IAM-2 ; root ⇒ CLD-IAM-1 ; expiring = contre-exemple) ; 5 politiques (admin, wildcard, notaction, escalation ⇒ iam_policy_* ; scoped = contre-exemple)" }
+    - { family: api_access_rules, count: 2, note: "public (0.0.0.0/0) ⇒ CLD-IAM-4 ; private = contre-exemple" }
+  extra:   # hors Terraform (crochet `extra`) : le provider 1.8.0 n'a pas ces ressources
+    - { family: buckets, count: 6, note: "public/policy ⇒ CLD-STO-1 ; unversioned ⇒ CLD-STO-4 (+ STO-8) ; unlocked ⇒ CLD-STO-8 ; unencrypted ⇒ CLD-CHF-2 ; hardened = contre-exemple" }
+    - { family: inline_policies, count: 1, note: "politique EIM inline `Action: *` sur l'utilisateur du tenant (incident fondateur, ADR-0006) ⇒ iam_policy_no_administrative_privileges" }
+
+not_exercised:
+  - control: governance_resource_region_in_eu
+    reason: "Un compte Outscale n'existe que dans sa région (eu-west-2, UE) : aucune ressource hors UE n'est constructible ; seul le pass est prouvé."
+  - control: iam_accesskey_rotated
+    reason: "Une date de création ne s'antidate pas : aucune clé du tenant ne peut avoir plus de 90 jours. Le contrôle s'observe sur les clés existantes du compte (hors tenant)."
+  - control: network_peering_cross_organization
+    reason: "Un appairage entre deux comptes exige un second compte : seul le contre-exemple (deux Nets du même compte) est construit."
+  - control: iam_account_mfa_enforced
+    reason: "ApiAccessPolicy est un singleton du compte : forcer RequireTrustedEnv=true fermerait l'API à toute clé sans MFA, y compris celle qui qualifie. Observé tel quel, hors tenant."
+  - control: iam_apiaccesspolicy_max_key_expiration
+    reason: "Même singleton : observé tel quel, hors tenant."
+  - control: iam_apiaccessrule_defined
+    reason: "Le compte porte déjà des règles d'accès API : le pass est observé, l'écart (aucune règle) n'est pas constructible sans les retirer toutes — et c'est exactement le geste qu'on ne fait pas sur le compte d'un mainteneur."
+  - control: loadbalancer_logging_enabled
+    reason: "Le contre-exemple (journal d'accès activé) exige un bucket OOS cible et outscale_load_balancer_attributes : non construit, seul l'écart est prouvé."
+  - control: network_securitygroup_default_restrict_traffic
+    reason: "Le contre-exemple (SG « default » vidé de sa règle d'usine) n'est pas exprimable par le provider, qui ne sait qu'ajouter des règles."
+  - control: kubernetes_*
+    reason: "Aucun cluster OKS : coût et durée hors de proportion avec ce que les quatre contrôles mesureraient. not-evaluated épinglé."

@@ -5,9 +5,15 @@ Trois sous-commandes, appelées par tools/qualification/qualify.py :
 
     identity                      quel compte les identifiants natifs désignent-ils,
                                   d'après l'API (jamais d'après une variable locale)
+    variables --live|--plan-only <identity.json>
+                                  les variables Terraform propres au tenant, et
+                                  l'échéance à attendre avant de scanner
+    extra apply|destroy <outputs.json>
+                                  ce que Terraform ne sait pas créer (rien ici)
     inventory <tenant.yaml>       ce que le compte contient, famille par famille, et
                                   ce qui, dedans, appartient au tenant (tag / préfixe)
-    cleanup <tenant.yaml>         supprime ce qui appartient au tenant — chemin de
+    cleanup <tenant.yaml> [leftovers.json]
+                                  supprime ce qui appartient au tenant — chemin de
                                   SECOURS quand `terraform destroy` n'a pas fini
 
 # Pourquoi l'API plutôt qu'une variable
@@ -280,13 +286,49 @@ def cleanup(tenant):
     return ok
 
 
+# ─── variables propres au tenant ───────────────────────────────────────────────
+
+def variables(mode, identity_path):
+    """Les variables Terraform que ce tenant calcule à chaque run, jamais écrites :
+    les deux échéances de clé d'API, le principal de politique de bucket (l'identité
+    qui qualifie, lue dans identity.json), et un mot de passe jetable pour les bases
+    managées du plan complet. Le runner les passe à Terraform par l'environnement.
+
+    La clé « expirée » : une échéance que l'apply précède et que le scan suit — le
+    runner attend `wait_until`. En mode plan seul, rien n'est appliqué et le scan du
+    plan a lieu tout de suite : l'échéance est posée dans le passé."""
+    import datetime as dt
+    import secrets
+    who = json.load(open(identity_path))
+    now = dt.datetime.now(dt.timezone.utc)
+    rfc = "%Y-%m-%dT%H:%M:%SZ"
+    expired = now + (dt.timedelta(minutes=3) if mode == "--live" else -dt.timedelta(minutes=1))
+    return {
+        "tf_vars": {
+            "key_expires_at": (now + dt.timedelta(days=2)).strftime(rfc),
+            "key_expired_at": expired.strftime(rfc),
+            "bucket_policy_principal": who["principal"],
+            "rdb_password": secrets.token_urlsafe(24) + "Aa1!",
+        },
+        "wait_until": expired.strftime(rfc) if mode == "--live" else None,
+        "note": f"4 variables ; clé expirée à {expired.strftime('%H:%M:%SZ')}",
+    }
+
+
 # ─── point d'entrée ────────────────────────────────────────────────────────────
 
 def main(argv):
-    if len(argv) < 2 or argv[1] not in ("identity", "inventory", "cleanup"):
+    if len(argv) < 2 or argv[1] not in ("identity", "inventory", "cleanup", "variables", "extra"):
         sys.exit(__doc__)
     if argv[1] == "identity":
         print(json.dumps(identity(), indent=2))
+        return 0
+    if argv[1] == "variables":
+        print(json.dumps(variables(argv[2], argv[3])))
+        return 0
+    if argv[1] == "extra":
+        # Tout ce que ce tenant crée passe par Terraform : rien hors Terraform.
+        print(json.dumps({"created": [], "deleted": [], "left": []}))
         return 0
     tenant = yaml.safe_load(open(argv[2]))
     if argv[1] == "inventory":

@@ -23,6 +23,14 @@ belongs in `git log`.
 
 ### Added
 
+- **Qualification tenants for Outscale and Exoscale** (issue #198). Outscale: 79 Terraform
+  resources plus 6 OOS buckets and an inline EIM policy created by the tenant's `extra`
+  hook, applied and destroyed on a real account — the two-NIC machine, the root access
+  key, the `iam_policy_*` family, snapshots, a public OMI, load balancers; the runner
+  now applies `pre_destroy_vars` before destroying (a protected VM does not destroy,
+  provider #88) and re-lists until deletions settle. Exoscale: plan-only, 37 resources,
+  no account — the Terraform source is pinned, the live half waits for an account.
+
 - **A qualification tenant, applied and destroyed on a real account** (issue #178,
   stage 3). `PEPIN_GATE_LIVE=1 mise run qualify` applies the Terraform stack committed
   under `references/qualification/scaleway/` — 40 resources in the plan, 29 of them

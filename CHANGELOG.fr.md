@@ -24,6 +24,15 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Tenants de qualification Outscale et Exoscale** (issue #198). Outscale : 79 ressources
+  Terraform, plus 6 buckets OOS et une politique EIM inline créés par le crochet `extra`
+  du tenant, appliqués et détruits sur un compte réel — la machine à deux cartes, la clé
+  root, la famille `iam_policy_*`, les snapshots, une OMI publique, des load balancers ;
+  le runner applique désormais `pre_destroy_vars` avant de détruire (une VM protégée ne
+  se détruit pas, provider #88) et reliste jusqu'à ce que les suppressions soient
+  effectives. Exoscale : plan seul, 37 ressources, sans compte — la source Terraform
+  est épinglée, la moitié live attend un compte.
+
 - **Un tenant de qualification, appliqué et détruit sur un compte réel** (issue #178,
   étape 3). `PEPIN_GATE_LIVE=1 mise run qualify` applique la stack Terraform committée
   sous `references/qualification/scaleway/` — 40 ressources dans le plan, dont 29

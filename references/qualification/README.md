@@ -22,7 +22,7 @@ references/qualification/
     .terraform.lock.hcl             versioned: the provider build that was qualified
     tenant.yaml                     metadata: region, tenant tag, pinned provider version, budget, hourly rates
     expected.yaml                   the contract: control × source × subject → status, and the pinned account
-    hooks.py                        provider hooks: identity, inventory by family, rescue cleanup
+    hooks.py                        provider hooks: identity, variables, extra (what Terraform cannot create), inventory by family, rescue cleanup
     README.md · README.fr.md        what the stack creates, what blocks destroy upstream, measured results
 tools/qualification/qualify.py      the generic runner (apply, scan, seal, verify, destroy, prove, compare)
 ```
@@ -55,14 +55,19 @@ mise run qualify:selftest                     # the comparison proves itself on 
    `sarif`), sealed with `--seal`; `verify --re-derive` must pass, and a bundle
    altered by one byte must be refused ([ADR-0018](../../docs/adr/0018-ce-quun-bundle-prouve-de-lui-meme.md)).
 6. **`pepin scan --terraform`** on the same plan.
-7. **Destroy**, in a `finally`: it runs even when a stage before it failed. If
-   `terraform destroy` does not finish, the provider hooks delete what carries the
-   tenant's tag through the API, and destroy runs again.
+7. **Destroy**, in a `finally`: it runs even when a stage before it failed. What has
+   to be undone first (a deletion protection Outscale refuses to delete through, provider
+   #88) is applied before it (`tenant.yaml` `pre_destroy_vars`); what the `extra` hook
+   created outside Terraform is removed before it too. If `terraform destroy` does not
+   finish, the provider hooks delete what carries the tenant's tag through the API, and
+   destroy runs again.
 8. **Proof of destruction** — `Destroy complete!` is not a proof. The account is
    listed again, family by family, filtered on the tenant's tag and name prefix,
    **and** compared with the inventory taken before apply: anything that appeared
    in between, tagged or not (a renamed root volume, an automatic backup), is a
-   leftover and a NO-GO.
+   leftover and a NO-GO. Deletions are asynchronous on more than one provider, so
+   the listing is repeated until empty, bounded (`settle_seconds`, 240 s): what
+   survives the delay is a leftover, and the rescue cleanup is attempted on it.
 9. **Comparison** with `expected.yaml`, then **falsification**: an expectation is
    broken in memory and the comparison must say NO-GO. A gate that was never seen
    red guards nothing.
@@ -84,6 +89,14 @@ enters the repository from there without reading it.
 | a control missing from `expected.yaml` | an unpinned verdict |
 | an exit code other than the pinned one | the CI gate itself moved ([ADR-0005](../../docs/adr/0005-codes-de-sortie.md)) |
 | a resource surviving destroy | the only unacceptable outcome of the whole exercise |
+
+Three more words `expected.yaml` may use: `inconclusive:` lists the tenant subjects on
+which a rule says it cannot conclude (a `not-evaluated` with a subject, ADR-0015);
+`known_defect:` pins a measured behaviour that is wrong, with the issue that tracks it —
+the gate stays GO and the fix turns it NO-GO on purpose; `evaluated` accepts `pass` or
+`fail` for a control whose subjects are outside the tenant (the account's users, its API
+access policy). A tenant without an account says `live: unavailable` in `tenant.yaml`:
+it runs in `--plan-only` only, and a real run is refused.
 
 `expected.yaml` is **not a green matrix** ([ADR-0010](../../docs/adr/0010-dette-de-veracite-comptee.md)):
 each `not-evaluated` in it is a **named collection debt**, and it changes when, and

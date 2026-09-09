@@ -1,0 +1,354 @@
+# Ce que Pépin DOIT rendre sur le tenant de qualification Outscale — contrôle × source
+# × sujet → statut. Lu par tools/qualification/qualify.py. Même contrat que le tenant
+# Scaleway (references/qualification/README.fr.md) : un `fail` manquant est un faux
+# vert, un `fail` en trop un faux positif, un `not-evaluated` déplacé une régression
+# de couverture, et toute différence est un NO-GO.
+#
+# Le compte attendu vient de l'ENVIRONNEMENT (le dépôt est public, un identifiant
+# publié ne se dépublie pas) ; une variable absente est un REFUS, jamais un
+# laissez-passer. Le crochet `identity` demande le compte à l'API (ReadAccounts) et
+# le runner compare.
+#
+# Sujets live : identifiants OAPI (`${output.<nom>}`), noms de politiques et de
+# buckets. Sujets Terraform : adresse de la ressource quand l'identifiant n'est pas
+# connu au stade du plan (ADR-0022), nom sinon. `inconclusive:` liste les sujets du
+# tenant sur lesquels la règle DIT ne pas savoir conclure (ADR-0015).
+#
+# Le compte porte aussi des ressources qui ne sont pas du tenant (clés, politiques,
+# règles d'accès API, buckets, un Net et ses groupes) : un écart sur elles est
+# rapporté, jamais gardé — sauf pour les contrôles marqués `evaluated`, qui portent
+# sur des singletons du compte (politique d'accès API) que le tenant ne touche pas.
+account:
+  account_id_env: PEPIN_QUAL_OSC_ACCOUNT
+
+exit_codes:
+  live: 1
+  terraform: 1
+
+controls:
+  # ── EIM : politiques (documents JSON) ─────────────────────────────────────────
+  iam_policy_no_administrative_privileges:
+    live:
+      # La politique managée `admin` ET la politique INLINE posée sur l'utilisateur
+      # par le crochet (l'incident fondateur de l'ADR-0006 : elle échappait à tout).
+      fail: [pepin-qual-policy-admin, pepin-qual-inline-admin]
+      silent: [pepin-qual-policy-wildcard, pepin-qual-policy-scoped]
+    terraform:
+      fail: [pepin-qual-policy-admin]
+      silent: [pepin-qual-policy-wildcard, pepin-qual-policy-scoped]
+
+  iam_policy_no_wildcard_resource:
+    # Trois politiques portent `Resource: *` sans tout autoriser : la ressource joker
+    # est leur point commun, et la règle le dit sur chacune.
+    live:
+      fail: [pepin-qual-policy-wildcard, pepin-qual-policy-notaction, pepin-qual-policy-escalation]
+      silent: [pepin-qual-policy-scoped, pepin-qual-policy-admin]
+    terraform:
+      fail: [pepin-qual-policy-wildcard, pepin-qual-policy-notaction, pepin-qual-policy-escalation]
+      silent: [pepin-qual-policy-scoped, pepin-qual-policy-admin]
+
+  iam_policy_no_notaction_notresource:
+    live:
+      fail: [pepin-qual-policy-notaction]
+      silent: [pepin-qual-policy-scoped]
+    terraform:
+      fail: [pepin-qual-policy-notaction]
+      silent: [pepin-qual-policy-scoped]
+
+  iam_policy_no_privilege_escalation:
+    live:
+      fail: [pepin-qual-policy-escalation]
+      silent: [pepin-qual-policy-scoped, pepin-qual-policy-wildcard]
+    terraform:
+      fail: [pepin-qual-policy-escalation]
+      silent: [pepin-qual-policy-scoped, pepin-qual-policy-wildcard]
+
+  # ── EIM : clés d'accès ────────────────────────────────────────────────────────
+  iam_no_root_access_key:
+    # La clé créée sans `user_name` est celle du compte qui exécute (root) : dérivée
+    # root_owned par différence d'ensembles. Les clés existantes du root, hors tenant,
+    # sont rapportées sans être gardées.
+    live:
+      fail: ["${output.api_key_root}"]
+      silent: ["${output.api_key_no_expiry}", "${output.api_key_expiring}"]
+    # `outscale_access_key` n'est pas mappé sur le plan (#203).
+    terraform: not-evaluated
+
+  iam_accesskey_expiration_set:
+    live:
+      fail: ["${output.api_key_no_expiry}"]
+      silent: ["${output.api_key_expiring}", "${output.api_key_root}"]
+    terraform: not-evaluated
+
+  iam_accesskey_rotated:
+    # Une date de création ne s'antidate pas : aucune clé du tenant n'a 90 jours. Le
+    # contrôle conclut sur les clés existantes du compte, hors tenant.
+    live:
+      status: evaluated
+      perimeter: compte
+      reason: "Les clés du tenant sont neuves ; le verdict porte sur les clés préexistantes du compte, que le tenant ne crée ni ne supprime."
+    terraform: not-evaluated
+
+  # ── Singletons du compte : politique et règles d'accès API ───────────────────
+  iam_account_mfa_enforced:
+    live:
+      status: evaluated
+      perimeter: compte
+      reason: "ApiAccessPolicy.RequireTrustedEnv est un réglage du compte : le forcer fermerait l'API à la clé qui qualifie. Observé, jamais modifié."
+    terraform: not-evaluated
+
+  iam_apiaccesspolicy_max_key_expiration:
+    live:
+      status: evaluated
+      perimeter: compte
+      reason: "Même singleton (MaxAccessKeyExpirationSeconds) : observé, jamais modifié."
+    terraform: not-evaluated
+
+  iam_apiaccessrule_defined:
+    # Le compte porte des règles avant le tenant, et le tenant en ajoute deux :
+    # l'écart (aucune règle) n'est pas constructible sans les retirer toutes.
+    live: pass
+    terraform: not-evaluated
+
+  iam_apiaccessrule_no_public_cidr:
+    live:
+      fail: ["${output.api_rule_public_id}"]
+      silent: ["${output.api_rule_private_id}"]
+    # `outscale_api_access_rule` n'est pas mappé sur le plan (#203).
+    terraform: not-evaluated
+
+  # ── Groupes de sécurité ───────────────────────────────────────────────────────
+  # Sujet live = identifiant du groupe ; sujet Terraform = adresse du groupe (les
+  # règles y désignent leur groupe par référence, résolue par l'ADR-0022).
+  network_securitygroup_allow_ingress_from_internet_to_tcp_port_22:
+    live:
+      fail: ["${output.sg_ssh_open_id}", "${output.sg_any_open_id}", "${output.sg_quartet_id}", "${output.sg_net_ssh_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_rdp_open_id}", "${output.sg_net_closed_id}"]
+    terraform:
+      fail: [outscale_security_group.ssh_open, outscale_security_group.any_open, outscale_security_group.quartet, outscale_security_group.net_ssh_open]
+      silent: [outscale_security_group.hardened, outscale_security_group.rdp_open, outscale_security_group.net_closed]
+
+  network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389:
+    live:
+      fail: ["${output.sg_rdp_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
+    terraform:
+      fail: [outscale_security_group.rdp_open, outscale_security_group.any_open]
+      silent: [outscale_security_group.hardened, outscale_security_group.ssh_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports:
+    live:
+      fail: ["${output.sg_db_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
+    terraform:
+      fail: [outscale_security_group.db_open, outscale_security_group.any_open]
+      silent: [outscale_security_group.hardened, outscale_security_group.ssh_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports:
+    live:
+      fail: ["${output.sg_snmp_open_id}", "${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_db_open_id}"]
+    terraform:
+      fail: [outscale_security_group.snmp_open, outscale_security_group.any_open]
+      silent: [outscale_security_group.hardened, outscale_security_group.db_open]
+
+  network_securitygroup_allow_ingress_from_internet_to_all_ports:
+    live:
+      fail: ["${output.sg_any_open_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}", "${output.sg_quartet_id}"]
+    terraform:
+      fail: [outscale_security_group.any_open]
+      silent: [outscale_security_group.hardened, outscale_security_group.ssh_open, outscale_security_group.quartet]
+
+  network_securitygroup_unrestricted_egress:
+    # `egress_any` porte la règle explicitement ; le groupe « default » du Net, créé
+    # par le produit, garde sa règle sortante par défaut — les huit autres l'ont
+    # retirée (`remove_default_outbound_rule`), et c'est le contre-exemple.
+    live:
+      fail: ["${output.sg_egress_any_id}", "${output.sg_net_default_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}", "${output.sg_net_closed_id}"]
+    terraform:
+      fail: [outscale_security_group.egress_any]
+      silent: [outscale_security_group.hardened, outscale_security_group.ssh_open]
+
+  network_securitygroup_default_restrict_traffic:
+    # La règle d'usine du groupe « default » du Net (source = lui-même) : écart
+    # contextuel, sur un sujet que Terraform ne gère pas (source de données).
+    live:
+      fail: ["${output.sg_net_default_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_net_closed_id}"]
+    # Le plan ne porte pas `security_group_name` sur les règles.
+    terraform: not-evaluated
+
+  # ── Réseau ────────────────────────────────────────────────────────────────────
+  network_documented:
+    live:
+      fail: ["${output.net_undocumented_id}"]
+      silent: ["${output.net_documented_id}"]
+    terraform:
+      fail: [outscale_net.undocumented]
+      silent: [outscale_net.documented]
+
+  network_subnet_no_public_ip_by_default:
+    live:
+      fail: ["${output.subnet_autoip_id}"]
+      silent: ["${output.subnet_main_id}"]
+    terraform:
+      fail: [outscale_subnet.autoip]
+      silent: [outscale_subnet.main]
+
+  network_peering_cross_organization:
+    # Deux Nets du même compte : source_account = accepter_account, muet. L'écart
+    # exigerait un second compte.
+    live: pass
+    # `outscale_net_peering` n'est pas mappé sur le plan (#203).
+    terraform: not-evaluated
+
+  # ── Calcul ────────────────────────────────────────────────────────────────────
+  compute_instance_public_ip_with_open_securitygroup:
+    # `exposed` par sa carte primaire ; `two_nics` par sa carte SECONDAIRE (#187) —
+    # l'inverse (`two_nics_inverse`) ne doit pas parler.
+    live:
+      fail: ["${output.vm_exposed_id}", "${output.vm_two_nics_id}"]
+      silent: ["${output.vm_private_id}", "${output.vm_hardened_id}", "${output.vm_two_nics_inverse_id}"]
+    # Le plan ne porte pas l'IP publique d'une VM (elle naît d'un lien).
+    terraform: not-evaluated
+
+  compute_instance_has_security_group:
+    live: pass
+    terraform: pass
+
+  compute_instance_no_secrets_in_user_data:
+    live:
+      fail: ["${output.vm_secrets_id}"]
+      silent: ["${output.vm_hardened_id}", "${output.vm_exposed_id}"]
+    terraform:
+      fail: ['outscale_vm.public["secrets"]']
+      silent: ['outscale_vm.public["hardened"]', 'outscale_vm.public["exposed"]']
+
+  compute_instance_deletion_protection:
+    # `unprotected` (Env=prod, sans protection) est l'écart ; `hardened` (Env=prod,
+    # protégée) le contre-exemple ; `untagged` n'a pas d'environnement lisible : la
+    # règle dit qu'elle ne sait pas conclure (ADR-0015).
+    live:
+      fail: ["${output.vm_unprotected_id}"]
+      silent: ["${output.vm_hardened_id}", "${output.vm_exposed_id}"]
+      inconclusive: ["${output.vm_untagged_id}"]
+    # Le plan ne mappe pas `deletion_protection`, que `outscale_vm` porte pourtant (#203).
+    terraform: not-evaluated
+
+  compute_image_not_public:
+    live:
+      fail: ["${output.image_public_id}"]
+      silent: ["${output.image_private_id}"]
+    terraform:
+      fail: [outscale_image.public]
+      silent: [outscale_image.private]
+
+  # ── Stockage block ────────────────────────────────────────────────────────────
+  blockstorage_volume_snapshots_exist:
+    # Tout volume en usage sans snapshot fraîche et terminée : le volume de données
+    # `unsnapshotted` et les huit volumes racine (les OMI sont construites depuis la
+    # snapshot gérée, aucun volume racine n'est sauvegardé).
+    live:
+      fail: ["${output.volume_unsnapshotted_id}", "${output.root_volume_exposed_id}", "${output.root_volume_private_id}", "${output.root_volume_hardened_id}", "${output.root_volume_untagged_id}", "${output.root_volume_secrets_id}", "${output.root_volume_unprotected_id}", "${output.root_volume_two_nics_id}", "${output.root_volume_two_nics_inverse_id}"]
+      silent: ["${output.volume_snapshotted_id}"]
+    terraform: not-evaluated
+
+  blockstorage_snapshot_not_public:
+    live:
+      fail: ["${output.snapshot_public_id}"]
+      silent: ["${output.snapshot_private_id}"]
+    terraform: not-evaluated
+
+  blockstorage_volume_encryption:
+    live: not-applicable
+    terraform: not-applicable
+
+  # ── Stockage objet (OOS, créé par le crochet `extra`) ─────────────────────────
+  objectstorage_bucket_public_access:
+    live:
+      fail: ["${output.bucket_public}", "${output.bucket_policy}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_unversioned}"]
+    terraform: not-evaluated
+
+  objectstorage_bucket_versioning_enabled:
+    live:
+      fail: ["${output.bucket_unversioned}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_unlocked}"]
+    terraform: not-evaluated
+
+  objectstorage_bucket_object_lock_enabled:
+    live:
+      fail: ["${output.bucket_unlocked}", "${output.bucket_unversioned}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_public}"]
+    terraform: not-evaluated
+
+  objectstorage_bucket_default_encryption:
+    # Actif pour Outscale : SSE opt-in par bucket, `unencrypted` ne l'a pas.
+    live:
+      fail: ["${output.bucket_unencrypted}"]
+      silent: ["${output.bucket_hardened}", "${output.bucket_public}"]
+    terraform: not-evaluated
+
+  objectstorage_bucket_kms_encryption:
+    live: not-applicable
+    terraform: not-applicable
+
+  # ── Répartiteurs de charge ────────────────────────────────────────────────────
+  loadbalancer_ssl_listeners:
+    # `http` : écouteur HTTP seul. `tcp443` : candidat au passthrough TLS, que la
+    # règle refuse de trancher — non concluant (ADR-0015).
+    live:
+      fail: ["${output.lb_http_name}"]
+      inconclusive: ["${output.lb_tcp443_name}"]
+    # `outscale_load_balancer` n'est pas mappé sur le plan (#203).
+    terraform: not-evaluated
+
+  loadbalancer_logging_enabled:
+    live:
+      fail: ["${output.lb_http_name}", "${output.lb_tcp443_name}"]
+    terraform: not-evaluated
+
+  loadbalancer_http_redirect_to_https:
+    live: not-applicable
+    terraform: not-applicable
+
+  # ── Gouvernance ───────────────────────────────────────────────────────────────
+  governance_resource_required_tags:
+    live:
+      fail: ["${output.vm_untagged_id}"]
+      silent: ["${output.vm_exposed_id}", "${output.root_volume_exposed_id}", "${output.volume_snapshotted_id}", "${output.snapshot_private_id}", "${output.image_private_id}", "${output.bucket_hardened}", "${output.lb_http_name}"]
+    terraform:
+      fail: ['outscale_vm.public["untagged"]']
+      silent: ['outscale_vm.public["exposed"]']
+
+  governance_resource_region_in_eu:
+    live: pass
+    # Le mapping Terraform ne projette pas la région (#203 ; #194 pour Scaleway).
+    terraform: not-evaluated
+
+  governance_provider_sovereignty:
+    live: pass
+    terraform: pass
+
+  # ── Déclarés non applicables, ou sans ressource ───────────────────────────────
+  iam_user_mfa_enabled:
+    live: not-applicable
+    terraform: not-applicable
+
+  kubernetes_cluster_not_publicly_accessible:
+    live: not-evaluated
+    terraform: not-evaluated
+
+  kubernetes_cluster_control_plane_highly_available:
+    live: not-evaluated
+    terraform: not-evaluated
+
+  kubernetes_cluster_auto_upgrade_enabled:
+    live: not-evaluated
+    terraform: not-evaluated
+
+  kubernetes_cluster_deletion_protection:
+    live: not-evaluated
+    terraform: not-evaluated

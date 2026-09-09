@@ -22,7 +22,7 @@ references/qualification/
     .terraform.lock.hcl             versionné : le binaire de provider qui a été qualifié
     tenant.yaml                     métadonnées : région, tag du tenant, version épinglée, budget, tarifs horaires
     expected.yaml                   le contrat : contrôle × source × sujet → statut, et le compte épinglé
-    hooks.py                        crochets du fournisseur : identité, inventaire par famille, nettoyage de secours
+    hooks.py                        crochets du fournisseur : identité, variables, extra (ce que Terraform ne sait pas créer), inventaire par famille, nettoyage de secours
     README.md · README.fr.md        ce que la stack crée, ce qui bloque destroy en amont, résultats mesurés
 tools/qualification/qualify.py      le runner générique (apply, scan, scelle, vérifie, détruit, prouve, compare)
 ```
@@ -56,13 +56,18 @@ mise run qualify:selftest                     # la comparaison se prouve sur des
    bundle altéré d'un octet doit être refusé ([ADR-0018](../../docs/adr/0018-ce-quun-bundle-prouve-de-lui-meme.md)).
 6. **`pepin scan --terraform`** sur le même plan.
 7. **Destroy**, dans un `finally` : il tourne même quand une étape précédente a
-   échoué. Si `terraform destroy` ne finit pas, les crochets du fournisseur suppriment
-   par l'API ce qui porte le tag du tenant, et destroy est relancé.
+   échoué. Ce qu'il faut défaire d'abord (une protection contre la suppression, que le
+   provider Outscale ne sait pas traverser, #88) est appliqué avant lui (`tenant.yaml`
+   `pre_destroy_vars`) ; ce que le crochet `extra` a créé hors Terraform est retiré
+   avant lui aussi. Si `terraform destroy` ne finit pas, les crochets du fournisseur
+   suppriment par l'API ce qui porte le tag du tenant, et destroy est relancé.
 8. **Preuve de destruction** : `Destroy complete!` n'est pas une preuve. Le compte est
    relisté famille par famille, filtré sur le tag et le préfixe de nom du tenant,
    **et** comparé à l'inventaire pris avant apply : ce qui est apparu entre les deux,
    étiqueté ou non (un volume racine renommé, une sauvegarde automatique), est un
-   reste et un NO-GO.
+   reste et un NO-GO. Les suppressions sont asynchrones chez plus d'un fournisseur :
+   le listing est répété jusqu'au vide, bornée (`settle_seconds`, 240 s) — ce qui
+   survit au délai est un reste, et le nettoyage de secours est tenté dessus.
 9. **Comparaison** à `expected.yaml`, puis **falsification** : une attente est cassée
    en mémoire et la comparaison doit dire NO-GO. Une porte qu'on n'a jamais vue rouge
    ne garde rien.
@@ -84,6 +89,14 @@ entre au dépôt sans relecture.
 | un contrôle absent d'`expected.yaml` | un verdict non épinglé |
 | un code de sortie autre que celui épinglé | la porte de CI elle-même a bougé ([ADR-0005](../../docs/adr/0005-codes-de-sortie.md)) |
 | une ressource qui survit au destroy | le seul résultat inacceptable de tout l'exercice |
+
+Trois mots de plus qu'`expected.yaml` peut employer : `inconclusive:` liste les sujets
+du tenant sur lesquels une règle dit ne pas savoir conclure (un `not-evaluated` à sujet,
+ADR-0015) ; `known_defect:` épingle un comportement mesuré et faux, avec l'issue qui le
+suit — la porte reste GO et la correction la fait rougir sciemment ; `evaluated` accepte
+`pass` ou `fail` pour un contrôle dont les sujets sont hors du tenant (les utilisateurs
+du compte, sa politique d'accès API). Un tenant sans compte dit `live: unavailable` dans
+`tenant.yaml` : il ne tourne qu'en `--plan-only`, et un run réel est refusé.
 
 `expected.yaml` n'est **pas une matrice verte** ([ADR-0010](../../docs/adr/0010-dette-de-veracite-comptee.md)) :
 chacun de ses `not-evaluated` est une **dette de collecte nommée**, et il change quand,

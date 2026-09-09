@@ -48,3 +48,6 @@ references/docs/*/
 # détruit. Ils portent les identifiants de ressources d'un compte ; rien n'en
 # entre au dépôt sans relecture (ADR-0012).
 release-gate/
+
+# Caches Python des outils et crochets lancés en scripts.
+__pycache__/
