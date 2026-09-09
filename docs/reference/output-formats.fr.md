@@ -256,11 +256,6 @@ Un résultat :
   "evidence": {
     "attribute": "acl",
     "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {

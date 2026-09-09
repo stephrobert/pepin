@@ -145,11 +145,6 @@ Deux entrées méritent une seconde lecture :
   "control": "network_securitygroup_allow_ingress_from_internet_to_all_ports",
   "evidence": {
     "observed": "aucune non-conformité détectée sur les ressources de type « security_group_rule » collectées (contrat vérifié)",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "terraform-plan"
   },
   "references": [
@@ -210,11 +205,6 @@ ressources, pas une liste à cocher de contrôles.
   "evidence": {
     "attribute": "acl",
     "observed": "Bucket « scaleway_object_bucket_acl.backups » accessible publiquement (ACL publique).",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -287,11 +277,6 @@ rejeté par n'importe quel auditeur, l'outil refuse donc d'en produire.
   "control": "blockstorage_volume_encryption",
   "evidence": {
     "observed": "Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2).",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "terraform-plan"
   },
   "references": [
@@ -359,11 +344,6 @@ pas touché : Pépin ne l'a pas collecté, il n'a donc rien à en attester.
   "control": "compute_instance_public_ip_with_open_securitygroup",
   "evidence": {
     "observed": "attribut « public_ip » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "terraform-plan"
   },
   "references": [
@@ -454,11 +434,6 @@ exception, c'est-à-dire le même faux vert avec une étape de plus.
   "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
   "evidence": {
     "observed": "SSH (port 22) accepté depuis/vers Internet.",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "export"
   },
   "labels": {

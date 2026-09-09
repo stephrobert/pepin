@@ -70,11 +70,6 @@ de deviner :
   "evidence": {
     "attribute": "security_group_ids",
     "observed": "attribut « security_group_ids » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "security_group_ids=terraform-plan:scaleway_instance_server observed=0/1"
   },
   "references": [
@@ -147,11 +142,6 @@ dans un inventaire à la forme que produit le collecteur live, `vm_id` depuis `S
   "control": "compute_instance_has_security_group",
   "evidence": {
     "observed": "aucune non-conformité détectée sur les ressources de type « compute_instance » collectées (contrat vérifié)",
-    "proves": [
-      "",
-      "",
-      ""
-    ],
     "source": "export"
   },
   "references": [
