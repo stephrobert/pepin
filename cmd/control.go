@@ -33,6 +33,17 @@ var explainProvider string
 var controlCmd = &cobra.Command{
 	Use:   "control",
 	Short: "Inspecter les contrôles du référentiel commun",
+	// `pepin control list` est une supposition NATURELLE — `provider list` existe, on
+	// essaie la forme symétrique. Elle rendait un écran d'aide et un code 0, laissant
+	// l'utilisateur deviner seul que la sous-commande est `control explain`. Une étape
+	// `pepin control list --json > controls.json` réussissait, écrivait l'aide dans le
+	// fichier, et le job passait au vert.
+	Args: cobra.NoArgs,
+	// `Args` ne suffit PAS sur une commande non exécutable : cobra rend l'aide et
+	// s'arrête AVANT de valider les arguments. Un `RunE`, même trivial, la rend
+	// exécutable et remet la validation dans le chemin — sans quoi `control list`
+	// continuait de rendre l'aide et 0.
+	RunE: func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
 }
 
 var controlExplainCmd = &cobra.Command{

@@ -58,7 +58,15 @@ const (
 // aucun drapeau et aucun code de sortie existant ne bouge. L'incrément est dû
 // quand même — la surface est la liste de ce qu'un intégrateur a le droit de
 // brancher, et elle vient de s'allonger.
-// v6 : ajout de `scan --gate` (all | security | compliance | sovereignty), le profil
+// v6 : ajout de `verify --require-signature`, qui refuse un bundle dont aucune
+// signature n'a été vérifiée. Un appelant qui script `verify` recevait 0 pour un
+// dossier que l'outil qualifie lui-même de NON opposable : l'avertissement est sur
+// stdout, le code disait « réussi », et l'automatisation lit le code. Le drapeau est
+// OPT-IN — changer le défaut ferait échouer en silence des chaînes qui passent
+// aujourd'hui —, d'où un ajout pur, et l'incrément est dû quand même : la surface est
+// la liste de ce qu'un intégrateur a le droit de brancher.
+//
+// v7 : ajout de `scan --gate` (all | security | compliance | sovereignty), le profil
 // de PORTE. Il ne filtre pas le rapport — celui-ci reste complet dans tous les
 // formats — il filtre ce qui pèse dans le CODE DE SORTIE, et c'est pourquoi
 // l'incrément est dû : un pipeline qui pose ce drapeau doit savoir qu'un écart mis
@@ -67,7 +75,7 @@ const (
 //
 // Le drapeau ne s'appelle PAS `--profile` : ce nom désigne déjà le profil
 // d'identifiants de la collecte live.
-const cliSurfaceVersion = 6
+const cliSurfaceVersion = 7
 
 // findingsSurfaceVersion est la version de FORME de `--format json`
 // ({"findings": [...], "summary": {...}}), la sortie qu'un pipeline parse le

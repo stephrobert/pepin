@@ -23,6 +23,27 @@ belongs in `git log`.
 
 ### Security
 
+- **`verify` no longer accepts a bundle that contradicts itself.** Rewriting four
+  `fail` results into `pass` and recomputing the digest of the file touched produced a
+  bundle reported as "internally consistent", exit 0 — while its own `manifest.json`
+  still announced `"fail": 4`. The bundle already carried the information that
+  contradicted it, and nothing compared the two. Three cross-checks now do, none of
+  them needing a key: the manifest summary is reconciled with the statuses actually
+  present in `assessment.json`, each artifact's declared **size** is checked alongside
+  its digest, and `checksums.txt` is parsed **strictly** — an unreadable or duplicated
+  line is a refusal, where an appended byte used to go unnoticed.
+- **`verify --require-signature`** fails when no signature was verified. A caller
+  scripting `verify` received 0 for a bundle the tool itself calls non-defensible: the
+  warning was on stdout, the exit code said success, and automation reads the exit
+  code. Opt-in, so no existing chain changes. CLI surface v5 → v6.
+
+  What this does **not** do is close the digest chain, and the limit is worth stating:
+  nothing inside a bundle can anchor `checksums.txt`, because whoever rewrites a file
+  rewrites the anchor too. Only the detached cosign signature closes it. These checks
+  catch corruption and self-contradiction, not a determined forger.
+
+### Security
+
 - **A third-party policy could exfiltrate the audited inventory, silently.** Rules
   hot-loaded through `--policy-dir` are third-party code, run over everything the scan
   collected. The engine had removed `http.send`, `net.lookup_ip_addr` and `opa.runtime`
@@ -38,6 +59,24 @@ belongs in `git log`.
 
 ### Fixed
 
+- **An unknown subcommand no longer exits 0, and no longer runs something else.**
+  `pepin provider inexistant` silently ran `provider list`; `pepin control list` — the
+  natural guess, symmetric with `provider list` — printed a help screen and succeeded.
+  A pipeline step written `pepin control list --json > controls.json` therefore wrote a
+  help screen into the file and went green. Every command now validates its arguments
+  and exits **2** on one it does not understand. A guard walks the command tree rather
+  than checking a hand-written list, and it found a fifth case the report had not:
+  `provider list` ignored any argument.
+- **An inventory whose origin contradicts the requested ruleset is now refused.**
+  Scanning a Scaleway inventory with the Exoscale rules was accepted without a word and
+  produced six `pass` verdicts. Those passes were not wrong by accident, they were
+  meaningless: the resource shapes overlap just enough for rules to evaluate and
+  conclude. The failure mode was quiet and realistic — a typo in a pipeline, a
+  copy-pasted job — and the report looked entirely normal, with a non-zero exit code
+  that even suggested the scan had done its job. The declaration is read from the root
+  of the export and from its resources, and a mismatch exits **2**, the code already
+  used for an unreadable export. An inventory that declares nothing is not refused: an
+  absent origin is not invented.
 - **`evidence.proves` no longer travels as `["","",""]` on every result.** `omitempty`
   on a fixed-size array is a no-op, so a reader could not tell "no proof recorded" from
   "three proofs recorded, all blank" — including inside sealed bundles archived for

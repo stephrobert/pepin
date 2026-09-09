@@ -24,6 +24,29 @@ l'une ni l'autre appartient au `git log`.
 
 ### Sécurité
 
+- **`verify` n'accepte plus un bundle qui se contredit.** Réécrire quatre résultats
+  `fail` en `pass` puis recalculer l'empreinte du fichier touché produisait un bundle
+  déclaré « cohérent en interne », code 0 — alors que son propre `manifest.json`
+  annonçait encore `"fail": 4`. Le bundle portait déjà l'information qui le
+  contredisait, et rien ne comparait les deux. Trois recoupements le font désormais,
+  aucun n'exigeant de clé : le résumé du manifeste est confronté aux statuts réellement
+  présents dans `assessment.json`, la **taille** déclarée de chaque artefact est
+  vérifiée à côté de son empreinte, et `checksums.txt` est lu **strictement** — une
+  ligne illisible ou dupliquée est un refus, là où un octet ajouté passait inaperçu.
+- **`verify --require-signature`** échoue si aucune signature n'a été vérifiée. Un
+  appelant qui script `verify` recevait 0 pour un bundle que l'outil qualifie lui-même
+  de non opposable : l'avertissement était sur stdout, le code disait « réussi », et
+  l'automatisation lit le code. Opt-in, donc aucune chaîne existante ne change. Surface
+  CLI v5 → v6.
+
+  Ce que cela ne fait **pas**, et la limite mérite d'être dite : fermer la chaîne
+  d'empreintes. Rien dans un bundle ne peut ancrer `checksums.txt`, puisque qui réécrit
+  un fichier réécrit aussi l'ancre. Seule la signature détachée cosign le peut. Ces
+  recoupements attrapent la corruption et la contradiction interne, pas un
+  falsificateur déterminé.
+
+### Sécurité
+
 - **Une politique tierce pouvait exfiltrer l'inventaire audité, en silence.** Les règles
   chargées à chaud via `--policy-dir` sont du code tiers, exécuté sur tout ce que le
   scan a collecté. Le moteur avait retiré `http.send`, `net.lookup_ip_addr` et
@@ -40,6 +63,25 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une sous-commande inconnue ne rend plus 0, et n'exécute plus autre chose.**
+  `pepin provider inexistant` lançait silencieusement `provider list` ; `pepin control
+  list` — la supposition naturelle, symétrique de `provider list` — rendait un écran
+  d'aide et réussissait. Une étape de pipeline écrite `pepin control list --json >
+  controls.json` écrivait donc l'aide dans le fichier et passait au vert. Chaque
+  commande valide désormais ses arguments et rend **2** sur un argument qu'elle ne
+  comprend pas. Une garde parcourt l'ARBRE des commandes plutôt qu'une liste écrite à
+  la main, et elle a trouvé un cinquième cas que le rapport n'avait pas : `provider
+  list` ignorait tout argument.
+- **Un inventaire dont l'origine contredit le jeu de règles demandé est désormais
+  refusé.** Scanner un inventaire Scaleway avec les règles Exoscale était accepté sans
+  un mot et produisait six verdicts `pass`. Ces `pass` n'étaient pas faux par accident :
+  ils étaient **vides de sens**, les formes de ressources se recouvrant juste assez pour
+  que des règles s'évaluent et concluent. Le mode d'échec était silencieux et réaliste —
+  une faute de frappe dans un pipeline, un job copié-collé — et le rapport avait l'air
+  parfaitement normal, avec un code de sortie non nul qui suggérait même que le scan
+  avait travaillé. La déclaration est lue à la racine de l'export et sur ses ressources,
+  et une discordance sort en **2**, le code déjà employé pour un export illisible. Un
+  inventaire qui ne déclare rien n'est pas refusé : une origine absente ne s'invente pas.
 - **`evidence.proves` ne voyage plus en `["","",""]` sur chaque résultat.** `omitempty`
   sur un tableau de taille fixe est sans effet, si bien qu'un lecteur ne pouvait pas
   distinguer « aucune preuve enregistrée » de « trois preuves enregistrées, toutes
