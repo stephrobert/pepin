@@ -91,3 +91,83 @@ test_public_vm_all_ports_sentinel_is_critical if {
 	f.code == _vm_code
 	f.severity == "critical"
 }
+
+# ── L'EXPOSITION EST UNE PROPRIÉTÉ DE LA CARTE ────────────────────────────────
+
+# Le cas MESURÉ sur le tenant : carte primaire privée avec un groupe fermé, carte
+# secondaire portant l'IP publique ET un groupe ouvert sur 22. Aucun finding n'était
+# produit, alors que SSH répondait sur l'IP publique.
+_deux_cartes(attrs_vm, cartes, regles) := {"resources": array.concat(
+	array.concat(
+		[{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": attrs_vm}],
+		[{"provider": "outscale", "type": "network_interface", "id": c.nic_id, "attributes": c} | some c in cartes],
+	),
+	[{"provider": "outscale", "type": "security_group_rule", "id": r.security_group_id, "attributes": r} | some r in regles],
+)}
+
+_ssh_ouvert(sg) := {"security_group_id": sg, "direction": "inbound", "action": "accept", "protocol": "tcp", "port_from": 22, "port_to": 22, "cidrs": ["0.0.0.0/0"]}
+
+_cld_net_3 := "compute_instance_public_ip_with_open_securitygroup"
+
+_findings_net3(input_doc) := {f | some f in deny with input as input_doc; f.code == _cld_net_3}
+
+# ✗ La carte SECONDAIRE porte l'IP publique et le groupe ouvert : c'est un écart.
+test_a_public_secondary_nic_with_an_open_group_is_denied if {
+	fs := _findings_net3(_deux_cartes(
+		{"vm_id": "i-1", "security_group_ids": ["sg-web"]},
+		[
+			{"nic_id": "eni-1", "vm_id": "i-1", "security_group_ids": ["sg-web"]},
+			{"nic_id": "eni-2", "vm_id": "i-1", "public_ip": "198.51.100.7", "security_group_ids": ["sg-ssh"]},
+		],
+		[_ssh_ouvert("sg-ssh")],
+	))
+	count(fs) == 1
+	some f in fs
+	f.severity == "high"
+	f.subject == "i-1"
+}
+
+# LE CONTRE-EXEMPLE que l'appariement existe pour tenir : une carte PUBLIQUE au
+# groupe fermé, plus une carte PRIVÉE au groupe ouvert. Réunir les deux dirait
+# « publique et ouverte » — un écart que cette machine ne porte pas. Rien n'est
+# joignable depuis Internet, et la règle doit se taire.
+test_a_public_nic_and_a_separate_open_nic_stay_silent if {
+	count(_findings_net3(_deux_cartes(
+		{"vm_id": "i-1", "security_group_ids": ["sg-web"]},
+		[
+			{"nic_id": "eni-1", "vm_id": "i-1", "public_ip": "198.51.100.7", "security_group_ids": ["sg-web"]},
+			{"nic_id": "eni-2", "vm_id": "i-1", "security_group_ids": ["sg-ssh"]},
+		],
+		[_ssh_ouvert("sg-ssh")],
+	))) == 0
+}
+
+# UN seul finding quand la carte primaire est déjà celle qui expose : le repli ne doit
+# pas s'ajouter au chemin des cartes, sinon un même fait produirait deux écarts.
+test_one_finding_when_the_primary_nic_is_the_exposed_one if {
+	count(_findings_net3(_deux_cartes(
+		{"vm_id": "i-1", "public_ip": "198.51.100.7", "security_group_ids": ["sg-ssh"]},
+		[{"nic_id": "eni-1", "vm_id": "i-1", "public_ip": "198.51.100.7", "security_group_ids": ["sg-ssh"]}],
+		[_ssh_ouvert("sg-ssh")],
+	))) == 1
+}
+
+# LE REPLI. Une source qui ne collecte pas les cartes — un plan Terraform — juge la
+# machine sur ses propres attributs, exactement comme avant. Un repli muet ferait
+# DISPARAÎTRE des écarts que le dépôt détecte aujourd'hui.
+test_without_nics_the_vm_is_judged_on_its_own_attributes if {
+	count(_findings_net3({"resources": [
+		{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": {"vm_id": "i-1", "public_ip": "198.51.100.7", "security_group_ids": ["sg-ssh"]}},
+		{"provider": "outscale", "type": "security_group_rule", "id": "sg-ssh", "attributes": _ssh_ouvert("sg-ssh")},
+	]})) == 1
+}
+
+# Une carte d'une AUTRE machine n'expose pas celle-ci : la jointure porte sur `vm_id`,
+# et une jointure trop large est le faux positif le plus coûteux du dépôt.
+test_a_nic_of_another_vm_never_exposes_this_one if {
+	count(_findings_net3({"resources": [
+		{"provider": "outscale", "type": "compute_instance", "id": "i-1", "attributes": {"vm_id": "i-1", "security_group_ids": ["sg-web"]}},
+		{"provider": "outscale", "type": "network_interface", "id": "eni-9", "attributes": {"nic_id": "eni-9", "vm_id": "i-2", "public_ip": "198.51.100.9", "security_group_ids": ["sg-ssh"]}},
+		{"provider": "outscale", "type": "security_group_rule", "id": "sg-ssh", "attributes": _ssh_ouvert("sg-ssh")},
+	]})) == 0
+}

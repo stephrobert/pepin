@@ -1,0 +1,88 @@
+# Exposition par une carte réseau SECONDAIRE, sur une collecte live Outscale.
+#
+# Le chemin traverse le collecteur RÉEL : `/ReadVms`, l'éclatement de `Vm.Nics[]` en une
+# ressource `network_interface` par carte, le mapping déclaratif (`LinkPublicIp.PublicIp`
+# → `public_ip`, `SecurityGroups[].SecurityGroupId` → `security_group_ids`), la règle,
+# puis l'assessment. C'est l'entrée exigée par le contrat : le type est produit par la
+# spec `collecte`.
+#
+# # Ce que ce scénario tient, et qu'aucun test Rego ne tient
+#
+# La règle savait déjà apparier une IP et des groupes ; ce qu'elle n'avait pas, c'est la
+# DONNÉE. Le faux négatif fondateur venait du collecteur : `Vm.SecurityGroups` documente
+# les groupes de la carte PRIMAIRE, et une VM publique par sa carte secondaire était
+# confrontée aux groupes de la mauvaise carte. Un mapping qui cesserait de projeter
+# `Nics[]` rendrait la règle muette sans casser un seul test unitaire.
+control: compute_instance_public_ip_with_open_securitygroup
+provider: outscale
+source: live
+
+scenarios:
+  - expect: fail
+    why: "carte primaire privee et fermee, carte secondaire portant l'IP publique ET 22 ouvert : SSH repond"
+    api:
+      /ReadVms: |
+        {"Vms": [{"VmId": "i-cb7729a3",
+                  "State": "running",
+                  "SecurityGroups": [{"SecurityGroupId": "sg-web-ok"}],
+                  "Nics": [{"NicId": "eni-primaire",
+                            "SecurityGroups": [{"SecurityGroupId": "sg-web-ok"}]},
+                           {"NicId": "eni-secondaire",
+                            "LinkPublicIp": {"PublicIp": "198.51.100.170"},
+                            "SecurityGroups": [{"SecurityGroupId": "sg-ssh-world"}]}]}]}
+      /ReadSecurityGroups: |
+        {"SecurityGroups": [{"SecurityGroupId": "sg-ssh-world",
+                             "SecurityGroupName": "pepin-audit-ssh-world",
+                             "InboundRules": [{"IpProtocol": "tcp",
+                                               "FromPortRange": 22,
+                                               "ToPortRange": 22,
+                                               "IpRanges": ["0.0.0.0/0"]}],
+                             "OutboundRules": []},
+                            {"SecurityGroupId": "sg-web-ok",
+                             "SecurityGroupName": "pepin-audit-web-ok",
+                             "InboundRules": [{"IpProtocol": "tcp",
+                                               "FromPortRange": 443,
+                                               "ToPortRange": 443,
+                                               "IpRanges": ["0.0.0.0/0"]}],
+                             "OutboundRules": []}]}
+
+  - expect: pass
+    why: "les MEMES cartes, l'IP publique deplacee sur celle dont le groupe est ferme : rien n'est joignable"
+    api:
+      /ReadVms: |
+        {"Vms": [{"VmId": "i-cb7729a3",
+                  "State": "running",
+                  "SecurityGroups": [{"SecurityGroupId": "sg-web-ok"}],
+                  "Nics": [{"NicId": "eni-primaire",
+                            "LinkPublicIp": {"PublicIp": "198.51.100.170"},
+                            "SecurityGroups": [{"SecurityGroupId": "sg-web-ok"}]},
+                           {"NicId": "eni-secondaire",
+                            "SecurityGroups": [{"SecurityGroupId": "sg-ssh-world"}]}]}]}
+      /ReadSecurityGroups: |
+        {"SecurityGroups": [{"SecurityGroupId": "sg-ssh-world",
+                             "SecurityGroupName": "pepin-audit-ssh-world",
+                             "InboundRules": [{"IpProtocol": "tcp",
+                                               "FromPortRange": 22,
+                                               "ToPortRange": 22,
+                                               "IpRanges": ["0.0.0.0/0"]}],
+                             "OutboundRules": []},
+                            {"SecurityGroupId": "sg-web-ok",
+                             "SecurityGroupName": "pepin-audit-web-ok",
+                             "InboundRules": [{"IpProtocol": "tcp",
+                                               "FromPortRange": 443,
+                                               "ToPortRange": 443,
+                                               "IpRanges": ["0.0.0.0/0"]}],
+                             "OutboundRules": []}]}
+
+  - expect: not-evaluated
+    why: "le droit api:Read* manque sur les regles de groupe : la donnee qui etablit l'exposition n'est jamais arrivee"
+    deny:
+      - /ReadSecurityGroups
+    api:
+      /ReadVms: |
+        {"Vms": [{"VmId": "i-cb7729a3",
+                  "State": "running",
+                  "SecurityGroups": [{"SecurityGroupId": "sg-web-ok"}],
+                  "Nics": [{"NicId": "eni-primaire",
+                            "LinkPublicIp": {"PublicIp": "198.51.100.170"},
+                            "SecurityGroups": [{"SecurityGroupId": "sg-web-ok"}]}]}]}

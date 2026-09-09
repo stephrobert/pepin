@@ -69,7 +69,14 @@ func providerIdentityTable(t providerStrings, d genprovider.Descriptor) string {
 	row(t.fieldJurisdiction, s.Juridiction)
 	row(t.fieldEUEstablished, boolLabel(t, s.EUEtabli))
 	row(t.fieldCapital, s.ControleCapitalistique)
-	row(t.fieldSecNumCloud, "`"+s.SecNumCloud+"`")
+	// Le statut ne se rend JAMAIS seul quand un périmètre est déclaré : une
+	// qualification porte sur des régions, et « qualifie » sans elles est
+	// précisément ce qu'un tenant hors périmètre lisait à son sujet.
+	secnum := "`" + s.SecNumCloud + "`"
+	if len(s.SecNumCloudRegions) > 0 {
+		secnum += " " + t.scopedTo + " `" + strings.Join(s.SecNumCloudRegions, "`, `") + "`"
+	}
+	row(t.fieldSecNumCloud, secnum)
 	row(t.fieldExtraterritorial, boolLabel(t, s.ExpositionExtraterritoriale))
 	row(t.fieldSources, oneLine(s.Sources))
 	return b.String()
@@ -333,6 +340,7 @@ type providerStrings struct {
 	fieldDescription, fieldScope, fieldRegionKey, fieldAuth    string
 	fieldJurisdiction, fieldEUEstablished, fieldCapital        string
 	fieldSecNumCloud, fieldExtraterritorial, fieldSources      string
+	scopedTo                                                   string
 	rowConfigFile, noteParent, noteS3, noteManagedK8s, baseURL string
 	unset, yes, no, none, noDescriptor                         string
 }
@@ -352,6 +360,7 @@ func providerText(lang string) providerStrings {
 			fieldAuth: "Authentification de l'API", fieldJurisdiction: "Juridiction du siège",
 			fieldEUEstablished: "Établi dans l'UE", fieldCapital: "Contrôle capitalistique",
 			fieldSecNumCloud: "SecNumCloud", fieldExtraterritorial: "Exposition extraterritoriale",
+			scopedTo:       "— périmètre :",
 			fieldSources:   "Sources de l'ancrage",
 			rowConfigFile:  "fichier de configuration natif",
 			noteParent:     "liste parente d'une jointure (appelée en premier)",
@@ -375,6 +384,7 @@ func providerText(lang string) providerStrings {
 		fieldAuth: "API authentication", fieldJurisdiction: "Jurisdiction of the head office",
 		fieldEUEstablished: "Established in the EU", fieldCapital: "Capital control",
 		fieldSecNumCloud: "SecNumCloud", fieldExtraterritorial: "Extraterritorial exposure",
+		scopedTo:       "— scope:",
 		fieldSources:   "Anchoring sources",
 		rowConfigFile:  "native configuration file",
 		noteParent:     "parent listing of a join (called first)",

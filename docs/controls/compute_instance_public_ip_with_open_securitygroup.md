@@ -15,7 +15,7 @@
 | Severity | `critical` |
 | SCSL requirement (frozen index) | `CLD-NET-3` |
 | Resource type read | `compute_instance` |
-| Deciding attribute | `public_ip` |
+| Deciding attribute | `nic_public_ips` / `public_ip` |
 | State | active |
 | Declared for | `exoscale`, `outscale`, `scaleway` |
 | Remediation proofs | 1 / 3 |
@@ -60,7 +60,7 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
-| scaleway | terraform | ◐ `partial` | deciding attribute "public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| scaleway | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 
@@ -77,7 +77,7 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 ## How to investigate
 
 - Normalized resource type the rule reads: `compute_instance`
-- Attribute the decision depends on: `public_ip`
+- Attribute the decision depends on: `nic_public_ips` / `public_ip`
 - Without that attribute on a resource of the targeted type, the scan returns `not-evaluated` rather than `pass` (`internal/assess`, `requiredAttr` table).
 - What each source projects is readable in the descriptor: [`providers/exoscale.yaml`](../../providers/exoscale.yaml) · [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - The rule that emits this code lives in [`internal/commonrules/rules/`](../../internal/commonrules/rules): it is **common** to every provider, only the source changes.

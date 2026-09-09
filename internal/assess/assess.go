@@ -64,10 +64,15 @@ var frameworkSlug = map[string]string{
 // TestDecidingAttributesDeclareKnownTypes — la chaîne va du Rego aux types, puis des
 // types aux attributs, et aucun maillon ne flotte.
 var requiredAttr = map[string]map[string][]string{
-	"compute_instance_deletion_protection":               {"": {"deletion_protection"}},
-	"compute_instance_no_secrets_in_user_data":           {"": {"user_data"}},
-	"compute_instance_has_security_group":                {"": {"security_group_ids"}},
-	"compute_instance_public_ip_with_open_securitygroup": {"": {"public_ip"}},
+	"compute_instance_deletion_protection":     {"": {"deletion_protection"}},
+	"compute_instance_no_secrets_in_user_data": {"": {"user_data"}},
+	"compute_instance_has_security_group":      {"": {"security_group_ids"}},
+	// La donnée qui décide de l'exposition n'est plus le seul `public_ip` de la
+	// machine : une VM peut être joignable par une carte SECONDAIRE, et c'est
+	// `nic_public_ips` qui l'atteste. « Au moins un » suffit — les deux disent la
+	// même chose, chacun pour une carte. Exiger le seul `public_ip` rendait
+	// `not-evaluated` une machine dont on avait parfaitement lu les cartes.
+	"compute_instance_public_ip_with_open_securitygroup": {"": {"public_ip", "nic_public_ips"}},
 	"compute_image_not_public":                           {"": {"public"}},
 	"iam_no_root_access_key":                             {"": {"root_owned", "scope"}},
 	// Sans date de création, l'ÂGE d'une clé ne se déduit pas : une absence n'est pas

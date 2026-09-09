@@ -8,7 +8,7 @@
 # Une ligne qui disparaît est une dette payée. Une ligne qui apparaît sans
 # scénario est un contrôle ajouté sans sa preuve, et la CI la refuse.
 #
-# chemins : 179 · entierement prouves : 26 · obligations : 461 · restantes : 372
+# chemins : 179 · entierement prouves : 27 · obligations : 461 · restantes : 369
 
 blockstorage_snapshot_not_public exoscale live not-applicable
 blockstorage_snapshot_not_public outscale live fail,pass,not-evaluated
@@ -37,7 +37,6 @@ compute_instance_no_secrets_in_user_data scaleway live not-evaluated
 compute_instance_no_secrets_in_user_data scaleway terraform not-evaluated
 compute_instance_public_ip_with_open_securitygroup exoscale live fail,pass,not-evaluated
 compute_instance_public_ip_with_open_securitygroup exoscale terraform fail,pass,not-evaluated
-compute_instance_public_ip_with_open_securitygroup outscale live fail,pass,not-evaluated
 compute_instance_public_ip_with_open_securitygroup scaleway live fail,pass,not-evaluated
 compute_instance_public_ip_with_open_securitygroup scaleway terraform not-evaluated
 database_backup_enabled scaleway terraform not-evaluated

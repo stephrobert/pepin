@@ -12,7 +12,7 @@ gelée, avec les mêmes égards que la surface CLI.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v6
+pepin-inventory/v7
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -157,7 +157,7 @@ code.
 | `blockstorage_volume` | `encrypted` `state` `tags` `volume_id` |
 | `compute_image` | `image_id` `public` `state` `tags` |
 | `compute_instance` | `deletion_protection` `nic_public_ips` `public_ip` `security_group_ids` `state` `tags` `user_data` `vm_id` |
-| `governance_provider` | `capital_control` `eu_established` `extraterritorial_exposure` `jurisdiction` `secnumcloud` |
+| `governance_provider` | `capital_control` `eu_established` `extraterritorial_exposure` `jurisdiction` `secnumcloud` `secnumcloud_regions` |
 | `iam_policy` | `manages_iam` `owner_group` `owner_user` `policy_id` `policy_name` `scope` `statements` |
 | `iam_role` | `admin_privileges` `editable` `manages_iam` `max_session_ttl` `name` `policy_has_expiration` `role_id` `source_ip_restricted` |
 | `iam_user` | `mfa_enabled` `user_id` `username` |
@@ -169,6 +169,7 @@ code.
 | `load_balancer` | `access_log` `listeners` `load_balancer_name` `load_balancer_type` `tags` |
 | `managed_database` | `database_id` `disable_backup` `encryption_at_rest` `ip_filter` |
 | `network` | `cidr` `description` `name` `network_id` `state` `tags` |
+| `network_interface` | `nic_id` `public_ip` `security_group_ids` `vm_id` |
 | `network_peering` | `accepter_account` `peering_id` `source_account` `state` |
 | `object_storage_bucket` | `acl` `acl_grants` `default_encryption_enabled` `kms_key_id` `name` `object_lock_enabled` `policy_public` `public_via_acl` `sse_kms_enabled` `tags` `versioning` |
 | `security_group` | `inbound_default_policy` `security_group_id` |

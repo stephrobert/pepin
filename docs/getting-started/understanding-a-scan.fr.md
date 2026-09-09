@@ -526,7 +526,7 @@ mot.
 {
   "control": "compute_instance_public_ip_with_open_securitygroup",
   "evidence": {
-    "observed": "attribut « public_ip » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
+    "observed": "attribut « nic_public_ips / public_ip » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
     "source": "terraform-plan"
   },
   "references": [

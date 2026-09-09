@@ -87,7 +87,7 @@ Le tableau ci-dessous est rendu depuis cette table même, il n'en est pas la cop
 | `compute_instance_deletion_protection` | `compute_instance` | `deletion_protection` |
 | `compute_instance_has_security_group` | `compute_instance` | `security_group_ids` |
 | `compute_instance_no_secrets_in_user_data` | `compute_instance` | `user_data` |
-| `compute_instance_public_ip_with_open_securitygroup` | `compute_instance` | `public_ip` |
+| `compute_instance_public_ip_with_open_securitygroup` | `compute_instance` | `nic_public_ips` ou `public_ip` |
 | `database_backup_enabled` | `managed_database` | `disable_backup` |
 | `database_encryption_at_rest_enabled` | `managed_database` | `encryption_at_rest` |
 | `database_service_not_open_to_internet` | `managed_database` | `ip_filter` |
@@ -344,7 +344,7 @@ pas touché : Pépin ne l'a pas collecté, il n'a donc rien à en attester.
 {
   "control": "compute_instance_public_ip_with_open_securitygroup",
   "evidence": {
-    "observed": "attribut « public_ip » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
+    "observed": "attribut « nic_public_ips / public_ip » non collecté sur les ressources de type « compute_instance » (garde de capacité)",
     "source": "terraform-plan"
   },
   "references": [

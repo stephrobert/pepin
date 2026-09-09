@@ -87,7 +87,7 @@ The table below is rendered from that very map — not transcribed from it:
 | `compute_instance_deletion_protection` | `compute_instance` | `deletion_protection` |
 | `compute_instance_has_security_group` | `compute_instance` | `security_group_ids` |
 | `compute_instance_no_secrets_in_user_data` | `compute_instance` | `user_data` |
-| `compute_instance_public_ip_with_open_securitygroup` | `compute_instance` | `public_ip` |
+| `compute_instance_public_ip_with_open_securitygroup` | `compute_instance` | `nic_public_ips` or `public_ip` |
 | `database_backup_enabled` | `managed_database` | `disable_backup` |
 | `database_encryption_at_rest_enabled` | `managed_database` | `encryption_at_rest` |
 | `database_service_not_open_to_internet` | `managed_database` | `ip_filter` |
@@ -341,7 +341,7 @@ Pépin did not collect it, so it has nothing to attest about it.
 {
   "control": "compute_instance_public_ip_with_open_securitygroup",
   "evidence": {
-    "observed": "attribute \"public_ip\" not collected on the resources of type \"compute_instance\" (capability guard)",
+    "observed": "attribute \"nic_public_ips / public_ip\" not collected on the resources of type \"compute_instance\" (capability guard)",
     "source": "terraform-plan"
   },
   "references": [

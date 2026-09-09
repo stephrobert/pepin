@@ -23,6 +23,13 @@ souverainete:
   juridiction: FR
   controle_capitalistique: FR  # marque/filiale de Dassault Systèmes (France)
   secnumcloud: qualifie        # SecNumCloud 3.2 (ANSSI, déc. 2023) — 1er cloud public qualifié
+  # La qualification porte sur la RÉGION cloudgouv-eu-west-1, et sur elle seule.
+  # Source : support Outscale, « Is the cloudgouv-eu-west-1b AZ SecNumCloud qualified » —
+  # « The entire cloudgouv-eu-west-1 Region, meaning both of its AZs, is SecNumCloud
+  # qualified » (support.outscale.com/hc/en-us/articles/4420389575195), et le blog
+  # Outscale sur la seconde AZ de « la région Cloud qualifiée SecNumCloud ».
+  # Un tenant en eu-west-2 lisait « SecNumCloud qualifié » dans un pass de souveraineté.
+  secnumcloud_regions: [cloudgouv-eu-west-1]
   exposition_extraterritoriale: false
   sources: "3ds.com/newsroom (Outscale 1er cloud SecNumCloud 3.2) ; en.outscale.com/our-certifications"
 
@@ -74,6 +81,12 @@ permissions:
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
     note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
     note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+  - unit: network_interface
+    grant: "api:Read* (EIM) — ReadVms"
+    etat: a_verifier
+    source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
+    note: "Les cartes réseau sont lues DANS la réponse de ReadVms (Vm.Nics[]) : aucun appel ni droit supplémentaire. La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
+    note_en: "Network interfaces are read INSIDE the ReadVms response (Vm.Nics[]): no extra call, no extra grant. The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
   - unit: compute_instance
     grant: "api:Read* (EIM) — ReadVms"
     etat: a_verifier
@@ -251,6 +264,36 @@ collecte:
         security_group_ids: pluck:SecurityGroupId
         nic_public_ips: [pluck:LinkPublicIp, pluck:PublicIp]
         tags: kv
+
+    # Cartes réseau, une ressource normalisée par NIC.
+    #
+    # L'exposition est une propriété de la CARTE, pas de la machine, et l'aplatir sur la
+    # VM perd l'APPARIEMENT : mesuré sur un tenant réel, une VM dont la carte primaire est
+    # privée avec un groupe fermé et dont la carte secondaire porte l'IP publique ET un
+    # groupe ouvert sur 22 ne produisait aucun finding. `Vm.SecurityGroups` documente les
+    # groupes de la carte PRIMAIRE ; l'union des IP suffisait à rendre la VM « publique »,
+    # mais la règle la confrontait aux groupes de la mauvaise carte.
+    #
+    # L'inverse est aussi vrai, et c'est ce qui interdit d'aplatir : une carte publique au
+    # groupe fermé plus une carte privée au groupe ouvert donneraient, une fois réunies,
+    # « publique et ouverte » — un écart que la machine ne porte pas.
+    #
+    # Contrat : osc-sdk-go v2.24.0, Vm.Nics []NicLight{NicId, LinkPublicIp
+    # (LinkPublicIpLightForVm.PublicIp), SecurityGroups []SecurityGroupLight}.
+    - type: network_interface
+      path: /ReadVms
+      method: POST
+      body: "{}"
+      items: Vms[*].Nics[*]
+      id: nic_id
+      paging: { style: token-body, token_param: NextPageToken, token_path: NextPageToken, size_param: ResultsPerPage, size: 1000 }
+      map:
+        nic_id: NicId
+        vm_id: _parent.VmId
+        public_ip: LinkPublicIp.PublicIp
+        security_group_ids: SecurityGroups
+      transforms:
+        security_group_ids: pluck:SecurityGroupId
   
     # Clés d'accès de NIVEAU COMPTE (appelant). ReadAccessKeys sans UserName renvoie les
     # clés de l'identité de scan ; si elle est le root (cas d'un scan account-owner/admin),
@@ -609,6 +652,14 @@ contrat:
         peer_security_group_ids: SecurityGroupsMembers (*[]SecurityGroupsMember) → pluck SecurityGroupId ; ENTRANT seulement
         security_group_id: SecurityGroupId
         security_group_name: SecurityGroupName (du SG parent)
+    network_interface:
+      etat: verifie
+      source: Vm.Nics[] (NicLight)
+      mapping:
+        nic_id: NicId
+        vm_id: VmId (de la Vm porteuse)
+        public_ip: LinkPublicIp.PublicIp (LinkPublicIpLightForVm)
+        security_group_ids: SecurityGroups[].SecurityGroupId (SecurityGroupLight) — groupes de CETTE carte
     compute_instance:
       etat: verifie
       source: Vm

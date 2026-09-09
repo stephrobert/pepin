@@ -12,11 +12,23 @@
 #   effectivement vulnérable, ni qu'un port anodin ne l'est pas. Il mesure la
 #   surface, pas l'exploitabilité.
 #
+#   L'EXPOSITION EST UNE PROPRIÉTÉ DE LA CARTE, PAS DE LA MACHINE. Mesuré sur un
+#   tenant réel : une VM dont la carte primaire est privée avec un groupe fermé et
+#   dont la carte secondaire porte l'IP publique ET un groupe ouvert sur 22 ne
+#   produisait AUCUN finding — la règle confrontait l'union des IP aux groupes de la
+#   seule carte primaire. Un port d'administration joignable depuis Internet, et un
+#   rapport muet.
+#
+#   L'aplatissement est fautif dans les DEUX sens, et c'est ce qui interdit de le
+#   corriger en réunissant tout : une carte publique au groupe fermé plus une carte
+#   privée au groupe ouvert donneraient « publique et ouverte », un écart que la
+#   machine ne porte pas. Ce qui compte est l'APPARIEMENT (ip, groupes) par carte.
+#
 # Origine : osc-policy OSC-VM-014. SCSL : CLD-NET-3.
-# Contrat : type normalisé agnostique `compute_instance` (attributs natifs
-#   osc-sdk-go Vm). Champs : vm_id, public_ip (string), security_group_ids
-#   ([]string, DÉRIVÉ depuis Vm.SecurityGroups[].SecurityGroupId). Corrélé aux
-#   `security_group_rule` entrants ouverts sur Internet.
+# Contrat : types normalisés agnostiques `compute_instance` et `network_interface`.
+#   `compute_instance` : vm_id, public_ip, security_group_ids (carte primaire).
+#   `network_interface` : nic_id, vm_id, public_ip, security_group_ids (CETTE carte).
+#   Corrélés aux `security_group_rule` entrants ouverts sur Internet.
 package pepin.rules
 
 import rego.v1
@@ -56,9 +68,9 @@ _sg_sensitive[sg_id] contains port if {
 
 # ── critical : tous les ports ouverts sur Internet ────────────────────────────────
 deny contains f if {
-	some vm in resources_of_type("compute_instance")
-	_vm_has_public_ip(vm)
-	some sg_id in object.get(vm.attributes, "security_group_ids", [])
+	some couple in _exposed
+	vm := couple.vm
+	sg_id := couple.sg
 	sg_id in _sg_ids_any_port
 	id := object.get(vm.attributes, "vm_id", vm.id)
 	f := {
@@ -79,9 +91,9 @@ deny contains f if {
 
 # ── high : un port sensible ouvert sur Internet ───────────────────────────────────
 deny contains f if {
-	some vm in resources_of_type("compute_instance")
-	_vm_has_public_ip(vm)
-	some sg_id in object.get(vm.attributes, "security_group_ids", [])
+	some couple in _exposed
+	vm := couple.vm
+	sg_id := couple.sg
 	not sg_id in _sg_ids_any_port
 	ports := sort([p | some p in _sg_sensitive[sg_id]])
 	count(ports) > 0
@@ -102,9 +114,42 @@ deny contains f if {
 	}
 }
 
+# _exposed — les couples (machine, groupe) réellement exposés, appariés PAR CARTE.
+#
+# Quand les cartes sont collectées, elles font foi : chaque carte joignable apporte SES
+# groupes, et une carte privée n'en apporte aucun. C'est le seul appariement fidèle.
+_exposed contains {"vm": vm, "sg": sg_id} if {
+	some nic in resources_of_type("network_interface")
+	_has_public_ip(nic)
+	some vm in resources_of_type("compute_instance")
+	object.get(vm.attributes, "vm_id", vm.id) == object.get(nic.attributes, "vm_id", "")
+	some sg_id in object.get(nic.attributes, "security_group_ids", [])
+}
+
+# REPLI, pour toute source qui ne collecte pas les cartes — un plan Terraform, un
+# provider dont l'API ne les expose pas. La machine y est jugée sur ses propres
+# attributs, exactement comme avant. Un repli qui se tairait ferait DISPARAÎTRE des
+# écarts que le dépôt détecte aujourd'hui, ce qui serait pire que le défaut corrigé.
+_exposed contains {"vm": vm, "sg": sg_id} if {
+	some vm in resources_of_type("compute_instance")
+	not _has_nics(vm)
+	_vm_has_public_ip(vm)
+	some sg_id in object.get(vm.attributes, "security_group_ids", [])
+}
+
+# _has_nics — cette machine a-t-elle des cartes collectées ? La jointure porte sur
+# `vm_id` des deux côtés, tous deux issus de la MÊME réponse d'API : une carte sans
+# `vm_id` ne rattache rien et ne fait donc pas taire le repli.
+_has_nics(vm) if {
+	some nic in resources_of_type("network_interface")
+	object.get(vm.attributes, "vm_id", vm.id) == object.get(nic.attributes, "vm_id", "")
+}
+
+_has_public_ip(r) if object.get(r.attributes, "public_ip", "") != ""
+
 # Une VM est joignable si son IP primaire OU l'IP publique d'une NIC secondaire existe :
 # ne regarder que `public_ip` laissait passer les VMs multi-cartes (contrat NicLight.LinkPublicIp).
-_vm_has_public_ip(vm) if object.get(vm.attributes, "public_ip", "") != ""
+_vm_has_public_ip(vm) if _has_public_ip(vm)
 
 _vm_has_public_ip(vm) if {
 	some ip in object.get(vm.attributes, "nic_public_ips", [])

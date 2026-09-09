@@ -1,13 +1,13 @@
 {
   "controls": 58,
   "paths": 179,
-  "paths_proven": 26,
+  "paths_proven": 27,
   "obligations": 461,
-  "proven": 89,
+  "proven": 92,
   "verdicts": {
     "fail": {
       "required": 141,
-      "proven": 23
+      "proven": 24
     },
     "not-applicable": {
       "required": 22,
@@ -15,11 +15,11 @@
     },
     "not-evaluated": {
       "required": 157,
-      "proven": 19
+      "proven": 20
     },
     "pass": {
       "required": 141,
-      "proven": 36
+      "proven": 37
     }
   },
   "live_paths": 101,
@@ -476,6 +476,11 @@
             "fail",
             "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
           ]
         },
         {
@@ -513,6 +518,7 @@
         }
       ],
       "scenarios": [
+        "internal/veracity/testdata/scenarios/nic-exposure-outscale-live.yaml",
         "internal/veracity/testdata/scenarios/public-vm-open-sg-outscale-terraform.yaml"
       ],
       "tenants": [

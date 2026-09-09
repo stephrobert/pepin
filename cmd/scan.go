@@ -1266,10 +1266,14 @@ func withGovernance(p provider.Provider, input any) any {
 	if !ok {
 		return input
 	}
-	res, ok := gp.GovernanceResource()
+	// La région SCANNÉE entre dans la projection : c'est elle qui dit si le tenant
+	// se trouve dans le périmètre d'une qualification. Vide sur un plan Terraform,
+	// et le statut le dit alors plutôt que de trancher.
+	res, ok := gp.GovernanceResourceIn(scanRegion)
 	if !ok {
 		return input
 	}
+	res.Region = scanRegion
 	m, ok := input.(map[string]any)
 	if !ok {
 		return input

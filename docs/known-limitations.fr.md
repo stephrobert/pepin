@@ -85,7 +85,7 @@ pas.
 | `blockstorage_volume_snapshots_exist` | outscale | live | cette source ne produit aucune ressource de type « blockstorage_volume » |
 | `compute_instance_deletion_protection` | outscale | live | attribut décisif « deletion_protection » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_no_secrets_in_user_data` | scaleway | terraform | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_encryption_at_rest_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
@@ -206,9 +206,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 | Chiffre | Nombre |
 |---|---:|
 | Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 179 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 26 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 27 |
 | Verdicts à prouver au total | 461 |
-| Verdicts restant à prouver | 372 |
+| Verdicts restant à prouver | 369 |
 <!-- /pepin:gen veracity-debt -->
 
 Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est
@@ -253,6 +253,20 @@ stderr au moment du scellement.
 créées hors du code, rien des attributs encore inconnus au stade plan. C'est pour cela que le
 verdict dit « périmètre déclaré (plan Terraform, état planifié) » et non « conforme ». Pour la
 configuration effective, utilisez `--live`.
+
+### Un scan porte sur UNE région, et une qualification aussi
+
+`--region` désigne une région (chez Exoscale, une zone : `region_key: zone`). Tout ce qu'un
+rapport dit vaut pour CETTE région, et un compte réparti sur plusieurs régions demande autant de
+scans qu'il a de régions. **Les bundles de preuve ne se fusionnent pas** : chacun scelle son
+périmètre, et les additionner reviendrait à fabriquer un scan qui n'a pas eu lieu.
+
+La conséquence la plus facile à manquer porte sur SecNumCloud. Une qualification couvre un
+périmètre de régions, pas un fournisseur entier : celle d'Outscale couvre `cloudgouv-eu-west-1`
+et elle seule. Un tenant en `eu-west-2` n'est donc pas dans le périmètre qualifié, et le
+descripteur le déclare (`secnumcloud_regions`) pour que le scan cesse de transcrire
+« qualifié » à son sujet — il rend `hors_perimetre`. Sans `--region`, il rend
+`perimetre_inconnu` : un scan qui ne sait pas où il porte ne tranche pas.
 
 ### `--live` voit exactement ce que voient vos identifiants
 
