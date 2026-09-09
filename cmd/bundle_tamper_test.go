@@ -4,9 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -196,20 +194,4 @@ func TestRequireSignatureRefusesAnUnsignedBundle(t *testing.T) {
 	if !strings.Contains(out, "NON opposable") && !strings.Contains(out, "NOT defensible") {
 		t.Errorf("le rendu ne dit pas que le bundle n'est pas opposable :\n%s", out)
 	}
-}
-
-// exitCodeOfArgs lance le binaire et rend son code : ici, le code EST la mesure, donc
-// une sortie non nulle ne doit pas faire échouer le test.
-func exitCodeOfArgs(t *testing.T, bin string, args ...string) int {
-	t.Helper()
-	c := exec.Command(bin, args...)
-	c.Dir = repoRoot
-	if err := c.Run(); err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) {
-			return ee.ExitCode()
-		}
-		t.Fatalf("exécution de %v : %v", args, err)
-	}
-	return 0
 }
