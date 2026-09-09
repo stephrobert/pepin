@@ -243,6 +243,7 @@ collecte:
         access_key_id: AccessKeyId
         state: State
         expiration_date: ExpirationDate
+        creation_date: CreationDate
 
     # Clés d'accès des utilisateurs EIM (F4) : ReadAccessKeys UserName=<user>, pour CHAQUE
     # user EIM. Ces clés sont NON-root (attribuées à un user) — d'où `scope: eim`. Double
@@ -269,6 +270,7 @@ collecte:
         owner_user: _parent.UserName
         state: State
         expiration_date: ExpirationDate
+        creation_date: CreationDate
   
     # Règles d'accès API (par IP).
     - type: api_access_rule
@@ -623,6 +625,7 @@ contrat:
         access_key_id: AccessKeyId
         state: State
         expiration_date: ExpirationDate
+        creation_date: CreationDate
         root_owned: DÉRIVÉ par différence d'ensembles — clé scope:account (ReadAccessKeys appelant) absente de l'ensemble scope:eim (ReadAccessKeys par user EIM). Auditer les clés root exige des identifiants account-owner/admin.
     iam_user:
       etat: absent

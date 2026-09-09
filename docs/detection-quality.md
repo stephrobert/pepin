@@ -15,19 +15,19 @@ tenants, canary records. None is typed in.
 with no measurement behind it is a false green moved into a dashboard, and it is
 worse there than anywhere else: nobody re-reads a dashboard.
 
-The figures are therefore ugly, and that is the point. "57 controls" says nothing
-about the quality of a detection; "83 verdicts proven out of 458" says where the
+The figures are therefore ugly, and that is the point. "58 controls" says nothing
+about the quality of a detection; "86 verdicts proven out of 461" says where the
 product stands, and shrinks the right way with every scenario written.
 
 ## The figures
 
 | Figure | Count |
 |---|---:|
-| Controls in the reference | 57 |
-| Control x provider x source paths on which Pépin concludes | 178 |
-| Paths whose EVERY reachable verdict is proven end to end | 24 |
-| Verdicts to prove in total | 458 |
-| Verdicts proven | 83 |
+| Controls in the reference | 58 |
+| Control x provider x source paths on which Pépin concludes | 179 |
+| Paths whose EVERY reachable verdict is proven end to end | 25 |
+| Verdicts to prove in total | 461 |
+| Verdicts proven | 86 |
 
 ## Veracity coverage, by verdict
 
@@ -37,11 +37,11 @@ inventing a non-applicability.
 
 | Verdict | What it stages | To prove | Proven | % |
 |---|---|---:|---:|---:|
-| `fail` | a vulnerable configuration is detected | 140 | 21 | 15 |
-| `pass` | a genuinely correct configuration is confirmed | 140 | 33 | 23 |
-| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 156 | 18 | 11 |
+| `fail` | a vulnerable configuration is detected | 141 | 22 | 15 |
+| `pass` | a genuinely correct configuration is confirmed | 141 | 34 | 24 |
+| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 157 | 19 | 12 |
 | `not-applicable` | the provider's contract declares the mechanism non-existent | 22 | 11 | 50 |
-| **Total** | | **458** | **83** | **18** |
+| **Total** | | **461** | **86** | **18** |
 
 ## Validated live
 
@@ -56,7 +56,7 @@ will rise on its own.
 
 | Figure | Count |
 |---|---:|
-| Paths whose source is a live collection | 100 |
+| Paths whose source is a live collection | 101 |
 | Validated live | **0 %** |
 
 ## What the real control planes answered
@@ -83,9 +83,9 @@ in `internal/veracity/testdata/counterexamples-debt.txt`.
 
 | Figure | Count |
 |---|---:|
-| Active high/critical controls | 42 |
-| Of which a detection path is proven end to end | 18 |
-| Of which a legitimate counterexample is proven | 16 |
+| Active high/critical controls | 43 |
+| Of which a detection path is proven end to end | 19 |
+| Of which a legitimate counterexample is proven | 17 |
 | False positives measured on the counter-witnesses | 0 |
 
 There is no "false negatives" row, and its absence is the most honest figure on

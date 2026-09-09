@@ -46,7 +46,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 1 · ✗ 4 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
-| `iam` | 14 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 10 | ✅ 10 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 3 · ◐ 1 · ∅ 0 · ✗ 10 |
+| `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 3 · ◐ 1 · ∅ 0 · ✗ 11 |
 | `journalisation` | 2 | ✅ 1 · ◐ 0 · ∅ 1 · ✗ 0 | ✅ 1 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 0 · ◐ 0 · ∅ 0 · ✗ 2 |
 | `reseau` | 15 | ✅ 9 · ◐ 0 · ∅ 0 · ✗ 6 | ✅ 11 · ◐ 0 · ∅ 0 · ✗ 4 | ✅ 9 · ◐ 1 · ∅ 0 · ✗ 5 |
 | `stockage` | 7 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 | ✅ 6 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 |
@@ -70,6 +70,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ◐ | ✅ | ✅ | ✅ |
 | `governance_resource_required_tags` | medium | CLD-GVN-1 | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |
 | `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✅ | ✅ |
+| `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_account_mfa_enforced` | high | CLD-IAM-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_defined` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
@@ -145,6 +146,7 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `governance_resource_required_tags` | scaleway | terraform | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
 | `governance_resource_required_tags` | scaleway | live | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
 | `iam_accesskey_expiration_set` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
+| `iam_accesskey_rotated` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
 | `iam_account_mfa_enforced` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_summary » |
@@ -207,10 +209,10 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 
 | Fournisseur | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 21 | 1 | 5 | 30 |
-| exoscale | live | 25 | 1 | 5 | 26 |
-| outscale | terraform | 17 | 4 | 4 | 32 |
-| outscale | live | 39 | 1 | 4 | 13 |
-| scaleway | terraform | 18 | 6 | 2 | 31 |
-| scaleway | live | 16 | 3 | 2 | 36 |
-| kubernetes | live | 4 | 0 | 0 | 53 |
+| exoscale | terraform | 21 | 1 | 5 | 31 |
+| exoscale | live | 25 | 1 | 5 | 27 |
+| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | live | 40 | 1 | 4 | 13 |
+| scaleway | terraform | 18 | 6 | 2 | 32 |
+| scaleway | live | 16 | 3 | 2 | 37 |
+| kubernetes | live | 4 | 0 | 0 | 54 |

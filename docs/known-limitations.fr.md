@@ -91,6 +91,7 @@ pas.
 | `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `governance_resource_region_in_eu` | outscale | live | attribut décisif « region » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_accesskey_expiration_set` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
+| `iam_accesskey_rotated` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_account_mfa_enforced` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | outscale | live | cette source ne produit aucune ressource de type « api_access_summary » |
@@ -145,13 +146,13 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 <!-- pepin:gen coverage-totals -->
 | Fournisseur | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 21 | 1 | 5 | 30 |
-| exoscale | live | 25 | 1 | 5 | 26 |
-| outscale | terraform | 17 | 4 | 4 | 32 |
-| outscale | live | 39 | 1 | 4 | 13 |
-| scaleway | terraform | 18 | 6 | 2 | 31 |
-| scaleway | live | 16 | 3 | 2 | 36 |
-| kubernetes | live | 4 | 0 | 0 | 53 |
+| exoscale | terraform | 21 | 1 | 5 | 31 |
+| exoscale | live | 25 | 1 | 5 | 27 |
+| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | live | 40 | 1 | 4 | 13 |
+| scaleway | terraform | 18 | 6 | 2 | 32 |
+| scaleway | live | 16 | 3 | 2 | 37 |
+| kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
 
 Le détail par contrôle, avec le motif de chaque case qui n'est pas pleinement supportée, est la
@@ -169,9 +170,9 @@ note documentée. À ce jour :
 |---|---:|
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
-| outscale | 0 / 40 |
+| outscale | 0 / 41 |
 | scaleway | 0 / 25 |
-| **Total** | **26 / 95** |
+| **Total** | **26 / 96** |
 <!-- /pepin:gen remediation-coverage -->
 
 Ce contrôle n'est **délibérément pas** branché sur `mise run validate` : tous fournisseurs
@@ -204,9 +205,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 <!-- pepin:gen veracity-debt -->
 | Chiffre | Nombre |
 |---|---:|
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 178 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 24 |
-| Verdicts à prouver au total | 458 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 179 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 25 |
+| Verdicts à prouver au total | 461 |
 | Verdicts restant à prouver | 375 |
 <!-- /pepin:gen veracity-debt -->
 

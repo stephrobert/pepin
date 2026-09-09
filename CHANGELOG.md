@@ -157,6 +157,16 @@ belongs in `git log`.
 
 ### Added
 
+- **`iam_accesskey_rotated`: the rotation half of CLD-IAM-2, which nothing measured.**
+  The requirement asks for long-lived keys "with an expiry AND a rotation". The expiry
+  reads off a field; the rotation reads nowhere — it is deduced from the key's age,
+  because a key never replaced is a key never rotated. Measured on a real tenant: a key
+  expiring in 2099 satisfies the expiry control while no rotation has ever taken place,
+  and an account with `MaxAccessKeyExpirationSeconds: 0` has no ceiling to bound it
+  either. The window is `controls.iam.key_max_age_days`, 90 days by default; widening it
+  silences deviations, so the reference binds it to the requirement through
+  `au_plus_le_defaut`. Inventory schema v4 → v5: an `access_key` now carries
+  `creation_date` (osc-sdk-go v2.24.0 `AccessKey.CreationDate`, verified in the SDK).
 - **`scan --gate <all|security|compliance|sovereignty>`: a profile for the CI gate,
   which hides nothing.** A first scan should trigger "oh, that one is interesting", not
   "yes, I know my test VM has no deletion protection". The report stays COMPLETE in

@@ -79,6 +79,7 @@ type File struct {
 type Controls struct {
 	Tagging   *Tagging   `yaml:"tagging" json:"tagging,omitempty"`
 	Snapshots *Snapshots `yaml:"snapshots" json:"snapshots,omitempty"`
+	Iam       *Iam       `yaml:"iam" json:"iam,omitempty"`
 	Secrets   *Secrets   `yaml:"secrets" json:"secrets,omitempty"`
 }
 
@@ -116,6 +117,19 @@ type Snapshots struct {
 	MaxAgeDays *int `yaml:"max_age_days" json:"max_age_days,omitempty"`
 	// AcceptedStates : les états NATIFS d'une snapshot réellement exploitable.
 	AcceptedStates []string `yaml:"accepted_states" json:"accepted_states,omitempty"`
+}
+
+// Iam règle les contrôles portant sur les identités et leurs secrets.
+type Iam struct {
+	// KeyMaxAgeDays : l'âge au-delà duquel une clé d'accès n'est plus considérée
+	// comme tournée. Pointeur : « non écrit » et « écrit à 90 » ne sont pas la même
+	// déclaration.
+	//
+	// Configurable, parce que la période de rotation est une décision
+	// d'organisation ; mais l'ALLONGER est un assouplissement, et le référentiel
+	// l'adosse à CLD-IAM-2 par `au_plus_le_defaut` : une fenêtre plus large fait
+	// tomber la correspondance normative, visiblement.
+	KeyMaxAgeDays *int `yaml:"key_max_age_days" json:"key_max_age_days,omitempty"`
 }
 
 // Secrets règle la DÉTECTION de secrets dans les données utilisateur.
@@ -198,6 +212,12 @@ func (c *Controls) problems() []string {
 					"  controls.snapshots.accepted_states: empty state"))
 			}
 		}
+	}
+	if c.Iam != nil && c.Iam.KeyMaxAgeDays != nil && *c.Iam.KeyMaxAgeDays < 1 {
+		out = append(out, fmt.Sprintf(i18n.T(
+			"  controls.iam.key_max_age_days : %d — une fenêtre de rotation est un nombre de jours ≥ 1",
+			"  controls.iam.key_max_age_days: %d — a rotation window is a number of days ≥ 1"),
+			*c.Iam.KeyMaxAgeDays))
 	}
 	if c.Secrets != nil && c.Secrets.MinConfidence != "" {
 		if rankOfConfidence(c.Secrets.MinConfidence) < 0 {

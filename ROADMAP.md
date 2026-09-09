@@ -35,10 +35,10 @@ The reference they are evaluated against:
 <!-- pepin:gen control-counts -->
 | Figure | Count |
 |---|---:|
-| Controls in the reference | 57 |
-| Controls declared for at least one provider | 56 |
+| Controls in the reference | 58 |
+| Controls declared for at least one provider | 57 |
 | `critical` | 10 |
-| `high` | 32 |
+| `high` | 33 |
 | `medium` | 13 |
 | `low` | 2 |
 <!-- /pepin:gen control-counts -->
@@ -71,9 +71,9 @@ compliant Terraform module under `references/remediation/`.
 |---|---:|
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
-| outscale | 0 / 40 |
+| outscale | 0 / 41 |
 | scaleway | 0 / 25 |
-| **Total** | **26 / 95** |
+| **Total** | **26 / 96** |
 <!-- /pepin:gen remediation-coverage -->
 
 `mise run check-remediation` is deliberately not wired into `mise run validate`: a gate

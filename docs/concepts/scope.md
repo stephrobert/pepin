@@ -130,10 +130,10 @@ Pépin does not:
 <!-- pepin:gen control-counts -->
 | Figure | Count |
 |---|---:|
-| Controls in the reference | 57 |
-| Controls declared for at least one provider | 56 |
+| Controls in the reference | 58 |
+| Controls declared for at least one provider | 57 |
 | `critical` | 10 |
-| `high` | 32 |
+| `high` | 33 |
 | `medium` | 13 |
 | `low` | 2 |
 <!-- /pepin:gen control-counts -->

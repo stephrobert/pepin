@@ -10,7 +10,7 @@
 # contre-exemple est une règle high/critical ajoutée sans sa preuve de
 # précision, et la CI la refuse.
 #
-# high/critical actifs : 42 · avec contre-exemple : 16 · restants : 26
+# high/critical actifs : 43 · avec contre-exemple : 17 · restants : 26
 
 blockstorage_snapshot_not_public
 blockstorage_volume_encryption

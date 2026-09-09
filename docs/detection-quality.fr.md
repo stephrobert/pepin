@@ -15,19 +15,19 @@ référence, relevés de canari. Aucun n'est saisi.
 pourcentage sans mesure derrière est un faux vert déplacé dans un tableau de
 bord, et il y est pire qu'ailleurs : personne ne relit un tableau de bord.
 
-Les chiffres sont donc laids, et c'est le point. « 57 contrôles » ne dit rien de
-la qualité d'une détection ; « 83 verdicts prouvés sur 458 » dit où en est le
+Les chiffres sont donc laids, et c'est le point. « 58 contrôles » ne dit rien de
+la qualité d'une détection ; « 86 verdicts prouvés sur 461 » dit où en est le
 produit, et rétrécit dans le bon sens à chaque scénario écrit.
 
 ## Les chiffres
 
 | Chiffre | Nombre |
 |---|---:|
-| Contrôles au référentiel | 57 |
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 178 |
-| Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 24 |
-| Verdicts à prouver au total | 458 |
-| Verdicts prouvés | 83 |
+| Contrôles au référentiel | 58 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 179 |
+| Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 25 |
+| Verdicts à prouver au total | 461 |
+| Verdicts prouvés | 86 |
 
 ## Couverture de véracité, par verdict
 
@@ -37,11 +37,11 @@ demanderait d'inventer une non-applicabilité.
 
 | Verdict | Ce qu'il met en scène | À prouver | Prouvés | % |
 |---|---|---:|---:|---:|
-| `fail` | une configuration vulnérable est détectée | 140 | 21 | 15 |
-| `pass` | une configuration réellement correcte est confirmée | 140 | 33 | 23 |
-| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 156 | 18 | 11 |
+| `fail` | une configuration vulnérable est détectée | 141 | 22 | 15 |
+| `pass` | une configuration réellement correcte est confirmée | 141 | 34 | 24 |
+| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 157 | 19 | 12 |
 | `not-applicable` | le contrat du fournisseur déclare le mécanisme inexistant | 22 | 11 | 50 |
-| **Total** | | **458** | **83** | **18** |
+| **Total** | | **461** | **86** | **18** |
 
 ## Validé en live
 
@@ -56,7 +56,7 @@ relevé authentifié, il montera tout seul.
 
 | Chiffre | Nombre |
 |---|---:|
-| Chemins dont la source est une collecte live | 100 |
+| Chemins dont la source est une collecte live | 101 |
 | Validé en live | **0 %** |
 
 ## Ce que les vrais plans de contrôle ont répondu
@@ -84,9 +84,9 @@ n'en ont pas encore sont comptés dans
 
 | Chiffre | Nombre |
 |---|---:|
-| Contrôles high/critical actifs | 42 |
-| Dont un chemin de détection est prouvé de bout en bout | 18 |
-| Dont un contre-exemple légitime est prouvé | 16 |
+| Contrôles high/critical actifs | 43 |
+| Dont un chemin de détection est prouvé de bout en bout | 19 |
+| Dont un contre-exemple légitime est prouvé | 17 |
 | Faux positifs mesurés sur les contre-témoins | 0 |
 
 Il n'y a pas de ligne « faux négatifs », et son absence est le chiffre le plus

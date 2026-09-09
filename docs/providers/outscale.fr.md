@@ -218,8 +218,8 @@ rend un booléen. Les règles normalisent les deux
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 4 | 4 | 32 |
-| live | 39 | 1 | 4 | 13 |
+| terraform | 17 | 4 | 4 | 33 |
+| live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
 Contrôle par contrôle, avec le motif de chaque case qui n'est pas pleinement supportée, la
@@ -246,6 +246,7 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 | `compute_instance_deletion_protection` | live | attribut décisif « deletion_protection » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `governance_resource_region_in_eu` | live | attribut décisif « region » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_accesskey_expiration_set` | live | cette source ne produit aucune ressource de type « access_key » |
+| `iam_accesskey_rotated` | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_account_mfa_enforced` | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | live | cette source ne produit aucune ressource de type « api_access_summary » |

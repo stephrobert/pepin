@@ -105,7 +105,9 @@ func ControlType(code string) string {
 		return "iam_user"
 	case code == "iam_account_mfa_enforced":
 		return "api_access_policy"
-	case code == "iam_no_root_access_key", code == "iam_accesskey_expiration_set":
+	case code == "iam_no_root_access_key",
+		code == "iam_accesskey_expiration_set",
+		code == "iam_accesskey_rotated":
 		return "access_key"
 	case strings.HasPrefix(code, "iam_role"):
 		return "iam_role"

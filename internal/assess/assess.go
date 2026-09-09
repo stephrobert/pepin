@@ -70,15 +70,18 @@ var requiredAttr = map[string]map[string][]string{
 	"compute_instance_public_ip_with_open_securitygroup": {"": {"public_ip"}},
 	"compute_image_not_public":                           {"": {"public"}},
 	"iam_no_root_access_key":                             {"": {"root_owned", "scope"}},
-	"iam_user_mfa_enabled":                               {"": {"mfa_enabled"}},
-	"iam_account_mfa_enforced":                           {"": {"require_trusted_env"}},
-	"iam_apiaccesspolicy_max_key_expiration":             {"": {"max_access_key_expiration_seconds"}},
-	"blockstorage_volume_encryption":                     {"": {"encrypted"}},
-	"blockstorage_snapshot_not_public":                   {"": {"global_permission"}},
-	"objectstorage_bucket_object_lock_enabled":           {"": {"object_lock_enabled"}},
-	"objectstorage_bucket_kms_encryption":                {"": {"sse_kms_enabled"}},
-	"objectstorage_bucket_versioning_enabled":            {"": {"versioning"}},
-	"objectstorage_bucket_default_encryption":            {"": {"default_encryption_enabled"}},
+	// Sans date de création, l'ÂGE d'une clé ne se déduit pas : une absence n'est pas
+	// une rotation récente. Le contrôle sort « non évalué » plutôt que conforme.
+	"iam_accesskey_rotated":                    {"": {"creation_date"}},
+	"iam_user_mfa_enabled":                     {"": {"mfa_enabled"}},
+	"iam_account_mfa_enforced":                 {"": {"require_trusted_env"}},
+	"iam_apiaccesspolicy_max_key_expiration":   {"": {"max_access_key_expiration_seconds"}},
+	"blockstorage_volume_encryption":           {"": {"encrypted"}},
+	"blockstorage_snapshot_not_public":         {"": {"global_permission"}},
+	"objectstorage_bucket_object_lock_enabled": {"": {"object_lock_enabled"}},
+	"objectstorage_bucket_kms_encryption":      {"": {"sse_kms_enabled"}},
+	"objectstorage_bucket_versioning_enabled":  {"": {"versioning"}},
+	"objectstorage_bucket_default_encryption":  {"": {"default_encryption_enabled"}},
 	// Un 403 sur GetBucketAcl ne doit pas rendre un bucket public « conforme ». La liste
 	// n'accepte QUE des signaux d'ACL, volontairement : `policy_public` en faisait partie,
 	// or collectBucket interroge ACL et policy SÉPARÉMENT (best effort). Un 403 sur

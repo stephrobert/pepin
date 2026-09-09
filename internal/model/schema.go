@@ -83,7 +83,15 @@ import (
 //   - Une `blockstorage_snapshot` porte `state`, l'état natif qui dit si la
 //     snapshot est terminée (Outscale Snapshot.State, Exoscale
 //     block-storage-snapshot.state).
-const InventoryFormat = "pepin-inventory/v4"
+//
+// v5 : une `access_key` porte `creation_date`, la date d'émission native
+//
+//	(osc-sdk-go v2.24.0 AccessKey.CreationDate, vérifiée dans model_access_key.go).
+//	Ajout PUR — aucun champ existant ne bouge. Il est nécessaire parce que la
+//	ROTATION ne se lit nulle part : CLD-IAM-2 demande « une expiration ET une
+//	rotation », l'expiration se lit sur un champ, la rotation se déduit de l'âge.
+//	Un consommateur qui l'ignore ne perd rien de ce qu'il lisait déjà.
+const InventoryFormat = "pepin-inventory/v5"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

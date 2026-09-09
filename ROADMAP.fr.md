@@ -35,10 +35,10 @@ Le référentiel contre lequel ils sont évalués :
 <!-- pepin:gen control-counts -->
 | Chiffre | Nombre |
 |---|---:|
-| Contrôles au référentiel | 57 |
-| Contrôles déclarés pour au moins un fournisseur | 56 |
+| Contrôles au référentiel | 58 |
+| Contrôles déclarés pour au moins un fournisseur | 57 |
 | `critical` | 10 |
-| `high` | 32 |
+| `high` | 33 |
 | `medium` | 13 |
 | `low` | 2 |
 <!-- /pepin:gen control-counts -->
@@ -73,9 +73,9 @@ déployable** : un module Terraform autonome et conforme sous `references/remedi
 |---|---:|
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
-| outscale | 0 / 40 |
+| outscale | 0 / 41 |
 | scaleway | 0 / 25 |
-| **Total** | **26 / 95** |
+| **Total** | **26 / 96** |
 <!-- /pepin:gen remediation-coverage -->
 
 `mise run check-remediation` est volontairement débranché de `mise run validate` : une

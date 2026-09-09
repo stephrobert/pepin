@@ -416,6 +416,8 @@ _config_tagging := object.get(_config, "tagging", {})
 
 _config_snapshots := object.get(_config, "snapshots", {})
 
+_config_iam := object.get(_config, "iam", {})
+
 _config_secrets := object.get(_config, "secrets", {})
 
 # normalize_tag_key — forme COMPARABLE d'un nom d'étiquette : minuscules, sans
@@ -464,6 +466,20 @@ required_tags_label(required) := concat(", ", [req.name | some req in required])
 snapshot_max_age_days := object.get(_config_snapshots, "max_age_days", _default_snapshot_max_age_days)
 
 snapshot_max_age_ns := ((snapshot_max_age_days * 24) * 3600) * 1000000000
+
+# key_max_age_days / key_max_age_ns — la fenêtre de ROTATION d'une clé d'accès.
+#
+# CLD-IAM-2 demande « une expiration ET une rotation ». L'expiration se lit sur un
+# champ ; la rotation ne se lit nulle part — elle se DÉDUIT de l'âge de la clé, parce
+# qu'une clé jamais remplacée est une clé jamais tournée.
+#
+# Quatre-vingt-dix jours par défaut : la période que les référentiels publics retiennent
+# le plus souvent pour un secret statique, et assez longue pour qu'une organisation qui
+# ne l'a pas outillée puisse s'y conformer sans automatisation. L'ALLONGER est un
+# assouplissement, et le référentiel l'adosse à l'exigence par `au_plus_le_defaut`.
+key_max_age_days := object.get(_config_iam, "key_max_age_days", _default_key_max_age_days)
+
+key_max_age_ns := ((key_max_age_days * 24) * 3600) * 1000000000
 
 # snapshot_accepted_states — les états NATIFS d'une snapshot réellement
 # exploitable. Ancrés sur le contrat de chaque API, jamais devinés :
@@ -534,6 +550,8 @@ _default_snapshot_max_age_days := 7
 _default_snapshot_states := ["completed", "created"]
 
 _default_min_confidence := "heuristic"
+
+_default_key_max_age_days := 90
 
 # ── L'ENVIRONNEMENT d'une ressource, et ce qu'il autorise à conclure ──────────
 #

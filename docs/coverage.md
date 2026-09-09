@@ -45,7 +45,7 @@ and the report says so on every scan, control by control, with the reason.
 | `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 1 · ✗ 4 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
-| `iam` | 14 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 10 | ✅ 10 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 3 · ◐ 1 · ∅ 0 · ✗ 10 |
+| `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 3 · ◐ 1 · ∅ 0 · ✗ 11 |
 | `journalisation` | 2 | ✅ 1 · ◐ 0 · ∅ 1 · ✗ 0 | ✅ 1 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 0 · ◐ 0 · ∅ 0 · ✗ 2 |
 | `reseau` | 15 | ✅ 9 · ◐ 0 · ∅ 0 · ✗ 6 | ✅ 11 · ◐ 0 · ∅ 0 · ✗ 4 | ✅ 9 · ◐ 1 · ∅ 0 · ✗ 5 |
 | `stockage` | 7 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 | ✅ 6 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 |
@@ -69,6 +69,7 @@ and the report says so on every scan, control by control, with the reason.
 | `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ◐ | ✅ | ✅ | ✅ |
 | `governance_resource_required_tags` | medium | CLD-GVN-1 | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |
 | `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✅ | ✅ |
+| `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_account_mfa_enforced` | high | CLD-IAM-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_defined` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
@@ -144,6 +145,7 @@ already shows them, and they add nothing.
 | `governance_resource_required_tags` | scaleway | terraform | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 | `governance_resource_required_tags` | scaleway | live | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 | `iam_accesskey_expiration_set` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
+| `iam_accesskey_rotated` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
 | `iam_account_mfa_enforced` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_summary" |
@@ -206,10 +208,10 @@ the other's scope. One source only: live collection through a kubeconfig.
 
 | Provider | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 21 | 1 | 5 | 30 |
-| exoscale | live | 25 | 1 | 5 | 26 |
-| outscale | terraform | 17 | 4 | 4 | 32 |
-| outscale | live | 39 | 1 | 4 | 13 |
-| scaleway | terraform | 18 | 6 | 2 | 31 |
-| scaleway | live | 16 | 3 | 2 | 36 |
-| kubernetes | live | 4 | 0 | 0 | 53 |
+| exoscale | terraform | 21 | 1 | 5 | 31 |
+| exoscale | live | 25 | 1 | 5 | 27 |
+| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | live | 40 | 1 | 4 | 13 |
+| scaleway | terraform | 18 | 6 | 2 | 32 |
+| scaleway | live | 16 | 3 | 2 | 37 |
+| kubernetes | live | 4 | 0 | 0 | 54 |

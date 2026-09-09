@@ -194,6 +194,8 @@ func ordinal(r Resolved, param string) (int, bool) {
 	switch param {
 	case "snapshots.max_age_days":
 		return r.Snapshots.MaxAgeDays, true
+	case "iam.key_max_age_days":
+		return r.Iam.KeyMaxAgeDays, true
 	case "secrets.min_confidence":
 		rank := rankOfConfidence(r.Secrets.MinConfidence)
 		return rank, rank >= 0
@@ -234,7 +236,7 @@ func members(r Resolved, param string) (map[string]bool, bool) {
 func render(r Resolved, param string) string {
 	if n, ok := ordinal(r, param); ok {
 		switch param {
-		case "snapshots.max_age_days":
+		case "snapshots.max_age_days", "iam.key_max_age_days":
 			return strconv.Itoa(n) + i18n.T(" jours", " days")
 		case "secrets.min_confidence":
 			return r.Secrets.MinConfidence
