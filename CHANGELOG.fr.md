@@ -63,6 +63,16 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un scan qui n'a rien mesuré ne se rend plus comme conforme.** Une coche verte,
+  « Aucun écart sur le périmètre audité » et quatre compteurs à zéro s'imprimaient
+  immédiatement au-dessus d'un verdict `INDÉTERMINÉ`. Trois signaux littéralement vrais
+  et collectivement trompeurs : « aucun écart trouvé » et « rien n'a été regardé » se
+  rendaient à l'identique. Le code de sortie était déjà 3, donc l'automatisation se
+  comportait correctement — le mode d'échec était la personne qui survole un terminal,
+  ou la capture collée dans un ticket. Le marqueur est désormais neutre, la ligne nomme
+  la cause, et les compteurs sont tus. Un scan réellement conforme garde les trois, et
+  le test le vérifie aussi : rendre les deux cas identiques n'aurait fait que déplacer
+  la confusion.
 - **La description racine nomme les fournisseurs qui existent.** La première phrase
   qu'un nouvel utilisateur lit annonçait OVH — une entrée de feuille de route, pas un
   fournisseur — et omettait Kubernetes, qui en est un. La liste est désormais dérivée du

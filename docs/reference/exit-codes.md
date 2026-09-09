@@ -132,11 +132,11 @@ for `--strict`.
 ```console
 $ ./pepin scan scaleway empty-inventory.json
 […]
+──────────────────────────────────────────────────────────────────────────────
  Summary
 
  Verdict: UNDETERMINED — no control measured on any resource (the assessed scope is empty or was not collected)
 
- 🔴 CRITICAL 0   🟠 HIGH 0   🟡 MEDIUM 0   🔵 LOW 0
 ──────────────────────────────────────────────────────────────────────────────
 $ echo $?
 3

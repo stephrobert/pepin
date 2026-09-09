@@ -59,6 +59,15 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A scan that measured nothing no longer renders as compliant.** A green tick,
+  "No deviations found in the audited scope" and four severity counters at zero were
+  printed immediately above a verdict saying `INDÉTERMINÉ`. Three signals literally true
+  and collectively misleading: "no deviation was found" and "nothing was looked at"
+  rendered identically. The exit code was already 3, so automation behaved correctly —
+  the failure mode was the person skimming a terminal, or the screenshot pasted into a
+  ticket. The marker is now neutral, the line names the cause, and the counters are
+  omitted. A genuinely compliant scan keeps all three, and the test asserts that too:
+  making the two cases identical would only have moved the confusion.
 - **The root description names the providers that exist.** The first sentence a new
   user reads advertised OVH — a roadmap entry, not a provider — and omitted Kubernetes,
   which is one. The list is now derived from the registry: a copied list goes stale at

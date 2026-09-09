@@ -213,3 +213,51 @@ func TestAnUnknownFormatIsRefused(t *testing.T) {
 		}
 	}
 }
+
+// TestNothingMeasuredNeverRendersAsCompliant — l'issue #158.
+//
+// Quand rien n'a pu être mesuré, le rapport montrait une coche VERTE, « aucun écart sur
+// le périmètre audité », et quatre compteurs à zéro — immédiatement au-dessus d'un
+// verdict INDÉTERMINÉ qui disait l'inverse. Trois signaux littéralement vrais et
+// collectivement trompeurs.
+//
+// Le mode d'échec est HUMAIN, pas machine : le code de sortie était déjà 3, et une
+// automatisation se comportait correctement. C'est la personne qui survole un terminal,
+// ou la capture collée dans un ticket, qui voit une coche et une rangée de zéros.
+//
+// Les deux sens sont éprouvés. Un cas RÉELLEMENT conforme doit garder sa coche : une
+// correction qui les rendrait identiques n'aurait fait que déplacer la confusion.
+func TestNothingMeasuredNeverRendersAsCompliant(t *testing.T) {
+	bin := buildPepin(t)
+
+	// Rien de mesuré : un plan dont aucune ressource n'entre dans un contrôle.
+	vide, _ := runPepin(t, bin, []string{"LANG=fr_FR.UTF-8"},
+		"scan", "scaleway", "--terraform", "references/tenants/scaleway/kubic/plan.json")
+	if strings.Contains(vide, "✓") {
+		t.Error("la coche verte subsiste alors que rien n'a été mesuré : c'est ce que l'œil retient")
+	}
+	if strings.Contains(vide, "Aucun écart") {
+		t.Error("« aucun écart » subsiste alors que rien n'a été regardé")
+	}
+	if strings.Contains(vide, "CRITICAL") {
+		t.Error("les compteurs subsistent : quatre zéros se lisent comme un feu vert")
+	}
+	if !strings.Contains(vide, "Aucun contrôle n'a pu être mesuré") {
+		t.Errorf("le rendu ne nomme pas la cause :\n%s", vide)
+	}
+	// Le code de sortie et le rendu doivent dire la MÊME chose : c'est leur divergence
+	// qui faisait le défaut.
+	if code := exitCodeOfArgs(t, bin, "scan", "scaleway", "--terraform",
+		"references/tenants/scaleway/kubic/plan.json"); code != exitStrict {
+		t.Errorf("code %d, attendu %d : le rendu et la porte ne disent plus la même chose", code, exitStrict)
+	}
+
+	// Et le cas RÉELLEMENT conforme garde tout ce qui le distingue.
+	ok, _ := runPepin(t, bin, []string{"LANG=fr_FR.UTF-8"},
+		"scan", "scaleway", "examples/scaleway/inventory-ok.json")
+	for _, want := range []string{"✓", "Aucun écart", "CRITICAL"} {
+		if !strings.Contains(ok, want) {
+			t.Errorf("le cas conforme a perdu %q : la correction a rendu les deux cas identiques", want)
+		}
+	}
+}

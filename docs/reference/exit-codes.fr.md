@@ -133,11 +133,11 @@ qu'il faille demander `--strict`.
 ```console
 $ ./pepin scan scaleway empty-inventory.json
 […]
+──────────────────────────────────────────────────────────────────────────────
  Synthèse
 
  Verdict : INDÉTERMINÉ — aucun contrôle mesuré sur des ressources (le périmètre évalué est vide ou non collecté)
 
- 🔴 CRITICAL 0   🟠 HIGH 0   🟡 MEDIUM 0   🔵 LOW 0
 ──────────────────────────────────────────────────────────────────────────────
 $ echo $?
 3
