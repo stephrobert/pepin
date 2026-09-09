@@ -1194,10 +1194,51 @@ func loadInput(ctx context.Context, p provider.Provider, path string) (any, erro
 	if err := json.Unmarshal(raw, &input); err != nil {
 		return nil, fmt.Errorf(tr("export JSON invalide : %w", "invalid JSON export: %w"), err)
 	}
+	if err := checkIsInventory(input); err != nil {
+		return nil, err
+	}
 	if err := checkProviderMatches(p.Name(), input); err != nil {
 		return nil, err
 	}
 	return input, nil
+}
+
+// checkIsInventory refuse un document qui n'a pas la FORME d'un inventaire.
+//
+// N'importe quel objet JSON était accepté et évalué comme un inventaire VIDE : un
+// `terraform show -json` passé sans `--terraform`, ou un `{}`, rendaient « périmètre
+// vide » et le code 3. C'est honnête sur ce qui a été mesuré, et faux sur la cause :
+// l'appelant n'a pas un périmètre vide, il a donné le mauvais fichier. Le code 2 —
+// erreur technique — est celui d'un export illisible, et c'est exactement ce cas.
+//
+// L'échange inverse était déjà refusé : `--terraform` sur un inventaire rend « plan
+// terraform sans bloc planned_values ni values ». Les deux sens sont maintenant en
+// phase, ce qui est le minimum pour que l'erreur soit reconnaissable dans un pipeline.
+//
+// C'est le même raisonnement qu'aux issues #148/#155, un cran plus tôt : une erreur
+// discrète et réaliste ne doit pas produire un rapport d'allure normale.
+func checkIsInventory(input any) error {
+	m, ok := input.(map[string]any)
+	if !ok {
+		return errors.New(tr(
+			"ce n'est pas un inventaire Pépin : le document racine n'est pas un objet JSON",
+			"this is not a Pépin inventory: the root document is not a JSON object"))
+	}
+	if _, ok := m["resources"]; ok {
+		return nil
+	}
+	// Un plan Terraform porte une forme reconnaissable. Le NOMMER évite à l'appelant
+	// de chercher ce qui manque à un fichier qui, lui, ne manque de rien.
+	for _, cle := range []string{"planned_values", "format_version", "terraform_version"} {
+		if _, ok := m[cle]; ok {
+			return errors.New(tr(
+				"ce fichier est un plan Terraform, pas un inventaire Pépin : le scanner avec --terraform",
+				"this file is a Terraform plan, not a Pépin inventory: scan it with --terraform"))
+		}
+	}
+	return errors.New(tr(
+		"ce n'est pas un inventaire Pépin : aucun tableau « resources » à la racine",
+		"this is not a Pépin inventory: no `resources` array at the root"))
 }
 
 // checkProviderMatches refuse un inventaire dont l'ORIGINE contredit le jeu de règles

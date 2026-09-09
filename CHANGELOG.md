@@ -59,6 +59,23 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A document without an inventory's shape is refused instead of being scanned as an
+  empty one.** A `terraform show -json` output handed over without `--terraform`, or an
+  empty object, was accepted and evaluated as an empty inventory: exit 3, "nothing
+  measured". Honest about what was measured, wrong about the cause — the caller does not
+  have an empty scope, they gave the wrong file, which is exit 2. A plan is named as such
+  ("this file is a Terraform plan: scan it with `--terraform`"), and the opposite swap
+  was already refused, so both directions now move in step. The repository's own tests
+  were relying on the defect: two of them passed a plan in the inventory position.
+- **The coverage matrix measures what a plan carries instead of declaring what the
+  mapping names.** `compute_instance_public_ip_with_open_securitygroup` read ✅ for
+  outscale/terraform while `public_ip` is computed — Terraform only knows it after
+  `apply`, so no real plan carries it — and the veracity scenarios confirmed the cell on
+  a hand-written plan where the attribute is a literal. Coverage is now corrected by what
+  the reference tenant plans, generated from third-party HCL, actually yield. Three cells
+  drop from ✅ to ◐, and the reason distinguishes "the mapping does not name it" (fixed in
+  the spec) from "the mapping names it but no plan carries it" (not fixable there at all).
+  Six obligations that could never be met leave the veracity ledger with them.
 - **The terminal report printed one control's title and remediation over another
   control's findings.** A block prints a code, a title and a remediation and then lists
   findings underneath, so it *asserts* those three of every finding it gathers —  but

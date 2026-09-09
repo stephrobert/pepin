@@ -52,7 +52,7 @@ déclaré, ou type absent de cette source ».
 | Fournisseur | Plan Terraform | Collecte live |
 |---|:-:|:-:|
 | exoscale | ✅ | ✅ |
-| outscale | ✅ | ✅ |
+| outscale | ◐ | ✅ |
 | scaleway | ◐ | ✅ |
 | kubernetes | sans objet | ✗ |
 
@@ -61,6 +61,7 @@ porte son motif :
 
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
+| outscale | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
 | scaleway | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
@@ -68,9 +69,9 @@ porte son motif :
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
 | `fail` | un écart a été détecté sur une ressource réelle | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | exoscale / terraform · exoscale / live · outscale / live · scaleway / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
-| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | scaleway / terraform |
+| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | outscale / terraform · scaleway / terraform |
 
 Un contrôle observable rend tout de même `not-evaluated` sur un inventaire qui ne
 contient aucune ressource du type visé : « rien à voir » n'est pas « conforme ».

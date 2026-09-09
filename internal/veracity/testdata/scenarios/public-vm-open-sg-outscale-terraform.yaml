@@ -1,21 +1,31 @@
-# VM exposée : IP publique ET groupe de sécurité ouvert sur Internet, chez Outscale.
+# VM exposée, sur un PLAN Terraform Outscale : ce que ce chemin peut réellement conclure.
 #
-# C'est le premier couple de la table de l'issue #115, et il éprouve la frontière
-# que ce contrôle trace : ce n'est pas l'IP publique qui fait l'écart, ni le port
-# ouvert seul, c'est leur CONJONCTION. Un serveur web public est légitime ; le même
-# serveur avec SSH ouvert à tout Internet ne l'est pas.
+# # Pourquoi ce fichier ne prouve plus ni `fail` ni `pass`
 #
-# Le cas `pass` est délibérément PROCHE du cas `fail` : même VM, même IP publique,
-# même groupe de sécurité ouvert à 0.0.0.0/0 — seul le port change. Un contre-exemple
-# qui retirerait l'IP publique ne prouverait rien de la règle, seulement que le
-# contrôle a besoin d'une VM exposée pour parler.
+# Il les prouvait, sur un plan écrit à la main où `public_ip` était un littéral. Or
+# `outscale_vm.public_ip` est calculé : Terraform ne le connaît qu'après `apply`, et un
+# plan réel ne le porte donc JAMAIS. Le scénario éprouvait un document que l'outil
+# n'a aucune chance de rencontrer — une fixture qui se confirme elle-même, et c'est le
+# constat de l'issue #175.
+#
+# Depuis que la matrice de couverture MESURE ce que les plans des tenants de référence
+# portent, au lieu de déclarer ce que le mapping nomme, cette cellule est ◐ : le seul
+# verdict atteignable est `not-evaluated`. Le scénario dit désormais cela, et rien de
+# plus. C'est une perte de couverture APPARENTE, et un gain de vérité : la logique de
+# la règle reste tenue par ses tests Rego, et la chaîne live la prouve de bout en bout
+# (nic-exposure-outscale-live.yaml).
+#
+# Ce qui rouvrirait `fail` ici : mapper la ressource de LIEN
+# (`outscale_public_ip_link`), qui est la façon dont un exploitant attache réellement
+# une IP publique. C'est une jointure INVERSE, elle demande un autre mécanisme, et elle
+# reste ouverte.
 control: compute_instance_public_ip_with_open_securitygroup
 provider: outscale
 source: terraform
 
 scenarios:
-  - expect: fail
-    why: "VM a IP publique dont le groupe de securite ouvre SSH a 0.0.0.0/0 : la conjonction expose l'administration"
+  - expect: not-evaluated
+    why: "plan realiste : public_ip est calcule, donc absent, et le scan refuse de conclure plutot que de rendre un pass"
     plan:
       format_version: "1.2"
       planned_values:
@@ -25,11 +35,7 @@ scenarios:
               type: outscale_vm
               name: web
               values:
-                vm_id: i-expose
-                public_ip: 203.0.113.10
                 state: running
-                security_group_ids:
-                  - sg-web
             - address: outscale_security_group_rule.ssh
               type: outscale_security_group_rule
               name: ssh
@@ -39,31 +45,4 @@ scenarios:
                 ip_protocol: tcp
                 from_port_range: 22
                 to_port_range: 22
-                ip_range: 0.0.0.0/0
-
-  - expect: pass
-    why: "MEME VM publique, MEME groupe ouvert a 0.0.0.0/0, mais sur 443 : un serveur web public est sa raison d'etre"
-    plan:
-      format_version: "1.2"
-      planned_values:
-        root_module:
-          resources:
-            - address: outscale_vm.web
-              type: outscale_vm
-              name: web
-              values:
-                vm_id: i-expose
-                public_ip: 203.0.113.10
-                state: running
-                security_group_ids:
-                  - sg-web
-            - address: outscale_security_group_rule.https
-              type: outscale_security_group_rule
-              name: https
-              values:
-                security_group_id: sg-web
-                flow: Inbound
-                ip_protocol: tcp
-                from_port_range: 443
-                to_port_range: 443
                 ip_range: 0.0.0.0/0

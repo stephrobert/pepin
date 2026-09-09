@@ -51,7 +51,7 @@ source".
 | Provider | Terraform plan | Live collection |
 |---|:-:|:-:|
 | exoscale | ✅ | ✅ |
-| outscale | ✅ | ✅ |
+| outscale | ◐ | ✅ |
 | scaleway | ◐ | ✅ |
 | kubernetes | n/a | ✗ |
 
@@ -60,6 +60,7 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
+| outscale | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 | scaleway | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
@@ -67,9 +68,9 @@ reason:
 | Status | What the status asserts | Reachable from |
 |---|---|---|
 | `fail` | a deviation was detected on a real resource | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | the deciding data was collected, and it is compliant | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / live |
+| `pass` | the deciding data was collected, and it is compliant | exoscale / terraform · exoscale / live · outscale / live · scaleway / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
-| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | scaleway / terraform |
+| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | outscale / terraform · scaleway / terraform |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
 resource of the targeted type: "nothing to look at" is not "compliant".

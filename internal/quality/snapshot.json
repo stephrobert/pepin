@@ -1,13 +1,13 @@
 {
   "controls": 58,
   "paths": 179,
-  "paths_proven": 27,
-  "obligations": 461,
-  "proven": 92,
+  "paths_proven": 29,
+  "obligations": 455,
+  "proven": 90,
   "verdicts": {
     "fail": {
-      "required": 141,
-      "proven": 24
+      "required": 138,
+      "proven": 23
     },
     "not-applicable": {
       "required": 22,
@@ -18,8 +18,8 @@
       "proven": 20
     },
     "pass": {
-      "required": 141,
-      "proven": 37
+      "required": 138,
+      "proven": 36
     }
   },
   "live_paths": 101,
@@ -486,15 +486,11 @@
         {
           "provider": "outscale",
           "source": "terraform",
-          "status": "supported",
+          "status": "partial",
           "required": [
-            "fail",
-            "pass",
             "not-evaluated"
           ],
           "proven": [
-            "fail",
-            "pass",
             "not-evaluated"
           ]
         },
@@ -561,10 +557,8 @@
         {
           "provider": "scaleway",
           "source": "terraform",
-          "status": "supported",
+          "status": "partial",
           "required": [
-            "fail",
-            "pass",
             "not-evaluated"
           ],
           "proven": [
@@ -1371,10 +1365,8 @@
         {
           "provider": "exoscale",
           "source": "terraform",
-          "status": "supported",
+          "status": "partial",
           "required": [
-            "fail",
-            "pass",
             "not-evaluated"
           ],
           "proven": [

@@ -228,7 +228,7 @@ rend un booléen. Les règles normalisent les deux
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 4 | 4 | 33 |
+| terraform | 16 | 5 | 4 | 33 |
 | live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
@@ -254,6 +254,7 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 | `blockstorage_snapshot_not_public` | live | cette source ne produit aucune ressource de type « blockstorage_snapshot » |
 | `blockstorage_volume_snapshots_exist` | live | cette source ne produit aucune ressource de type « blockstorage_volume » |
 | `compute_instance_deletion_protection` | live | attribut décisif « deletion_protection » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
 | `governance_resource_region_in_eu` | live | attribut décisif « region » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_accesskey_expiration_set` | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_accesskey_rotated` | live | cette source ne produit aucune ressource de type « access_key » |

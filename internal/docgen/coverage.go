@@ -10,12 +10,16 @@
 package docgen
 
 import (
+	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
+	"github.com/stephrobert/pepin/internal/tenants"
+	"github.com/stephrobert/pepin/internal/tfmap"
+	"github.com/stephrobert/pepin/internal/tfparse"
 	"github.com/stephrobert/pepin/internal/veracity"
 	"github.com/stephrobert/pepin/referentiel"
 )
@@ -101,10 +105,33 @@ type Matrix struct {
 type projection struct {
 	types map[string]bool
 	attrs map[string]map[string]bool
+	// declared : ce que le mapping NOMME, avant toute correction par la mesure.
+	//
+	// Gardé parce que les deux motifs de `partial` ne se corrigent pas au même
+	// endroit : « le mapping ne le nomme pas » s'écrit dans la spec, « le mapping le
+	// nomme mais aucun plan ne le porte » ne s'écrit nulle part — la valeur n'existe
+	// qu'après `apply`. Donner le premier motif pour le second, ou l'inverse, envoie
+	// corriger dans le vide.
+	declared map[string]map[string]bool
+	// measured : les types pour lesquels un PLAN RÉEL a servi de témoin.
+	//
+	// La distinction est celle que l'issue #175 nomme. Ce qu'un mapping DÉCLARE
+	// projeter et ce qu'un plan PORTE ne coïncident pas : un identifiant que le plan
+	// va créer n'est pas résolu, il est absent, et la cellule affichait pourtant ✅
+	// parce que le mapping le nomme. Là où un tenant de référence exerce le type, la
+	// mesure fait foi ; là où aucun ne l'exerce, on n'a pas de témoin, et une absence
+	// de témoin n'est pas une preuve — la déclaration reste alors la meilleure
+	// réponse disponible.
+	measured map[string]bool
 }
 
 func newProjection() projection {
-	return projection{types: map[string]bool{}, attrs: map[string]map[string]bool{}}
+	return projection{
+		types:    map[string]bool{},
+		attrs:    map[string]map[string]bool{},
+		declared: map[string]map[string]bool{},
+		measured: map[string]bool{},
+	}
 }
 
 func (p projection) add(typ string, keys ...map[string]bool) {
@@ -153,7 +180,7 @@ func BuildMatrix(root, lang string) (Matrix, error) {
 	for name, desc := range descs {
 		projections[name] = map[Source]projection{
 			SourceLive:      liveProjection(desc, goAttrs),
-			SourceTerraform: terraformProjection(desc),
+			SourceTerraform: terraformProjection(desc, observedOnReferencePlans(root, name, desc.MappingTerraform)),
 		}
 	}
 
@@ -223,6 +250,15 @@ func cellStatus(l i18n.Lang, provider string, ctl referentiel.Control, src Sourc
 			"provider contract: type \""+typ+"\" is not declared `verifie` ("+etatLabel(l, provider, typ)+")")}
 	}
 	if len(required) > 0 && !anyProjected(proj.attrs[typ], required) {
+		// Deux motifs distincts, et la nuance vaut la peine : « le mapping ne le
+		// nomme pas » se corrige en écrivant le mapping ; « le mapping le nomme mais
+		// aucun plan ne le porte » ne se corrige pas ainsi, parce que la valeur
+		// n'existe qu'après `apply`. Confondre les deux envoie corriger dans le vide.
+		if proj.measured[typ] && anyProjected(proj.declared[typ], required) {
+			return Cell{Status: Partial, Reason: i18n.TIn(l,
+				"attribut décisif « "+strings.Join(required, " / ")+" » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated »",
+				"deciding attribute \""+strings.Join(required, " / ")+"\" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns \"not-evaluated\"")}
+		}
 		return Cell{Status: Partial, Reason: i18n.TIn(l,
 			"attribut décisif « "+strings.Join(required, " / ")+" » non projeté par cette source : garde de capacité, le scan rend « not-evaluated »",
 			"deciding attribute \""+strings.Join(required, " / ")+"\" not projected by this source: a capability guard, so the scan returns \"not-evaluated\"")}
@@ -281,7 +317,7 @@ func liveProjection(desc genprovider.Descriptor, goAttrs map[string]map[string]b
 // terraformProjection décrit ce que le mapping Terraform du descripteur sait produire. La
 // région n'y est observable que si une spec nomme son champ (`region:`) — sur un plan, rien
 // ne la pose implicitement.
-func terraformProjection(desc genprovider.Descriptor) projection {
+func terraformProjection(desc genprovider.Descriptor, observe map[string]map[string]bool) projection {
 	p := newProjection()
 	for _, r := range desc.MappingTerraform.Resources {
 		p.add(r.Type, keysOfString(r.Map), keysOfAny(r.Const))
@@ -289,7 +325,56 @@ func terraformProjection(desc genprovider.Descriptor) projection {
 			p.add("", map[string]bool{"region": true})
 		}
 	}
+	// Là où un plan RÉEL a exercé le type, il fait foi : un attribut que le mapping
+	// déclare mais qu'aucun plan ne porte n'est pas projeté, quoi qu'en dise la spec.
+	for typ, vus := range observe {
+		if p.attrs[typ] == nil {
+			continue
+		}
+		p.measured[typ] = true
+		p.declared[typ] = map[string]bool{}
+		for attr := range p.attrs[typ] {
+			p.declared[typ][attr] = true
+		}
+		for attr := range p.attrs[typ] {
+			if !vus[attr] {
+				delete(p.attrs[typ], attr)
+			}
+		}
+	}
 	return p
+}
+
+// observedOnReferencePlans rend, par type normalisé, les attributs que les plans des
+// tenants de référence de ce fournisseur portent RÉELLEMENT.
+//
+// Les tenants sont générés depuis du HCL tiers, pas écrit pour Pépin : c'est
+// exactement le témoin qui manquait. Les plans écrits à la main pour les tests, eux,
+// portent des identifiants littéraux et confirmeraient n'importe quoi.
+//
+// Aucun plan lisible ⇒ carte vide ⇒ la matrice retombe sur la déclaration. Une
+// mesure absente ne doit pas dégrader ce qu'on ne peut pas contredire.
+func observedOnReferencePlans(root, provider string, spec tfmap.Spec) map[string]map[string]bool {
+	plans, err := filepath.Glob(filepath.Join(root, tenants.Dir, provider, "*", "plan.json"))
+	if err != nil || len(plans) == 0 {
+		return nil
+	}
+	out := map[string]map[string]bool{}
+	for _, plan := range plans {
+		resources, perr := tfparse.ParsePlan(plan)
+		if perr != nil {
+			continue
+		}
+		for _, r := range tfmap.Apply(spec, resources).Resources {
+			if out[r.Type] == nil {
+				out[r.Type] = map[string]bool{}
+			}
+			for attr := range r.Attributes {
+				out[r.Type][attr] = true
+			}
+		}
+	}
+	return out
 }
 
 func keysOfString(m map[string]string) map[string]bool {

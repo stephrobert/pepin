@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -146,5 +148,76 @@ func TestAnUnknownRegionIsFlaggedBeforeTheCollectFails(t *testing.T) {
 		"scan", "outscale", "--terraform", "examples/outscale/terraform/plan.json", "--region", "eu-nowhere-9")
 	if strings.Contains(horsLive, "n'est pas au catalogue") {
 		t.Errorf("avertissement émis hors --live :\n%s", horsLive)
+	}
+}
+
+// TestEachInputShapeIsRefusedInTheWrongPosition : les trois formes qu'un appelant
+// peut confondre, dans les deux positions.
+//
+// N'importe quel objet JSON était accepté comme un inventaire VIDE : un plan
+// Terraform passé sans `--terraform`, ou un `{}`, rendaient « périmètre vide » et le
+// code 3. C'est honnête sur ce qui a été mesuré, et faux sur la CAUSE — l'appelant
+// n'a pas un périmètre vide, il a donné le mauvais fichier. L'échange inverse était
+// déjà refusé ; les deux sens marchent maintenant du même pas, et la table les tient
+// ensemble pour qu'ils ne puissent plus diverger.
+func TestEachInputShapeIsRefusedInTheWrongPosition(t *testing.T) {
+	bin := buildPepin(t)
+	vide := filepath.Join(t.TempDir(), "vide.json")
+	if err := os.WriteFile(vide, []byte("{}\n"), 0o600); err != nil {
+		t.Fatalf("écriture de la fixture : %v", err)
+	}
+	for _, c := range []struct {
+		nom      string
+		args     []string
+		refuse   bool
+		attendus []string
+	}{
+		{
+			nom:      "un plan en position d'inventaire",
+			args:     []string{"scan", "outscale", "examples/outscale/terraform/plan.json"},
+			refuse:   true,
+			attendus: []string{"plan Terraform", "--terraform"},
+		},
+		{
+			nom:      "un objet vide en position d'inventaire",
+			args:     []string{"scan", "outscale", vide},
+			refuse:   true,
+			attendus: []string{"resources"},
+		},
+		{
+			// L'autre sens, qui refusait déjà : la table le garde en phase.
+			nom:      "un inventaire en position de plan",
+			args:     []string{"scan", "outscale", "--terraform", "examples/outscale/inventory.json"},
+			refuse:   true,
+			attendus: []string{"planned_values"},
+		},
+		{
+			// LE CONTRE-EXEMPLE : un vrai inventaire passe. Un refus qui refuserait
+			// tout serait vert pour la pire des raisons.
+			nom:    "un inventaire en position d'inventaire",
+			args:   []string{"scan", "outscale", "examples/outscale/inventory.json"},
+			refuse: false,
+		},
+	} {
+		t.Run(c.nom, func(t *testing.T) {
+			stdout, stderr := runPepin(t, bin, []string{"LANG=fr_FR.UTF-8"}, c.args...)
+			if !c.refuse {
+				if strings.Contains(stderr, "erreur :") {
+					t.Fatalf("un inventaire valide a été refusé :\n%s", stderr)
+				}
+				if !strings.Contains(stdout, "Synthèse") {
+					t.Errorf("le scan n'a pas produit de rapport :\n%s", stdout)
+				}
+				return
+			}
+			if !strings.Contains(stderr, "erreur :") {
+				t.Fatalf("aucun refus :\nstdout=%s\nstderr=%s", stdout, stderr)
+			}
+			for _, mot := range c.attendus {
+				if !strings.Contains(stderr, mot) {
+					t.Errorf("le refus ne mentionne pas %q :\n%s", mot, stderr)
+				}
+			}
+		})
 	}
 }
