@@ -32,6 +32,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "compliance",
+			"confidence": "contextual",
 			"message_en": sprintf("Instance \"%s\" has no deletion protection — an accidental or malicious action destroys it.", [id]),
 			"remediation_en": "Enable deletion protection on the instances carrying a production service.",
 		},
@@ -58,6 +59,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "compliance",
+			"confidence": "contextual",
 			"inconclusive": "true",
 			"message_en": sprintf("VM \"%s\" has no deletion protection and no environment tag — whether it carries a production service cannot be told.", [id]),
 			"remediation_en": "Tag the environment (Env / environment / stage) so this control knows whether it applies; enable protection on production instances.",

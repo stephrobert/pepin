@@ -6,17 +6,22 @@
 #
 # Chaque motif porte son niveau, et le finding le publie (`labels.confidence`) :
 #
-#   high   — secret CONFIRMÉ par sa forme : un bloc PEM `-----BEGIN … PRIVATE KEY-----`
-#            n'est pas autre chose qu'une clé privée ;
-#   medium — secret PROBABLE : préfixe reconnu ET format attendu (AKIA…, SCW…,
-#            EXO…, ghp_…, glpat-…, JWT à trois segments) ;
-#   low    — SUSPECT : heuristique générique (`password=…`, `api_key=…`), qui ne
-#            distingue pas `password=changeme123456` d'un vrai secret.
+#   confirmed — secret CONFIRMÉ par sa forme : un bloc PEM `-----BEGIN … PRIVATE
+#               KEY-----` n'est pas autre chose qu'une clé privée ;
+#   probable  — préfixe reconnu ET format attendu (AKIA…, SCW…, EXO…, ghp_…,
+#               glpat-…, JWT à trois segments) ;
+#   heuristic — SUSPECT : heuristique générique (`password=…`, `api_key=…`), qui
+#               ne distingue pas `password=changeme123456` d'un vrai secret.
+#
+# Ce vocabulaire est COMMUN à tous les findings depuis #111 : il portait auparavant
+# `high`/`medium`/`low`, propres à cette règle. Les anciennes valeurs restent
+# acceptées par `secrets.min_confidence` (cf. `confidence_rank` dans lib.rego), pour
+# qu'une politique déjà committée ne change pas de sens en silence.
 #
 # Pourquoi ça compte : donner à `password=…` le même poids qu'une clé privée rend
 # l'outil irritant en CI, et un outil irritant finit désactivé — ce qui coûte plus
 # cher que le faux positif qu'on voulait éviter. Le seuil est donc RÉGLABLE
-# (`secrets.min_confidence`, défaut `low` = tout signaler, le comportement
+# (`secrets.min_confidence`, défaut `heuristic` = tout signaler, le comportement
 # d'avant). Le monter est un ASSOUPLISSEMENT : le référentiel adosse la
 # correspondance CLD-CMP-9 à `secrets.min_confidence: au_plus_le_defaut`, et un
 # seuil plus haut la fait tomber, visiblement.
@@ -25,7 +30,7 @@
 # le message d'un contrôle est une surface que des captures, des tickets et des
 # annotations de forge recopient — le déplacer d'un octet pour une information
 # structurée serait le payer partout —, et un niveau est fait pour être FILTRÉ
-# (`jq '.findings[] | select(.labels.confidence == "low")'`), pas lu au milieu
+# (`jq '.findings[] | select(.labels.confidence == "heuristic")'`), pas lu au milieu
 # d'une phrase. Le rendu par défaut n'a donc pas bougé d'un caractère.
 #
 # # LA VALEUR DÉTECTÉE NE SORT JAMAIS
@@ -113,38 +118,38 @@ _secret_regexes := {
 	"clé d'accès Outscale (format AKIA…)": {
 		"en": "Outscale access key (AKIA… format)",
 		"re": `AKIA[0-9A-Z]{16}`,
-		"confidence": "medium",
+		"confidence": "probable",
 	},
 	"clé d'accès Scaleway (SCW…)": {
 		"en": "Scaleway access key (SCW…)",
 		"re": `SCW[A-Z0-9]{17,}`,
-		"confidence": "medium",
+		"confidence": "probable",
 	},
 	"clé d'accès Exoscale (EXO…)": {
 		"en": "Exoscale access key (EXO…)",
 		"re": `EXO[A-Za-z0-9]{16,}`,
-		"confidence": "medium",
+		"confidence": "probable",
 	},
 	# Jetons de forge / d'identité fréquemment collés dans le user-data.
 	"jeton GitHub": {
 		"en": "GitHub token",
 		"re": `(gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,})`,
-		"confidence": "medium",
+		"confidence": "probable",
 	},
 	"jeton GitLab (glpat-)": {
 		"en": "GitLab token (glpat-)",
 		"re": `glpat-[A-Za-z0-9_-]{20}`,
-		"confidence": "medium",
+		"confidence": "probable",
 	},
 	"jeton JWT": {
 		"en": "JWT token",
 		"re": `eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}`,
-		"confidence": "medium",
+		"confidence": "probable",
 	},
 	"en-tête Authorization Bearer": {
 		"en": "Authorization Bearer header",
 		"re": `(?i)authorization\s*:\s*bearer\s+[A-Za-z0-9._-]{12,}`,
-		"confidence": "medium",
+		"confidence": "probable",
 	},
 	# Affectation de mot de passe EN CLAIR. La valeur doit suivre le séparateur SUR LA MÊME
 	# LIGNE (>=4 caractères non blancs) : évite le faux positif sur les blocs cloud-init
@@ -154,7 +159,7 @@ _secret_regexes := {
 	"mot de passe en clair": {
 		"en": "cleartext password",
 		"re": `(?i)(password|passwd|pwd)[ \t]*[:=][ \t]*['"]?[^\s'"]{4,}`,
-		"confidence": "low",
+		"confidence": "heuristic",
 	},
 	# Bloc cloud-init `chpasswd` : la façon la PLUS courante de poser un mot de passe.
 	# La valeur est sur une ligne indentée `utilisateur:motdepasse` — sans espace après
@@ -162,12 +167,12 @@ _secret_regexes := {
 	"mot de passe cloud-init (chpasswd)": {
 		"en": "cloud-init password (chpasswd)",
 		"re": `(?i)chpasswd:[\s\S]{0,300}?\n[ \t]+[A-Za-z0-9_.-]+:[^\s]{6,}`,
-		"confidence": "low",
+		"confidence": "heuristic",
 	},
 	"clé/API générique affectée": {
 		"en": "generic key/API assignment",
 		"re": `(?i)(api[_-]?key|secret[_-]?key|access[_-]?key|secret[_-]?access[_-]?key|auth[_-]?token|api[_-]?token)\s*[:=]\s*['"]?[A-Za-z0-9/+._-]{16,}`,
-		"confidence": "low",
+		"confidence": "heuristic",
 	},
 }
 
@@ -183,9 +188,10 @@ _secret_patterns(s) := patterns if {
 	}
 
 	# Un bloc PEM est un secret CONFIRMÉ : sa forme ne laisse pas de place au doute.
-	private_key := {{"fr": "bloc PRIVATE KEY", "en": "PRIVATE KEY block", "confidence": "high"} |
+	private_key := {{"fr": "bloc PRIVATE KEY", "en": "PRIVATE KEY block", "confidence": "confirmed"} |
 		contains(s, "BEGIN ")
 		contains(s, "PRIVATE KEY")
 	}
 	patterns := by_regex | private_key
 }
+

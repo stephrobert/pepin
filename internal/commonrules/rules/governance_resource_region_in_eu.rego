@@ -46,7 +46,8 @@ deny contains f if {
 		"remediation": "Si une localisation strictement UE est exigée, migrer vers une région de l'Union européenne ; sinon documenter l'acceptation du risque (zone adéquate).",
 		"labels": {
 			"provider": p,
-			"category": "compliance",
+			"category": "sovereignty",
+			"confidence": "confirmed",
 			"message_en": sprintf("Resource \"%s\" in region \"%s\": outside the European Union but within the European trusted area (EEA/Switzerland), an adequate level of protection with no extraterritorial law.", [name, reg]),
 			"remediation_en": "If a strictly EU location is required, migrate to a European Union region; otherwise document the accepted risk (adequate area).",
 		},
@@ -72,7 +73,8 @@ deny contains f if {
 		"remediation": "Recréer ou migrer la ressource dans une région de l'Union européenne ; restreindre les régions autorisées au niveau de l'organisation.",
 		"labels": {
 			"provider": p,
-			"category": "compliance",
+			"category": "sovereignty",
+			"confidence": "confirmed",
 			"message_en": sprintf("Resource \"%s\" hosted in region \"%s\", outside the European sovereign area — the EU location requirement is not met.", [name, reg]),
 			"remediation_en": "Recreate or migrate the resource in a European Union region; restrict the allowed regions at the organisation level.",
 		},
@@ -100,7 +102,8 @@ deny contains f if {
 		"remediation": "Vérifier la localisation réelle de cette région auprès du fournisseur, puis l'ajouter aux tables de classification (lib.rego) ; migrer la ressource si elle est hors UE.",
 		"labels": {
 			"provider": p,
-			"category": "compliance",
+			"category": "sovereignty",
+			"confidence": "confirmed",
 			# La règle CONSTATE qu'elle ne sait pas ; l'assessment en fait un
 			# `not-evaluated`. Se taire aurait valu « conforme » — les tables de
 			# classification sont des listes blanches (ADR-0015).

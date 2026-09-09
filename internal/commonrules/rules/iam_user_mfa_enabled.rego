@@ -23,6 +23,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Account \"%s\" has no multi-factor authentication (MFA) enabled.", [name]),
 			"remediation_en": "Enable MFA on the account; enforce it for every administrative access and for the cloud console.",
 		},

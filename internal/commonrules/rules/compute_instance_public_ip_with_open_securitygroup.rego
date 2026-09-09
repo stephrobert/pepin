@@ -70,6 +70,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(vm),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("VM \"%s\" publicly exposed: security group %s opens EVERY port to the internet.", [id, sg_id]),
 			"remediation_en": "Restrict the inbound rule to the ports actually served, or detach the public IP and go through an LBU / NAT.",
 		},
@@ -94,6 +95,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(vm),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("VM \"%s\" publicly exposed: security group %s opens sensitive port(s) %v to the internet.", [id, sg_id, ports]),
 			"remediation_en": "Restrict those ports to administration networks, or go through a bastion / VPN; leave open only the ports the service actually needs.",
 		},

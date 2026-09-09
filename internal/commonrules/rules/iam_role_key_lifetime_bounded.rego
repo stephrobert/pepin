@@ -32,6 +32,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "contextual",
 			"message_en": sprintf("IAM role \"%s\": no bound on credential lifetime (no session TTL, no expiry) — credentials assuming this role are permanent.", [name]),
 			"remediation_en": "Bound that lifetime: set a maximum session TTL on the role, or an expiry condition in its policy.",
 		},

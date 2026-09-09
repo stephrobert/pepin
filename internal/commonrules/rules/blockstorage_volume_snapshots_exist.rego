@@ -51,6 +51,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(v),
 			"category": "compliance",
+			"confidence": "contextual",
 			"message_en": sprintf("Volume \"%s\" (in use) has no completed snapshot younger than %d days.", [vid, snapshot_max_age_days]),
 			"remediation_en": "Set up an automated, regular snapshot schedule; test the restore periodically. If this volume is backed up by other means, file a dated, justified exemption rather than disabling the control.",
 		},

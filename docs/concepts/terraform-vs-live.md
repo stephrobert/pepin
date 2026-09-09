@@ -235,6 +235,7 @@ a shared helper (`truthy` in `internal/commonrules/rules/lib.rego`) that accepts
   "labels": {
     "category": "security",
     "check": "compute_image_not_public",
+    "confidence": "confirmed",
     "provider": "outscale",
     "tf_file": "main.tf",
     "tf_line": "32"

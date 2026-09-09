@@ -27,21 +27,21 @@ _weak := "password=hunter2000plus"
 test_private_key_is_high_confidence if {
 	some f in deny with input as _ud_vm(_pem)
 	f.code == "compute_instance_no_secrets_in_user_data"
-	f.labels.confidence == "high"
+	f.labels.confidence == "confirmed"
 }
 
 # ✗ jeton de forge à préfixe reconnu → confiance MEDIUM.
 test_prefixed_token_is_medium_confidence if {
 	some f in deny with input as _ud_vm(_token)
 	f.code == "compute_instance_no_secrets_in_user_data"
-	f.labels.confidence == "medium"
+	f.labels.confidence == "probable"
 }
 
 # ✗ heuristique générique → confiance LOW.
 test_generic_password_is_low_confidence if {
 	some f in deny with input as _ud_vm(_weak)
 	f.code == "compute_instance_no_secrets_in_user_data"
-	f.labels.confidence == "low"
+	f.labels.confidence == "heuristic"
 }
 
 # ── LA VALEUR NE SORT JAMAIS, quel que soit le niveau ────────────────────────

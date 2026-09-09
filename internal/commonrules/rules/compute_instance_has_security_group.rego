@@ -25,6 +25,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(vm),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("VM \"%s\" has no security group: no network filtering applies to it.", [id]),
 			"remediation_en": "Attach a restrictive security group (deny by default) to the VM.",
 		},

@@ -40,7 +40,8 @@ deny contains f if {
 		"remediation": sprintf("Ajouter les étiquettes obligatoires (%s) sur la ressource.", [required_tags_label(required_tags_billable)]),
 		"labels": {
 			"provider": provider_of(r),
-			"category": "compliance",
+			"category": "hygiene",
+			"confidence": "contextual",
 			"message_en": sprintf("Resource \"%s\": governance tags missing (%s).", [name, concat(", ", missing)]),
 			"remediation_en": sprintf("Add the mandatory tags (%s) to the resource.", [required_tags_label(required_tags_billable)]),
 		},

@@ -97,6 +97,7 @@ Frozen shape: `{"findings": [...], "summary": {...}}`.
   "labels": {
     "category": "security",
     "check": "objectstorage_bucket_public_access",
+    "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
     "tf_line": "81"
@@ -129,9 +130,40 @@ read what it is accepting rather than infer it:
   unit, and the resource types the source carried that no spec projects. Its shape is described
   in [the normalized inventory](inventory.md#the-collection-state).
 
-A secret-detection finding also carries `labels.confidence` (`high` | `medium` | `low`), so a
-pipeline can triage generic heuristics apart from confirmed secrets without changing the scan.
-The detected value itself never appears, at any level.
+### Triaging a report: confidence, distinct from severity
+
+Three dimensions travel in `labels`, and conflating them is what makes a first scan
+irritating:
+
+| Label | What it says | Values |
+|---|---|---|
+| `severity` (field, not a label) | the **consequence** if the problem is real | `critical` `high` `medium` `low` |
+| `labels.confidence` | the **certainty** that Pépin established the problem correctly | `confirmed` `probable` `heuristic` `contextual` |
+| `labels.category` | the **nature** of the problem | `security` `compliance` `sovereignty` `hygiene` |
+
+A volume with no recent snapshot and a VM with SSH open to the internet are both
+`high`. The first is `contextual` — the rule documents it itself, a volume may be
+backed up by other means — the second is `confirmed`. Giving them the same weight in
+a CI gate makes people doubt both.
+
+```bash
+# Block only on what is established, and see the rest without it blocking
+pepin scan scaleway inv.json -f json \
+  | jq '[.findings[] | select(.labels.confidence == "confirmed")]'
+
+# What is a matter of sovereignty, whatever its severity
+pepin scan scaleway inv.json -f json \
+  | jq '[.findings[] | select(.labels.category == "sovereignty")]'
+```
+
+`confidence` and `category` travel in `labels` rather than as first-class fields
+because the `Finding` model comes from the shared `scankit` module: adding a field
+there would impose Pépin's vocabulary on pitstop. It is the same choice as for the
+bilingual messages and the Terraform origin.
+
+For secret detection, the confidence is that of the PATTERN that fired, and the
+reporting threshold is configurable (`secrets.min_confidence`). The detected value
+itself never appears, at any level.
 
 **What this format cannot tell you**: it lists deviations, so an empty `findings` array means
 "no deviation found", which covers both "the tenant is clean" and "nothing was collected". The
@@ -230,6 +262,7 @@ One result:
   },
   "labels": {
     "category": "security",
+    "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
     "tf_line": "81"

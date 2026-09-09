@@ -32,6 +32,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(b),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("ClusterRoleBinding \"%s\" grants cluster-admin to %s — full power over the cluster.", [name, subject]),
 			"remediation_en": "Remove cluster-admin from this subject; grant a Role/ClusterRole restricted to what it strictly needs.",
 		},
@@ -68,6 +69,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(n),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Namespace \"%s\" has no Pod Security Standards enforced (enforce = %s) — a privileged pod is accepted there.", [name, lvl]),
 			"remediation_en": "Set the pod-security.kubernetes.io/enforce label (baseline or restricted) on the namespace.",
 		},
@@ -89,6 +91,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(n),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Namespace \"%s\" has no NetworkPolicy at all — every pod can reach every other pod (flat network).", [name]),
 			"remediation_en": "Define a default-deny NetworkPolicy (ingress and egress) in the namespace, then allow the legitimate flows.",
 		},
@@ -117,6 +120,7 @@ deny contains f if {
 		"labels": {
 			"provider": "kubernetes",
 			"category": "security",
+			"confidence": "contextual",
 			"message_en": "No external secrets manager detected (External Secrets Operator, Secrets Store CSI, Vault agent) — secrets rely on the native Kubernetes storage.",
 			"remediation_en": "Deploy an external secrets manager (External Secrets Operator or Secrets Store CSI) and mount secrets from the vault, never in cleartext in the manifests.",
 		},

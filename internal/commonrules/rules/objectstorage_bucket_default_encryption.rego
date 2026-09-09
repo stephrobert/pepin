@@ -27,6 +27,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(b),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Bucket \"%s\" has no default encryption at rest — objects are written in cleartext on the provider side.", [name]),
 			"remediation_en": "Enable the bucket's default encryption (SSE); check that the objects already stored are rewritten encrypted.",
 		},

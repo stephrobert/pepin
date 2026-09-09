@@ -240,6 +240,7 @@ insensiblement à la casse. L'écart est bien trouvé :
   "labels": {
     "category": "security",
     "check": "compute_image_not_public",
+    "confidence": "confirmed",
     "provider": "outscale",
     "tf_file": "main.tf",
     "tf_line": "32"

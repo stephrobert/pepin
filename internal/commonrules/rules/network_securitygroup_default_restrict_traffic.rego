@@ -25,6 +25,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Security group \"default\" (%s) carries an inbound rule — it applies automatically to every resource created without an explicit SG.", [sg]),
 			"remediation_en": "Empty the \"default\" security group of all its rules; explicitly attach a dedicated, restrictive SG to every resource.",
 		},

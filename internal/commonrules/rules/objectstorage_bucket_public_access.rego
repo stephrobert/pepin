@@ -58,6 +58,7 @@ _bucket_public_finding(r, cause, cause_en) := {
 	"labels": {
 		"provider": provider_of(r),
 		"category": "security",
+		"confidence": "confirmed",
 		"message_en": sprintf("Bucket \"%s\" is publicly accessible (%s).", [object.get(r.attributes, "name", r.id), cause_en]),
 		"remediation_en": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
 	},

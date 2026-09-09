@@ -22,6 +22,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Snapshot \"%s\" shared publicly (anyone is allowed to create a volume from it).", [id]),
 			"remediation_en": "Remove the global permission; share the snapshot with legitimate accounts only.",
 		},

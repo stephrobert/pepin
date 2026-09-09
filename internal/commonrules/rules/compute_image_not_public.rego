@@ -21,6 +21,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("Machine image \"%s\" shared publicly (anyone is allowed to launch it).", [id]),
 			"remediation_en": "Remove the image's public sharing; reserve it for legitimate accounts.",
 		},

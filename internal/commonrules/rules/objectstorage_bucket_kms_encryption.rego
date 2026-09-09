@@ -46,6 +46,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(b),
 			"category": "compliance",
+			"confidence": "confirmed",
 			"message_en": sprintf("Bucket \"%s\" is classified sensitive but encrypted without a customer-managed key (SSE-KMS): its data stays under the provider's exclusive control.", [name]),
 			"remediation_en": "Create a key in Key Manager and attach it to the bucket as its default encryption key (SSE-KMS) for sensitive data.",
 		},

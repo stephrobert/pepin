@@ -27,6 +27,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(c),
 			"category": "compliance",
+			"confidence": "confirmed",
 			"message_en": sprintf("Kubernetes cluster \"%s\": audit logging disabled — no audit endpoint is configured, an incident could not be investigated.", [name]),
 			"remediation_en": "Configure the cluster's Kubernetes audit (collection endpoint) and centralise the logs according to the retention policy.",
 		},

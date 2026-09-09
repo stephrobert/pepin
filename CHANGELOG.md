@@ -23,6 +23,23 @@ belongs in `git log`.
 
 ### Added
 
+- **A finding now declares its CONFIDENCE, distinct from its severity.** Severity says
+  the consequence if the problem is real; confidence says how sure Pépin is that it
+  established the problem at all. A volume with no recent snapshot and a VM with SSH
+  open to the internet were both `high` and indistinguishable — the first is
+  `contextual` (the rule documents it itself: a volume may be backed up otherwise), the
+  second `confirmed`. `labels.confidence` is one of `confirmed`, `probable`,
+  `heuristic`, `contextual`, declared per rule, and a rule without one breaks CI.
+- **`labels.category` gains `sovereignty` and `hygiene`.** Sovereignty is this
+  product's reason to exist and was filed under `compliance`, where a filter could not
+  find it; documentation hygiene is neither a vulnerability nor a normative breach, and
+  conflating it with either is what makes a first scan irritating. Seven findings move
+  to `sovereignty`, three to `hygiene`.
+- **The secret-detection confidence vocabulary is unified with the common one**:
+  `high`/`medium`/`low` become `confirmed`/`probable`/`heuristic`, with no granularity
+  lost. A `secrets.min_confidence` written with the old words is still accepted, at the
+  same rank, and normalised in the resolved configuration — a committed policy does not
+  change meaning in silence.
 - **The quality map now publishes precision, derived from the counterexample corpus.**
   "42 controls" is a sentence every CSPM says. Catching and staying SILENT are two
   different measurements, and they are now printed side by side: 42 active

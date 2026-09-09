@@ -22,6 +22,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "compliance",
+			"confidence": "confirmed",
 			"message_en": sprintf("Managed database \"%s\": automatic backups are disabled.", [id]),
 			"remediation_en": "Re-enable automatic backups and set a retention that matches the RPO.",
 		},

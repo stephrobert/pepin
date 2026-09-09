@@ -357,8 +357,22 @@ secret_min_confidence := object.get(_config_secrets, "min_confidence", _default_
 # confidence_rank — rang ordonné d'un niveau de confiance. Un niveau inconnu vaut
 # le rang le plus bas : une détection ne se perd pas parce qu'on n'a pas su lire
 # son étiquette.
+#
+# Le vocabulaire est celui de TOUS les findings depuis #111 — `confirmed`,
+# `probable`, `heuristic` — et non plus un vocabulaire propre à la détection de
+# secrets. Un même mot devait signifier la même chose partout, sans quoi filtrer
+# `confidence=heuristic` sur un rapport n'aurait pas de sens stable.
+#
+# Les anciennes valeurs `high`/`medium`/`low` restent acceptées, au même rang que
+# leur équivalent. Une politique déjà committée ne doit pas changer de SENS en
+# silence : elle continuerait de s'appliquer en donnant un autre seuil, ce qui est
+# le pire des deux mondes. Elles sont dépréciées, pas ignorées.
 confidence_rank(level) := r if {
-	ranks := {"low": 0, "medium": 1, "high": 2}
+	ranks := {
+		"heuristic": 0, "low": 0,
+		"probable": 1, "medium": 1,
+		"confirmed": 2, "high": 2,
+	}
 	r := object.get(ranks, level, 0)
 }
 
@@ -395,7 +409,7 @@ _default_snapshot_max_age_days := 7
 
 _default_snapshot_states := ["completed", "created"]
 
-_default_min_confidence := "low"
+_default_min_confidence := "heuristic"
 
 # ── L'ENVIRONNEMENT d'une ressource, et ce qu'il autorise à conclure ──────────
 #

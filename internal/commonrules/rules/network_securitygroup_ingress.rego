@@ -79,6 +79,12 @@ _sg_finding(r, code, sev, what, what_en) := {
 	"labels": {
 		"provider": provider_of(r),
 		"category": "security",
+		# CONFIRMÉ pour toutes les règles d'exposition que ce constructeur sert : une
+		# origine `0.0.0.0/0` sur un port sensible est OBSERVÉE dans la configuration,
+		# pas inférée. Le contexte n'y change rien — il n'existe pas de raison
+		# légitime d'ouvrir SSH ou RDP à tout Internet, seulement des raisons
+		# temporaires, qui se posent en dérogation datée.
+		"confidence": "confirmed",
 		"message_en": sprintf("Security group \"%s\": %s accepted from/to the internet.", [object.get(r.attributes, "security_group_id", r.id), what_en]),
 		"remediation_en": "Restrict the rule to legitimate sources/destinations and ports (administration CIDR, bastion, VPN); never expose a sensitive service to 0.0.0.0/0.",
 	},

@@ -26,6 +26,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(r),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("IAM role \"%s\": no source IP restriction — a key assuming this role is usable from any address.", [name]),
 			"remediation_en": "Add a source IP condition to the role's policy (legitimate administration ranges).",
 		},

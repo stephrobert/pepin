@@ -37,7 +37,8 @@ deny contains f if {
 		"remediation": sprintf("Étiqueter chaque réseau (%s) ; tenir la cartographie réseau à jour.", [required_tags_label(required_tags_network)]),
 		"labels": {
 			"provider": provider_of(n),
-			"category": "compliance",
+			"category": "hygiene",
+			"confidence": "contextual",
 			"message_en": sprintf("Network \"%s\": mapping tags missing (%s) — the network mapping is not maintained.", [name, concat(", ", missing)]),
 			"remediation_en": sprintf("Tag every network (%s); keep the network mapping up to date.", [required_tags_label(required_tags_network)]),
 		},

@@ -28,6 +28,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(lb),
 			"category": "compliance",
+			"confidence": "confirmed",
 			"message_en": sprintf("LBU \"%s\" has no access log enabled — no investigation is possible.", [name]),
 			"remediation_en": "Enable access_log (a dedicated OOS bucket, with a configured retention).",
 		},

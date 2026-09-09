@@ -28,6 +28,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(p),
 			"category": "compliance",
+			"confidence": "confirmed",
 			"message_en": sprintf("Network peering \"%s\" between two distinct accounts (%s <-> %s): internal flows opened towards another information system — the segregation must be justified.", [object.get(p.attributes, "peering_id", p.id), src, acc]),
 			"remediation_en": "Limit peerings to networks of the same information system; for a partner, justify the peering and restrict the routes and flows exchanged (flow matrix).",
 		},

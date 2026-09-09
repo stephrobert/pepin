@@ -25,6 +25,7 @@ deny contains f if {
 		"labels": {
 			"provider": provider_of(p),
 			"category": "security",
+			"confidence": "confirmed",
 			"message_en": sprintf("EIM policy \"%s\": Allow statement carrying Action=\"*\" (every action granted).", [name]),
 			"remediation_en": "Replace Action=\"*\" with the exhaustive list of the actions actually needed (least privilege).",
 		},
