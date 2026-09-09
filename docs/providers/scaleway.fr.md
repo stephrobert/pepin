@@ -156,8 +156,8 @@ pepin scan scaleway --terraform plan.json
 <!-- pepin:gen provider-scaleway-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 7 | 2 | 32 |
-| live | 16 | 3 | 2 | 37 |
+| terraform | 17 | 8 | 2 | 31 |
+| live | 17 | 3 | 2 | 36 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
 Contrôle par contrôle, avec le motif de chaque case qui n'est pas pleinement supportée, la
@@ -188,6 +188,7 @@ fournisseur.
 | `iam_policy_no_privilege_escalation` | terraform | cette source ne produit aucune ressource de type « iam_policy » |
 | `iam_user_mfa_enabled` | live | cette source ne produit aucune ressource de type « iam_user » |
 | `network_securitygroup_default_deny` | terraform | cette source ne produit aucune ressource de type « security_group » |
+| `objectstorage_bucket_default_encryption` | live | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_kms_encryption` | live | attribut décisif « sse_kms_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_versioning_enabled` | live | attribut décisif « versioning » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 <!-- /pepin:gen provider-scaleway-onesource -->

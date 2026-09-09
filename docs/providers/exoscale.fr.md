@@ -177,8 +177,8 @@ pepin scan exoscale --terraform plan.json
 <!-- pepin:gen provider-exoscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 20 | 2 | 5 | 31 |
-| live | 25 | 1 | 5 | 27 |
+| terraform | 19 | 2 | 6 | 31 |
+| live | 24 | 1 | 6 | 27 |
 <!-- /pepin:gen provider-exoscale-coverage -->
 
 Contrôle par contrôle, avec le motif de chaque case qui n'est pas pleinement supportée, la
@@ -193,6 +193,7 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 | `loadbalancer_http_redirect_to_https` | type de ressource « load_balancer » absent de l'API exoscale |
 | `loadbalancer_logging_enabled` | type de ressource « load_balancer » absent de l'API exoscale |
 | `loadbalancer_ssl_listeners` | type de ressource « load_balancer » absent de l'API exoscale |
+| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
 | `objectstorage_bucket_kms_encryption` | SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4). |
 <!-- /pepin:gen provider-exoscale-na -->
 

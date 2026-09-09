@@ -23,7 +23,7 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | `high` | 33 |
 | `medium` | 13 |
 | `low` | 2 |
-| Preuves de remédiation déployables | 26 / 96 |
+| Preuves de remédiation déployables | 26 / 97 |
 
 ## Comment lire ce catalogue
 
@@ -113,7 +113,7 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | [`k8s_secrets_external_manager`](k8s_secrets_external_manager.fr.md) Secrets Kubernetes sans coffre externe | high | `CLD-K8S-10` | `kubernetes` | 0 / 1 |
 | [`loadbalancer_http_redirect_to_https`](loadbalancer_http_redirect_to_https.fr.md) Listener HTTP sans redirection HTTPS | medium | `CLD-CHF-1` | _dormant_ | aucun |
 | [`loadbalancer_ssl_listeners`](loadbalancer_ssl_listeners.fr.md) Chiffrement en transit absent | high | `CLD-CHF-1` | `outscale` | 0 / 1 |
-| [`objectstorage_bucket_default_encryption`](objectstorage_bucket_default_encryption.fr.md) Bucket sans chiffrement par défaut au repos | high | `CLD-CHF-2` | `outscale` | 0 / 1 |
+| [`objectstorage_bucket_default_encryption`](objectstorage_bucket_default_encryption.fr.md) Bucket sans chiffrement par défaut au repos | high | `CLD-CHF-2` | `outscale`, `scaleway` | 0 / 2 |
 | [`objectstorage_bucket_kms_encryption`](objectstorage_bucket_kms_encryption.fr.md) Clé de chiffrement gérée par le client absente (BYOK) sur un bucket sensible | medium | `CLD-CHF-4` | `scaleway` | 0 / 1 |
 
 ## `journalisation`

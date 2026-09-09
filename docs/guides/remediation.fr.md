@@ -209,8 +209,8 @@ couples (contrôle, fournisseur) que le référentiel déclare réellement :
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 41 |
-| scaleway | 0 / 25 |
-| **Total** | **26 / 96** |
+| scaleway | 0 / 26 |
+| **Total** | **26 / 97** |
 <!-- /pepin:gen remediation-coverage -->
 
 Ce tableau compte des **preuves déployables**, pas des remédiations. La remédiation

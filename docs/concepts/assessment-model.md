@@ -388,7 +388,7 @@ reasons observed:
 <!-- pepin:gen not-evaluated-reasons -->
 | Reason | Count | Witness control |
 |---|---:|---|
-| attribute "…" not collected on the resources of type "…" (capability guard) | 4 | `compute_instance_has_security_group` |
+| attribute "…" not collected on the resources of type "…" (capability guard) | 5 | `compute_instance_has_security_group` |
 | collection of the required data is not confirmed for this provider (contract not "…") | 1 | `network_documented` |
 | deciding attributes not collected: "…" on the resources of type "…", "…" on the resources of type "…", "…" on the resources of type "…" (capability guard) | 1 | `governance_resource_region_in_eu` |
 | no resource of type "…" in the assessed inventory | 3 | `iam_accesskey_expiration_set` |
@@ -537,7 +537,7 @@ Scanning the deliberately misconfigured plan of the
 | `pass` | 6 |
 | `fail` | 10 |
 | `not-applicable` | 2 |
-| `not-evaluated` | 9 |
+| `not-evaluated` | 10 |
 <!-- /pepin:gen assessment-counts -->
 
 ## The link with exit code `3`

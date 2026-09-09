@@ -42,6 +42,7 @@ pour mot. Un N/A non justifié n'est jamais produit.
 | `loadbalancer_http_redirect_to_https` | outscale | Le LBU Outscale ne peut pas rediriger : `ListenerRule.Action` est documenté « always forward » au contrat OAPI (aucune action de redirection), et aucun attribut de redirection n'existe sur `Listener`. Le mécanisme est inexistant → contrôle non applicable (CHF-1). |
 | `loadbalancer_logging_enabled` | exoscale | type de ressource « load_balancer » absent de l'API exoscale |
 | `loadbalancer_ssl_listeners` | exoscale | type de ressource « load_balancer » absent de l'API exoscale |
+| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
 | `objectstorage_bucket_kms_encryption` | exoscale | SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | outscale | OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A. |
 <!-- /pepin:gen not-applicable-list -->
@@ -112,6 +113,7 @@ pas.
 | `network_securitygroup_default_deny` | scaleway | terraform | cette source ne produit aucune ressource de type « security_group » |
 | `network_securitygroup_default_restrict_traffic` | outscale | live | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
+| `objectstorage_bucket_default_encryption` | scaleway | live | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_kms_encryption` | scaleway | live | attribut décisif « sse_kms_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_object_lock_enabled` | exoscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_object_lock_enabled` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
@@ -148,12 +150,12 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 <!-- pepin:gen coverage-totals -->
 | Fournisseur | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 20 | 2 | 5 | 31 |
-| exoscale | live | 25 | 1 | 5 | 27 |
+| exoscale | terraform | 19 | 2 | 6 | 31 |
+| exoscale | live | 24 | 1 | 6 | 27 |
 | outscale | terraform | 16 | 5 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 7 | 2 | 32 |
-| scaleway | live | 16 | 3 | 2 | 37 |
+| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | live | 17 | 3 | 2 | 36 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
 
@@ -173,8 +175,8 @@ note documentée. À ce jour :
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 41 |
-| scaleway | 0 / 25 |
-| **Total** | **26 / 96** |
+| scaleway | 0 / 26 |
+| **Total** | **26 / 97** |
 <!-- /pepin:gen remediation-coverage -->
 
 Ce contrôle n'est **délibérément pas** branché sur `mise run validate` : tous fournisseurs
@@ -207,10 +209,10 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 <!-- pepin:gen veracity-debt -->
 | Chiffre | Nombre |
 |---|---:|
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 179 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 29 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 181 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 31 |
 | Verdicts à prouver au total | 455 |
-| Verdicts restant à prouver | 365 |
+| Verdicts restant à prouver | 364 |
 <!-- /pepin:gen veracity-debt -->
 
 Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est

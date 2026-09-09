@@ -17,8 +17,8 @@
 | Type de ressource lu | `object_storage_bucket` |
 | Attribut décisif | `default_encryption_enabled` |
 | État | actif |
-| Déclaré pour | `outscale` |
-| Preuves de remédiation | 0 / 1 |
+| Déclaré pour | `outscale`, `scaleway` |
+| Preuves de remédiation | 0 / 2 |
 
 ## Le risque
 
@@ -51,7 +51,7 @@ déclaré, ou type absent de cette source ».
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✅ |
-| scaleway | ✗ | ✗ |
+| scaleway | ◐ | ✅ |
 | kubernetes | sans objet | ✗ |
 
 Chaque case qui n'est pas ✅, **alors que le contrôle est déclaré pour ce fournisseur**,
@@ -60,15 +60,16 @@ porte son motif :
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
 | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
+| scaleway | terraform | ◐ `partial` | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
-| `fail` | un écart a été détecté sur une ressource réelle | outscale / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / live |
+| `fail` | un écart a été détecté sur une ressource réelle | outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / live · scaleway / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
-| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | aucun |
+| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | scaleway / terraform |
 
 Un contrôle observable rend tout de même `not-evaluated` sur un inventaire qui ne
 contient aucune ressource du type visé : « rien à voir » n'est pas « conforme ».
@@ -78,7 +79,7 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 - Type de ressource normalisé lu par la règle : `object_storage_bucket`
 - Attribut dont la décision dépend : `default_encryption_enabled`
 - Sans cet attribut sur une ressource du type visé, le scan rend `not-evaluated` et non `pass` (`internal/assess`, table `requiredAttr`).
-- Ce que chaque source projette se lit dans le descripteur : [`providers/outscale.yaml`](../../providers/outscale.yaml)
+- Ce que chaque source projette se lit dans le descripteur : [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - La règle qui émet ce code vit dans [`internal/commonrules/rules/`](../../internal/commonrules/rules) : elle est **commune** à tous les fournisseurs, seule la source change.
 
 ## Comment corriger
@@ -88,6 +89,7 @@ Activer le chiffrement par défaut du bucket (SSE) et vérifier que les objets d
 | Fournisseur | Montage déployable |
 |---|---|
 | outscale | _aucune preuve déposée à ce jour_ |
+| scaleway | _aucune preuve déposée à ce jour_ |
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie
 tel quel, ou une note ancrée sur la documentation officielle. Voir
@@ -96,6 +98,9 @@ tel quel, ou une note ancrée sur la documentation officielle. Voir
 ## Comment vérifier la correction
 
 ```bash
+# depuis un plan Terraform : aucune ressource n'est créée
+./pepin scan scaleway --terraform plan.json --format assessment
+
 # depuis l'API du fournisseur : configuration effective
 ./pepin scan outscale --live --format assessment
 ```
@@ -103,6 +108,10 @@ tel quel, ou une note ancrée sur la documentation officielle. Voir
 Dans la sortie `assessment`, chercher `"control": "objectstorage_bucket_default_encryption"` : son `status` doit être
 `pass`. S'il reste `not-evaluated`, la donnée décisive n'a pas été collectée, et la
 correction n'est **pas** démontrée : le tableau des motifs ci-dessus dit pourquoi.
+
+**Une des deux sources ne sait pas lever le verrou du « pass »** pour ce contrôle :
+le fournisseur cité y produit bien le type visé, mais le scan y rendra `not-evaluated`.
+Le tableau des motifs dit laquelle, et pourquoi.
 
 ## Voir aussi
 

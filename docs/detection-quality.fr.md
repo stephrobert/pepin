@@ -16,7 +16,7 @@ pourcentage sans mesure derrière est un faux vert déplacé dans un tableau de
 bord, et il y est pire qu'ailleurs : personne ne relit un tableau de bord.
 
 Les chiffres sont donc laids, et c'est le point. « 58 contrôles » ne dit rien de
-la qualité d'une détection ; « 90 verdicts prouvés sur 455 » dit où en est le
+la qualité d'une détection ; « 91 verdicts prouvés sur 455 » dit où en est le
 produit, et rétrécit dans le bon sens à chaque scénario écrit.
 
 ## Les chiffres
@@ -24,10 +24,10 @@ produit, et rétrécit dans le bon sens à chaque scénario écrit.
 | Chiffre | Nombre |
 |---|---:|
 | Contrôles au référentiel | 58 |
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 179 |
-| Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 29 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 181 |
+| Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 31 |
 | Verdicts à prouver au total | 455 |
-| Verdicts prouvés | 90 |
+| Verdicts prouvés | 91 |
 
 ## Couverture de véracité, par verdict
 
@@ -37,11 +37,11 @@ demanderait d'inventer une non-applicabilité.
 
 | Verdict | Ce qu'il met en scène | À prouver | Prouvés | % |
 |---|---|---:|---:|---:|
-| `fail` | une configuration vulnérable est détectée | 138 | 23 | 16 |
-| `pass` | une configuration réellement correcte est confirmée | 138 | 36 | 26 |
-| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 157 | 20 | 12 |
-| `not-applicable` | le contrat du fournisseur déclare le mécanisme inexistant | 22 | 11 | 50 |
-| **Total** | | **455** | **90** | **19** |
+| `fail` | une configuration vulnérable est détectée | 137 | 23 | 16 |
+| `pass` | une configuration réellement correcte est confirmée | 137 | 35 | 25 |
+| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 157 | 21 | 13 |
+| `not-applicable` | le contrat du fournisseur déclare le mécanisme inexistant | 24 | 12 | 50 |
+| **Total** | | **455** | **91** | **20** |
 
 ## Validé en live
 
@@ -56,7 +56,7 @@ relevé authentifié, il montera tout seul.
 
 | Chiffre | Nombre |
 |---|---:|
-| Chemins dont la source est une collecte live | 101 |
+| Chemins dont la source est une collecte live | 102 |
 | Validé en live | **0 %** |
 
 ## Ce que les vrais plans de contrôle ont répondu

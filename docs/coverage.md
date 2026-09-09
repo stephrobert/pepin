@@ -42,12 +42,12 @@ and the report says so on every scan, control by control, with the reason.
 
 | Family | Controls | exoscale | outscale | scaleway |
 |---|---:|---|---|---|
-| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 1 · ◐ 1 · ∅ 1 · ✗ 4 |
+| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 1 · ∅ 1 · ✗ 3 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
 | `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 3 · ◐ 1 · ∅ 0 · ✗ 11 |
 | `journalisation` | 2 | ✅ 1 · ◐ 0 · ∅ 1 · ✗ 0 | ✅ 1 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 0 · ◐ 0 · ∅ 0 · ✗ 2 |
-| `reseau` | 15 | ✅ 9 · ◐ 0 · ∅ 0 · ✗ 6 | ✅ 11 · ◐ 0 · ∅ 0 · ✗ 4 | ✅ 9 · ◐ 1 · ∅ 0 · ✗ 5 |
+| `reseau` | 15 | ✅ 8 · ◐ 0 · ∅ 1 · ✗ 6 | ✅ 11 · ◐ 0 · ∅ 0 · ✗ 4 | ✅ 9 · ◐ 1 · ∅ 0 · ✗ 5 |
 | `stockage` | 7 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 | ✅ 6 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 |
 
 ## Full matrix (control × provider × source)
@@ -98,7 +98,7 @@ and the report says so on every scan, control by control, with the reason.
 | `network_documented` | low | CLD-NET-5 | ✅ | ✅ | ✅ | ✅ | ◐ | ✗ |
 | `network_flow_matrix_documented` | medium | CLD-NET-5 | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
 | `network_peering_cross_organization` | high | CLD-NET-7 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
-| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | critical | CLD-NET-2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | critical | CLD-NET-2 | ∅ | ∅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports` | high | CLD-NET-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports` | high | CLD-NET-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_tcp_port_22` | high | CLD-NET-1, CLD-IAM-6, CLD-NET-6 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -107,7 +107,7 @@ and the report says so on every scan, control by control, with the reason.
 | `network_securitygroup_default_restrict_traffic` | high | CLD-NET-4 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `network_securitygroup_unrestricted_egress` | medium | CLD-NET-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_subnet_no_public_ip_by_default` | medium | CLD-NET-3 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
-| `objectstorage_bucket_default_encryption` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
+| `objectstorage_bucket_default_encryption` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✅ | ◐ | ✅ |
 | `objectstorage_bucket_kms_encryption` | medium | CLD-CHF-4 | ∅ | ∅ | ∅ | ∅ | ◐ | ✅ |
 | `objectstorage_bucket_object_lock_enabled` | low | CLD-STO-8 | ✗ | ✅ | ✗ | ✅ | ✅ | ✅ |
 | `objectstorage_bucket_public_access` | critical | CLD-STO-1 | ✗ | ✅ | ✗ | ✅ | ✅ | ✅ |
@@ -178,9 +178,12 @@ already shows them, and they add nothing.
 | `network_documented` | scaleway | terraform | ◐ `partial` | provider contract: type "network" is not declared `verifie` (state: a_verifier) |
 | `network_documented` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "network" |
 | `network_peering_cross_organization` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "network_peering" |
+| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | terraform | ∅ `not-applicable` | An Exoscale security group rule has no "all protocols" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case. |
+| `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | live | ∅ `not-applicable` | An Exoscale security group rule has no "all protocols" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case. |
 | `network_securitygroup_default_deny` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "security_group" |
 | `network_securitygroup_default_restrict_traffic` | outscale | terraform | ◐ `partial` | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
+| `objectstorage_bucket_default_encryption` | scaleway | terraform | ◐ `partial` | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_kms_encryption` | exoscale | terraform | ∅ `not-applicable` | SOS encrypts at rest by default (SSE-SOS, keys managed by Exoscale, SSE-S3 style) but exposes no customer-managed BYOK/KMS key at the bucket level (SSE-C stays per-object and unobservable), so the BYOK-at-bucket control is moot (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | exoscale | live | ∅ `not-applicable` | SOS encrypts at rest by default (SSE-SOS, keys managed by Exoscale, SSE-S3 style) but exposes no customer-managed BYOK/KMS key at the bucket level (SSE-C stays per-object and unobservable), so the BYOK-at-bucket control is moot (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | outscale | terraform | ∅ `not-applicable` | OOS encrypts server-side in AES256 with a PROVIDER key; there is neither a KMS service nor a customer-managed master key, so there is no BYOK to audit at the bucket level (CHF-4). Note: enabling SSE itself is opt-in and observable, which is a separate control, not this N/A. |
@@ -211,10 +214,10 @@ the other's scope. One source only: live collection through a kubeconfig.
 
 | Provider | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 20 | 2 | 5 | 31 |
-| exoscale | live | 25 | 1 | 5 | 27 |
+| exoscale | terraform | 19 | 2 | 6 | 31 |
+| exoscale | live | 24 | 1 | 6 | 27 |
 | outscale | terraform | 16 | 5 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 7 | 2 | 32 |
-| scaleway | live | 16 | 3 | 2 | 37 |
+| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | live | 17 | 3 | 2 | 36 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

@@ -23,7 +23,7 @@ overview per provider and per source, see the [coverage matrix](../coverage.md).
 | `high` | 33 |
 | `medium` | 13 |
 | `low` | 2 |
-| Deployable remediation proofs | 26 / 96 |
+| Deployable remediation proofs | 26 / 97 |
 
 ## How to read this catalogue
 
@@ -113,7 +113,7 @@ overview per provider and per source, see the [coverage matrix](../coverage.md).
 | [`k8s_secrets_external_manager`](k8s_secrets_external_manager.md) Kubernetes secrets without an external vault | high | `CLD-K8S-10` | `kubernetes` | 0 / 1 |
 | [`loadbalancer_http_redirect_to_https`](loadbalancer_http_redirect_to_https.md) HTTP listener without an HTTPS redirect | medium | `CLD-CHF-1` | _dormant_ | — |
 | [`loadbalancer_ssl_listeners`](loadbalancer_ssl_listeners.md) No encryption in transit | high | `CLD-CHF-1` | `outscale` | 0 / 1 |
-| [`objectstorage_bucket_default_encryption`](objectstorage_bucket_default_encryption.md) Bucket without default encryption at rest | high | `CLD-CHF-2` | `outscale` | 0 / 1 |
+| [`objectstorage_bucket_default_encryption`](objectstorage_bucket_default_encryption.md) Bucket without default encryption at rest | high | `CLD-CHF-2` | `outscale`, `scaleway` | 0 / 2 |
 | [`objectstorage_bucket_kms_encryption`](objectstorage_bucket_kms_encryption.md) No customer-managed encryption key (BYOK) on a sensitive bucket | medium | `CLD-CHF-4` | `scaleway` | 0 / 1 |
 
 ## `journalisation`

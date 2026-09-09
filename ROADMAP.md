@@ -72,8 +72,8 @@ compliant Terraform module under `references/remediation/`.
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 41 |
-| scaleway | 0 / 25 |
-| **Total** | **26 / 96** |
+| scaleway | 0 / 26 |
+| **Total** | **26 / 97** |
 <!-- /pepin:gen remediation-coverage -->
 
 `mise run check-remediation` is deliberately not wired into `mise run validate`: a gate

@@ -79,7 +79,7 @@ et un changement de cette forme incrémente un numéro de version et reçoit sa 
   "summary": {
     "fail": 10,
     "not-applicable": 2,
-    "not-evaluated": 9,
+    "not-evaluated": 10,
     "pass": 6
   },
   "artifacts": [

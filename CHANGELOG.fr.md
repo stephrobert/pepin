@@ -88,6 +88,25 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un contrôle émettait six écarts justes chez un fournisseur pour lequel le
+  référentiel ne le déclarait pas.** `objectstorage_bucket_default_encryption` se
+  déclenche chez Scaleway — le collecteur S3 commun pose `default_encryption_enabled`
+  sur chaque bucket, et le SSE y est opt-in par bucket, donc un bucket sans
+  configuration écrit ses objets en clair. Les verdicts étaient justes ; c'est la
+  déclaration qui était fausse, et la matrice affichait ✗ pour un fournisseur que
+  l'outil mesurait réellement. Déclaré désormais, l'attribut consigné au contrat du
+  fournisseur avec sa source.
+- **Deux contrôles déclarés ✅ chez Exoscale ne pouvaient jamais se déclencher, et les
+  deux cas ne méritaient pas la même réponse.** Tous deux exigeaient `protocol == "all"`,
+  qu'une règle de security group Exoscale ne sait pas exprimer (le schéma du provider et
+  l'API v2 n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp). `…_to_all_ports`
+  y est désormais **non applicable**, avec la justification sourcée : le mécanisme
+  any/any n'existe pas, et les contrôles de familles de ports couvrent le cas réel. Mais
+  `unrestricted_egress` a été **élargi** au lieu d'être écarté — une sortie ouverte
+  EXISTE chez Exoscale, elle s'écrit `tcp 1-65535 → 0.0.0.0/0`, et la déclarer non
+  mesurable aurait caché un fait de posture réel. La borne est stricte : une sortie
+  limitée à quelques ports est un filtrage, et crier dessus est le faux positif qui fait
+  désactiver un outil.
 - **Une règle de security group sans description obtenait `pass` — du contrôle qui
   existe pour attraper exactement ça.** La règle se gardait par
   `"description" in object.keys(...)`, censé répondre « ce fournisseur expose-t-il le

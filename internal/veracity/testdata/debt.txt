@@ -8,7 +8,7 @@
 # Une ligne qui disparaît est une dette payée. Une ligne qui apparaît sans
 # scénario est un contrôle ajouté sans sa preuve, et la CI la refuse.
 #
-# chemins : 179 · entierement prouves : 29 · obligations : 455 · restantes : 365
+# chemins : 181 · entierement prouves : 31 · obligations : 455 · restantes : 364
 
 blockstorage_snapshot_not_public exoscale live not-applicable
 blockstorage_snapshot_not_public outscale live fail,pass,not-evaluated
@@ -109,8 +109,7 @@ network_documented scaleway terraform not-evaluated
 network_flow_matrix_documented exoscale live fail,pass,not-evaluated
 network_flow_matrix_documented exoscale terraform fail,not-evaluated
 network_peering_cross_organization outscale live fail,pass,not-evaluated
-network_securitygroup_allow_ingress_from_internet_to_all_ports exoscale live fail,pass,not-evaluated
-network_securitygroup_allow_ingress_from_internet_to_all_ports exoscale terraform fail,not-evaluated
+network_securitygroup_allow_ingress_from_internet_to_all_ports exoscale live not-applicable
 network_securitygroup_allow_ingress_from_internet_to_all_ports outscale live fail,pass,not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_all_ports outscale terraform not-evaluated
 network_securitygroup_allow_ingress_from_internet_to_all_ports scaleway live fail,pass,not-evaluated
@@ -147,6 +146,7 @@ network_securitygroup_unrestricted_egress scaleway terraform fail,pass,not-evalu
 network_subnet_no_public_ip_by_default outscale live fail,pass,not-evaluated
 network_subnet_no_public_ip_by_default outscale terraform fail,not-evaluated
 objectstorage_bucket_default_encryption outscale live fail,pass,not-evaluated
+objectstorage_bucket_default_encryption scaleway live fail,pass,not-evaluated
 objectstorage_bucket_kms_encryption exoscale live not-applicable
 objectstorage_bucket_kms_encryption outscale live not-applicable
 objectstorage_bucket_kms_encryption scaleway live fail,pass,not-evaluated

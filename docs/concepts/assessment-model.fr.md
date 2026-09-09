@@ -391,7 +391,7 @@ voici les motifs distincts observés :
 <!-- pepin:gen not-evaluated-reasons -->
 | Motif | Nombre | Contrôle témoin |
 |---|---:|---|
-| attribut « … » non collecté sur les ressources de type « … » (garde de capacité) | 4 | `compute_instance_has_security_group` |
+| attribut « … » non collecté sur les ressources de type « … » (garde de capacité) | 5 | `compute_instance_has_security_group` |
 | attributs décisifs non collectés : « … » sur les ressources de type « … », « … » sur les ressources de type « … », « … » sur les ressources de type « … » (garde de capacité) | 1 | `governance_resource_region_in_eu` |
 | aucune ressource de type « … » dans l'inventaire évalué | 3 | `iam_accesskey_expiration_set` |
 | collecte de la donnée nécessaire non confirmée pour ce fournisseur (contrat non « … ») | 1 | `network_documented` |
@@ -541,7 +541,7 @@ fois (`exempted` n'apparaît qu'avec un fichier de dérogations) :
 | `pass` | 6 |
 | `fail` | 10 |
 | `not-applicable` | 2 |
-| `not-evaluated` | 9 |
+| `not-evaluated` | 10 |
 <!-- /pepin:gen assessment-counts -->
 
 ## Le lien avec le code de sortie `3`

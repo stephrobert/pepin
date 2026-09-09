@@ -56,11 +56,22 @@ deny contains f if {
 }
 
 # Sortie tout-trafic non restreinte vers Internet → CLD-NET-4.
+#
+# « Tout le trafic » se déclare de deux façons selon le fournisseur, et n'en regarder
+# qu'une rendait le contrôle inopérant sur un fournisseur entier. Chez Exoscale, une
+# règle n'a AUCUNE valeur « tous protocoles » : le schéma du provider n'accepte que
+# ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. Une sortie ouverte y existe pourtant, et
+# s'écrit `tcp 1-65535 → 0.0.0.0/0` — la règle la laissait passer, et le `pass` par
+# absence se publiait comme « aucun écart détecté ».
+#
+# On accepte donc les deux formes. La seconde exige TOUTE la plage de ports : une
+# sortie bornée à quelques ports est un filtrage, et la signaler serait le faux
+# positif qui fait désactiver l'outil.
 deny contains f if {
 	some r in resources_of_type("security_group_rule")
 	lower(object.get(r.attributes, "direction", "")) == "outbound"
 	sg_accepting(r.attributes)
-	lower(object.get(r.attributes, "protocol", "")) == "all"
+	_sortie_tout_trafic(r.attributes)
 	some cidr in cidr_list(object.get(r.attributes, "cidrs", []))
 	is_public_cidr(cidr)
 	f := _avec_confiance(
@@ -126,3 +137,18 @@ _sens_en(attrs) := "from" if lower(object.get(attrs, "direction", "")) == "inbou
 _sens_en(attrs) := "to" if lower(object.get(attrs, "direction", "")) == "outbound"
 
 _sens_en(attrs) := "from/to" if not lower(object.get(attrs, "direction", "")) in {"inbound", "outbound"}
+
+# _sortie_tout_trafic — la règle laisse-t-elle sortir TOUT ?
+#
+# Forme 1 : le fournisseur sait dire « tous protocoles ».
+_sortie_tout_trafic(attrs) if lower(object.get(attrs, "protocol", "")) == "all"
+
+# Forme 2 : le fournisseur ne le sait PAS, et la sortie ouverte s'écrit alors sur la
+# plage de ports complète d'un protocole de transport. La borne est stricte —
+# 1 (ou 0) à 65535 — parce qu'une sortie limitée à quelques ports est un filtrage, et
+# qu'un contrôle qui crierait dessus serait désactivé avant d'avoir servi.
+_sortie_tout_trafic(attrs) if {
+	lower(object.get(attrs, "protocol", "")) in {"tcp", "udp"}
+	object.get(attrs, "port_from", 1) <= 1
+	object.get(attrs, "port_to", 0) == 65535
+}

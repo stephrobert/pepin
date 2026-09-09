@@ -191,3 +191,43 @@ test_an_inbound_rule_says_depuis if {
 	contains(f.labels.message_en, "accepted from the internet")
 	not contains(f.message, "vers")
 }
+
+# ── « Tout le trafic » se déclare de deux façons (#202) ────────────────────────
+
+# ✗ Chez un fournisseur SANS valeur « tous protocoles », une sortie ouverte s'écrit sur
+# la plage de ports complète. La règle la laissait passer, et le `pass` par absence se
+# publiait comme « aucun écart détecté ».
+test_a_full_tcp_range_egress_is_unrestricted if {
+	some f in deny with input as _sgr({"direction": "outbound", "action": "accept", "protocol": "tcp", "port_from": 1, "port_to": 65535, "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"})
+	f.code == _egr
+}
+
+test_a_full_udp_range_egress_is_unrestricted if {
+	some f in deny with input as _sgr({"direction": "outbound", "action": "accept", "protocol": "udp", "port_from": 0, "port_to": 65535, "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"})
+	f.code == _egr
+}
+
+# LE CONTRE-EXEMPLE, et c'est lui qui décide de la borne : une sortie limitée à
+# quelques ports est un FILTRAGE. Crier dessus ferait désactiver le contrôle avant
+# qu'il ait servi.
+test_a_bounded_egress_stays_silent if {
+	every attrs in [
+		{"direction": "outbound", "action": "accept", "protocol": "tcp", "port_from": 443, "port_to": 443, "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"},
+		{"direction": "outbound", "action": "accept", "protocol": "tcp", "port_from": 1, "port_to": 1024, "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"},
+		{"direction": "outbound", "action": "accept", "protocol": "tcp", "port_from": 1024, "port_to": 65535, "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"},
+	] {
+		count({f | some f in deny with input as _sgr(attrs); f.code == _egr}) == 0
+	}
+}
+
+# La destination reste décisive : toute la plage vers un réseau d'administration n'est
+# pas une sortie vers Internet.
+test_a_full_range_egress_to_a_private_network_stays_silent if {
+	count({f | some f in deny with input as _sgr({"direction": "outbound", "action": "accept", "protocol": "tcp", "port_from": 1, "port_to": 65535, "cidrs": ["10.0.0.0/8"], "security_group_id": "sg-1"}); f.code == _egr}) == 0
+}
+
+# Et l'ENTRÉE ne bouge pas : la plage complète en entrée relève des contrôles de
+# familles de ports, pas de celui-ci.
+test_a_full_range_ingress_is_not_an_egress_finding if {
+	count({f | some f in deny with input as _sgr({"direction": "inbound", "action": "accept", "protocol": "tcp", "port_from": 1, "port_to": 65535, "cidrs": ["0.0.0.0/0"], "security_group_id": "sg-1"}); f.code == _egr}) == 0
+}

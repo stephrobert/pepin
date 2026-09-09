@@ -1,28 +1,28 @@
 {
   "controls": 58,
-  "paths": 179,
-  "paths_proven": 29,
+  "paths": 181,
+  "paths_proven": 31,
   "obligations": 455,
-  "proven": 90,
+  "proven": 91,
   "verdicts": {
     "fail": {
-      "required": 138,
+      "required": 137,
       "proven": 23
     },
     "not-applicable": {
-      "required": 22,
-      "proven": 11
+      "required": 24,
+      "proven": 12
     },
     "not-evaluated": {
       "required": 157,
-      "proven": 20
+      "proven": 21
     },
     "pass": {
-      "required": 138,
-      "proven": 36
+      "required": 137,
+      "proven": 35
     }
   },
-  "live_paths": 101,
+  "live_paths": 102,
   "live_validated": 0,
   "counterwitnesses": 2,
   "tenants": 6,
@@ -1752,24 +1752,20 @@
         {
           "provider": "exoscale",
           "source": "live",
-          "status": "supported",
+          "status": "not-applicable",
           "required": [
-            "fail",
-            "pass",
-            "not-evaluated"
+            "not-applicable"
           ]
         },
         {
           "provider": "exoscale",
           "source": "terraform",
-          "status": "supported",
+          "status": "not-applicable",
           "required": [
-            "fail",
-            "pass",
-            "not-evaluated"
+            "not-applicable"
           ],
           "proven": [
-            "pass"
+            "not-applicable"
           ]
         },
         {
@@ -1821,6 +1817,7 @@
         "internal/veracity/testdata/scenarios/all-ports-open-outscale-terraform.yaml"
       ],
       "tenants": [
+        "exoscale/eu-data-bootstrap",
         "exoscale/zone-demo",
         "outscale/ztiac-two-tier"
       ],
@@ -2348,7 +2345,31 @@
             "pass",
             "not-evaluated"
           ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
         }
+      ],
+      "tenants": [
+        "scaleway/ducklake"
       ],
       "rego_tests": [
         "internal/commonrules/rules/objectstorage_bucket_test.rego",
