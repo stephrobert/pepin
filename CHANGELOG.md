@@ -59,6 +59,17 @@ belongs in `git log`.
 
 ### Fixed
 
+- **The root description names the providers that exist.** The first sentence a new
+  user reads advertised OVH — a roadmap entry, not a provider — and omitted Kubernetes,
+  which is one. The list is now derived from the registry: a copied list goes stale at
+  the first provider added or removed, and nobody rereads a welcome sentence.
+- **`pepin scsl --index` no longer defaults to a maintainer's checkout layout.** The
+  default was a relative path climbing out of the working directory into a repository
+  the reader has never heard of. The error was correct and said nothing: one could not
+  tell whether `framework-scsl` was something to install, a submodule left
+  uninitialised, or an internal project. `--index` is now required, and the message says
+  what the file is, that the command is a **maintenance** tool a scan does not need, and
+  gives an example.
 - **An unknown `--format` value is refused instead of falling back to the table.** The
   scan ran and printed the table report, with the exit code of a successful scan. The
   dangerous case is not someone typing `xml` at a prompt and noticing: it is a pipeline

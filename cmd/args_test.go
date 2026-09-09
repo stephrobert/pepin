@@ -112,6 +112,75 @@ func exitCodeOfArgs(t *testing.T, bin string, args ...string) int {
 	return 0
 }
 
+// TestTheRootDescriptionNamesTheProvidersThatExist — l'issue #150.
+//
+// La première phrase qu'un nouvel utilisateur lit annonçait OVH — une entrée de feuille
+// de route, pas un fournisseur — et omettait Kubernetes, qui en est un. La liste est
+// désormais DÉRIVÉE du registre : une liste recopiée se périme au premier fournisseur
+// ajouté ou retiré, et personne ne relit une phrase d'accueil.
+func TestTheRootDescriptionNamesTheProvidersThatExist(t *testing.T) {
+	bin := buildPepin(t)
+	stdout, _ := runPepin(t, bin, nil, "--help")
+
+	// Les fournisseurs sont lus depuis le BINAIRE, pas depuis le processus de test :
+	// le registre se peuple à partir des descripteurs du dépôt, et un test qui
+	// tournerait dans un autre répertoire mesurerait un registre vide.
+	liste, _ := runPepin(t, bin, nil, "provider", "list")
+	var enregistres []string
+	for _, l := range strings.Split(liste, "\n") {
+		champs := strings.Fields(l)
+		if len(champs) > 0 && !strings.HasPrefix(champs[0], "/") && champs[0] != "" {
+			if n := champs[0]; strings.ToLower(n) == n && !strings.Contains(n, "é") {
+				enregistres = append(enregistres, n)
+			}
+		}
+	}
+	if len(enregistres) == 0 {
+		t.Fatal("aucun fournisseur listé par le binaire : le test ne mesure rien")
+	}
+	for _, p := range enregistres {
+		if !strings.Contains(stdout, p) {
+			t.Errorf("la description racine omet le fournisseur %q, qui est enregistré", p)
+		}
+	}
+	// Le cas EXACT du rapport : un nom annoncé qui n'existe pas.
+	for _, p := range enregistres {
+		if p == "ovh" {
+			return // le jour où il existe, cette garde s'efface d'elle-même
+		}
+	}
+	if strings.Contains(strings.ToLower(stdout), "ovh") {
+		t.Error("la description racine annonce OVH, qui n'est pas un fournisseur enregistré")
+	}
+}
+
+// TestTheSCSLIndexHasNoMaintainerDefault — l'issue #154.
+//
+// Le défaut de `--index` était un chemin relatif remontant hors du répertoire courant
+// vers un dépôt dont le lecteur n'a jamais entendu parler : la disposition locale d'un
+// mainteneur échappée dans un binaire publié. L'erreur était juste et ne disait rien.
+func TestTheSCSLIndexHasNoMaintainerDefault(t *testing.T) {
+	bin := buildPepin(t)
+	_, stderr := runPepin(t, bin, nil, "scsl")
+
+	// Ce qui était fautif n'est pas de MENTIONNER ce chemin — l'exemple aide — c'est
+	// de le poser en DÉFAUT, comme s'il allait de soi sur la machine du lecteur.
+	aide, _ := runPepin(t, bin, nil, "scsl", "--help")
+	if strings.Contains(aide, `(default "../framework-scsl`) {
+		t.Error("`--index` porte encore le chemin d'un mainteneur comme valeur par défaut")
+	}
+	// Le message doit dire ce QU'EST le fichier, et que la commande est un outil de
+	// maintenance : sans cela, le lecteur ne peut pas savoir si c'est à lui d'agir.
+	for _, attendu := range []string{"--index", "SCSL", "MAINTENANCE"} {
+		if !strings.Contains(strings.ToUpper(stderr), strings.ToUpper(attendu)) {
+			t.Errorf("le message n'explique pas %q :\n%s", attendu, stderr)
+		}
+	}
+	if code := exitCodeOfArgs(t, bin, "scsl"); code != exitErreur {
+		t.Errorf("`pepin scsl` sans index rend %d, attendu %d", code, exitErreur)
+	}
+}
+
 // TestAnUnknownFormatIsRefused — l'issue #149.
 //
 // Une valeur inconnue de `--format` était ignorée sans un mot : le scan tournait et

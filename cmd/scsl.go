@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -21,11 +22,24 @@ var scslIndex string
 // Pépin non encore couvertes.
 var scslCmd = &cobra.Command{
 	Use:   "scsl",
-	Short: "Vérifier la cohérence avec l'index SCSL et piloter la roadmap",
+	Short: "Vérifier la cohérence avec l'index SCSL et piloter la roadmap (maintenance)",
 	// Aucune sous-commande : tout argument est donc une faute de frappe, et l'ignorer
 	// ferait exécuter autre chose que ce qui a été tapé.
 	Args: noArgs(),
 	RunE: func(_ *cobra.Command, _ []string) error {
+		if scslIndex == "" {
+			return errors.New(tr(
+				"--index est requis : chemin de l'API statique du framework SCSL (api/v1/exigences.json).\n"+
+					"  Cette commande confronte le référentiel de Pépin à l'index SCSL GELÉ, et cet index\n"+
+					"  vit dans le dépôt du framework, pas ici. C'est un outil de MAINTENANCE : un scan\n"+
+					"  n'en a pas besoin.\n"+
+					"  Exemple : pepin scsl --index ../framework-scsl/api/v1/exigences.json",
+				"--index is required: path to the SCSL framework's static API (api/v1/exigences.json).\n"+
+					"  This command confronts Pépin's reference with the FROZEN SCSL index, and that index\n"+
+					"  lives in the framework's repository, not here. It is a MAINTENANCE tool: a scan does\n"+
+					"  not need it.\n"+
+					"  Example: pepin scsl --index ../framework-scsl/api/v1/exigences.json"))
+		}
 		exs, err := referentiel.ParseCLDExigences(scslIndex)
 		if err != nil {
 			return err
@@ -309,6 +323,13 @@ var scslCmd = &cobra.Command{
 }
 
 func init() {
-	scslCmd.Flags().StringVar(&scslIndex, "index", "../framework-scsl/api/v1/exigences.json",
-		"chemin de l'API SCSL (api/v1/exigences.json du framework)")
+	// Aucune valeur par DÉFAUT. Elle valait `../framework-scsl/api/v1/exigences.json`,
+	// un chemin relatif qui remonte hors du répertoire courant vers un dépôt dont le
+	// lecteur n'a jamais entendu parler : la disposition locale d'un mainteneur
+	// échappée dans un binaire publié. L'erreur était juste et ne disait rien —
+	// impossible de savoir si `framework-scsl` était à installer, un sous-module
+	// oublié, ou un projet interne inaccessible.
+	scslCmd.Flags().StringVar(&scslIndex, "index", "",
+		tr("chemin de l'index SCSL gelé (api/v1/exigences.json du framework, REQUIS)",
+			"path to the frozen SCSL index (api/v1/exigences.json of the framework, REQUIRED)"))
 }
