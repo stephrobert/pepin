@@ -3,6 +3,18 @@
 name: scaleway
 description: "Scaleway — object storage, instances, IAM, security groups"
 
+# Catalogue des régions connues de ce fournisseur.
+#
+# Recopié du catalogue de souveraineté (internal/commonrules/rules/lib.rego) :
+# c'est la MÊME connaissance, et `TestTheRegionCatalogueMatchesTheRules` refuse
+# qu'elles divergent. Elle est ici parce que la CLI ne lit pas de Rego, et là-bas
+# parce qu'une règle ne lit pas de descripteur.
+#
+# Sert à AVERTIR qu'un `--region` n'y figure pas, jamais à refuser : la liste
+# appartient au fournisseur, et une région ajoutée demain doit rester scannable.
+regions: [fr-par, nl-ams, pl-waw]
+
+
 # Souveraineté du fournisseur (CLD-GVN-4) — faits ancrés. Cloud français du
 # groupe Iliad (capital européen) ; qualification SecNumCloud en cours.
 souverainete:

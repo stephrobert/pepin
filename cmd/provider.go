@@ -60,6 +60,13 @@ var providerValidateCmd = &cobra.Command{
 		if len(args) > 0 {
 			dir = args[0]
 		}
+		// `os.DirFS(dir)` ne vérifie rien : passer un FICHIER produisait
+		// « lecture de . : open . : not a directory », qui ne contient ni l'argument
+		// reçu ni ce qu'on attendait à la place. Le verbe prend un dossier, l'aide le
+		// dit, et le refus doit le dire aussi.
+		if err := doitEtreUnDossier(dir, tr("dossier de providers", "provider directory")); err != nil {
+			return err
+		}
 		res, err := genprovider.ValidateAll(os.DirFS(dir), ".")
 		if err != nil {
 			return err

@@ -124,8 +124,8 @@ func localize() {
 		"région cible pour la collecte live",
 		"target region for the live collection"))
 	setUsage(scanCmd, "kubeconfig", tr(
-		"chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)",
-		"path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (use READ-ONLY, short-lived access — never cluster-admin)"))
+		"chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (exige --live ; utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)",
+		"path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (requires --live; use READ-ONLY, short-lived access — never cluster-admin)"))
 	setUsage(scanCmd, "profile", tr(
 		"profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)",
 		"credentials profile for the live collection (e.g. ~/.osc/config.json)"))

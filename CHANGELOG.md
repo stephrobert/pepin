@@ -59,6 +59,33 @@ belongs in `git log`.
 
 ### Fixed
 
+- **The install page pinned `v0.1.0`, the version this repository itself declares
+  refuses every installation.** `examples/github-actions/pepin.yml` says it in as many
+  words: in v0.1.0 and v0.1.1 the action's installer called `gh attestation verify`
+  without a token, which refused *every* install. The install page is the first page a
+  newcomer copies from. Every pin now names the latest release, a sentence says the
+  caller passes no token since v0.2.0, and a guard requires the pinned versions to equal
+  the latest release recorded in the CHANGELOG — read from the repository rather than
+  from git tags, so a CI checkout without tags cannot make it drift.
+- **Four CLI messages pointed at the wrong thing.** `--policy-dir /nonexistent` and
+  `provider validate <file>` both reported `.` — the root of the filesystem view they
+  had just built — instead of the argument received; a file passed where a directory is
+  expected is now refused as such. `--kubeconfig` without `--live` offered two sources
+  that are not the one the caller had just named; the error and the flag's help now say
+  it needs `--live`.
+- **An unknown `--region` is flagged before the collection fails.** `--region
+  eu-nowhere-9` cost a minute of failing DNS lookups and seventeen "service unavailable"
+  units to read before the cause became guessable. It is a **warning**, not a refusal:
+  the region list belongs to the provider, and one added tomorrow must stay scannable
+  the same day — which is what separates it from an unknown `--gate`, whose vocabulary
+  is Pépin's own. The catalogue lives next to the provider descriptor and a guard
+  requires it to match the one the sovereignty rules already carry.
+- **`control explain` accepts the code the report prints.** The terminal report's `Code`
+  column and every block header carry the SCSL requirement (`CLD-STO-1`), and
+  `--format json` carries it in `code`; the command accepted only the check identifier,
+  which the report never prints. A reader who had just read a verdict had to guess.
+  Both forms now work, case-insensitively, and a requirement covering several controls
+  names them all rather than silently picking one.
 - **An access key whose expiry has already passed no longer counts as compliant.** The
   rule only refused a MISSING date, so a key still `ACTIVE` two years past its expiry
   passed — measured on a real tenant. Both readings of that state are bad, which is why

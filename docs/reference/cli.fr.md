@@ -122,7 +122,7 @@ Drapeaux:
   -f, --format string                    format de sortie : table | json | assessment | oscal | sarif (default "table")
       --gate string                      GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
   -h, --help                             aide pour scan
-      --kubeconfig string                chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)
+      --kubeconfig string                chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (exige --live ; utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)
       --live                             collecter l'inventaire en direct via l'API du provider (identifiants requis)
       --policy fichier                   fichier YAML de politique : réglages des contrôles (`controls:`) ET dérogations (`exceptions:`) — un seul fichier, nom moderne de --exceptions
   -p, --policy-dir stringArray           répertoire de règles externes (.rego), répétable — chargé sans recompilation

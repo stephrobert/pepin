@@ -121,7 +121,7 @@ Flags:
   -f, --format string                    output format: table | json | assessment | oscal | sarif (default "table")
       --gate string                      GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
   -h, --help                             help for scan
-      --kubeconfig string                path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (use READ-ONLY, short-lived access — never cluster-admin)
+      --kubeconfig string                path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (requires --live; use READ-ONLY, short-lived access — never cluster-admin)
       --live                             collect the inventory live through the provider API (credentials required)
       --policy file                      policy YAML file: control settings (`controls:`) AND exemptions (`exceptions:`) — one single file, the modern name of --exceptions
   -p, --policy-dir stringArray           directory of external rules (.rego), repeatable — loaded without recompiling

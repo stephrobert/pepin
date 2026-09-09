@@ -8,6 +8,8 @@ package referentiel
 import (
 	_ "embed"
 	"fmt"
+	"sort"
+	"strings"
 
 	yaml "go.yaml.in/yaml/v3"
 
@@ -67,6 +69,31 @@ func init() {
 func Lookup(code string) (Control, bool) {
 	ctl, ok := byCode[code]
 	return ctl, ok
+}
+
+// BySCSL retourne les contrôles rattachés à une exigence SCSL (`CLD-*`), triés par
+// code, ou une tranche vide.
+//
+// Une exigence en couvre parfois plusieurs : c'est ce partage qui fait que le rapport
+// terminal regroupe leurs findings sous un même en-tête, et c'est pourquoi la
+// recherche rend une LISTE plutôt qu'un contrôle — en choisir un serait en cacher un.
+//
+// La comparaison est insensible à la casse : l'exigence est imprimée en majuscules
+// par le rapport, et personne ne devrait avoir à reproduire une casse pour être
+// compris.
+func BySCSL(code string) []Control {
+	cible := strings.ToUpper(strings.TrimSpace(code))
+	var out []Control
+	for _, ctl := range byCode {
+		for _, s := range ctl.Scsl {
+			if strings.ToUpper(s) == cible {
+				out = append(out, ctl)
+				break
+			}
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Code < out[j].Code })
+	return out
 }
 
 // All retourne tous les contrôles, indexés par code agnostique (lecture seule).
