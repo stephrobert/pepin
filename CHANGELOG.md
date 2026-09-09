@@ -59,6 +59,16 @@ belongs in `git log`.
 
 ### Fixed
 
+- **The terminal report printed one control's title and remediation over another
+  control's findings.** A block prints a code, a title and a remediation and then lists
+  findings underneath, so it *asserts* those three of every finding it gathers —  but
+  findings were grouped by SCSL code alone, and a requirement often covers several
+  controls. The title and remediation were then those of the first finding. Measured on
+  a real tenant, the line a reader acts on told them to revoke a root key in order to
+  fix a `Resource="*"` grant. Fixed upstream in scankit 0.3.4: the grouping key is now
+  exactly what the block asserts, so `CLD-IAM-1` renders one block per control and the
+  controls table stops summing severity and counts across different controls on one row.
+  A single control under a code renders identically.
 - **A VM public through a secondary NIC, with SSH open on that NIC, produced no
   finding.** The collector projected the union of the NICs' public IPs, so the machine
   counted as public — but it confronted that with `Vm.SecurityGroups`, which the OAPI

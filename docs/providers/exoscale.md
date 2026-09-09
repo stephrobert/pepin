@@ -216,11 +216,11 @@ pepin scan exoscale --terraform examples/exoscale/terraform/plan.json
 <!-- pepin:gen provider-exoscale-scan -->
 ```text
 […]
-  │ CLD-IAM-1  │ IAM role with excessive privileges             │ HIGH     │ exoscale │ 1 │
   │ CLD-IAM-12 │ IAM policy allowing privilege escalation       │ HIGH     │ exoscale │ 1 │
   │ CLD-IAM-4  │ IAM role without a source IP restriction       │ HIGH     │ exoscale │ 2 │
   │ CLD-K8S-2  │ Kubernetes control plane not highly available  │ HIGH     │ exoscale │ 1 │
-  │ CLD-NET-1  │ SSH (port 22) open to the internet             │ HIGH     │ exoscale │ 2 │
+  │ CLD-NET-1  │ RDP (port 3389) open to the internet           │ HIGH     │ exoscale │ 1 │
+  │ CLD-NET-1  │ SSH (port 22) open to the internet             │ HIGH     │ exoscale │ 1 │
   │ CLD-GVN-1  │ Incomplete inventory and tagging               │ MEDIUM   │ exoscale │ 1 │
   │ CLD-K8S-3  │ Automatic Kubernetes cluster upgrades disabled │ MEDIUM   │ exoscale │ 1 │
   │ CLD-GVN-3  │ Resource hosted outside the European Union     │ LOW      │ exoscale │ 3 │
