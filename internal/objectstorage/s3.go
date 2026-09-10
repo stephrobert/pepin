@@ -27,7 +27,19 @@ import (
 // `sseKMS` indique que le provider expose le chiffrement par défaut du bucket via
 // une clé client (SSE-KMS) : seul un tel provider renseigne `sse_kms_enabled`
 // (CLD-CHF-4) ; les autres laissent l'attribut absent (capacité inexistante).
-func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, secretKey string, sseKMS bool) ([]model.Resource, error) {
+// CollectBuckets — `tagsPersisted` dit si le stockage objet de ce fournisseur
+// CONSERVE les étiquettes qu'on lui écrit.
+//
+// La distinction n'est pas théorique. `NoSuchTagSet` veut dire « aucune étiquette »
+// chez un fournisseur qui les persiste — une valeur, pas une erreur, et c'est
+// pourquoi on la projette en `[]`. Chez SOS (Exoscale), la MÊME réponse arrive après
+// un `PutBucketTagging` accepté en 200 : l'API ne persiste rien. Projeter `[]` y
+// affirmerait que l'exploitant n'a rien étiqueté, alors qu'il ne PEUT pas.
+//
+// Faux : l'attribut n'est alors pas projeté du tout, le verrou de capacité rend
+// « non évalué », et le contrôle d'étiquetage se tait — au lieu de crier sur chaque
+// bucket avec une remédiation que l'API ignore.
+func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, secretKey string, sseKMS, tagsPersisted bool) ([]model.Resource, error) {
 	cfg, err := awsconfig.LoadDefaultConfig(ctx,
 		awsconfig.WithRegion(region),
 		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
@@ -51,14 +63,14 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 		if b.Name == nil {
 			continue
 		}
-		out = append(out, collectBucket(ctx, client, provider, region, *b.Name, sseKMS))
+		out = append(out, collectBucket(ctx, client, provider, region, *b.Name, sseKMS, tagsPersisted))
 	}
 	return out, nil
 }
 
 // collectBucket interroge ACL, versioning, policy et tags d'un bucket (best
 // effort : un appel non supporté/absent n'interrompt pas la collecte).
-func collectBucket(ctx context.Context, client *s3.Client, provider, region, name string, sseKMS bool) model.Resource {
+func collectBucket(ctx context.Context, client *s3.Client, provider, region, name string, sseKMS, tagsPersisted bool) model.Resource {
 	attrs := map[string]any{"name": name}
 
 	if acl, err := client.GetBucketAcl(ctx, &s3.GetBucketAclInput{Bucket: &name}); err == nil {
@@ -77,6 +89,9 @@ func collectBucket(ctx context.Context, client *s3.Client, provider, region, nam
 	// un bucket avec ZÉRO tag ne l'était pas. « Aucun tag » est une valeur, pas une erreur.
 	t, tagErr := client.GetBucketTagging(ctx, &s3.GetBucketTaggingInput{Bucket: &name})
 	switch {
+	case !tagsPersisted:
+		// Rien n'est projeté : chez ce fournisseur la réponse ne dit pas ce que
+		// l'exploitant a écrit, elle dit que l'API ne l'a pas gardé.
 	case tagErr == nil:
 		tags := make([]any, 0, len(t.TagSet))
 		for _, tag := range t.TagSet {

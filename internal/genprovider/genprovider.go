@@ -65,8 +65,13 @@ type Descriptor struct {
 	} `yaml:"credentials"`
 	S3 struct {
 		Endpoint string `yaml:"endpoint"` // {region}/{zone} substitués ; vide = pas de buckets
-		Region   string `yaml:"region"`   // {region} ou {zone} (défaut {region})
-		SSEKMS   bool   `yaml:"sse_kms"`  // expose une clé client au niveau bucket (SSE-KMS, CLD-CHF-4)
+		// TagsPersisted : ce stockage objet CONSERVE-t-il les étiquettes écrites ?
+		// Absent = oui, le cas général. Faux quand l'API accepte l'écriture et ne
+		// garde rien : projeter « aucune étiquette » y affirmerait un choix que
+		// l'exploitant n'a pas fait et ne peut pas faire.
+		TagsPersisted *bool  `yaml:"tags_persisted"`
+		Region        string `yaml:"region"`  // {region} ou {zone} (défaut {region})
+		SSEKMS        bool   `yaml:"sse_kms"` // expose une clé client au niveau bucket (SSE-KMS, CLD-CHF-4)
 	} `yaml:"s3"`
 	EIM struct {
 		InlinePolicies bool `yaml:"inline_policies"` // collecter les politiques EIM inline (chaîne à 3 niveaux)
@@ -211,6 +216,8 @@ func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) (mode
 			Key:      creds["access_key"],
 			Secret:   creds["secret_key"],
 			SSEKMS:   g.desc.S3.SSEKMS,
+			// Absent = les étiquettes sont conservées, le cas général.
+			TagsPersisted: g.desc.S3.TagsPersisted == nil || *g.desc.S3.TagsPersisted,
 		}
 	}
 	// Auth par kubeconfig : le serveur d'API et le client mTLS viennent du fichier, pas

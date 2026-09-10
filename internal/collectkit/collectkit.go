@@ -28,6 +28,10 @@ const httpTimeout = 30 * time.Second
 type S3 struct {
 	Endpoint, Region, Key, Secret string
 	SSEKMS                        bool // le provider expose une clé client au niveau bucket (SSE-KMS, CLD-CHF-4)
+	// TagsPersisted : ce stockage CONSERVE-t-il les étiquettes écrites ? Faux quand
+	// l'API accepte l'écriture sans rien garder — l'attribut n'est alors pas projeté,
+	// plutôt que de faire passer une limite de l'API pour un choix de l'exploitant.
+	TagsPersisted bool
 }
 
 // EIM décrit la collecte des politiques EIM *inline* (chaîne à 3 niveaux, hors moteur
@@ -75,7 +79,7 @@ func Run(ctx context.Context, name string, spec collect.Spec, auth collect.Auth,
 	// différents devant la même situation : c'est cela que l'invariant remplace.
 	collectUnit(ctx, &inv, s3.Endpoint != "", "object_storage_bucket", []string{"object_storage_bucket"},
 		func() ([]model.Resource, error) {
-			return objectstorage.CollectBuckets(ctx, name, s3.Endpoint, s3.Region, s3.Key, s3.Secret, s3.SSEKMS)
+			return objectstorage.CollectBuckets(ctx, name, s3.Endpoint, s3.Region, s3.Key, s3.Secret, s3.SSEKMS, s3.TagsPersisted)
 		})
 	// Les politiques EIM inline alimentent le MÊME type normalisé que les politiques
 	// managées (`iam_policy`) : leur unité est distincte — c'est une autre chaîne
