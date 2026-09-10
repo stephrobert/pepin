@@ -540,6 +540,19 @@ def version_du_bloc(bloc):
     return m.group(1) if m else None
 
 
+def vers_le_tag_publie(bloc, publie):
+    """Réécrit les versions d'un bloc documenté vers le dernier tag PUBLIÉ.
+
+    Rend le couple (bloc, versions substituées). La liste rendue n'est pas décorative :
+    c'est elle qui fait écrire la substitution dans la preuve. Une commande documentée
+    qu'on modifie en silence ne prouve plus ce que la page dit.
+    """
+    substituees = sorted({v for v in SEMVER.findall(bloc) if v != publie})
+    for v in substituees:
+        bloc = bloc.replace(v, publie)
+    return bloc, substituees
+
+
 def outil_absent(*noms):
     """Le motif de saut si un outil manque, None s'ils sont tous là."""
     manquants = [n for n in noms if shutil.which(n) is None]
@@ -653,21 +666,44 @@ def check_bloc_readme_pointe_le_dernier_tag():
 
 
 def check_image_publiee():
-    """L'image publiée se vérifie et scanne, avec les commandes de docs/install.md."""
+    """L'image publiée se vérifie et scanne, avec les commandes de docs/install.md.
+
+    LA VERSION VÉRIFIÉE EST CELLE QUI EST PUBLIÉE, jamais celle qu'on tague.
+
+    Le piège, trouvé au premier usage réel de cette porte. `docs/install.md` épingle la
+    version qu'on RELÂCHE — `TestTheInstallPagePinsTheLatestRelease` l'exige, et il a
+    raison : la page d'installation est la première qu'on recopie, elle ne doit pas
+    proposer une version périmée. Mais cette version n'existe pas encore sur ghcr.io au
+    moment où la porte tourne, puisque c'est le tag qui la crée. La porte bloquait donc
+    le tag sur l'absence d'un artefact que ce tag allait produire.
+
+    Ce que cette étape mesure vraiment, c'est que la PROCÉDURE documentée fonctionne
+    contre une release réelle. On substitue donc le dernier tag publié à celui que la
+    page épingle, et la substitution est ÉCRITE dans la preuve : une commande modifiée
+    en silence ne prouve plus ce que la page dit.
+    """
     nom = "l'image publiée se vérifie et scanne un plan, avec les commandes documentées"
     bloc = bloc_shell_sous("docs/install.md", "The container image")
     if bloc is None:
         return controle(nom, NOGO, "docs/install.md : le bloc de « The container image » est introuvable")
     if (motif := outil_absent("cosign", "docker")):
         return saute(nom, motif)
+    prec = tag_precedent()
+    if not prec:
+        return saute(nom, "aucun tag antérieur : aucune image publiée à vérifier")
+    bloc, substituees = vers_le_tag_publie(bloc, prec)
     # Le bloc documenté scanne `/work/plan.json` : on lui en donne un, celui du dépôt.
     tmp = SORTIE / "stage2-image"
     prep = (f"rm -rf {tmp} && mkdir -p {tmp} && "
             f"cp {ROOT}/examples/scaleway/terraform/plan.json {tmp}/plan.json && cd {tmp}\n")
     # `pepin scan` rend 1 sur un plan non conforme : c'est un succès du chemin, pas un
     # échec de la commande. On ne tolère que le 1, jamais le 2 (erreur technique).
-    return shell(nom, prep + bloc + "\nrc=$?\n[ $rc -le 1 ] || exit $rc\n",
-                 "l'image publiée ne se vérifie plus, ou ne scanne plus un plan")
+    c = shell(nom, prep + bloc + "\nrc=$?\n[ $rc -le 1 ] || exit $rc\n",
+              "l'image publiée ne se vérifie plus, ou ne scanne plus un plan")
+    if substituees and c["verdict"] == GO:
+        c["evidence"] = (f"vérifié sur {prec}, le dernier tag publié — la page épingle "
+                         f"{', '.join(substituees)}, qui n'est pas encore publiée")
+    return c
 
 
 def check_installeur():
@@ -1028,6 +1064,23 @@ def selftest():
          fuites_locales("voir docs/install.md et .github/workflows/release.yml"), [])
     veut("une URL ne fuit rien",
          fuites_locales("https://github.com/stephrobert/pepin/releases"), [])
+
+    # ── L'étape 2 vérifie ce qui est PUBLIÉ, pas ce qu'on tague ────────────────
+    #
+    # Trouvé au premier usage réel de la porte : `docs/install.md` épingle la version
+    # qu'on relâche — une autre porte l'exige —, mais son image n'existe pas encore sur
+    # ghcr.io, puisque c'est le tag qui la crée. La porte bloquait le tag sur l'absence
+    # d'un artefact que ce tag allait produire.
+    bloc_doc = "cosign verify ghcr.io/x/pepin:v0.4.0\ndocker run ghcr.io/x/pepin:v0.4.0 scan"
+    reecrit, subs = vers_le_tag_publie(bloc_doc, "v0.3.0")
+    veut("la version documentée est réécrite vers le tag publié", "v0.4.0" in reecrit, False)
+    veut("le tag publié est celui qu'on vérifie", reecrit.count("v0.3.0"), 2)
+    veut("la substitution est RENDUE, pour être écrite dans la preuve", subs, ["v0.4.0"])
+    # Le contre-exemple : quand la page épingle déjà le tag publié, on ne touche à rien
+    # et on ne prétend pas avoir substitué.
+    inchange, subs = vers_le_tag_publie("cosign verify ghcr.io/x/pepin:v0.3.0", "v0.3.0")
+    veut("rien à substituer, rien de substitué", subs, [])
+    veut("le bloc est intact", inchange, "cosign verify ghcr.io/x/pepin:v0.3.0")
 
     # ── Les ancres, telles que GitHub les fabrique ─────────────────────────────
     veut("ancre accentuée", ancre_de("Ce que le scan à rôle réduit a mesuré"),

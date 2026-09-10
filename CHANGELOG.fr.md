@@ -22,6 +22,20 @@ l'une ni l'autre appartient au `git log`.
 
 ## [0.4.0] - 2026-09-10
 
+### Corrigé
+
+- **La porte de release bloquait un tag sur l'absence d'un artefact que ce tag allait
+  créer.** L'étape 2 exécute les commandes de conteneur **extraites** de
+  `docs/install.md`, et cette page épingle la version qu'on **relâche** —
+  `TestTheInstallPagePinsTheLatestRelease` l'exige, à raison : une page d'installation
+  est la première qu'on recopie, elle ne doit pas proposer une version que le dépôt ne
+  publie plus. Mais cette image n'existe pas sur ghcr.io pendant que la porte tourne,
+  puisque c'est le tag qui la crée. Trouvé au premier usage réel de la porte, en coupant
+  la v0.4.0. L'étape 2 vérifie désormais le **dernier tag publié** — ce qu'elle mesure
+  vraiment, à savoir que la procédure documentée fonctionne contre une release réelle —
+  et **écrit la substitution dans sa preuve** : une commande documentée réécrite en
+  silence ne prouve plus ce que la page dit.
+
 ### Ajouté
 
 - **`mise run release-gate -- vX.Y.Z` — un verdict avant un tag, GO ou NO-GO, et son

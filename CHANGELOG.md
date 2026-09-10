@@ -21,6 +21,19 @@ belongs in `git log`.
 
 ## [0.4.0] - 2026-09-10
 
+### Fixed
+
+- **The release gate blocked a tag on the absence of an artefact that tag would create.**
+  Stage 2 runs the container commands **extracted** from `docs/install.md`, and that page
+  pins the version being **released** — `TestTheInstallPagePinsTheLatestRelease` requires
+  it, rightly: an install page is the first thing anyone copies, and it must not offer a
+  version the repository no longer publishes. But that image does not exist on ghcr.io
+  while the gate runs, since the tag is what creates it. Found on the gate's first real
+  use, cutting v0.4.0. Stage 2 now verifies the **last published tag** — which is what it
+  actually measures, that the documented procedure works against a real release — and
+  **writes the substitution into its evidence**: a documented command silently rewritten
+  no longer proves what the page says.
+
 ### Added
 
 - **`mise run release-gate -- vX.Y.Z` — one verdict before a tag, GO or NO-GO, with its
