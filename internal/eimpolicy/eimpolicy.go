@@ -281,6 +281,8 @@ func post(ctx context.Context, hc *http.Client, auth collect.Auth, url, body str
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	// Signature de l'appel calculée AVANT l'authentification (cf. collect.CallSignature).
+	called := collect.CallSignature(req.Method, req.URL)
 	if auth != nil {
 		if err := auth.Apply(req); err != nil {
 			return err
@@ -299,7 +301,6 @@ func post(ctx context.Context, hc *http.Client, auth collect.Auth, url, body str
 		// Erreur TYPÉE : le statut range l'échec dans sa classe, et l'état de collecte
 		// publie cette classe. C'est ce collecteur-ci qui a motivé l'invariant — un 403
 		// sur ReadUserPolicies faisait échouer tout le scan, ou pire, laissait conclure.
-		called := req.Method + " " + req.URL.Scheme + "://" + req.URL.Host + req.URL.Path
 		return &collect.HTTPError{Status: resp.StatusCode, Call: called, Body: strings.TrimSpace(string(raw))}
 	}
 	return json.Unmarshal(raw, into)

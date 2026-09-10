@@ -578,6 +578,8 @@ func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Pa
 	if body != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	// Signature de l'appel calculée AVANT l'authentification (cf. callSignature).
+	called := CallSignature(req.Method, req.URL)
 	if auth != nil {
 		if err := auth.Apply(req); err != nil {
 			return nil, "", err
@@ -588,10 +590,6 @@ func fetch(ctx context.Context, hc *http.Client, rawURL string, auth Auth, p *Pa
 		return nil, "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	// La requête telle qu'elle a été émise. Les paramètres de requête (page, jeton)
-	// sont écartés : ils varient d'une page à l'autre alors que l'endpoint, lui, est
-	// ce qui atteste la donnée.
-	called := req.Method + " " + req.URL.Scheme + "://" + req.URL.Host + req.URL.Path
 	respBody, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
 	if rerr != nil {
 		return nil, called, fmt.Errorf(i18n.T("lecture de la reponse de %s : %w", "reading the response from %s: %w"), u.Host, rerr)
@@ -1065,3 +1063,21 @@ func regionOfZone(zone string) string {
 // régions des descripteurs. Exposée pour être ÉPROUVÉE, pas pour être appelée : les
 // specs la demandent par le transform `region_of_zone`.
 func RegionOfZone(zone string) string { return regionOfZone(zone) }
+
+// CallSignature rend la requête telle qu'elle a été ÉMISE : méthode, schéma, hôte et
+// chemin. Les paramètres de requête sont écartés — ils varient d'une page à l'autre
+// alors que l'endpoint, lui, est ce qui atteste la donnée.
+//
+// Elle est construite AVANT que l'authentification ne soit posée sur la requête, et
+// c'est délibéré. Une analyse de flot de données considère qu'un objet dans lequel on
+// a écrit un secret est teinté TOUT ENTIER : relire ensuite `req.URL` pour bâtir une
+// chaîne qui finit dans un rapport publié fait remonter une alerte de fuite en clair.
+// Elle est fausse ici — ni en-tête ni requête ne sont lus —, mais l'analyse a raison
+// sur le principe, et une chaîne bâtie avant l'auth ne peut pas être fausse pour de
+// bon un jour. Le coût est nul, la propriété est structurelle.
+//
+// La provenance ne nomme pour autant jamais un appel qui n'a pas eu lieu : la chaîne
+// est CALCULÉE tôt et n'est UTILISÉE qu'après une réponse.
+func CallSignature(method string, u *url.URL) string {
+	return method + " " + u.Scheme + "://" + u.Host + u.Path
+}

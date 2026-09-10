@@ -34,6 +34,10 @@ func CollectClusters(ctx context.Context, hc *http.Client, provider, endpoint, r
 	if err != nil {
 		return nil, err
 	}
+	// Signature de l'appel calculée AVANT l'authentification (cf. collect.CallSignature) :
+	// un objet dans lequel on a écrit un secret est teinté tout entier pour une analyse
+	// de flot, et cette chaîne finit dans un rapport publié.
+	called := collect.CallSignature(req.Method, req.URL)
 	// Auth OKS : deux en-têtes en clair (pas de SigV4). Confirmé sur l'API réelle.
 	req.Header.Set("AccessKey", accessKey)
 	req.Header.Set("SecretKey", secretKey)
@@ -42,9 +46,6 @@ func CollectClusters(ctx context.Context, hc *http.Client, provider, endpoint, r
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	// La requête telle qu'elle a été RÉELLEMENT émise, lue après réponse : une
-	// provenance ne nomme jamais un appel qui n'a pas eu lieu (cf. model.Provenance).
-	called := req.Method + " " + req.URL.Scheme + "://" + req.URL.Host + req.URL.Path
 	body, rerr := io.ReadAll(io.LimitReader(resp.Body, maxRespBytes))
 	if rerr != nil {
 		return nil, fmt.Errorf(i18n.T("lecture de la reponse OKS : %w", "reading the OKS response: %w"), rerr)
