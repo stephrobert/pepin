@@ -20,7 +20,7 @@ leur utilisateur à expliquer à un auditeur un changement qu'il n'a pas fait,
 et c'est ici que cette explication commence. Un refactor qui ne change ni
 l'une ni l'autre appartient au `git log`.
 
-## [Non publié]
+## [0.4.0] - 2026-09-10
 
 ### Ajouté
 
