@@ -12,11 +12,27 @@ package pepin.rules
 import rego.v1
 
 # Audit Kubernetes non configuré (aucun endpoint d'audit) sur un cluster managé.
-# Ne se déclenche que si le collecteur a renseigné `audit_enabled` (provider qui
-# expose la capacité) ; un provider sans cet attribut ne déclenche pas la règle.
+#
+# # Le faux vert que ce contrôle a produit
+#
+# Le défaut par ressource était `true` : attribut absent ⇒ on suppose l'audit activé.
+# L'intention était de ne pas crier chez un fournisseur qui n'expose pas la capacité —
+# mais l'API SKS OMET l'objet `audit` quand l'audit est coupé, et `audit_enabled` en est
+# DÉRIVÉ. Un cluster sans audit n'avait donc pas l'attribut, la règle supposait
+# « activé », et le rapport concluait `pass` sur le cas le plus courant : celui qu'il
+# existe pour attraper.
+#
+# Le silence devenait un vert parce que le verrou de capacité, lui, voyait l'attribut
+# collecté sur le type — un cluster voisin, audité, suffisait à le poser.
+#
+# La question « ce fournisseur expose-t-il la capacité » se pose donc à l'échelle de
+# l'INVENTAIRE, pas de la ressource. Si un cluster porte l'attribut, le fournisseur
+# l'expose, et un cluster qui ne le porte pas n'a pas d'audit. Là où aucun cluster ne le
+# porte, la règle se tait toujours et c'est au verrou de dire « non évalué ».
 deny contains f if {
 	some c in resources_of_type("kubernetes_cluster")
-	not truthy(object.get(c.attributes, "audit_enabled", true))
+	_audit_expose
+	not truthy(object.get(c.attributes, "audit_enabled", false))
 	name := object.get(c.attributes, "name", c.id)
 	f := {
 		"code": "kubernetes_cluster_audit_logging_enabled",
@@ -32,4 +48,14 @@ deny contains f if {
 			"remediation_en": "Configure the cluster's Kubernetes audit (collection endpoint) and centralise the logs according to the retention policy.",
 		},
 	}
+}
+
+# _audit_expose — ce fournisseur expose-t-il la capacité d'audit ?
+#
+# Vrai dès qu'UN cluster de l'inventaire porte l'attribut, quelle que soit sa valeur :
+# `audit_enabled: false` prouve à lui seul que la capacité est lue. Aucune provenance
+# n'est consultée (ADR-0017).
+_audit_expose if {
+	some c in resources_of_type("kubernetes_cluster")
+	"audit_enabled" in object.keys(c.attributes)
 }

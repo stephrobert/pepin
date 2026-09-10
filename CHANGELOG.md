@@ -103,6 +103,20 @@ belongs in `git log`.
 
 ### Fixed
 
+- **Two more `pass` verdicts nothing established, both from the same shape as the audit
+  of a rule without a description.** A guard asked *per resource* a question that is
+  *per provider*, and the capability lock — seeing the attribute collected on the type
+  thanks to a neighbour — let the assessment conclude with no finding.
+  `kubernetes_cluster_audit_logging_enabled` defaulted an absent `audit_enabled` to
+  **true**, while the SKS API **omits the `audit` object when audit is off**: a cluster
+  with no audit had no attribute, the rule assumed "enabled", and the report said `pass`
+  on the very case it exists to catch. `governance_resource_required_tags` skipped, in
+  silence, every resource whose type does not carry `tags` — measured on an Exoscale
+  tenant where SOS buckets carry them and instances, volumes and clusters do not. Both
+  questions are now asked of the **inventory**, and the tags one **per type**: a bucket
+  carrying tags proves nothing about an instance, since those are two APIs and two
+  collections. The counterexample each guard protected still holds, with its own test: a
+  provider that exposes the capability nowhere still fires nothing.
 - **A control emitted six correct deviations on a provider the reference did not
   declare it for.** `objectstorage_bucket_default_encryption` fires on Scaleway — the
   shared S3 collector sets `default_encryption_enabled` on every bucket, and SSE is
