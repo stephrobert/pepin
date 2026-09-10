@@ -151,10 +151,22 @@ collecte:
       map:
         vm_id: id
         public_ip: public-ip
+        # `public-ip-assignment` dit si l'instance a une interface PUBLIQUE : `none`,
+        # `inet4` ou `dual` (API v2 Compute, opération get-instance). Le fait est
+        # OBSERVÉ, pas déduit d'une absence de `public-ip` — qui ne distinguerait pas
+        # « privée » de « non collectée ».
+        #
+        # Il compte parce que chez Exoscale les groupes de sécurité filtrent
+        # l'interface publique : une instance qui n'en a pas se voit attacher
+        # `security-groups: []` PAR CONSTRUCTION. Sans ce champ, le contrôle « VM sans
+        # groupe de sécurité » criait sur chaque instance privée, avec une remédiation
+        # que l'API ignore.
+        public_interface: public-ip-assignment
         security_group_ids: security-groups
         state: state
         user_data: user-data
       transforms:
+        public_interface: { none: false, inet4: true, dual: true }
         security_group_ids: pluck:id   # [{id,...}] -> [id]
   
     # Utilisateurs de l'organisation → iam_user (MFA).
@@ -370,6 +382,9 @@ contrat:
       etat: verifie
       source: egoscale/v3 Instance
       mapping:
+        public_interface: 'DÉRIVÉ : public-ip-assignment (none|inet4|dual) → false|true. Les groupes de sécurité
+          filtrent l''interface PUBLIQUE : une instance sans interface se voit attacher security-groups: [] par
+          construction (API v2 Compute, get-instance).'
         vm_id: ID (UUID)
         state: State (InstanceState)
         public_ip: PublicIP (net.IP)

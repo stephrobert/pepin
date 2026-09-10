@@ -364,7 +364,8 @@
         "outscale/ztiac-two-tier"
       ],
       "rego_tests": [
-        "internal/commonrules/rules/compute_blockstorage_test.rego"
+        "internal/commonrules/rules/compute_blockstorage_test.rego",
+        "internal/commonrules/rules/compute_instance_has_security_group_test.rego"
       ]
     },
     "compute_instance_no_secrets_in_user_data": {

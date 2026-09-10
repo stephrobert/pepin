@@ -109,6 +109,17 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une instance privée n'obtient plus un écart `critical` qu'elle ne peut pas
+  corriger.** Là où les groupes de sécurité d'un fournisseur filtrent l'interface
+  **publique**, une instance qui n'en a pas se voit attacher `security-groups: []` **par
+  construction** — l'API le fait, l'exploitant ne l'a pas choisi, et aucune remédiation
+  n'y change rien. Dix instances privées valaient dix findings `critical` impossibles à
+  faire disparaître, ce qui est le plus court chemin vers un outil qu'on ignore. Le fait
+  est désormais **observé** (`public_interface`, dérivé du `public-ip-assignment`
+  d'Exoscale), et non déduit d'un `public_ip` absent — qui ne distinguerait pas
+  « privée » de « non collectée ». Là où un fournisseur ne publie pas ce champ, rien ne
+  change ; et une instance **avec** interface publique et sans groupe reste un écart
+  `critical`.
 - **Deux `pass` de plus que rien n'établissait, de la même forme que celui de la règle
   sans description.** Une garde posait *par ressource* une question qui est *par
   fournisseur*, et le verrou de capacité — voyant l'attribut collecté sur le type grâce

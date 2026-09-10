@@ -12,7 +12,7 @@ with the same regard as the CLI surface.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v7
+pepin-inventory/v8
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -148,7 +148,7 @@ descriptors and from the Go collectors — never a hand-kept list beside the cod
 | `blockstorage_snapshot` | `creation_date` `global_permission` `snapshot_id` `state` `volume_id` |
 | `blockstorage_volume` | `encrypted` `state` `tags` `volume_id` |
 | `compute_image` | `image_id` `public` `state` `tags` |
-| `compute_instance` | `deletion_protection` `nic_public_ips` `public_ip` `security_group_ids` `state` `tags` `user_data` `vm_id` |
+| `compute_instance` | `deletion_protection` `nic_public_ips` `public_interface` `public_ip` `security_group_ids` `state` `tags` `user_data` `vm_id` |
 | `governance_provider` | `capital_control` `eu_established` `extraterritorial_exposure` `jurisdiction` `secnumcloud` `secnumcloud_regions` |
 | `iam_policy` | `manages_iam` `owner_group` `owner_user` `policy_id` `policy_name` `scope` `statements` |
 | `iam_role` | `admin_privileges` `editable` `manages_iam` `max_session_ttl` `name` `policy_has_expiration` `role_id` `source_ip_restricted` |

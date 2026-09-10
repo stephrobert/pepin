@@ -121,7 +121,17 @@ import (
 //	désormais rendu POUR la région scannée (`qualifie` | `hors_perimetre` |
 //	`perimetre_inconnu`), et le périmètre voyage à côté pour qu'un consommateur
 //	puisse le vérifier plutôt que de croire le statut sur parole.
-const InventoryFormat = "pepin-inventory/v7"
+//
+// v8 : une `compute_instance` peut porter `public_interface`, le fait qu'elle ait ou
+//
+//	non une interface PUBLIQUE (Exoscale : public-ip-assignment none|inet4|dual, API
+//	v2 Compute get-instance). Ajout PUR. Il est nécessaire parce que, chez un
+//	fournisseur dont les groupes de sécurité filtrent l'interface publique, une
+//	instance qui n'en a pas se voit attacher une liste vide PAR CONSTRUCTION : le
+//	contrôle « VM sans groupe de sécurité » criait alors sur chaque instance privée,
+//	avec une remédiation que l'API ignore. Déduire le fait d'une absence de
+//	`public_ip` ne distinguerait pas « privée » de « non collectée ».
+const InventoryFormat = "pepin-inventory/v8"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire
