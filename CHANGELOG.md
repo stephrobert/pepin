@@ -569,6 +569,31 @@ belongs in `git log`.
 
 ### Changed
 
+- **Five verdicts move on an unchanged tenant, and each one is measured** (issue #229).
+  The three qualification tenants were applied, scanned, sealed, destroyed and **proven
+  destroyed** on real Scaleway, Outscale and Exoscale accounts on 2026-09-10 — 15, 19 and
+  20 collection families listed, no tenant resource left, no before/after delta, for a
+  total of 0.072 EUR. What follows changes what a report says about infrastructure you
+  did not touch:
+  - `compute_instance_has_security_group` no longer flags a **private** instance: a
+    security group does not attach to an instance with no public interface, so the
+    remediation could never be carried out (#212). On Exoscale live the control now
+    answers `not-evaluated` rather than `pass`, because an observed empty list is
+    counted as not collected — a coverage gap, pinned and named as #227.
+  - `governance_resource_required_tags` no longer flags an Exoscale SOS bucket: SOS
+    accepts `PutBucketTagging` and persists nothing, so such a bucket never carries a
+    tag whatever you do (#208). The control says it cannot conclude instead of shouting.
+  - `database_service_not_open_to_internet` names **the database**, not the address of
+    the ACL rule that exposes it (#193). One database, one subject.
+  - `objectstorage_bucket_default_encryption` on a Terraform plan is no longer **absent**
+    from the assessment: it appears as `not-evaluated`, naming the attribute the plan
+    does not carry. A control that vanishes reads like a control with nothing to say.
+  - `governance_resource_region_in_eu` concludes `pass` on an Outscale plan, where it
+    used to give up: the region is now **derived from the zone the plan carries**
+    (`placement_subregion_name` → `region`, #194). Verified before being pinned — a
+    `not-evaluated` turning into a `pass` has the exact shape of a false green, and this
+    one rests on an observed value with its formula, not on a fabrication.
+
 - **A refused Outscale unit now names the grant that would have collected it, and the
   documentation says a complete scan needs the account owner's keys** (issue #168).
   Measured on 2026-09-09 against a real `eu-west-2` tenant, with an EIM user carrying

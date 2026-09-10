@@ -135,14 +135,30 @@ controls:
     terraform: not-evaluated
 
   compute_instance_has_security_group:
-    # MESURÉ, FAUX POSITIF : `untagged` est privée (`private = true`, public-ip-assignment
-    # none) ; l'API ignore les groupes déclarés et rend `security-groups: []` — un
-    # groupe ne s'attache pas à une instance sans interface publique. La règle en fait
-    # un écart, avec une remédiation inexécutable. Issue #212 ; sa
-    # correction fera rougir cette porte sciemment.
+    # RÉCONCILIÉ le 2026-09-10 par le premier run réel — et cette attente avait annoncé
+    # par écrit les deux mouvements avant qu'ils arrivent.
+    #
+    # 1. #212 est CORRIGÉE : `untagged` est privée (`public-ip-assignment: none`, donc
+    #    `public_interface: false`), et un groupe ne s'attache pas à une instance sans
+    #    interface publique. Ce n'est plus un écart, et sa remédiation était
+    #    inexécutable — le genre de finding qui fait désactiver un outil.
+    #
+    # 2. Le contrôle ne rend pourtant pas `pass` mais `not-evaluated`, et c'est #227.
+    #    L'inventaire scellé de ce run porte bien `security_group_ids: []` sur cette
+    #    instance, mais `collected()` compte une liste VIDE comme non collectée ;
+    #    l'intersection retire alors l'attribut de tout le type. La ressource fautive
+    #    fait taire le contrôle qui la vise — le motif de cette vague, un cran plus bas
+    #    que les règles.
+    #
+    # `coverage_gap` : le scan dit « je n'ai pas pu conclure », jamais « conforme ».
+    # C'est la direction sûre (ADR-0006), donc non bloquant — mais c'est une capacité
+    # perdue, et #227 doit la rendre.
     live:
-      fail: ["${output.vm_untagged_id}"]
-      silent: ["${output.vm_exposed_id}", "${output.vm_hardened_id}"]
+      status: not-evaluated
+      known_defect:
+        issue: 227
+        class: coverage_gap
+        note: "une liste vide OBSERVÉE est comptée comme non collectée ; l'instance sans groupe retire l'attribut de tout son type"
     terraform: pass
 
   compute_instance_no_secrets_in_user_data:
@@ -252,17 +268,19 @@ controls:
 
   # ── Gouvernance ───────────────────────────────────────────────────────────────
   governance_resource_required_tags:
-    # Les trois buckets SOS sont fautifs PAR CONSTRUCTION : SOS accepte
-    # PutBucketTagging et ne persiste rien (NoSuchTagSet juste après, mesuré par SigV4
-    # et par la CLI aws). Un bucket SOS n'a jamais d'étiquette, quoi qu'on fasse ;
-    # épinglé tel que mesuré, faux positif non remédiable — issue #208.
-    # Et FAUX VERT sur `untagged` : la collecte live ne projette pas `labels` sur les
-    # instances (ni volumes, ni clusters), la règle les saute en silence, seuls les
-    # buckets sont jugés — issue #211 ; sa correction ajoutera
-    # `${output.vm_untagged_id}` au `fail` et fera rougir cette porte.
+    # RÉCONCILIÉ le 2026-09-10 par le premier run réel. #208 est CORRIGÉE : SOS accepte
+    # PutBucketTagging et ne persiste RIEN (NoSuchTagSet juste après, mesuré par SigV4
+    # et par la CLI aws), donc le descripteur déclare `s3.tags_persisted: false` et un
+    # bucket SOS n'est plus tenu pour un bucket sans étiquette. Crier dessus était un
+    # faux positif non remédiable.
+    #
+    # Le contrôle rend donc `not-evaluated` sur cette source, avec son motif : « la
+    # collecte de la donnée requise n'est pas confirmée pour ce fournisseur (contrat
+    # non vérifié) ». Ce n'est pas un défaut mais une LIMITE déclarée : la source
+    # n'expose pas la donnée, et le scan le dit au lieu de conclure (ADR-0006,
+    # ADR-0015).
     live:
-      fail: ["${output.bucket_public}", "${output.bucket_unversioned}", "${output.bucket_hardened}"]
-      silent: ["${output.vm_hardened_id}", "${output.vm_secrets_id}", "${output.volume_unsnapshotted_id}", pepin-qual-sks-weak]
+      status: not-evaluated
     terraform:
       fail: [pepin-qual-vm-untagged]
       silent: [pepin-qual-vm-hardened, pepin-qual-vm-secrets]
