@@ -205,7 +205,7 @@ resources, not a checklist of controls.
   "control": "objectstorage_bucket_public_access",
   "evidence": {
     "attribute": "acl",
-    "observed": "Bucket \"scaleway_object_bucket.backups\" is publicly accessible (public ACL).",
+    "observed": "Bucket \"backups-prod\" is publicly accessible (public ACL).",
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -213,7 +213,7 @@ resources, not a checklist of controls.
     "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
-    "tf_line": "81"
+    "tf_line": "77"
   },
   "references": [
     {
@@ -248,7 +248,7 @@ resources, not a checklist of controls.
   "remediation": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
   "severity": "critical",
   "status": "fail",
-  "subject": "scaleway_object_bucket.backups",
+  "subject": "backups-prod",
   "title": "Object storage publicly exposed"
 }
 ```

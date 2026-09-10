@@ -117,6 +117,17 @@ belongs in `git log`.
   carrying tags proves nothing about an instance, since those are two APIs and two
   collections. The counterexample each guard protected still holds, with its own test: a
   provider that exposes the capability nowhere still fires nothing.
+- **One database got two subjects on a Terraform plan.** The ACL-derived deviation named
+  the ACL resource, the instance-derived ones named the database: three deviations, two
+  names — and an exception written on one missed the other, silently. Two things were
+  needed. A mapping that reads its carrier through `_parent.<field>` now gets that field
+  filled from the declared reference, like any other argument (ADR-0022 filled simple
+  paths only). And the address so obtained is then resolved to the **identity the target
+  carries in the inventory** — a database that has a `name` is named by it, not by its
+  Terraform address. The rewrite is bounded to attributes actually filled from a
+  reference: a value that merely looks like an address is never touched. The same fix
+  makes a Scaleway bucket's subject read `backups-prod` instead of
+  `scaleway_object_bucket.backups`, which is what a reader is looking for.
 - **A control emitted six correct deviations on a provider the reference did not
   declare it for.** `objectstorage_bucket_default_encryption` fires on Scaleway — the
   shared S3 collector sets `default_encryption_enabled` on every bucket, and SSE is

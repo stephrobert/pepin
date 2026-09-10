@@ -58,8 +58,8 @@ large tenant, you want to know the tool started. The closing line is
  ⚡ Immediate action — top 3 most severe deviations
 ──────────────────────────────────────────────────────────────────────────────
 
-  1. 🔴 CRIT  CLD-STO-1 — Bucket "scaleway_object_bucket.backups" is publicly accessible …
-     subject: scaleway_object_bucket.backups
+  1. 🔴 CRIT  CLD-STO-1 — Bucket "backups-prod" is publicly accessible (public ACL).
+     subject: backups-prod
   2. 🟠 HIGH  CLD-CMP-9 — VM "scaleway_instance_server.web": cleartext secret in user-dat…
      subject: scaleway_instance_server.web
   3. 🟠 HIGH  CLD-STO-3 — Managed database "pepin-test-rdb": automatic backups are disabl…
@@ -73,7 +73,7 @@ large tenant, you want to know the tool started. The closing line is
   Total deviations: 1
 
   Details:
-      CRIT  scaleway_object_bucket.backups — Bucket "scaleway_object_bucket.backups" is publicly accessible (public ACL).
+      CRIT  backups-prod — Bucket "backups-prod" is publicly accessible (public ACL).
 
   Remediation
     Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.
@@ -270,7 +270,7 @@ screen of a long report is already actionable.
   Total deviations: 1
 
   Details:
-      CRIT  scaleway_object_bucket.backups — Bucket "scaleway_object_bucket.backups" is publicly accessible (public ACL).
+      CRIT  backups-prod — Bucket "backups-prod" is publicly accessible (public ACL).
 
   Remediation
     Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.
@@ -402,7 +402,7 @@ documented in
   "control": "objectstorage_bucket_public_access",
   "evidence": {
     "attribute": "acl",
-    "observed": "Bucket \"scaleway_object_bucket.backups\" is publicly accessible (public ACL).",
+    "observed": "Bucket \"backups-prod\" is publicly accessible (public ACL).",
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -410,7 +410,7 @@ documented in
     "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
-    "tf_line": "81"
+    "tf_line": "77"
   },
   "references": [
     {
@@ -445,7 +445,7 @@ documented in
   "remediation": "Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.",
   "severity": "critical",
   "status": "fail",
-  "subject": "scaleway_object_bucket.backups",
+  "subject": "backups-prod",
   "title": "Object storage publicly exposed"
 }
 ```

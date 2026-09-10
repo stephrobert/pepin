@@ -72,8 +72,8 @@ actionable:
  ⚡ Immediate action — top 3 most severe deviations
 ──────────────────────────────────────────────────────────────────────────────
 
-  1. 🔴 CRIT  CLD-STO-1 — Bucket "scaleway_object_bucket.backups" is publicly accessible …
-     subject: scaleway_object_bucket.backups
+  1. 🔴 CRIT  CLD-STO-1 — Bucket "backups-prod" is publicly accessible (public ACL).
+     subject: backups-prod
   2. 🟠 HIGH  CLD-CMP-9 — VM "scaleway_instance_server.web": cleartext secret in user-dat…
      subject: scaleway_instance_server.web
   3. 🟠 HIGH  CLD-STO-3 — Managed database "pepin-test-rdb": automatic backups are disabl…
