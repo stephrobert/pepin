@@ -58,13 +58,49 @@ the Python tooling must still be able to cut a release.
    `docs/assets/quickstart.version` records it. The preflight compares that file
    with the tag and refuses to proceed if they differ.
 
-4. **Run the preflight**, which replays offline everything that must hold:
+4. **Run the release gate**, which returns a single verdict and its report:
 
    ```bash
-   mise run release-check -- v0.1.0
+   mise run release-gate -- v0.1.0
    ```
 
-   It checks: a clean tree on `main`; the tag free locally *and* on origin;
+   One command, one verdict, **GO** or **NO-GO**. Offline first, then what needs the
+   network: a gate that demands a network to say a CHANGELOG is missing is a gate you
+   run less often. Every stage writes `release-gate/stageN.json` (verdict, evidence,
+   duration) and the run ends with `release-gate/REPORT.md`, **attached to the GitHub
+   Release**: it is the evidence that GO was said, and why.
+
+   | Stage | What it measures | What it needs |
+   |---|---|---|
+   | 1 | the repository, and what its documentation claims | nothing |
+   | 3 | the qualification tenant (below) | a cloud account, `PEPIN_GATE_LIVE=1` |
+   | 4 | the frozen surfaces, and what a moved verdict must have written | nothing |
+
+   Three rules govern the verdict, and none of them is negotiable:
+
+   - **nothing says GO while a stage is red**. The final verdict is not a judgement
+     call: one red check is enough;
+   - **a skipped stage carries a WRITTEN reason**, which appears in the report
+     (`--skip '4=no previous tag on this clone'`). A silent `--skip` is refused: that
+     is how a gate turns into a formality;
+   - **the gate must be able to go red.** `mise run gate:selftest` breaks each of
+     these rules and demands a refusal. It runs inside `mise run prepush`, like the
+     self-tests of `falsify` and `qualify`.
+
+   Beyond the gates the repository already had, stage 1 measures **what the
+   documentation claims**, because that is where an external audit found by hand what
+   no gate was looking at:
+
+   - no Pépin version pinned in `docs/install*.md` or `examples/` predates the
+     minimum [`references/release/pinning.yaml`](./references/release/pinning.yaml)
+     declares safe — and both install pages do cite that minimum;
+   - every relative link in the documentation resolves, **anchor included**;
+   - the binary's opening sentence names **exactly** the registered providers,
+     measured by running `pepin` and `pepin provider list`, not by re-reading the
+     code.
+
+   Stage 1 also runs the **preflight** (`mise run release-check -- v0.1.0`), which
+   stays usable on its own. It checks: a clean tree on `main`; the tag free locally *and* on origin;
    `mise run test` (Go with `-race`, the Rego suites, and the frozen-surface
    gates), `mise run validate` and `mise run vet`; **zero SCSL drift** (see
    below); the exit codes answered by the **built binary** on the example
@@ -80,7 +116,7 @@ the Python tooling must still be able to cut a release.
    CI runs them on every push; the preflight asks CI whether it did, on this
    exact commit.
 
-5. **Tag and push**:
+5. **Tag and push** — only on **GO**:
 
    ```bash
    git tag -a v0.1.0 -m "v0.1.0"

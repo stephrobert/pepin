@@ -24,6 +24,30 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **`mise run release-gate -- vX.Y.Z` — un verdict avant un tag, GO ou NO-GO, et son
+  rapport** (issue #178, étapes 1 et 4). `release-check` et le canari faisaient chacun
+  ce qu'ils annonçaient ; ce que le dépôt ne savait pas produire, c'est un **seul**
+  verdict, lu depuis ce qu'un utilisateur vit vraiment. Un audit externe d'une journée
+  a trouvé à la main cinq défauts qu'aucune porte ne regardait, et trois d'entre eux
+  étaient des affirmations de la **documentation**. Au-delà de lancer d'un bloc ce qui
+  existait déjà — préflight, `audit`, `adr-drift`, `falsify:all`, une campagne de
+  fuzzing bornée, les blocs générés —, l'étape 1 mesure donc ces affirmations : aucune
+  version de Pépin épinglée dans `docs/install*.md` ou `examples/` n'est antérieure au
+  minimum que `references/release/pinning.yaml` déclare sûr (et les deux pages
+  d'installation le citent) ; tout lien relatif de la documentation résout, **ancre
+  comprise** ; et la phrase d'accueil du binaire nomme exactement les fournisseurs
+  enregistrés, mesurée en le lançant. L'étape 4 ajoute la règle que l'en-tête du
+  CHANGELOG promettait déjà : un `expected.yaml` qui a bougé depuis le tag précédent
+  oblige un CHANGELOG qui a bougé aussi — un verdict qui change sur un tenant inchangé
+  est ce que son lecteur devra expliquer à un auditeur. Chaque étape écrit
+  `release-gate/stageN.json` et le run finit sur `release-gate/REPORT.md`, destiné à
+  être joint à la release. Trois règles non négociables : rien ne dit GO tant qu'une
+  étape est rouge ; une étape sautée porte un motif **écrit** qui apparaît dans le
+  rapport, et un `--skip` muet est refusé ; et la porte doit savoir rougir —
+  `mise run gate:selftest` casse chacune de ces règles et exige un refus, et tourne
+  dans `prepush`. L'étape 2 (les artefacts publiés) n'est pas encore écrite, et la
+  porte le dit plutôt que de la sauter en silence.
+
 - **Tenants de qualification Outscale et Exoscale** (issue #198). Outscale : 79 ressources
   Terraform, plus 6 buckets OOS et une politique EIM inline créés par le crochet `extra`
   du tenant, appliqués et détruits sur un compte réel — la machine à deux cartes, la clé

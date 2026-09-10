@@ -1,0 +1,47 @@
+# La version la plus ANCIENNE que ce dépôt déclare sûre à épingler.
+#
+# Pourquoi ce fichier existe. La consigne « épinglez au moins v0.2.0 » vivait dans
+# une phrase de `docs/install.md`, et les exemples qu'on copie-colle vivaient
+# ailleurs. Rien ne reliait les deux : une page d'installation a pu rester épinglée
+# sur une version que le dépôt qualifie lui-même de cassée, et personne ne relit une
+# consigne qu'il a écrite. L'audit externe de `main` @ 82ba444 l'a trouvée à la main
+# (défaut #H de l'issue #178).
+#
+# La porte de release lit CE fichier, puis vérifie deux choses : que les deux pages
+# d'installation citent bien ce minimum, et qu'aucune version de Pépin épinglée dans
+# `docs/install*.md` ou `examples/` ne lui est antérieure. Un exemple plus ancien
+# que le minimum n'est pas une coquille : c'est une instruction de sécurité que le
+# projet donne contre lui-même.
+#
+# Ce fichier ne dit RIEN de la dernière version publiée. Une release ne l'incrémente
+# donc pas mécaniquement : on ne l'élève que lorsqu'une version devient dangereuse à
+# épingler, et le motif en dit la raison.
+
+minimum_sur: v0.2.0
+
+motif: >
+  Dans v0.1.0 et v0.1.1, l'installeur de l'action GitHub appelait l'API GitHub avec
+  le jeton du workflow appelant. Depuis v0.2.0 l'appelant ne passe aucun jeton :
+  l'action vérifie elle-même la somme de contrôle de ce qu'elle télécharge.
+
+motif_en: >
+  In v0.1.0 and v0.1.1 the GitHub action's installer called the GitHub API with the
+  calling workflow's token. Since v0.2.0 the caller passes no token: the action
+  verifies the checksum of what it downloads itself.
+
+# Où la consigne est écrite pour un lecteur humain. La porte exige que le minimum
+# ci-dessus apparaisse dans CHACUN de ces fichiers : le dépôt est bilingue, et une
+# consigne de sécurité présente dans une seule langue n'est donnée qu'à la moitié
+# des lecteurs.
+pages:
+  - docs/install.md
+  - docs/install.fr.md
+
+# Où les versions épinglées se vérifient. Seules comptent les occurrences qui
+# désignent Pépin — un `v0.18.2` de provider Terraform vendu dans un exemple n'a
+# rien à voir avec la version de cet outil, et le confondre rendrait la porte
+# bruyante, donc désarmée.
+surfaces:
+  - docs/install.md
+  - docs/install.fr.md
+  - examples/

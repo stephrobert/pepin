@@ -299,7 +299,7 @@ go test ./cmd/ -run '^$' -fuzz 'FuzzInventoryWalk' -fuzztime="$t"
 
 [tasks.prepush]
 description = "Tout ce sur quoi une PR échouera, qui coûte des secondes et n'exige aucun compte"
-depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftest", "falsify:lint", "qualify:selftest"]
+depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftest", "falsify:lint", "qualify:selftest", "gate:selftest"]
 # Ce que c'est, et ce que ce n'est délibérément PAS.
 #
 # Chacune de ces portes est déterministe, hors ligne, et tient en quelques
@@ -312,6 +312,29 @@ depends = ["validate", "test", "audit", "adr-drift", "secrets", "falsify:selftes
 # fournisseur. Ces choses vivent en nocturne ou à la qualification de release,
 # précisément pour ne pas rendre ce chemin-ci trop lent pour être suivi.
 run = "echo 'prepush : toutes les portes locales sont vertes'"
+
+# LA PORTE DE RELEASE (issue #178) : un seul verdict, GO ou NO-GO, et son rapport.
+#
+# Hors ligne d'abord — une porte qui exige le réseau pour dire qu'un CHANGELOG manque
+# est une porte qu'on lance moins souvent. Chaque étape écrit release-gate/stageN.json,
+# et le run finit sur release-gate/REPORT.md, joint à la release comme la preuve que
+# GO a été dit et pourquoi.
+#
+# Les trois règles : rien ne dit GO tant qu'une étape est rouge ; une étape sautée
+# porte un motif ÉCRIT, qui apparaît dans le rapport, et un `--skip` muet est refusé ;
+# et la porte doit savoir rougir — `gate:selftest` casse chacune de ces règles et
+# exige un refus, comme falsify et qualify le font pour les leurs.
+#
+#   mise run release-gate -- v0.4.0
+#   mise run release-gate -- v0.4.0 --stages 1
+#   mise run release-gate -- v0.4.0 --skip 4=aucun tag anterieur sur ce clone
+[tasks.release-gate]
+description = "Le verdict unique avant un tag : mise run release-gate -- vX.Y.Z"
+run = "python3 tools/release/gate.py run"
+
+[tasks."gate:selftest"]
+description = "La porte de release se prouve : chacune de ses règles est cassée et doit refuser"
+run = "python3 tools/release/gate.py selftest"
 
 # Le TENANT DE QUALIFICATION (issue #178, étape 3) : une stack Terraform par
 # fournisseur, délibérément mal configurée — une ressource par contrôle, un
