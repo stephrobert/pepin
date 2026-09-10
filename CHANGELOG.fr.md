@@ -66,6 +66,19 @@ l'une ni l'autre appartient au `git log`.
   jamais GO : un vert qui n'a rien mesuré est le défaut que ce produit reproche aux
   autres.
 
+  La porte écrit aussi `release-gate/SUMMARY.md` : le verdict **seul** — nom des
+  contrôles, leur verdict, la date, le commit —, destiné au **corps** de la GitHub
+  Release. Le rapport détaillé, lui, ne se publie délibérément pas : il porte les
+  chemins du mainteneur, les sorties brutes des outils et, à l'étape 3, les
+  identifiants de ressources d'un compte réel — et il ne pourrait de toute façon pas
+  entrer dans `checksums.txt`, puisqu'il est produit localement avant le tag quand les
+  sommes sont engendrées en CI (ADR-0016). Le corps d'une release n'est pas un artefact
+  — c'est le même registre que les notes qu'il prolonge, une affirmation humaine, non
+  signée —, donc le verdict n'y ajoute aucune promesse de confiance nouvelle. Et la
+  porte prouve que ce résumé est publiable : elle refuse de le déclarer tel s'il nomme
+  un chemin de cette machine, le dit à l'écran, et coiffe le fichier d'un
+  `NON PUBLIABLE`.
+
 - **Tenants de qualification Outscale et Exoscale** (issue #198). Outscale : 79 ressources
   Terraform, plus 6 buckets OOS et une politique EIM inline créés par le crochet `extra`
   du tenant, appliqués et détruits sur un compte réel — la machine à deux cartes, la clé

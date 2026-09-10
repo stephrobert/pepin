@@ -145,6 +145,36 @@ the Python tooling must still be able to cut a release.
    git push origin v0.1.0
    ```
 
+6. **Append the verdict to the release body**, once the workflow is done:
+
+   ```bash
+   gh release view v0.1.0 --json body --jq .body > /tmp/notes.md
+   cat release-gate/SUMMARY.md >> /tmp/notes.md
+   gh release edit v0.1.0 --notes-file /tmp/notes.md
+   ```
+
+   `SUMMARY.md` is the verdict ALONE — check names, their verdicts, the date and the
+   commit — and the gate refuses to call it publishable if it names a path on this
+   machine (a `--skip` reason is hand-written: that is where a path would get in). It
+   says so on screen and stamps the file `NON PUBLIABLE` so nobody pastes it by
+   accident.
+
+   **The detailed report is not published**, for two independent reasons pointing the
+   same way:
+
+   - it carries paths from the maintainer's machine, raw tool output and, at stage 3,
+     **resource identifiers from a real account** — which is exactly why
+     `release-gate/` is git-ignored;
+   - it cannot enter `checksums.txt`, generated in CI from what CI holds, while the
+     report is produced **locally, before the tag**. A `.md` attached to the release
+     would be an artefact covered by no documented verification path, which
+     [ADR-0016](./docs/adr/0016-chaine-dapprovisionnement-verifiable.md) forbids.
+
+   A release BODY is not an artefact: it is the same register as the release notes it
+   extends — a human claim, unsigned, and never presented as anything else. The verdict
+   therefore adds no new trust promise; it states what was measured, when, and on which
+   commit.
+
 Pushing the tag is what publishes. It cannot be undone quietly: a tag has to
 be deleted on both sides, and a release that reached the world has been
 downloaded.

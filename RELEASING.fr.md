@@ -146,6 +146,37 @@ l'outillage Python doit pouvoir couper une release.
    git push origin v0.1.0
    ```
 
+6. **Joindre le verdict au corps de la release**, une fois le workflow terminé :
+
+   ```bash
+   gh release view v0.1.0 --json body --jq .body > /tmp/notes.md
+   cat release-gate/SUMMARY.md >> /tmp/notes.md
+   gh release edit v0.1.0 --notes-file /tmp/notes.md
+   ```
+
+   `SUMMARY.md` est le verdict SEUL — nom des contrôles, leur verdict, la date et le
+   commit —, et la porte refuse de le déclarer publiable s'il nomme un chemin de cette
+   machine (un motif de `--skip` est écrit à la main : c'est par là qu'un chemin
+   entrerait). Elle le dit à l'écran et coiffe le fichier d'un `NON PUBLIABLE` pour que
+   personne ne le colle par mégarde.
+
+   **Le rapport détaillé, lui, ne se publie pas**, et pour deux raisons indépendantes
+   qui vont dans le même sens :
+
+   - il porte des chemins de la machine du mainteneur, les sorties brutes des outils
+     et, à l'étape 3, **les identifiants de ressources d'un compte réel** — c'est
+     précisément pourquoi `release-gate/` est ignoré par git ;
+   - il ne peut pas entrer dans `checksums.txt`, engendré en CI depuis ce que la CI
+     détient, alors que le rapport est produit **localement, avant le tag**. Un `.md`
+     joint à la release serait un artefact couvert par aucun chemin de vérification
+     documenté, ce que
+     [l'ADR-0016](./docs/adr/0016-chaine-dapprovisionnement-verifiable.md) interdit.
+
+   Le CORPS d'une release n'est pas un artefact : c'est le même registre que les notes
+   de version qu'il prolonge — une affirmation humaine, non signée, et que personne n'a
+   jamais présentée autrement. Le verdict n'y ajoute donc aucune promesse de confiance
+   nouvelle ; il dit ce qui a été mesuré, quand, et sur quel commit.
+
 Pousser le tag est ce qui publie. Cela ne s'annule pas discrètement : un tag se
 supprime des deux côtés, et une release qui a atteint le monde a été
 téléchargée.

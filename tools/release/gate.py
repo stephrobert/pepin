@@ -789,11 +789,13 @@ def ecris_rapport(version, etapes, final):
         (SORTIE / f"stage{e['stage']}.json").write_text(
             json.dumps(e, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
+    commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
+                            capture_output=True, text=True).stdout.strip()
     lignes = [
         f"# Porte de release — {version}",
         "",
         f"Lancée le {dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')}, "
-        f"sur `{subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT, capture_output=True, text=True).stdout.strip()}`.",
+        f"sur `{commit}`.",
         "",
         "| Étape | Verdict | Durée |",
         "|---|:-:|--:|",
@@ -818,7 +820,85 @@ def ecris_rapport(version, etapes, final):
     rouges = [str(e["stage"]) for e in etapes if e["verdict"] == NOGO]
     lignes.append(f"**{'GO' if final == GO else 'NO-GO: étape(s) ' + ', '.join(rouges)}**")
     (SORTIE / "REPORT.md").write_text("\n".join(lignes) + "\n", encoding="utf-8")
-    return SORTIE / "REPORT.md"
+
+    resume, fuites = resume_publiable(version, etapes, final, commit)
+    (SORTIE / "SUMMARY.md").write_text(resume, encoding="utf-8")
+    if fuites:
+        (SORTIE / "SUMMARY.md").write_text(
+            "<!-- NON PUBLIABLE — ce résumé nomme des chemins locaux :\n" +
+            "\n".join(fuites) + "\n-->\n" + resume, encoding="utf-8")
+    return SORTIE / "REPORT.md", fuites
+
+
+# ── Ce qui peut être PUBLIÉ, et ce qui ne le peut pas ──────────────────────────
+#
+# Le rapport complet ne se publie pas, et pour deux raisons indépendantes qui
+# convergent.
+#
+# LA PREMIÈRE EST UNE QUESTION DE DONNÉES. `release-gate/` est ignoré par git parce
+# que ses artefacts portent les identifiants de ressources d'un compte réel (étape 3),
+# des chemins de la machine du mainteneur, et les sorties brutes des outils. Rien de
+# tout cela n'a à partir chez un tiers, et le geste « joindre le rapport » est
+# exactement celui qui l'y enverrait sans que personne ne l'ait décidé.
+#
+# LA SECONDE EST UNE QUESTION DE CHAÎNE. L'ADR-0016 pose que TOUT artefact publié
+# figure dans `checksums.txt`, donc sous la signature — et le rapport ne peut pas y
+# entrer : il est produit LOCALEMENT, avant le tag, alors que `checksums.txt` est
+# engendré en CI depuis ce que la CI détient. Un `.md` joint à la release serait un
+# artefact couvert par aucun chemin de vérification documenté, et il passerait sous
+# `TestEveryPublishedArtefactIsChecksummed`, dont le motif ne reconnaît que
+# json/jsonl/txt/bundle. Une garde écrite parce que le SBOM avait glissé sous un
+# commentaire ne doit pas laisser glisser un rapport sous une extension.
+#
+# Ce qui se publie, c'est donc le VERDICT, dans le CORPS de la release — là où vivent
+# déjà les notes de version, qui sont une affirmation humaine non signée et que
+# personne n'a jamais présentée autrement. Le résumé n'ajoute aucune promesse de
+# confiance nouvelle : il dit ce qui a été mesuré, quand, et sur quel commit.
+#
+# Et il le prouve : `resume_publiable` REND les fuites qu'il détecte au lieu de les
+# taire. Un motif de saut est écrit à la main par le mainteneur — c'est précisément par
+# là qu'un chemin local entrerait.
+
+FUITE = re.compile(r"(/home/[^\s`\"']+|/Users/[^\s`\"']+|(?<![\w/])/(?:tmp|var|opt|srv)/[^\s`\"']+)")
+
+
+def fuites_locales(texte):
+    """Les fragments d'un texte destiné à la publication qui nomment cette machine."""
+    return sorted({m.group(0) for m in FUITE.finditer(texte)})
+
+
+def resume_publiable(version, etapes, final, commit):
+    """Le verdict, sans aucune preuve : nom des contrôles, verdicts, date, commit.
+
+    Rend le couple (markdown, fuites). Une fuite n'est pas corrigée en silence — la
+    corriger reviendrait à décider à la place du mainteneur ce qu'il voulait écrire.
+    """
+    lignes = [
+        f"### Porte de release — {version}",
+        "",
+        f"Verdict : **{'GO' if final == GO else 'NO-GO'}** · "
+        f"commit `{commit}` · {dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d')}",
+        "",
+    ]
+    for e in etapes:
+        lignes.append(f"**Étape {e['stage']} — {e['title']} : {e['verdict'].upper()}**")
+        lignes.append("")
+        if e["verdict"] == SKIPPED and not e["checks"]:
+            lignes += [f"- — sautée : {e.get('skip_reason', '')}", ""]
+            continue
+        for c in e["checks"]:
+            ligne = f"- {SYMBOLE[c['verdict']]} {c['name']}"
+            # Un saut est la SEULE chose dont le motif se publie : c'est lui qui dit ce
+            # que la porte n'a pas mesuré, et le taire vaudrait un vert sans mesure.
+            if c["verdict"] == SKIPPED:
+                ligne += f" — sauté : {c['evidence']}"
+            lignes.append(ligne)
+        lignes.append("")
+    lignes.append("_Le rapport détaillé reste local : il porte des chemins de la machine "
+                  "qui a lancé la porte, et les identifiants de ressources du tenant de "
+                  "qualification._")
+    texte = "\n".join(lignes) + "\n"
+    return texte, fuites_locales(texte)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -909,6 +989,45 @@ def selftest():
     veut("une version postérieure passe", trop_ancienne("v0.3.0", "v0.2.0"), False)
     veut("une chaine qui n'est pas une version ne refuse rien",
          trop_ancienne("vX.Y.Z", "v0.2.0"), False)
+
+    # ── Le résumé PUBLIABLE ne publie jamais les preuves ───────────────────────
+    #
+    # La propriété qui décide : ce fichier part chez un tiers. Le rapport détaillé
+    # porte des chemins de la machine du mainteneur, les sorties brutes des outils et,
+    # à l'étape 3, les identifiants de ressources d'un compte réel. Le résumé ne doit
+    # rien en emporter — c'est un contrôle de FUITE, pas de mise en forme.
+    etapes_test = [{
+        "stage": 2, "title": "réseau", "verdict": NOGO, "duration_s": 3,
+        "checks": [
+            controle("un contrôle vert", GO, "/home/mainteneur/secret/chemin"),
+            controle("un contrôle rouge", NOGO, "identifiant-de-ressource-i-0123456789"),
+            controle("un contrôle sauté", SKIPPED, "outil(s) absent(s) : cosign"),
+        ],
+    }]
+    resume, fuites = resume_publiable("v1.2.3", etapes_test, NOGO, "abc1234")
+    veut("aucune preuve dans le résumé", "/home/mainteneur" in resume, False)
+    veut("aucun identifiant de ressource dans le résumé",
+         "i-0123456789" in resume, False)
+    veut("les noms de contrôle, eux, y sont", "un contrôle rouge" in resume, True)
+    veut("le motif d'un SAUT s'y publie", "outil(s) absent(s) : cosign" in resume, True)
+    veut("le verdict y est", "NO-GO" in resume, True)
+    veut("le commit y est", "abc1234" in resume, True)
+    veut("un résumé propre ne signale aucune fuite", fuites, [])
+
+    # Un motif de `--skip` est écrit à la main : c'est par là qu'un chemin local entre.
+    etape_sautee = [{"stage": 2, "title": "réseau", "verdict": SKIPPED, "duration_s": 0,
+                     "checks": [], "skip_reason": "cosign absent de /home/bob/.local/bin"}]
+    _, fuites = resume_publiable("v1.2.3", etape_sautee, GO, "abc1234")
+    veut("un chemin local dans un motif de saut est signalé",
+         fuites, ["/home/bob/.local/bin"])
+    veut("un chemin macOS aussi", fuites_locales("voir /Users/qui/dossier"), ["/Users/qui/dossier"])
+    veut("un chemin temporaire aussi", fuites_locales("dans /tmp/run-42"), ["/tmp/run-42"])
+    # Le contre-exemple : une porte qui crierait sur tout serait désarmée. Un chemin du
+    # DÉPÔT est relatif, et il n'a rien de local.
+    veut("un chemin du dépôt ne fuit rien",
+         fuites_locales("voir docs/install.md et .github/workflows/release.yml"), [])
+    veut("une URL ne fuit rien",
+         fuites_locales("https://github.com/stephrobert/pepin/releases"), [])
 
     # ── Les ancres, telles que GitHub les fabrique ─────────────────────────────
     veut("ancre accentuée", ancre_de("Ce que le scan à rôle réduit a mesuré"),
@@ -1012,9 +1131,16 @@ def cmd_run(args):
                           "duration_s": round(time.time() - t0, 1)})
 
     final = verdict_final(resultats)
-    chemin = ecris_rapport(version, resultats, final)
+    chemin, fuites = ecris_rapport(version, resultats, final)
     rouges = [str(e["stage"]) for e in resultats if e["verdict"] == NOGO]
-    print(f"\n{chemin.relative_to(ROOT)}")
+    print(f"\n{chemin.relative_to(ROOT)}  (détaillé, LOCAL)")
+    print(f"{(SORTIE / 'SUMMARY.md').relative_to(ROOT)}  (verdict seul, à joindre au corps de la release)")
+    if fuites:
+        print("  ATTENTION : le résumé nomme des chemins de cette machine, il n'est pas "
+              "publiable tel quel —")
+        for f in fuites:
+            print(f"    {f}")
+        print("  ils viennent d'un motif de --skip : le réécrire sans chemin local.")
     print("GO" if final == GO else f"NO-GO: étape(s) {', '.join(rouges)}")
     return 0 if final == GO else 1
 

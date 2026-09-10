@@ -62,6 +62,17 @@ belongs in `git log`.
   **all** skipped is reported SKIPPED, never GO, because a green that measured nothing is
   the defect this product holds against others.
 
+  The gate also writes `release-gate/SUMMARY.md`: the verdict **alone** — check names,
+  their verdicts, the date, the commit — meant for the **body** of the GitHub Release.
+  The detailed report is deliberately not published: it carries the maintainer's paths,
+  raw tool output and, at stage 3, resource identifiers from a real account, and it
+  could not enter `checksums.txt` anyway, since it is produced locally before the tag
+  while the checksums are generated in CI (ADR-0016). A release body is not an artefact
+  — it is the same register as the notes it extends, a human claim, unsigned — so the
+  verdict adds no new trust promise there. And the gate proves the summary is safe to
+  publish: it refuses to call it publishable when it names a path on this machine, says
+  so on screen, and stamps the file `NON PUBLIABLE`.
+
 - **Qualification tenants for Outscale and Exoscale** (issue #198). Outscale: 79 Terraform
   resources plus 6 OOS buckets and an inline EIM policy created by the tenant's `extra`
   hook, applied and destroyed on a real account — the two-NIC machine, the root access
