@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 // La porte des DROITS MINIMAUX : chaque unité de collecte qu'un descripteur sait
@@ -16,8 +17,11 @@ import (
 //
 // La porte n'exige PAS que le droit soit vérifié. Elle exige qu'il soit DÉCLARÉ
 // et que son état soit dit. `a_verifier` est une réponse parfaitement recevable —
-// c'est même la seule honnête tant qu'aucun scan à rôle réduit n'a eu lieu, et ce
-// dépôt n'en fait aucun. Ce qui est refusé, c'est le silence.
+// c'est la seule honnête tant qu'aucun scan à rôle réduit n'a porté sur l'unité.
+// Ce qui est refusé, c'est le silence.
+//
+// Quand un tel scan a bien eu lieu, il se CONSIGNE (`mesure:`), et les deux portes
+// du bas disent ce que ce consignement engage.
 
 // collectionUnitsOf énumère les unités de collecte qu'un descripteur produit :
 // les types de la spec `collecte`, plus les collecteurs Go que le descripteur
@@ -176,6 +180,70 @@ func TestGrantsAndSourcesCarryNoProse(t *testing.T) {
 					t.Errorf("%s / %s : le champ %s porte de la prose accentuée (%q) ; les identifiants restent neutres, la prose va dans `note`/`note_en`",
 						name, p.Unit, f.label, f.value)
 				}
+			}
+		}
+	}
+}
+
+// TestAMeasuredPermissionIsDatedAndSituated : un scan à rôle réduit ne vaut que
+// daté et situé.
+//
+// Sans date, rien ne permet de juger le relevé périmé — et un droit se retire, un
+// service change de modèle d'identité. Sans région, on ne sait pas sur quel plan
+// de contrôle il a porté, alors qu'un même fournisseur n'expose pas les mêmes
+// services partout (OKS n'existe pas en cloudgouv). Une mesure vague se lirait
+// comme une preuve tout en n'en étant pas une, ce qui est pire que son absence.
+func TestAMeasuredPermissionIsDatedAndSituated(t *testing.T) {
+	for name, d := range loadAllDescriptors(t) {
+		for _, p := range d.Permissions {
+			m := p.Mesure
+			if m == (MesurePermission{}) {
+				continue // aucun scan à rôle réduit n'a porté sur cette unité
+			}
+			if _, err := time.Parse("2006-01-02", m.Date); err != nil {
+				t.Errorf("%s / %s : mesure sans date lisible (%q) — un relevé qu'on ne peut pas juger périmé n'est pas un relevé",
+					name, p.Unit, m.Date)
+			}
+			if strings.TrimSpace(m.Region) == "" {
+				t.Errorf("%s / %s : mesure sans région — un droit se mesure sur un plan de contrôle, pas dans l'absolu",
+					name, p.Unit)
+			}
+			switch m.RoleReduit {
+			case RoleReduitSuffisant, RoleReduitRefuse:
+			default:
+				t.Errorf("%s / %s : role_reduit %q inconnu (%s | %s)",
+					name, p.Unit, m.RoleReduit, RoleReduitSuffisant, RoleReduitRefuse)
+			}
+		}
+	}
+}
+
+// TestAMeasuredRefusalNamesTheGrantThatWorks : le défaut fondateur de l'issue #168,
+// tenu par un test.
+//
+// `object_storage_bucket` et `kubernetes_cluster` portaient un `grant` VIDE. Le
+// relevé de capacités n'imprime la ligne « droit requis » que si le descripteur la
+// déclare, et le motif d'un « non évalué » de même : l'opérateur ne lisait donc que
+// l'erreur brute d'OOS — « The AWS access key Id you provided does not exist in our
+// records » — qui l'envoyait vérifier une clé parfaitement valide, alors que le fait
+// mesuré est qu'OOS ne connaît AUCUNE clé EIM.
+//
+// Un refus mesuré sans droit nommé est donc pire qu'un refus non mesuré : on sait ce
+// qu'il faut, et on ne le dit pas. La réserve est exigée dans la foulée, parce que
+// c'est elle qui porte ce que le fournisseur a réellement répondu.
+func TestAMeasuredRefusalNamesTheGrantThatWorks(t *testing.T) {
+	for name, d := range loadAllDescriptors(t) {
+		for _, p := range d.Permissions {
+			if p.Mesure.RoleReduit != RoleReduitRefuse {
+				continue
+			}
+			if strings.TrimSpace(p.Grant) == "" {
+				t.Errorf("%s / %s : rôle réduit mesuré REFUSÉ sans nommer le droit qui, lui, collecte — le relevé de capacités et le motif du « non évalué » resteront muets sous l'erreur brute de l'API",
+					name, p.Unit)
+			}
+			if strings.TrimSpace(p.Note) == "" || strings.TrimSpace(p.NoteEn) == "" {
+				t.Errorf("%s / %s : refus mesuré sans réserve écrite — dire CE QUE le fournisseur a répondu, pas seulement qu'il a dit non",
+					name, p.Unit)
 			}
 		}
 	}

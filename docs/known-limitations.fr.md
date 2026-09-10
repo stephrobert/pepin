@@ -285,25 +285,53 @@ Ce qui reste vrai : Pépin ne peut pas vous dire ce qu'un identifiant *plus larg
 Il rend compte de la surface qu'on lui a donnée, et de l'absence de cette surface, jamais de ce
 qui s'étend au-delà.
 
-### Les permissions minimales sont documentées, pas mesurées
+### Les permissions minimales sont documentées ; mesurées chez un seul fournisseur
 
 Chaque page de fournisseur liste les appels d'API que fait un scan et les permissions de lecture
 qu'ils exigent. Ces listes sont **dérivées des descripteurs de collecte**, c'est-à-dire des
 endpoints que la spec déclare, et confrontées à la documentation IAM publique du fournisseur.
 Chaque page distingue les lignes confirmées par la documentation de celles qui restent non
-vérifiées.
+vérifiées, et **date** celles qu'un scan réel a mesurées.
 
-Deux moitiés, et elles ne sont pas dans le même état. La moitié **endpoints** est désormais
-mesurée : une session enregistrée prouve que le collecteur émet bien ce que le descripteur
-déclare, donc la liste n'est plus une affirmation sur du code que personne n'a regardé tourner
-([Tracer les appels réels](guides/tracing-api-calls.fr.md)). La moitié **droits** ne l'est pas,
-et ne peut pas l'être d'ici : confirmer que `InstancesReadOnly` et rien de plus suffit à
-`ListSecurityGroups` exige de lancer un scan avec un rôle délibérément réduit contre un tenant
-réel. Ce dépôt ne détient aucun identifiant cloud, par construction, et aucun contrôle
-automatisé n'atteint une API de fournisseur. Chez Outscale, l'essentiel des lignes est
-`a_verifier` pour une raison plus tranchée encore : les noms d'action y sont **inférés** de la
-syntaxe EIM documentée, et non recopiés d'un catalogue de permissions publié. Un droit inféré
-est une supposition, et c'est précisément ce qu'un CSPM ne doit pas vous demander d'accorder.
+Deux moitiés, et elles ne sont pas dans le même état. La moitié **endpoints** est mesurée : une
+session enregistrée prouve que le collecteur émet bien ce que le descripteur déclare, donc la
+liste n'est plus une affirmation sur du code que personne n'a regardé tourner
+([Tracer les appels réels](guides/tracing-api-calls.fr.md)).
+
+La moitié **droits** ne l'est que chez **Outscale**, où un scan mené le 2026-09-09 avec un
+utilisateur EIM ne portant que `api:Read*` a établi que cette politique suffit à toutes les
+unités OAPI, et qu'elle est refusée par OOS et par OKS
+([page Outscale](providers/outscale.fr.md#ce-que-le-scan-à-rôle-réduit-a-mesuré)). Ailleurs,
+elle ne l'est pas : confirmer que `InstancesReadOnly` et rien de plus suffit à
+`ListSecurityGroups` exige le même geste contre un tenant Scaleway, et il n'a pas été fait. Ces
+mesures ne sont **jamais automatisables** : aucun identifiant cloud n'entre dans ce dépôt ni
+dans sa CI, par construction ([ADR-0012](adr/0012-aucun-identifiant-en-ci.md)). Un relevé daté
+peut donc devenir périmé sans que rien ne rougisse — un droit se retire, un service change de
+modèle d'identité.
+
+Ce qui reste inféré même chez Outscale : les **noms d'action** détaillés, tirés de la syntaxe
+EIM documentée et non d'un catalogue de permissions publié. Ce qui a été mesuré, c'est
+`api:Read*` prise en bloc. Un droit inféré est une supposition, et c'est précisément ce qu'un
+CSPM ne doit pas vous demander d'accorder.
+
+### Un scan Outscale complet exige les clés du propriétaire du compte
+
+Mesuré le 2026-09-09 : OOS répond `InvalidAccessKeyId` à une clé EIM que l'OAPI vient pourtant
+d'accepter — il ne connaît pas du tout les clés EIM — et OKS répond
+`Forbidden: User type not allowed`, refusant l'identité par son type. Aucun de ces deux refus
+ne porte sur un droit, donc aucune politique EIM ne les lève.
+
+Le stockage objet et le Kubernetes managé ne sont donc atteignables qu'avec les clés du
+propriétaire du compte, que Pépin signale lui-même en `iam_no_root_access_key` (HIGH). Son seul
+mode de fonctionnement complet sur Outscale est l'un de ses propres constats. Un scan à rôle
+réduit n'est pas un faux vert — il consigne les deux unités incomplètes, nomme le droit qui les
+collecterait, et rend les contrôles concernés en `not-evaluated` — mais c'est un scan
+incomplet, et l'arbitrage revient à l'opérateur ; ce n'est pas à nous de le masquer. La page du
+fournisseur dit comment vivre avec :
+[un scan complet exige les clés du propriétaire du compte](providers/outscale.fr.md#un-scan-complet-exige-les-clés-du-propriétaire-du-compte).
+
+Qu'un droit plus étroit existe — des clés d'accès propres à OOS pour un utilisateur EIM —
+reste ouvert ; `ReadAccessKeys` n'en montre aucune.
 
 ### Les faits de souveraineté sont déclarés, pas vérifiés
 

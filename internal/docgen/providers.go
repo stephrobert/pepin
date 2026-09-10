@@ -284,10 +284,13 @@ func boolLabel(t providerStrings, v *bool) string {
 // information, pas une lacune honteuse : elle dit exactement où s'arrête ce que
 // le projet peut prouver.
 //
-// Aucune de ces lignes n'est confirmée par un scan réel à rôle réduit : ce dépôt
-// ne détient aucun identifiant cloud et aucun contrôle automatisé n'atteint une
-// API de fournisseur. Ce que « confirmé » engage, c'est la documentation
-// officielle citée en regard.
+// « Confirmé » engage la documentation officielle citée en regard — et, quand une
+// DATE le suit, un scan réel mené avec un rôle délibérément réduit ce jour-là. Les
+// deux ne disent pas la même chose : un document dit ce que le fournisseur écrit,
+// une mesure dit ce qu'il répond, et c'est la seconde qui a montré qu'une clé EIM
+// portant la politique de lecture publiée par Outscale était refusée par OOS et par
+// OKS. Aucun de ces scans n'a lieu en CI : ce sont des gestes de mainteneur, lancés
+// localement, consignés et datés dans le descripteur (ADR-0012).
 func providerPermissionsTable(t providerStrings, l i18n.Lang, d genprovider.Descriptor) string {
 	perms := d.Permissions
 	if len(perms) == 0 {
@@ -304,6 +307,12 @@ func providerPermissionsTable(t providerStrings, l i18n.Lang, d genprovider.Desc
 		mark := t.no
 		if p.Etat == "verifie" {
 			mark = t.yes
+			// Une ligne MESURÉE se distingue d'une ligne documentée : les fondre
+			// dans un même « oui » perdrait ce qui décide de la confiance qu'on
+			// peut y mettre. La date est ce qui permettra de la juger périmée.
+			if d := p.Mesure.Date; d != "" {
+				mark = fmt.Sprintf(t.yesMeasured, d)
+			}
 		}
 		grant := p.Grant
 		if grant == "" {
@@ -337,6 +346,7 @@ type providerStrings struct {
 	colExploded, colSource, colControl, colJustification       string
 	colOnlyVia, colReason                                      string
 	colUnit, colGrant, colConfirmed, reservations              string
+	yesMeasured                                                string
 	fieldDescription, fieldScope, fieldRegionKey, fieldAuth    string
 	fieldJurisdiction, fieldEUEstablished, fieldCapital        string
 	fieldSecNumCloud, fieldExtraterritorial, fieldSources      string
@@ -368,6 +378,7 @@ func providerText(lang string) providerStrings {
 			noteManagedK8s: "API du Kubernetes managé (collecteur Go)",
 			baseURL:        "URL de base :",
 			unset:          "—", yes: "oui", no: "non", none: "_Aucun._",
+			yesMeasured:  "oui (mesuré le %s)",
 			noDescriptor: "_Descripteur absent du dépôt : cette page ne peut rien affirmer sur ce fournisseur._",
 		}
 	}
@@ -392,6 +403,7 @@ func providerText(lang string) providerStrings {
 		noteManagedK8s: "managed Kubernetes API (Go collector)",
 		baseURL:        "Base URL:",
 		unset:          "—", yes: "yes", no: "no", none: "_None._",
+		yesMeasured:  "yes (measured %s)",
 		noDescriptor: "_Descriptor missing from the repository: this page can assert nothing about this provider._",
 	}
 }

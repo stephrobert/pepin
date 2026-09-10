@@ -561,6 +561,27 @@ l'une ni l'autre appartient au `git log`.
 
 ### Modifié
 
+- **Une unité Outscale refusée nomme désormais le droit qui l'aurait collectée, et la
+  documentation dit qu'un scan complet exige les clés du propriétaire du compte**
+  (issue #168). Mesuré le 2026-09-09 sur un tenant `eu-west-2` réel, avec un utilisateur
+  EIM ne portant que la politique de lecture publiée par Outscale (`api:Read*` sur `*`) :
+  toutes les unités OAPI sont revenues complètes, avec un inventaire identique à celui
+  du compte propriétaire — et **OOS comme OKS ont refusé cette identité**. OOS répond
+  `InvalidAccessKeyId — The AWS access key Id you provided does not exist in our
+  records`, c'est-à-dire qu'il ne connaît pas du tout les clés EIM ; OKS répond
+  `Forbidden: User type not allowed`, refusant l'identité par son type. Aucun des deux
+  n'est un droit manquant, donc aucune politique EIM ne les lève. Ces deux unités
+  portaient un droit **vide** au descripteur, et le relevé de capacités n'imprime
+  « droit requis » que si le descripteur le déclare : l'opérateur ne lisait que l'erreur
+  S3 brute et allait vérifier une clé parfaitement valide. Les deux droits sont
+  désormais déclarés, donc le relevé de capacités et chaque motif de `not-evaluated` les
+  nomment. La table des permissions distingue une ligne **documentée** d'une ligne
+  **mesurée** et date la seconde (`mesure:` au descripteur) ; la page du fournisseur dit
+  comment vivre avec les clés propriétaires — une clé dédiée avec une date
+  d'expiration, hors CI, et une dérogation datée sur `iam_no_root_access_key` plutôt que
+  le silence. Aucun identifiant n'entre en CI : la mesure est un geste de mainteneur,
+  lancé localement et consigné (ADR-0012).
+
 - **La porte de qualification disait GO alors qu'un faux vert connu subsistait.** Elle
   comparait un run à `expected.yaml` et concluait GO dès qu'ils coïncidaient — un bon
   **contrat de non-régression**, mais présenté comme une **porte de qualité de release**.

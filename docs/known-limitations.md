@@ -282,24 +282,51 @@ produces a report that says what it could not see. See
 What remains true: Pépin cannot tell you what a *broader* credential would have found. It
 reports the surface it was given, and the absence of that surface, never what lies beyond it.
 
-### The minimum permissions are documented, not measured
+### The minimum permissions are documented; measured on one provider only
 
 Each provider page lists the API calls a scan makes and the read permissions they need. Those
 lists are **derived from the collection descriptors** — the endpoints the spec declares — and
 checked against the provider's public IAM documentation. Each page marks which lines are
-confirmed by documentation and which remain unverified.
+confirmed by documentation and which remain unverified, and **dates** the ones a real scan has
+measured.
 
-Two halves, and they are not in the same state. The **endpoints** half is now measured: a
-recorded session proves the collector really emits what the descriptor declares, so the list is
-no longer a claim about code nobody watched run
-([Tracing real API calls](guides/tracing-api-calls.md)). The **grants** half is not, and cannot
-be from here: confirming that `InstancesReadOnly` and nothing more suffices for
-`ListSecurityGroups` requires running a scan with a deliberately reduced role against a real
-tenant. This repository holds no cloud credentials, by design, and no automated check reaches a
-provider API. Most of Outscale's entries are `a_verifier` for a sharper reason still: the action
-names are **inferred** from the documented EIM syntax rather than read from a published
-permission set, and an inferred grant is a guess, which is precisely what a CSPM must not ask
-you to grant.
+Two halves, and they are not in the same state. The **endpoints** half is measured: a recorded
+session proves the collector really emits what the descriptor declares, so the list is no
+longer a claim about code nobody watched run
+([Tracing real API calls](guides/tracing-api-calls.md)).
+
+The **grants** half is measured on **Outscale** only, where a scan run on 2026-09-09 with an
+EIM user carrying nothing but `api:Read*` established that this policy suffices for every OAPI
+unit, and that OOS and OKS refuse it
+([Outscale page](providers/outscale.md#what-the-reduced-role-scan-measured)). Elsewhere it is
+not: confirming that `InstancesReadOnly` and nothing more suffices for `ListSecurityGroups`
+requires the same gesture against a Scaleway tenant, and it has not been made. These
+measurements can **never be automated**: no cloud credential enters this repository or its CI,
+by design ([ADR-0012](adr/0012-aucun-identifiant-en-ci.md)). A dated reading can therefore go
+stale with nothing turning red — a grant gets revoked, a service changes its identity model.
+
+What remains inferred even on Outscale: the detailed **action names**, taken from the documented
+EIM syntax rather than from a published permission set. What was measured is `api:Read*` taken
+as a whole, and an inferred grant is a guess, which is precisely what a CSPM must not ask you to
+grant.
+
+### A complete Outscale scan needs the account owner's keys
+
+Measured on 2026-09-09: OOS answers `InvalidAccessKeyId` to an EIM key the OAPI has just
+accepted — it does not know EIM keys at all — and OKS answers `Forbidden: User type not
+allowed`, refusing the identity by its type. Neither refusal is about a grant, so no EIM policy
+lifts them.
+
+Object storage and managed Kubernetes are therefore reachable only with the account owner's
+keys, which Pépin itself flags as `iam_no_root_access_key` (HIGH). Its only complete operating
+mode on Outscale is one of its own findings. A reduced-role scan is not a false green — it
+records both units as incomplete, names the grant that would collect them, and returns the
+affected controls as `not-evaluated` — but it is an incomplete one, and the trade-off is the
+operator's to make, not ours to hide. The provider page states how to live with it:
+[a complete scan needs the account owner's keys](providers/outscale.md#a-complete-scan-needs-the-account-owners-keys).
+
+Whether a narrower grant exists — OOS-specific access keys for an EIM user — is open;
+`ReadAccessKeys` shows none.
 
 ### Sovereignty facts are declared, not verified
 
