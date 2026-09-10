@@ -66,7 +66,7 @@ and the report says so on every scan, control by control, with the reason.
 | `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ |
 | `database_service_not_open_to_internet` | high | CLD-NET-1 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `governance_provider_sovereignty` | high | CLD-GVN-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ◐ | ✅ | ✅ | ✅ |
+| `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `governance_resource_required_tags` | medium | CLD-GVN-1 | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |
 | `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✅ | ✅ |
 | `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
@@ -139,7 +139,6 @@ already shows them, and they add nothing.
 | `database_encryption_at_rest_enabled` | scaleway | terraform | ◐ `partial` | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
 | `database_encryption_at_rest_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
-| `governance_resource_region_in_eu` | outscale | terraform | ◐ `partial` | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `governance_resource_required_tags` | exoscale | terraform | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 | `governance_resource_required_tags` | exoscale | live | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 | `governance_resource_required_tags` | outscale | terraform | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
@@ -216,7 +215,7 @@ the other's scope. One source only: live collection through a kubeconfig.
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 16 | 5 | 4 | 33 |
+| outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 17 | 3 | 2 | 36 |

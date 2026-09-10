@@ -91,7 +91,6 @@ pas.
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
-| `governance_resource_region_in_eu` | outscale | live | attribut décisif « region » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_accesskey_expiration_set` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_accesskey_rotated` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_account_mfa_enforced` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
@@ -152,7 +151,7 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 16 | 5 | 4 | 33 |
+| outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 17 | 3 | 2 | 36 |
@@ -210,9 +209,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 | Chiffre | Nombre |
 |---|---:|
 | Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 181 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 31 |
-| Verdicts à prouver au total | 455 |
-| Verdicts restant à prouver | 364 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 30 |
+| Verdicts à prouver au total | 457 |
+| Verdicts restant à prouver | 366 |
 <!-- /pepin:gen veracity-debt -->
 
 Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est

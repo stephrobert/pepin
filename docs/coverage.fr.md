@@ -67,7 +67,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ |
 | `database_service_not_open_to_internet` | high | CLD-NET-1 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `governance_provider_sovereignty` | high | CLD-GVN-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ◐ | ✅ | ✅ | ✅ |
+| `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `governance_resource_required_tags` | medium | CLD-GVN-1 | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |
 | `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✅ | ✅ |
 | `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
@@ -140,7 +140,6 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `database_encryption_at_rest_enabled` | scaleway | terraform | ◐ `partial` | attribut décisif « encryption_at_rest » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
 | `database_encryption_at_rest_enabled` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |
-| `governance_resource_region_in_eu` | outscale | terraform | ◐ `partial` | attribut décisif « region » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `governance_resource_required_tags` | exoscale | terraform | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
 | `governance_resource_required_tags` | exoscale | live | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
 | `governance_resource_required_tags` | outscale | terraform | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
@@ -217,7 +216,7 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 16 | 5 | 4 | 33 |
+| outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 17 | 3 | 2 | 36 |

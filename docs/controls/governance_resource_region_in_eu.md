@@ -48,25 +48,23 @@ source".
 | Provider | Terraform plan | Live collection |
 |---|:-:|:-:|
 | exoscale | ✅ | ✅ |
-| outscale | ◐ | ✅ |
+| outscale | ✅ | ✅ |
 | scaleway | ✅ | ✅ |
 | kubernetes | n/a | ✗ |
 
 Every cell that is not ✅ **while the control is declared for that provider** carries its
 reason:
 
-| Provider | Source | Status | Reason |
-|---|---|---|---|
-| outscale | terraform | ◐ `partial` | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+_None: every declared cell is fully observable._
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
 | `fail` | a deviation was detected on a real resource | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | the deciding data was collected, and it is compliant | exoscale / terraform · exoscale / live · outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | the deciding data was collected, and it is compliant | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
-| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | outscale / terraform |
+| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
 resource of the targeted type: "nothing to look at" is not "compliant".

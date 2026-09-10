@@ -260,7 +260,6 @@ source produces the resource type and its deciding attribute, and the other does
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
-| `governance_resource_region_in_eu` | outscale | live | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_accesskey_rotated` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_account_mfa_enforced` | outscale | live | this source produces no resource of type "api_access_policy" |

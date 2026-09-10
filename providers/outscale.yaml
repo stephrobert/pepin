@@ -582,6 +582,10 @@ mapping_terraform:
 
     - tf_type: outscale_vm
       type: compute_instance
+      # Un plan localise par la SOUS-RÉGION (`eu-west-2a`), la région s'en dérive en
+      # retirant la lettre de zone. Sans elle, le contrôle de souveraineté rendait
+      # « non évalué » sur tout plan Outscale, alors que la localisation y est écrite.
+      region: placement_subregion_name
       id: vm_id
       map:
         vm_id: vm_id
@@ -597,6 +601,9 @@ mapping_terraform:
         # Sans lui, la règle qui itère la liste ne verrait rien, et le silence
         # ressemblerait exactement à une VM sans groupe.
         security_group_ids: list
+        # Le transform de la RÉGION se déclare sous le nom du champ source : elle n'est
+        # pas un attribut de `map`, donc sans nom commun sous lequel l'indexer.
+        placement_subregion_name: region_of_zone
   
     - tf_type: outscale_policy
       type: iam_policy

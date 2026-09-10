@@ -92,7 +92,6 @@ actually decide them. The reason given is the one that applies to the source tha
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
-| `governance_resource_region_in_eu` | outscale | live | deciding attribute "region" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_accesskey_rotated` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_account_mfa_enforced` | outscale | live | this source produces no resource of type "api_access_policy" |
@@ -152,7 +151,7 @@ Per provider and per source, over all controls in the reference:
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 16 | 5 | 4 | 33 |
+| outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 17 | 3 | 2 | 36 |
@@ -210,9 +209,9 @@ What is not yet proven is **counted**, not hidden:
 | Figure | Count |
 |---|---:|
 | Control x provider x source paths on which Pépin concludes | 181 |
-| Paths whose every reachable verdict is proven end to end | 31 |
-| Verdicts to prove in total | 455 |
-| Verdicts left to prove | 364 |
+| Paths whose every reachable verdict is proven end to end | 30 |
+| Verdicts to prove in total | 457 |
+| Verdicts left to prove | 366 |
 <!-- /pepin:gen veracity-debt -->
 
 The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a

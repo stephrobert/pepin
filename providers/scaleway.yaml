@@ -260,6 +260,7 @@ mapping_terraform:
     # chaque règle DB porte une garde de capacité sur SON attribut.
     - tf_type: scaleway_rdb_instance
       type: managed_database
+      region: region
       id: database_id
       map:
         database_id: name
@@ -276,6 +277,7 @@ mapping_terraform:
     # Bucket → object_lock (immutabilité, CLD-STO-8).
     - tf_type: scaleway_object_bucket
       type: object_storage_bucket
+      region: region
       id: name
       map:
         name: name
@@ -322,6 +324,7 @@ mapping_terraform:
     # (cloud-init sous une clé) → secrets en clair (CLD-CMP-2).
     - tf_type: scaleway_instance_server
       type: compute_instance
+      region: zone            # `fr-par-1` -> `fr-par` (transform region_of_zone)
       id: vm_id
       map:
         vm_id: id
@@ -331,6 +334,10 @@ mapping_terraform:
       transforms:
         security_group_ids: list
         tags: kv
+        # Le transform de la RÉGION se déclare sous le nom du champ source : la région
+        # n'est pas un attribut de `map`, elle n'a donc pas de nom commun sous lequel
+        # l'indexer. Un plan localise par la ZONE (`fr-par-1`), la région s'en dérive.
+        zone: region_of_zone
 
 # Contrat d'API (ancrage §2) + applicabilité SCSL (non_applicable) — lu par `pepin scsl`.
 contrat:

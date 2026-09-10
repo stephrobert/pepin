@@ -128,6 +128,17 @@ l'une ni l'autre appartient au `git log`.
   mesurable aurait caché un fait de posture réel. La borne est stricte : une sortie
   limitée à quelques ports est un filtrage, et crier dessus est le faux positif qui fait
   désactiver un outil.
+- **Un plan Terraform localise par la zone, et la région était lue brute.** Scaleway
+  écrit `fr-par-1` sur un serveur, Outscale `eu-west-2a` sur une VM ; le mapper prenait la
+  valeur telle quelle, posait donc un nom de zone en guise de région — que nul catalogue
+  ne connaît — et `governance_resource_region_in_eu` rendait « non évalué » sur **tout**
+  plan, alors que l'exploitant y avait écrit la localisation en clair. Un transform
+  `region_of_zone` la dérive désormais, déclaré par mapping. Les schémas de nommage sont
+  ceux publiés, et une garde confronte chaque région dérivée au catalogue de régions du
+  fournisseur : un fournisseur qui changerait de convention la fait rougir plutôt que de
+  laisser poser en silence une région inventée dans un rapport de souveraineté. Ce qui ne
+  se dérive pas ne rend rien, et le verrou de capacité dit « non évalué » — une région
+  fausse y serait pire que son absence.
 - **Une règle de security group sans description obtenait `pass` — du contrôle qui
   existe pour attraper exactement ça.** La règle se gardait par
   `"description" in object.keys(...)`, censé répondre « ce fournisseur expose-t-il le

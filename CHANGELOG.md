@@ -120,6 +120,16 @@ belongs in `git log`.
   and declaring it unmeasurable would have hidden a real posture fact. The bound is
   strict: an egress limited to a few ports is filtering, and shouting at it is the false
   positive that gets a tool switched off.
+- **A Terraform plan localises by zone, and the region was read raw.** Scaleway writes
+  `fr-par-1` on a server, Outscale `eu-west-2a` on a VM; the mapper took the value as-is,
+  so it posted a zone name as a region — a name no catalogue knows — and
+  `governance_resource_region_in_eu` returned `not-evaluated` on **every** plan, while the
+  operator had written the location in clear. A `region_of_zone` transform now derives it,
+  declared per mapping. The naming schemes are the published ones, and a guard confronts
+  every derived region with the provider's own region catalogue: a provider that changed
+  convention makes it go red rather than silently posting an invented region into a
+  sovereignty report. What does not derive yields nothing, so the capability lock says
+  `not-evaluated` — a wrong region there would be worse than none.
 - **A security group rule with no description got `pass` — from the control that
   exists to catch exactly that.** The rule guarded itself with `"description" in
   object.keys(...)`, meant to answer "does this provider expose the field at all", but
