@@ -31,6 +31,26 @@ belongs in `git log`.
   provider #88) and re-lists until deletions settle. Exoscale: plan-only, 37 resources,
   no account — the Terraform source is pinned, the live half waits for an account.
 
+- **Exoscale qualification tenant, live half** (issue #198): 40 resources in the full
+  plan, 39 applied (the organisation's quota is four instances; the Swiss instance is
+  plan-only through `terraform_only_resources`) plus 3 SOS buckets created by the
+  `extra` hook (one of them with Object Lock, through the S3 API), applied, scanned
+  `--live` in five formats, sealed, destroyed and proven destroyed across two zones
+  (15 API families + buckets, before/after delta). The expected organisation comes
+  from `PEPIN_QUAL_EXO_ORG` and is confirmed by `GET /api-key/{key}` → `org-id`
+  before any apply. What the live pass found, pinned as measured and filed: SOS
+  accepts `PutBucketTagging` and persists nothing (#208, every SOS bucket fails
+  `governance_resource_required_tags`); `kubernetes_cluster_audit_logging_enabled`
+  passes live on a cluster whose audit is disabled (#209, false green: the API returns
+  `audit: {}` and `audit_enabled` is derived from `audit.endpoint`); `region` is
+  projected on no live resource (#210, `governance_resource_region_in_eu`
+  not-evaluated); instance labels are not collected live (#211, an untagged instance
+  passes); a private instance carries no security group by construction (#212,
+  `compute_instance_has_security_group` fires with an impossible remediation); every
+  SKS cluster creates an `sks-ccm-*` IAM role that fails two `iam_role_*` controls
+  (#213). The two rule changes of #206 are pinned: `…_all_ports` is `not-applicable`
+  on Exoscale, `network_securitygroup_unrestricted_egress` fails on `tcp 1-65535`.
+
 - **A qualification tenant, applied and destroyed on a real account** (issue #178,
   stage 3). `PEPIN_GATE_LIVE=1 mise run qualify` applies the Terraform stack committed
   under `references/qualification/scaleway/` — 40 resources in the plan, 29 of them

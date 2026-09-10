@@ -1,5 +1,10 @@
 # Variables du tenant de qualification Exoscale (plan seul).
 
+variable "organization_id" {
+  description = "Organisation Exoscale (GET /organization), confirmée par l'API avant tout apply ; ses huit premiers caractères suffixent les buckets SOS, globaux"
+  type        = string
+}
+
 variable "zone" {
   description = "Zone UE des ressources : de-fra-1 (Allemagne). Chez Exoscale, la « région » est la zone"
   type        = string
@@ -12,16 +17,22 @@ variable "trusted_zone" {
   default     = "ch-gva-2"
 }
 
-variable "template_id" {
-  description = "Modèle (image) des instances. Un plan ne le valide pas ; un apply réel exigera l'identifiant d'un modèle Exoscale de la zone (data source exoscale_template), donc un compte"
+variable "template_name" {
+  description = "Modèle (image) des instances, résolu par une source de données dans chaque zone"
   type        = string
-  default     = "00000000-0000-0000-0000-000000000000"
+  default     = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
 variable "instance_type" {
-  description = "Gamme des instances (plan seul : aucune facturation)"
+  description = "Gamme des instances sans volume attaché"
   type        = string
   default     = "standard.micro"
+}
+
+variable "instance_type_with_volume" {
+  description = "Gamme des instances qui portent un volume block storage : l'API exige au moins standard.small (provider #375, « Instance size must be at least small »)"
+  type        = string
+  default     = "standard.small"
 }
 
 variable "tenant_tag" {
@@ -31,7 +42,7 @@ variable "tenant_tag" {
 }
 
 variable "terraform_only_resources" {
-  description = "Uniformité du runner : rien n'est « plan seulement » ici, puisque tout l'est"
+  description = "Vrai (défaut) : le plan porte aussi ce que seul le chemin Terraform mesure — l'instance de ch-gva-2, hors de la zone scannée et hors quota (l'organisation a droit à quatre instances). Le runner applique avec false"
   type        = bool
   default     = true
 }
@@ -45,4 +56,6 @@ locals {
   }
   tagged   = merge({ (var.tenant_tag) = "tenant" }, local.governance)
   untagged = { (var.tenant_tag) = "tenant" }
+
+  bucket_suffix = substr(var.organization_id, 0, 8)
 }
