@@ -23,6 +23,27 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A resource with nothing no longer silences the control looking for it** (issue #227).
+  The Exoscale qualification tenant contains, deliberately, an instance with **no
+  security group at all** — the very deviation `compute_instance_has_security_group`
+  exists to catch. The scan answered `not-evaluated`: the sealed inventory carried
+  `security_group_ids: []`, but an observed empty list counted as *not collected*, and
+  the per-type intersection then removed the attribute from every instance. The faulty
+  resource blinded its own control, and its neighbours with it.
+
+  The fix is **not** teaching the capability lock to tolerate empty values — that would
+  have re-opened ADR-0006's founding incident, because `IAMPolicyStatements` returned
+  `[]` both for *"this document could not be parsed"* and for *"this policy grants
+  nothing"*. **The placeholder is removed at the source**: the parser now returns nothing
+  when it could not read, the collectors omit the attribute rather than posting an empty
+  one, and only then does the lock answer on **presence**. An observed empty list is a
+  complete enumeration that counts zero; `nil` still establishes nothing.
+
+  Measured: one verdict moves — `compute_instance_has_security_group` on Exoscale live,
+  `not-evaluated` → `pass`, and that `pass` is proven: all four instances carry the
+  attribute, and the only empty one is private (#212). Confirmed end to end by two real
+  qualification runs, Exoscale and Outscale, both GO.
+
 - **The roadmap announced a version the project had left behind.** `ROADMAP.md` still
   said *"Where Pépin stands, v0.2.0"* two releases later. For most projects that is a
   detail; for one whose whole claim is that no assertion is worth more than what was

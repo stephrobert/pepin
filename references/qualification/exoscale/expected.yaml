@@ -154,11 +154,13 @@ controls:
     # C'est la direction sûre (ADR-0006), donc non bloquant — mais c'est une capacité
     # perdue, et #227 doit la rendre.
     live:
-      status: not-evaluated
-      known_defect:
-        issue: 227
-        class: coverage_gap
-        note: "une liste vide OBSERVÉE est comptée comme non collectée ; l'instance sans groupe retire l'attribut de tout son type"
+      # #227 CORRIGÉE : une liste vide OBSERVÉE compte désormais comme collectée, parce
+      # que le bouchon qui obligeait à s'en méfier a été retiré à la source (un document
+      # de politique illisible se déclare non lu, au lieu de rendre `[]`). Le contrôle
+      # retrouve donc sa capacité à conclure — et il conclut `pass` : les quatre
+      # instances portent leur attribut, et la seule à liste vide est PRIVÉE, donc hors
+      # de portée de la règle depuis #212. Rien à signaler, mesuré, plus supposé.
+      status: pass
     terraform: pass
 
   compute_instance_no_secrets_in_user_data:
