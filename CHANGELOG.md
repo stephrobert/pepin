@@ -103,6 +103,15 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A private instance no longer gets a `critical` deviation it cannot fix.** Where a
+  provider's security groups filter the **public** interface, an instance without one is
+  given `security-groups: []` **by construction** — the API does it, the operator did not
+  choose it, and no remediation changes it. Ten private instances meant ten unfixable
+  `critical` findings, which is the shortest path to a tool being ignored. The fact is
+  now **observed** (`public_interface`, derived from Exoscale's `public-ip-assignment`),
+  not inferred from a missing `public_ip`, which would not tell "private" from "not
+  collected". Where a provider does not publish that field, nothing changes; and an
+  instance **with** a public interface and no group is still a `critical` deviation.
 - **Two more `pass` verdicts nothing established, both from the same shape as the audit
   of a rule without a description.** A guard asked *per resource* a question that is
   *per provider*, and the capability lock — seeing the attribute collected on the type
