@@ -457,6 +457,18 @@ belongs in `git log`.
 
 ### Changed
 
+- **The qualification gate said GO while a known false green stood.** It compared a run
+  to `expected.yaml` and concluded GO when they matched — a good **non-regression
+  contract**, but presented as a **release quality gate**. A pinned defect reproduces
+  identically, the comparison finds no difference, and the gate said GO: it verified that
+  the product lies the same way it did yesterday. The two questions are now answered
+  separately, side by side in the report. A known defect declares its **class** and
+  whether it blocks a release: a `false_green` **always** blocks and cannot be waived — it
+  is the promise the product is built on — a `false_positive` blocks by default and can be
+  waived explicitly, and a `coverage_gap` does not block, because a justified
+  `not-evaluated` is a named limit, which is exactly what the product asks of itself.
+  A bare string, or a class nobody declared, blocks: a pin that does not say what it is
+  must not act as a pass.
 - **Terraform plans: a declared reference now closes the correlation that never worked.**
   A plan cannot know the id of a resource it is about to create — that attribute is not
   resolved, it is **absent**. Measured on a reference tenant built from third-party HCL:

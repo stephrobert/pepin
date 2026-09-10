@@ -68,10 +68,70 @@ OUTPUT_REF = re.compile(r"^\$\{output\.([A-Za-z0-9_]+)\}$")
 # Comparaison — fonctions PURES, éprouvées par `selftest`
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Classes de défaut connu, et ce que chacune vaut pour une RELEASE.
+#
+# La porte comparait un run à `expected.yaml` et disait GO dès qu'ils coïncidaient.
+# C'est un contrat de NON-RÉGRESSION, et c'en est un bon. Mais un défaut épinglé s'y
+# reproduit à l'identique, la comparaison ne trouve aucune différence, et la porte
+# concluait GO : elle vérifiait que le produit ment de la même façon qu'hier.
+#
+# Les deux questions sont distinctes et méritent deux verdicts :
+#
+#   contrat de non-régression : le run dit-il ce qu'on attendait ?
+#   verdict de release        : ce qu'on attendait est-il publiable ?
+#
+# Un `not-evaluated` justifié est une limite de couverture nommée : elle se documente et
+# se publie. Un `pass` que rien n'établit, non — c'est l'affirmation que le produit
+# promet de ne jamais faire.
+CLASSES_DEFAUT = {
+    # Un `pass` que rien n'établit. TOUJOURS bloquant, sans dérogation possible :
+    # c'est la promesse centrale du produit, et la renier une fois suffit à la perdre.
+    "false_green": {"bloquant_toujours": True},
+    # Un écart que l'utilisateur ne peut pas faire disparaître — parce que la
+    # plateforme l'impose, ou que la remédiation proposée n'aboutit jamais. Bloquant
+    # par défaut : dix de ces findings apprennent à ignorer l'outil.
+    "false_positive": {"bloquant_toujours": False},
+    # Une donnée que la source n'expose pas, rendue « non évalué ». Honnête, nommée,
+    # publiable — c'est exactement ce que l'ADR-0006 demande.
+    "coverage_gap": {"bloquant_toujours": False, "bloquant_defaut": False},
+    # Le verdict est juste, sa DÉCLARATION ne l'est pas (référentiel, matrice).
+    # Trompeur pour qui lit la doc, sans jamais mentir sur un tenant.
+    "declaration_gap": {"bloquant_toujours": False, "bloquant_defaut": False},
+}
+
+
+def defaut_connu(want):
+    """Normalise l'épinglage d'un défaut connu, ou None.
+
+    Deux formes acceptées. Une CHAÎNE, historique : elle ne dit pas sa classe, donc
+    elle est traitée comme BLOQUANTE — un épinglage qui ne se prononce pas ne doit pas
+    valoir laissez-passer. Un MAPPING `{issue, class, release_blocker, note}` dit ce
+    qu'il est, et c'est la forme à écrire.
+    """
+    kd = want.get("known_defect") if isinstance(want, dict) else None
+    if not kd:
+        return None
+    if isinstance(kd, str):
+        return {"issue": None, "class": None, "bloquant": True, "note": kd}
+    classe = kd.get("class")
+    regles = CLASSES_DEFAUT.get(classe)
+    if regles is None:
+        return {"issue": kd.get("issue"), "class": classe, "bloquant": True,
+                "note": f"classe inconnue {classe!r} (valeurs : {', '.join(sorted(CLASSES_DEFAUT))}) — traitée comme bloquante",
+                "invalide": True}
+    bloquant = kd.get("release_blocker", regles.get("bloquant_defaut", True))
+    if regles["bloquant_toujours"] and not bloquant:
+        return {"issue": kd.get("issue"), "class": classe, "bloquant": True,
+                "note": f"un défaut de classe {classe} ne se dérroge pas : release_blocker ignoré",
+                "invalide": True}
+    return {"issue": kd.get("issue"), "class": classe, "bloquant": bool(bloquant), "note": kd.get("note", "")}
+
+
 class Verdict:
     def __init__(self):
-        self.problems = []   # ce qui rend NO-GO
+        self.problems = []   # ce qui rend NO-GO le contrat de non-régression
         self.infos = []      # ce qui mérite d'être lu sans rendre NO-GO
+        self.defauts = []    # défauts connus rencontrés, normalisés
 
     @property
     def ok(self):
@@ -156,8 +216,14 @@ def compare(expected, results, source, exit_code, outputs, prefix, owned=None):
         # Un défaut CONNU est épinglé tel qu'il est mesuré, avec le numéro de l'issue
         # qui le suit : la porte reste GO, et la correction la fera rougir sciemment.
         # Il est dit à chaque run, pour ne jamais passer pour une attente ordinaire.
-        if isinstance(want, dict) and want.get("known_defect"):
-            v.info(f"[{source}] {code} : épinglé comme DÉFAUT CONNU — {want['known_defect']}")
+        d = defaut_connu(want)
+        if d:
+            d = dict(d, control=code, source=source)
+            v.defauts.append(d)
+            marque = "BLOQUE LA RELEASE" if d["bloquant"] else "n'empêche pas la release"
+            v.info(f"[{source}] {code} : DÉFAUT CONNU ({d['class'] or 'classe non dite'}, {marque})"
+                   + (f" — {d['note']}" if d.get("note") else "")
+                   + (f" — issue #{d['issue']}" if d.get("issue") else ""))
         # Un sujet que l'attente NOMME est du tenant, même sans préfixe : le
         # fournisseur lui-même, sujet du contrôle de souveraineté, en est le cas.
         named = set()
@@ -643,6 +709,7 @@ class Run:
             results = load_results(self.run_dir / fname)
             v = compare(self.expected, results, source, rc, self.outputs, prefix, owned)
             self.comparison[source] = {"ok": v.ok, "problems": v.problems, "infos": v.infos,
+                                       "known_defects": v.defauts,
                                        "results": len(results), "exit_code": rc}
             for p in v.problems:
                 print(f"  ✘ {p}")
@@ -670,11 +737,19 @@ class Run:
                 "estimate": round(hours * rate, 4),
                 "note": "estimation : durée apply→destroy × tarifs horaires de tenant.yaml ; la facture à 48 h tranche"}
 
-    def report(self, verdict):
+    def report(self, verdict, release=None, bloquants=None):
         duration = round(time.time() - self.t0, 1)
+        release = release or verdict
+        bloquants = bloquants or []
+        tous = [d for src in getattr(self, "comparison", {}).values() for d in src.get("known_defects", [])]
+        par_classe = {}
+        for d in tous:
+            par_classe.setdefault(d["class"] or "classe non dite", []).append(d)
         rep = {
             "stage": f"qualification-{self.provider}",
-            "verdict": verdict,
+            "regression_contract": verdict,
+            "verdict": release,
+            "known_defects": tous,
             "plan_only": self.plan_only,
             "started": dt.datetime.fromtimestamp(self.t0, dt.timezone.utc).isoformat(timespec="seconds"),
             "duration_seconds": duration,
@@ -690,9 +765,27 @@ class Run:
         }
         out = self.run_dir.parent / f"qualification-{self.provider}.json"
         out.write_text(json.dumps(rep, indent=2, ensure_ascii=False))
-        lines = [f"# Qualification {self.provider} — {verdict}", ""]
+        lines = [f"# Qualification {self.provider} — {release}", ""]
         for s in self.stages:
             lines.append(f"- {'✔' if s['rc'] == 0 else '✘'} {s['name']} ({s['seconds']}s) — {s['note']}")
+        # Les deux verdicts, côte à côte : le contrat de non-régression répond « le run
+        # dit-il ce qu'on attendait », le verdict de release « ce qu'on attend est-il
+        # publiable ». Les afficher ensemble empêche de lire l'un pour l'autre.
+        lines += ["", f"- contrat de non-régression : {verdict}"]
+        if tous:
+            lines.append("- défauts connus :")
+            for classe in sorted(par_classe):
+                ds = par_classe[classe]
+                bloque = sum(1 for d in ds if d["bloquant"])
+                marque = "❌" if bloque else "⚠"
+                lines.append(f"    {marque} {classe} : {len(ds)}" + (f" (dont {bloque} bloquant(s))" if bloque else ""))
+            for d in bloquants:
+                ref = f" (#{d['issue']})" if d.get("issue") else ""
+                lines.append(f"    ↳ BLOQUE : {d['control']} [{d['source']}]{ref}"
+                             + (f" — {d['note']}" if d.get("note") else ""))
+        else:
+            lines.append("- défauts connus : aucun")
+        lines.append(f"- VERDICT DE RELEASE : {release}")
         c = rep["cost"]
         if c:
             lines.append(f"- coût estimé : {c['estimate']} {c['currency']} ({c['billed_hours']} h × {c['hourly_rate']} {c['currency']}/h)")
@@ -731,9 +824,30 @@ class Run:
         if ok and budget and (time.time() - self.t0) > budget * 60:
             self.stages.append({"name": "budget", "rc": 1, "seconds": 0, "note": f"{round((time.time() - self.t0) / 60, 1)} min > {budget} min"})
             ok = False
+        # DEUX verdicts, et la distinction est le sujet.
+        #
+        # Le contrat de NON-RÉGRESSION dit si le run coïncide avec `expected.yaml`.
+        # Le verdict de RELEASE dit si ce qu'on attend est publiable. Un défaut connu
+        # épinglé satisfait le premier — c'est même sa raison d'être, il se reproduit à
+        # l'identique — et ne dit rien du second. Les confondre revenait à conclure GO
+        # parce que le produit ment de la même façon qu'hier.
+        bloquants = self.defauts_bloquants()
         verdict = "GO" if ok else ("NO-GO" if self.destroyed or not self.applied else "NO-GO (RESTES À NETTOYER)")
-        self.report(verdict)
-        return 0 if ok else 1
+        release = verdict
+        if ok and bloquants:
+            release = "NO-GO"
+            self.stages.append({"name": "défauts connus bloquants", "rc": 1, "seconds": 0,
+                                "note": "; ".join(f"{d['control']} [{d['source']}] {d['class'] or 'classe non dite'}"
+                                                  + (f" #{d['issue']}" if d.get("issue") else "") for d in bloquants)})
+        self.report(verdict, release, bloquants)
+        return 0 if release == "GO" else 1
+
+    def defauts_bloquants(self):
+        """Les défauts connus qui interdisent une release, tous tenants confondus."""
+        out = []
+        for src in getattr(self, "comparison", {}).values():
+            out += [d for d in src.get("known_defects", []) if d["bloquant"]]
+        return out
 
 
 class StageFailed(Exception):
@@ -795,6 +909,32 @@ def selftest():
         ("un inconcluant que rien n'attend rend NO-GO", expected, good + [{"control": "a_fail", "status": "not-evaluated", "subject": "pepin-qual-vm-x"}], 1, False),
     ]
     failures = 0
+    # ── Ce qu'un défaut connu vaut pour une RELEASE ────────────────────────────
+    #
+    # Le contrat de non-régression et le verdict de release répondent à deux
+    # questions. Ces cas éprouvent la seconde, qui n'existait pas : un défaut épinglé
+    # se reproduisait, la comparaison ne trouvait aucune différence, et la porte
+    # concluait GO — elle vérifiait que le produit ment de la même façon qu'hier.
+    for label, kd, bloquant_attendu in [
+        ("une chaîne ne dit pas sa classe : traitée comme BLOQUANTE",
+         "#0 exemple", True),
+        ("un faux vert bloque",
+         {"issue": 209, "class": "false_green"}, True),
+        ("un faux vert ne se déroge PAS, même demandé",
+         {"issue": 209, "class": "false_green", "release_blocker": False}, True),
+        ("un faux positif bloque par défaut",
+         {"issue": 208, "class": "false_positive"}, True),
+        ("un faux positif peut se déroger, explicitement",
+         {"issue": 208, "class": "false_positive", "release_blocker": False}, False),
+        ("une lacune de couverture ne bloque pas",
+         {"issue": 210, "class": "coverage_gap"}, False),
+        ("une classe inconnue est traitée comme BLOQUANTE",
+         {"issue": 1, "class": "inventee"}, True),
+    ]:
+        d = defaut_connu({"known_defect": kd})
+        ok = d is not None and d["bloquant"] == bloquant_attendu
+        failures += not ok
+        print(f"  {'✔' if ok else '✘'} {label}" + ("" if ok else f" — obtenu bloquant={d and d['bloquant']}"))
     for case in cases:
         label, exp, results, rc, want_ok = case[:5]
         outs = case[5] if len(case) > 5 else outputs
@@ -809,7 +949,7 @@ def selftest():
     if failures:
         print(f"\n{failures} cas en échec : la comparaison ne mesure pas ce qu'elle prétend", file=sys.stderr)
         return 1
-    print(f"\n{len(cases) + 1} cas, tous conformes.")
+    print(f"\n{len(cases) + 8} cas, tous conformes.")
     return 0
 
 
