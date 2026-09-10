@@ -70,6 +70,16 @@ l'une ni l'autre appartient au `git log`.
 
 ### Sécurité
 
+- **Un collecteur ne relit plus une requête dans laquelle il vient d'écrire un secret.**
+  CodeQL signalait, en `high`, une clé secrète atteignant un rapport publié : un
+  collecteur posait son identifiant en en-tête, puis rebâtissait la signature de l'appel
+  depuis ce même objet requête pour l'enregistrer en provenance. L'alerte est un **faux
+  positif** — seuls la méthode, le schéma, l'hôte et le chemin sont lus, jamais un
+  en-tête ni la requête —, mais l'analyse a raison sur le principe, et une chaîne bâtie
+  avant que l'identifiant ne soit posé ne peut pas devenir fausse un jour. La signature
+  est désormais calculée **avant** l'authentification, dans un helper partagé par les
+  trois collecteurs qui l'enregistrent. La provenance ne nomme toujours aucun appel qui
+  n'a pas eu lieu : la chaîne est calculée tôt et n'est utilisée qu'après une réponse.
 - **`verify` n'accepte plus un bundle qui se contredit.** Réécrire quatre résultats
   `fail` en `pass` puis recalculer l'empreinte du fichier touché produisait un bundle
   déclaré « cohérent en interne », code 0 — alors que son propre `manifest.json`

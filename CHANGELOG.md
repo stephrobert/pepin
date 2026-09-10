@@ -67,6 +67,15 @@ belongs in `git log`.
 
 ### Security
 
+- **A collector no longer reads back a request it has just put a secret into.** CodeQL
+  reported, at `high`, a secret key reaching a published report: a collector set its
+  credential as a header, then rebuilt the call signature from that same request object
+  to record it as provenance. The alert is a **false positive** — only method, scheme,
+  host and path are read, never a header or a query — but the analysis is right in
+  principle, and a string built before the credential is attached cannot become wrong
+  later. The signature is now computed **before** authentication is applied, in one
+  shared helper used by the three collectors that record it. Provenance still never names
+  a call that did not happen: the string is computed early and used only after a response.
 - **`verify` no longer accepts a bundle that contradicts itself.** Rewriting four
   `fail` results into `pass` and recomputing the digest of the file touched produced a
   bundle reported as "internally consistent", exit 0 — while its own `manifest.json`
