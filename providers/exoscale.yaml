@@ -40,6 +40,20 @@ credentials:
 s3:
   endpoint: "https://sos-{zone}.exo.io"
   region: "{zone}"
+  # SOS ACCEPTE `PutBucketTagging` (HTTP 200) et ne persiste RIEN : le
+  # `GetBucketTagging` qui suit rend aussitôt `NoSuchTagSet`. Mesuré le 2026-09-09 sur
+  # `de-fra-1`, à l'AWS CLI puis en SigV4 écrit à la main, et `exo storage show` n'expose
+  # aucune étiquette non plus.
+  #
+  # La conséquence est ce qui compte : `NoSuchTagSet` veut dire « aucune étiquette » chez
+  # un fournisseur qui les conserve, et « cette API ne les garde pas » ici. Projeter `[]`
+  # affirmait donc que l'exploitant n'avait rien étiqueté, alors qu'il ne PEUT pas — et
+  # le contrôle d'étiquetage criait sur chaque bucket de l'organisation avec une
+  # remédiation qui n'aboutit jamais.
+  #
+  # À faux, l'attribut n'est pas projeté : le verrou de capacité rend « non évalué », ce
+  # qui est la vérité. À rouvrir si SOS se met à les conserver.
+  tags_persisted: false
 
 # PERMISSIONS MINIMALES, unité de collecte par unité de collecte.
 #
@@ -419,6 +433,9 @@ contrat:
       etat: verifie
       source: aws-sdk-go-v2/service/s3 (SOS, endpoint sos-<zone>.exo.io)
       mapping:
+        tags: 'NON COLLECTÉ : SOS accepte PutBucketTagging (200) et ne persiste rien (GetBucketTagging → NoSuchTagSet,
+          mesuré). Projeter [] ferait passer une limite de l''API pour un choix de l''exploitant ; l''attribut est donc
+          absent et le contrôle d''étiquetage rend « non évalué » (cf. s3.tags_persisted).'
         acl_grants: GetBucketAcl → Grants[].{Grantee.URI, Permission}
         public_via_acl: 'DÉRIVÉ : grant AllUsers/AuthenticatedUsers'
         versioning: GetBucketVersioning → Status

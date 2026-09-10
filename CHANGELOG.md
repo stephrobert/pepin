@@ -103,6 +103,17 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A bucket store that accepts tags and keeps none no longer produces a deviation on
+  every bucket.** Exoscale's SOS answers `200` to `PutBucketTagging` and persists
+  nothing: the `GetBucketTagging` that follows returns `NoSuchTagSet` immediately —
+  measured through the AWS CLI and a hand-written SigV4 request. That same response means
+  *"no tags"* at a provider that keeps them, and *"this API does not keep them"* here, so
+  projecting `[]` asserted a choice the operator had not made and cannot make. The
+  descriptor now declares it (`s3.tags_persisted`), the attribute is not projected, the
+  capability lock returns `not-evaluated` — the truth — and the tagging control stays
+  silent instead of flagging every bucket of the organisation with a remediation that
+  never succeeds. `tags` remains a collector capability, so coverage keeps announcing it
+  where it does exist.
 - **A private instance no longer gets a `critical` deviation it cannot fix.** Where a
   provider's security groups filter the **public** interface, an instance without one is
   given `security-groups: []` **by construction** — the API does it, the operator did not

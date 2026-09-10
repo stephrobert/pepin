@@ -109,6 +109,17 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un stockage objet qui accepte les étiquettes et n'en garde aucune ne produit plus un
+  écart sur chaque bucket.** Le SOS d'Exoscale répond `200` à `PutBucketTagging` et ne
+  persiste rien : le `GetBucketTagging` qui suit rend aussitôt `NoSuchTagSet` — mesuré à
+  l'AWS CLI puis en SigV4 écrit à la main. Cette même réponse veut dire « aucune
+  étiquette » chez un fournisseur qui les conserve, et « cette API ne les garde pas »
+  ici : projeter `[]` affirmait donc un choix que l'exploitant n'a pas fait et ne peut
+  pas faire. Le descripteur le déclare désormais (`s3.tags_persisted`), l'attribut n'est
+  pas projeté, le verrou de capacité rend « non évalué » — ce qui est la vérité — et le
+  contrôle d'étiquetage se tait au lieu de signaler chaque bucket de l'organisation avec
+  une remédiation qui n'aboutit jamais. `tags` reste une capacité du collecteur, donc la
+  couverture continue de l'annoncer là où elle existe.
 - **Une instance privée n'obtient plus un écart `critical` qu'elle ne peut pas
   corriger.** Là où les groupes de sécurité d'un fournisseur filtrent l'interface
   **publique**, une instance qui n'en a pas se voit attacher `security-groups: []` **par
