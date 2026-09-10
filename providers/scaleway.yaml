@@ -14,6 +14,22 @@ description: "Scaleway — object storage, instances, IAM, security groups"
 # appartient au fournisseur, et une région ajoutée demain doit rester scannable.
 regions: [fr-par, nl-ams, pl-waw]
 
+# Données PERSONNELLES : les attributs qui nomment une personne, et l'identifiant
+# stable qui les remplace dans un bundle caviardé (`--seal --redact`).
+#
+# `iam_user.username` est mappé depuis `email` : le sujet d'un finding MFA est donc une
+# adresse. Un bundle est fait pour être remis à un TIERS, et une adresse e-mail y est
+# une donnée personnelle que l'outil aurait mise là sans que personne ne le décide.
+#
+# On ne la SUPPRIME pas : un exploitant qui corrige un MFA doit savoir qui. Elle reste
+# dans le rapport local ; seul le bundle destiné à sortir du périmètre porte
+# l'identifiant stable à sa place.
+donnees_personnelles:
+  - type: iam_user
+    attributs: [username]
+    identifiant_stable: user_id
+    source: "api/iam/v1alpha1 User — `email` mappé en `username` (cf. collecte)"
+
 
 # Souveraineté du fournisseur (CLD-GVN-4) — faits ancrés. Cloud français du
 # groupe Iliad (capital européen) ; qualification SecNumCloud en cours.

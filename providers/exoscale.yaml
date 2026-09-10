@@ -15,6 +15,22 @@ region_key: zone
 # appartient au fournisseur, et une région ajoutée demain doit rester scannable.
 regions: [at-vie-1, at-vie-2, bg-sof-1, ch-dk-2, ch-gva-2, de-fra-1, de-muc-1, hr-zag-1]
 
+# Données PERSONNELLES : les attributs qui nomment une personne, et l'identifiant
+# stable qui les remplace dans un bundle caviardé (`--seal --redact`).
+#
+# `iam_user.username` est mappé depuis `email` : le sujet d'un finding MFA est donc une
+# adresse. Un bundle est fait pour être remis à un TIERS, et une adresse e-mail y est
+# une donnée personnelle que l'outil aurait mise là sans que personne ne le décide.
+#
+# On ne la SUPPRIME pas : un exploitant qui corrige un MFA doit savoir qui. Elle reste
+# dans le rapport local ; seul le bundle destiné à sortir du périmètre porte
+# l'identifiant stable à sa place.
+donnees_personnelles:
+  - type: iam_user
+    attributs: [username]
+    identifiant_stable: user_id
+    source: "API v2 IAM — l'utilisateur est identifié par son `email`, mappé en `username` (cf. collecte)"
+
 
 # Souveraineté du fournisseur (CLD-GVN-4) — faits ancrés, projetés en ressource
 # governance_provider. Siège en Suisse (hors UE) → écart GVN-4 attendu.

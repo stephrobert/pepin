@@ -67,6 +67,17 @@ belongs in `git log`.
 
 ### Security
 
+- **A shared evidence bundle no longer names a person.** `iam_user.username` is mapped
+  from `email` at both Scaleway and Exoscale, so an MFA finding's subject was an e-mail
+  address — and it travelled verbatim into `assessment.json`, the OSCAL, the SARIF and
+  the sealed `input.json`. A bundle is meant to be handed to a **third party**: the tool
+  was putting personal data in it without anyone deciding to. `--redact`, already the
+  "for a third party" switch, now substitutes those subjects with the user's **stable
+  identifier**, in the inventory, in the sealed assessment and in the evidence line that
+  quotes them. The address is not dropped — an operator fixing an MFA needs to know who —
+  the **local report is unchanged**; only what leaves the perimeter is. Which attribute
+  names a person is **declared in the provider descriptor with its source**, never a
+  hard-coded list in the CLI.
 - **A collector no longer reads back a request it has just put a secret into.** CodeQL
   reported, at `high`, a secret key reaching a published report: a collector set its
   credential as a header, then rebuilt the call signature from that same request object
