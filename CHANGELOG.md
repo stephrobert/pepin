@@ -43,8 +43,24 @@ belongs in `git log`.
   non-negotiable rules: nothing says GO while a stage is red; a skipped stage carries
   a **written** reason that appears in the report, and a silent `--skip` is refused;
   and the gate must be able to go red — `mise run gate:selftest` breaks each rule and
-  demands a refusal, and runs inside `prepush`. Stage 2 (the published artefacts) is
-  not written yet, and the gate says so rather than skipping it silently.
+  demands a refusal, and runs inside `prepush`.
+
+- **Release gate, stage 2 — the artefacts as a user gets them** (issue #178). CI proves
+  the *mechanisms* work, on artefacts it builds itself and serves over a loopback. It
+  says nothing about the **published chain** — the signature living at Sigstore, the
+  attestation at GitHub, the image on ghcr.io — which can stop verifying without a line
+  of this repository moving. Stage 2 rebuilds the binaries with the workflow's own build
+  line (they must carry their tag and keep their exit codes), then, against the previous
+  tag's real assets: the README's "Verify what you downloaded" block, the `cosign verify`
+  and `docker run` of `docs/install.md`, the action's installer — which must accept the
+  published binary **and** refuse the same binary with one byte changed — and the GitLab
+  template's `before_script` in the `alpine:3.21` it declares. Those commands are
+  **extracted** from the documentation, never copied into the gate: copying would prove
+  the copy works, extracting proves the page works, which is the invariant of ADR-0016. A
+  reorganised page turns the gate red instead of passing silently. Each check skips with
+  a written reason when its tool is missing — and a stage whose measuring checks were
+  **all** skipped is reported SKIPPED, never GO, because a green that measured nothing is
+  the defect this product holds against others.
 
 - **Qualification tenants for Outscale and Exoscale** (issue #198). Outscale: 79 Terraform
   resources plus 6 OOS buckets and an inline EIM policy created by the tenant's `extra`
