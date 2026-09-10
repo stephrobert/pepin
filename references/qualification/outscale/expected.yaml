@@ -325,8 +325,20 @@ controls:
 
   governance_resource_region_in_eu:
     live: pass
-    # Le mapping Terraform ne projette pas la région (#203 ; #194 pour Scaleway).
-    terraform: not-evaluated
+    # RÉCONCILIÉ le 2026-09-10 : #194 est CORRIGÉE et vaut aussi pour Outscale. Le
+    # mapping projette désormais la région, DÉRIVÉE de la zone que le plan porte
+    # (`placement_subregion_name: eu-west-2a` → `eu-west-2`, transform `region_of_zone`).
+    #
+    # Le passage de `not-evaluated` à `pass` a la forme exacte d'un faux vert, et c'est
+    # à ce titre qu'il a été vérifié AVANT d'être épinglé : la région n'est pas
+    # fabriquée, elle est dérivée d'une valeur observée dans le plan, avec sa formule
+    # (ADR-0014). L'assessment le dit lui-même — « no deviation detected on the
+    # resources of type "compute_instance", whose deciding data was observed on every
+    # one of them », sur les 8 VM du tenant.
+    #
+    # La porte avait raison de crier : avant cette ligne, rien dans le dépôt
+    # n'expliquait le changement. C'est précisément ce qu'un pin doit porter.
+    terraform: pass
 
   governance_provider_sovereignty:
     live: pass

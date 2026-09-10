@@ -230,18 +230,31 @@ controls:
       # #192 CORRIGÉE (#206) : le contrôle est désormais déclaré pour Scaleway, et la
       # matrice ne dit plus ✗ là où l'outil mesure. Les six écarts étaient JUSTES —
       # seule la déclaration était fausse —, donc ce pin de statut ne bouge pas.
-    terraform: absent
+    # RÉCONCILIÉ le 2026-09-10 : sur le PLAN, le contrôle n'est plus absent, il rend
+    # `not-evaluated` en nommant sa raison — « attribut `default_encryption_enabled`
+    # non collecté sur les ressources de type `object_storage_bucket` ». C'est le bon
+    # comportement et non une régression : un plan Terraform ne porte pas de bloc SSE
+    # pour un bucket qui n'en déclare aucun, donc il n'y a rien à observer. Une règle
+    # qui ne peut pas conclure le DIT, au lieu de disparaître du rapport (ADR-0015) —
+    # et disparaître était le pire des deux, parce qu'un contrôle absent se lit comme
+    # un contrôle sans écart.
+    terraform: not-evaluated
 
   # ── Bases managées (PLAN SEULEMENT : aucune collecte live RDB, et rien n'est
   #    provisionné qu'aucun scan live ne verrait — cf. variables.tf) ────────────
   database_service_not_open_to_internet:
     live: not-evaluated
     terraform:
-      # `_parent.instance_id` n'est pas comblé par les références du plan (ADR-0022,
-      # chemins simples seulement, issue #193) : le sujet est l'adresse de la
-      # ressource ACL, indexée parce que les bases n'existent que sur le plan (count).
-      fail: ["scaleway_rdb_acl.exposed[0]"]
-      silent: ["scaleway_rdb_acl.hardened[0]"]
+      # RÉCONCILIÉ le 2026-09-10 : #193 est CORRIGÉE. Le mapper réécrit désormais une
+      # adresse injectée vers l'IDENTITÉ que la cible porte dans l'inventaire, si bien
+      # que le sujet n'est plus `scaleway_rdb_acl.exposed[0]` — l'adresse d'une règle
+      # d'ACL — mais la base elle-même. Une base, un sujet : l'opérateur lit le nom de
+      # ce qu'il doit corriger, pas la coordonnée d'une ressource intermédiaire.
+      #
+      # Mesuré : `ip_filter=terraform-plan:scaleway_rdb_acl (derived) observed=2/2`,
+      # « ACL allowing a public CIDR (0.0.0.0/0) ».
+      fail: [pepin-qual-rdb-exposed]
+      silent: [pepin-qual-rdb-hardened]
 
   database_encryption_at_rest_enabled:
     live: not-evaluated

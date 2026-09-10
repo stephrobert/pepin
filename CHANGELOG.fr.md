@@ -616,6 +616,32 @@ l'une ni l'autre appartient au `git log`.
 
 ### Modifié
 
+- **Cinq verdicts bougent sur un tenant inchangé, et chacun est mesuré** (issue #229).
+  Les trois tenants de qualification ont été appliqués, scannés, scellés, détruits et
+  **prouvés détruits** sur des comptes Scaleway, Outscale et Exoscale réels le
+  2026-09-10 — 15, 19 et 20 familles de collecte listées, aucune ressource du tenant
+  survivante, aucun delta avant/après, pour 0,072 EUR au total. Ce qui suit change ce
+  qu'un rapport dit d'une infrastructure que vous n'avez pas touchée :
+  - `compute_instance_has_security_group` ne signale plus une instance **privée** : un
+    groupe de sécurité ne s'attache pas à une instance sans interface publique, donc la
+    remédiation ne pouvait jamais aboutir (#212). En live Exoscale, le contrôle rend
+    désormais `not-evaluated` plutôt que `pass`, parce qu'une liste vide observée est
+    comptée comme non collectée — lacune de couverture, épinglée et nommée #227.
+  - `governance_resource_required_tags` ne signale plus un bucket SOS Exoscale : SOS
+    accepte `PutBucketTagging` et ne persiste rien, donc un tel bucket n'a jamais
+    d'étiquette quoi qu'on fasse (#208). Le contrôle dit qu'il ne peut pas conclure au
+    lieu de crier.
+  - `database_service_not_open_to_internet` nomme **la base**, et non l'adresse de la
+    règle d'ACL qui l'expose (#193). Une base, un sujet.
+  - `objectstorage_bucket_default_encryption` sur un plan Terraform n'est plus **absent**
+    de l'assessment : il apparaît en `not-evaluated`, en nommant l'attribut que le plan
+    ne porte pas. Un contrôle qui disparaît se lit comme un contrôle sans rien à dire.
+  - `governance_resource_region_in_eu` conclut `pass` sur un plan Outscale, là où il
+    renonçait : la région est désormais **dérivée de la zone que le plan porte**
+    (`placement_subregion_name` → `region`, #194). Vérifié avant d'être épinglé — un
+    `not-evaluated` qui devient `pass` a la forme exacte d'un faux vert, et celui-ci
+    repose sur une valeur observée avec sa formule, pas sur une fabrication.
+
 - **Une unité Outscale refusée nomme désormais le droit qui l'aurait collectée, et la
   documentation dit qu'un scan complet exige les clés du propriétaire du compte**
   (issue #168). Mesuré le 2026-09-09 sur un tenant `eu-west-2` réel, avec un utilisateur
