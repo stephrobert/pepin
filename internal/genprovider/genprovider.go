@@ -110,16 +110,45 @@ type Descriptor struct {
 // devine les droits qu'il réclame pousse à en donner trop.
 //
 // D'où `Etat`, sur le modèle du contrat d'API : `verifie` engage la source citée,
-// `a_verifier` dit explicitement que le droit n'a pas pu être établi. Aucune de
-// ces lignes n'est confirmée par un scan réel à rôle réduit — le dépôt ne détient
-// aucun identifiant cloud —, et la documentation générée le dit à chaque page.
+// `a_verifier` dit explicitement que le droit n'a pas pu être établi.
+//
+// `Mesure` dit COMMENT il a été établi. Une ligne confirmée par un document et une
+// ligne confirmée par un scan réel à rôle réduit n'engagent pas la même chose : la
+// première dit ce que le fournisseur ÉCRIT, la seconde ce qu'il RÉPOND. Les fondre
+// dans un seul « oui » perdrait la distinction qui décide, pour qui doit accorder
+// ces droits, s'il peut s'y fier.
 type Permission struct {
-	Unit   string `yaml:"unit"`   // unité de collecte (type de ressource normalisé, ou chaîne d'appels nommée)
-	Grant  string `yaml:"grant"`  // le droit, dans le vocabulaire natif du fournisseur
-	Etat   string `yaml:"etat"`   // verifie | a_verifier
-	Source string `yaml:"source"` // document officiel qui confirme (ou dont l'absence motive `a_verifier`)
-	Note   string `yaml:"note"`   // réserve ou précision, en français
-	NoteEn string `yaml:"note_en"`
+	Unit   string           `yaml:"unit"`   // unité de collecte (type de ressource normalisé, ou chaîne d'appels nommée)
+	Grant  string           `yaml:"grant"`  // le droit, dans le vocabulaire natif du fournisseur
+	Etat   string           `yaml:"etat"`   // verifie | a_verifier
+	Source string           `yaml:"source"` // document officiel qui confirme (ou dont l'absence motive `a_verifier`)
+	Note   string           `yaml:"note"`   // réserve ou précision, en français
+	NoteEn string           `yaml:"note_en"`
+	Mesure MesurePermission `yaml:"mesure"` // le scan réel qui a tranché, s'il y en a eu un
+}
+
+// Les deux verdicts d'un rôle réduit, et c'est tout le vocabulaire.
+const (
+	// RoleReduitSuffisant : la politique de moindre privilège a collecté l'unité.
+	RoleReduitSuffisant = "suffisant"
+	// RoleReduitRefuse : elle a été refusée. L'unité exige davantage, et `Grant` doit
+	// alors NOMMER ce davantage — sans quoi l'opérateur ne lit qu'une erreur brute de
+	// l'API, qui l'envoie corriger une clé qui n'a rien à se reprocher.
+	RoleReduitRefuse = "refuse"
+)
+
+// MesurePermission consigne le scan réel qui a tranché sur un droit : quand, où, et
+// ce que le rôle RÉDUIT a rendu.
+//
+// L'ADR-0012 interdit tout identifiant en CI et fait du scan live un geste de
+// mainteneur « dont le résultat est consigné et daté ». Ce type est ce consignement :
+// la date permet de juger un relevé périmé, la région dit sur quel plan de contrôle
+// il a porté, et `RoleReduit` porte le seul fait qui intéresse un lecteur — la
+// politique de moindre privilège a-t-elle suffi.
+type MesurePermission struct {
+	Date       string `yaml:"date"`        // AAAA-MM-JJ, jour du scan
+	Region     string `yaml:"region"`      // région du tenant mesuré
+	RoleReduit string `yaml:"role_reduit"` // suffisant | refuse
 }
 
 // DonneePersonnelle : un type dont certains attributs nomment une personne, et

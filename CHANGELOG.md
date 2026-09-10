@@ -519,6 +519,25 @@ belongs in `git log`.
 
 ### Changed
 
+- **A refused Outscale unit now names the grant that would have collected it, and the
+  documentation says a complete scan needs the account owner's keys** (issue #168).
+  Measured on 2026-09-09 against a real `eu-west-2` tenant, with an EIM user carrying
+  nothing but the read-only policy Outscale publishes (`api:Read*` on `*`): every OAPI
+  unit came back complete, with an inventory identical to the account owner's — and
+  **OOS and OKS both refused that identity**. OOS answers `InvalidAccessKeyId — The AWS
+  access key Id you provided does not exist in our records`, meaning it does not know
+  EIM keys at all; OKS answers `Forbidden: User type not allowed`, refusing the identity
+  by its type. Neither is a missing grant, so no EIM policy lifts them. Those two units
+  carried an **empty** grant in the descriptor, and the capability report only prints
+  "required grant" when the descriptor declares one: the operator read the raw S3 error
+  and went to check a perfectly valid key. Both grants are now declared, so the
+  capability report and every `not-evaluated` reason name them. The permissions table
+  distinguishes a **documented** line from a **measured** one and dates the latter
+  (`mesure:` in the descriptor); the provider page states how to live with owner keys —
+  a dedicated key with an expiry, out of CI, and a dated exemption on
+  `iam_no_root_access_key` rather than silence. No credential enters CI: the measurement
+  is a maintainer gesture, run locally and recorded (ADR-0012).
+
 - **The qualification gate said GO while a known false green stood.** It compared a run
   to `expected.yaml` and concluded GO when they matched — a good **non-regression
   contract**, but presented as a **release quality gate**. A pinned defect reproduces

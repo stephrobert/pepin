@@ -65,124 +65,213 @@ oks:
 # DÉRIVÉE de la même donnée. Deux listes tenues en parallèle divergent, et celle
 # qui diverge est toujours celle qu'on lit.
 #
-# `etat: verifie` engage : la permission est confirmée dans la source citée, un
-# document officiel du fournisseur. `a_verifier` dit l'inverse, explicitement.
-# AUCUNE de ces lignes n'a été confirmée par un scan réel avec un rôle réduit :
-# ce dépôt ne détient aucun identifiant cloud, par construction.
+# `etat: verifie` engage : le droit est ÉTABLI. `a_verifier` dit l'inverse,
+# explicitement. Le bloc `mesure` dit COMMENT il l'a été — un document dit ce que le
+# fournisseur ÉCRIT, un scan à rôle réduit dit ce qu'il RÉPOND, et les deux ne valent
+# pas la même chose pour qui doit décider quels droits accorder.
 #
-# La politique EIM en lecture seule publiée par Outscale — `api:Read*` sur `*` —
-# couvre TOUS les appels OAPI ci-dessous. Les actions sont énumérées pour dire
-# lesquelles chaque unité exige, mais leur nom exact est INFÉRÉ de la syntaxe
-# documentée `<service>:<APIMethod>`, pas recopié d'un catalogue d'actions.
+# Outscale est le seul fournisseur dont les droits sont MESURÉS : le 2026-09-09, sur
+# un tenant eu-west-2, avec un utilisateur EIM ne portant QUE la politique de lecture
+# publiée par Outscale (`api:Read*` sur `*`). Geste de mainteneur, lancé localement,
+# consigné et daté ici — aucun identifiant n'entre en CI (ADR-0012).
+#
+# Ce que ce scan a rendu, et c'est la raison d'être de l'issue #168 :
+#
+#   - les unités OAPI sont revenues COMPLÈTES, inventaire identique à celui du compte
+#     propriétaire. La politique `api:Read*` suffit, PRISE EN BLOC : les noms d'action
+#     détaillés restent INFÉRÉS de la syntaxe documentée `<service>:<APIMethod>`, et
+#     aucun d'eux n'a été éprouvé isolément ;
+#   - OOS et OKS l'ont REFUSÉE, et pas faute d'un droit : OOS ne connaît pas les clés
+#     EIM, OKS refuse l'utilisateur EIM par son TYPE. Un scan Outscale complet exige
+#     donc les clés du propriétaire du compte — que le référentiel signale lui-même en
+#     `iam_no_root_access_key`. Comment vivre avec est dit sur la page du fournisseur ;
+#     ce descripteur ne dit que ce qui a été mesuré.
+#
+# `grant` NOMME ce qu'il faut détenir, y compris quand la réponse est « les clés du
+# compte » : c'est cette chaîne que le relevé de capacités imprime sous un refus, et
+# que le motif d'un « non évalué » cite. La laisser vide, comme elle l'était pour OOS
+# et OKS, laissait l'opérateur devant une erreur brute qui accuse sa clé.
 permissions:
   - unit: security_group_rule
     grant: "api:Read* (EIM) — ReadSecurityGroups"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: network_interface
     grant: "api:Read* (EIM) — ReadVms"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "Les cartes réseau sont lues DANS la réponse de ReadVms (Vm.Nics[]) : aucun appel ni droit supplémentaire. La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "Network interfaces are read INSIDE the ReadVms response (Vm.Nics[]): no extra call, no extra grant. The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Les cartes réseau sont lues DANS la réponse de ReadVms (Vm.Nics[]) : aucun appel ni droit supplémentaire. Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Network interfaces are read INSIDE the ReadVms response (Vm.Nics[]): no extra call, no extra grant. Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: compute_instance
     grant: "api:Read* (EIM) — ReadVms"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: access_key
     grant: "api:Read* (EIM) — ReadAccounts, ReadAccessKeys"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: api_access_rule
     grant: "api:Read* (EIM) — ReadApiAccessRules"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: api_access_summary
     grant: "api:Read* (EIM) — ReadApiAccessRules"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: api_access_policy
     grant: "api:Read* (EIM) — ReadApiAccessPolicy"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: blockstorage_volume
     grant: "api:Read* (EIM) — ReadVolumes"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: blockstorage_snapshot
     grant: "api:Read* (EIM) — ReadSnapshots"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: iam_policy
     grant: "api:Read* (EIM) — ReadPolicies, ReadPolicyVersion"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: iam_policy_inline
     grant: "api:Read* (EIM) — ReadUsers, ReadUserPolicies, ReadUserPolicy, ReadUserGroups, ReadUserGroupPolicies"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: network
     grant: "api:Read* (EIM) — ReadNets"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: network_peering
     grant: "api:Read* (EIM) — ReadNetPeerings"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: subnet
     grant: "api:Read* (EIM) — ReadSubnets"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: load_balancer
     grant: "api:Read* (EIM) — ReadLoadBalancers"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: compute_image
     grant: "api:Read* (EIM) — ReadImages"
-    etat: a_verifier
+    etat: verifie
     source: "docs.outscale.com/en/userguide/Managing-Access-for-Cloud-Automation.html + EIM-Policy-Elements.html"
-    note: "La politique `api:Read*` est vérifiée telle quelle dans la documentation ; le nom d'action détaillé, lui, est inféré de la syntaxe et non recopié d'un catalogue."
-    note_en: "The `api:Read*` policy itself is verified as published; the detailed action name is inferred from the documented syntax rather than copied from an action catalogue."
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: suffisant
+    note: "Scan réel du 2026-09-09 sur un tenant eu-west-2, avec un utilisateur EIM ne portant que cette politique : l'unité est revenue COMPLÈTE, inventaire identique à celui du compte propriétaire (issue #168). Ce qui a été mesuré, c'est `api:Read*` PRISE EN BLOC : le nom d'action détaillé reste inféré de la syntaxe documentée, pas recopié d'un catalogue, et il n'a pas été éprouvé isolément."
+    note_en: "Real scan on 2026-09-09 against an eu-west-2 tenant, with an EIM user carrying nothing but this policy: the unit came back COMPLETE, with an inventory identical to the account owner's (issue #168). What was measured is `api:Read*` TAKEN AS A WHOLE: the detailed action name is still inferred from the documented syntax rather than copied from an action catalogue, and it was not exercised on its own."
   - unit: object_storage_bucket
-    grant: ""
-    etat: a_verifier
-    source: "docs.outscale.com/en/userguide/EIM-Policy-Elements.html + EIM API reference"
-    note: "Aucun code de service de stockage objet n'apparaît dans les éléments de politique EIM. Avec les clés du propriétaire du compte, l'accès OOS vient avec le compte ; comment l'accorder à un utilisateur EIM n'est PAS vérifié. Par politique de bucket, les actions de lecture documentées sont s3:ListBucket, s3:HeadBucket, s3:GetBucketAcl, s3:GetBucketPolicy, s3:GetBucketTagging, s3:GetBucketVersioning, s3:GetEncryptionConfiguration, s3:GetBucketObjectLockConfiguration — sans action pour LISTER les buckets d'un compte, qui est pourtant le premier appel."
-    note_en: "No object-storage service code appears in the EIM policy elements. With the account owner keys, OOS access comes with the account; how to grant it to an EIM user is NOT verified. Through a bucket policy the documented read actions are s3:ListBucket, s3:HeadBucket, s3:GetBucketAcl, s3:GetBucketPolicy, s3:GetBucketTagging, s3:GetBucketVersioning, s3:GetEncryptionConfiguration, s3:GetBucketObjectLockConfiguration - with no action for LISTING an account buckets, which is the first call made."
+    grant: "account owner access key (OOS) - not an EIM user key"
+    etat: verifie
+    source: "issue #168 (measure) + docs.outscale.com/en/userguide/EIM-Policy-Elements.html"
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: refuse
+    note: "MESURÉ le 2026-09-09 (issue #168) : une clé EIM portant `api:Read*` est refusée par OOS avec `InvalidAccessKeyId - The AWS access key Id you provided does not exist in our records`. OOS ne connaît donc pas du tout les clés EIM, et son message trompe : la clé existe, elle est inconnue de CE service. Seules les clés du propriétaire du compte collectent cette unité. Aucun code de service de stockage objet n'apparaît dans les éléments de politique EIM ; par politique de bucket, les actions de lecture documentées sont s3:ListBucket, s3:HeadBucket, s3:GetBucketAcl, s3:GetBucketPolicy, s3:GetBucketTagging, s3:GetBucketVersioning, s3:GetEncryptionConfiguration, s3:GetBucketObjectLockConfiguration — sans action pour LISTER les buckets d'un compte, qui est pourtant le premier appel. Qu'un droit plus étroit que les clés du compte existe reste ouvert."
+    note_en: "MEASURED on 2026-09-09 (issue #168): an EIM key carrying `api:Read*` is refused by OOS with `InvalidAccessKeyId - The AWS access key Id you provided does not exist in our records`. OOS therefore does not know EIM keys at all, and its message misleads: the key exists, it is unknown to THAT service. Only the account owner keys collect this unit. No object-storage service code appears in the EIM policy elements; through a bucket policy the documented read actions are s3:ListBucket, s3:HeadBucket, s3:GetBucketAcl, s3:GetBucketPolicy, s3:GetBucketTagging, s3:GetBucketVersioning, s3:GetEncryptionConfiguration, s3:GetBucketObjectLockConfiguration - with no action for LISTING an account buckets, which is the first call made. Whether a grant narrower than the account keys exists remains open."
   - unit: kubernetes_cluster
-    grant: ""
-    etat: a_verifier
-    source: "docs.outscale.com/en/userguide/ (OKS + EIM)"
-    note: "Le modèle de permission de GET /api/v2/clusters/all n'est PAS vérifié. Un appel refusé dégrade proprement : les contrôles Kubernetes reviennent « non évalués »."
-    note_en: "The permission model of GET /api/v2/clusters/all is NOT verified. A refused call degrades cleanly: the Kubernetes controls come back \"not evaluated\"."
+    grant: "account owner access key (OKS) - not an EIM user key"
+    etat: verifie
+    source: "issue #168 (measure) + docs.outscale.com/en/userguide/ (OKS + EIM)"
+    mesure:
+      date: "2026-09-09"
+      region: eu-west-2
+      role_reduit: refuse
+    note: "MESURÉ le 2026-09-09 (issue #168) : une clé EIM portant `api:Read*` est refusée par OKS avec `403 - Forbidden: User type not allowed`. Le refus porte sur le TYPE d'identité, pas sur un droit manquant : aucune politique EIM ne le lève. Seules les clés du propriétaire du compte collectent cette unité. Un appel refusé dégrade proprement : les contrôles Kubernetes reviennent « non évalués », en nommant désormais le droit qui manque."
+    note_en: "MEASURED on 2026-09-09 (issue #168): an EIM key carrying `api:Read*` is refused by OKS with `403 - Forbidden: User type not allowed`. The refusal is about the identity TYPE, not about a missing grant: no EIM policy lifts it. Only the account owner keys collect this unit. A refused call degrades cleanly: the Kubernetes controls come back \"not evaluated\", and now name the grant they lack."
 
 collecte:
   # Collecte live Outscale PILOTÉE PAR YAML (moteur internal/collect, SigV4).
