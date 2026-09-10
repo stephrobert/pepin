@@ -230,12 +230,23 @@ collecte:
         source_ip_restricted: policy
         policy_has_expiration: policy
         manages_iam: policy
+        provider_managed: name
       transforms:
         max_session_ttl: ["default:0", to_int]
         admin_privileges: "equals:allow"   # default allow = tout autorisé sauf deny ciblés (CLD-IAM-1)
         source_ip_restricted: "contains:source_ip"
         policy_has_expiration: "contains:duration("
         manages_iam: "contains:iam-role"   # autorise la gestion des rôles IAM = escalade (CLD-IAM-12)
+        # Identité GÉRÉE PAR LA PLATEFORME : SKS crée un rôle `sks-ccm-<cluster>` pour
+        # le cloud controller manager du cluster, s'en sert, et le supprime avec lui.
+        # Observé le 2026-09-09 (GET /v2/iam-role) : `editable: true`, donc le filtre
+        # des rôles prédéfinis ne le couvre pas — et pourtant l'exploitant ne le crée
+        # pas, ne l'utilise pas, et ne peut pas le durcir sans casser le composant.
+        #
+        # Le MOTIF vit ici, avec sa source, jamais dans une règle : une règle commune ne
+        # connaît aucune convention de nommage de fournisseur, et coder le préfixe dans
+        # chacune les ferait diverger au premier changement.
+        provider_managed: "matches:^sks-ccm-"
 
     # Volumes block storage → blockstorage_volume. state natif (block-storage-volume) :
     # attached|detached|creating|... ; « attached » = rattaché à une instance (en usage,
@@ -452,6 +463,9 @@ contrat:
         permissions[]}. Policy = {default-service-strategy (allow|deny), services{<svc>:{type, rules:[{action, expression,
         resources}]}}} ; expression en CEL. Réf : references/docs/exoscale/reference-api-schemas-iam-role.md + iam-policy.md.'
       mapping:
+        provider_managed: 'DÉRIVÉ : name correspond à ^sks-ccm- — rôle que SKS crée pour le cloud controller
+          manager du cluster, utilise et supprime avec lui (GET /v2/iam-role, observé). `editable: true`, donc le
+          filtre des rôles prédéfinis ne le couvre pas, alors que l''exploitant ne peut ni le créer ni le durcir.'
         role_id: id
         name: name
         editable: 'editable (bool) : un rôle PRÉDÉFINI (non éditable, ex. « Billing », « Owner ») a une policy non modifiable

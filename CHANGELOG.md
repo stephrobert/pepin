@@ -112,6 +112,17 @@ belongs in `git log`.
 
 ### Fixed
 
+- **An identity the platform creates, uses and deletes no longer brings two unfixable
+  deviations per cluster.** Exoscale's SKS creates an `sks-ccm-<cluster>` role for the
+  cluster's cloud controller manager and removes it with the cluster. It is
+  `editable: true`, so the predefined-role filter did not cover it — and every cluster
+  brought two IAM findings nobody could clear: binding the role to a source IP would mean
+  guessing the control plane's addresses, and adding a lifetime clause would break the
+  component. Ten clusters meant twenty irreparable findings. The fact is now **collected**
+  (`provider_managed`) and **declared in the provider descriptor with its source**, never
+  hardcoded as a name prefix inside a rule — a common rule knows no provider's naming
+  convention, and a prefix repeated in each would diverge at the first change. A shared
+  helper reads it, and the same role **without** the mark still raises all three findings.
 - **A bucket store that accepts tags and keeps none no longer produces a deviation on
   every bucket.** Exoscale's SOS answers `200` to `PutBucketTagging` and persists
   nothing: the `GetBucketTagging` that follows returns `NoSuchTagSet` immediately —

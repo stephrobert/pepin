@@ -582,3 +582,21 @@ environment_of(attrs) := lower(v) if {
 is_production(attrs) if environment_of(attrs) in production_values
 
 environment_known(attrs) if environment_of(attrs)
+
+# gere_par_le_fournisseur — cette ressource est-elle créée, utilisée et supprimée par
+# la PLATEFORME, pour un composant que l'exploitant ne fait pas tourner ?
+#
+# Le cas fondateur : SKS crée un rôle `sks-ccm-<cluster>` pour le cloud controller
+# manager, s'en sert, et le supprime avec le cluster. Il est `editable: true`, donc le
+# filtre des rôles prédéfinis ne le couvrait pas — et chaque cluster apportait deux
+# écarts IAM que personne ne pouvait faire disparaître. Dix clusters, vingt findings
+# irréparables : c'est ainsi qu'un CSPM se fait ignorer.
+#
+# Le FAIT est collecté (`provider_managed`), déclaré dans le descripteur du
+# fournisseur avec sa source. Aucune règle ne connaît de convention de nommage : coder
+# un préfixe dans chacune les ferait diverger au premier changement, et c'est
+# précisément ce que la revue de release demandait d'éviter.
+#
+# Vrai seulement si l'attribut est présent ET vrai. Absent ne vaut pas vrai : un
+# fournisseur qui ne déclare rien ne voit aucun changement.
+gere_par_le_fournisseur(r) if truthy(object.get(r.attributes, "provider_managed", false))

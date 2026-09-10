@@ -131,7 +131,17 @@ import (
 //	contrôle « VM sans groupe de sécurité » criait alors sur chaque instance privée,
 //	avec une remédiation que l'API ignore. Déduire le fait d'une absence de
 //	`public_ip` ne distinguerait pas « privée » de « non collectée ».
-const InventoryFormat = "pepin-inventory/v8"
+//
+// v9 : une ressource peut porter `provider_managed`, le fait qu'elle soit créée,
+//
+//	utilisée et supprimée par la PLATEFORME pour un composant que l'exploitant ne
+//	fait pas tourner (Exoscale : le rôle `sks-ccm-<cluster>` du cloud controller
+//	manager, GET /v2/iam-role). Ajout PUR. Il est nécessaire parce que ce rôle est
+//	`editable: true` : le filtre des rôles prédéfinis ne le couvrait pas, et chaque
+//	cluster apportait deux écarts IAM que personne ne pouvait faire disparaître. Le
+//	fait est déclaré par le descripteur, avec sa source ; aucune règle ne connaît de
+//	convention de nommage.
+const InventoryFormat = "pepin-inventory/v9"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire
