@@ -4,7 +4,7 @@
 
 Un binaire Go, pas de démon, pas de dépendance. Quatre portes d'entrée,
 chacune vérifiée avant que quoi que ce soit s'exécute : le binaire publié,
-l'image de conteneur, l'action GitHub, le modèle GitLab. `0.3.0` ci-dessous
+l'image de conteneur, l'action GitHub, le modèle GitLab. `0.4.0` ci-dessous
 nomme une version publiée : un `latest` mutable installe ce qui est le plus
 récent, c'est-à-dire un binaire que personne ne sait nommer après coup.
 
@@ -14,7 +14,7 @@ Demande `cosign` (ou `gh`, plus bas) et rien d'autre. Chaque fichier est
 téléchargé sur disque et vérifié avant d'être exécuté.
 
 ```bash
-base=https://github.com/stephrobert/pepin/releases/download/v0.3.0
+base=https://github.com/stephrobert/pepin/releases/download/v0.4.0
 
 case "$(uname -s)-$(uname -m)" in
   Linux-x86_64)  asset=pepin-linux-amd64 ;;
@@ -46,7 +46,7 @@ Avec `gh`, qui contrôle la provenance de build à la place : elle prouve quel
 workflow et quel commit ont produit le binaire.
 
 ```bash
-gh release download v0.3.0 --repo stephrobert/pepin --pattern 'pepin-linux-amd64'
+gh release download v0.4.0 --repo stephrobert/pepin --pattern 'pepin-linux-amd64'
 gh attestation verify pepin-linux-amd64 --repo stephrobert/pepin \
   --signer-workflow stephrobert/pepin/.github/workflows/release.yml
 ```
@@ -71,12 +71,12 @@ n'est pas le tag ou dont les codes de sortie ont bougé.
 Un tag par release, pas de `latest`. Vérifier, puis lancer :
 
 ```bash
-cosign verify ghcr.io/stephrobert/pepin:v0.3.0 \
+cosign verify ghcr.io/stephrobert/pepin:v0.4.0 \
   --certificate-identity-regexp '^https://github\.com/stephrobert/pepin/\.github/workflows/release\.yml@refs/tags/v' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 
 # auditer un plan Terraform : aucun identifiant, rien de provisionné
-docker run --rm -v "$PWD:/work" ghcr.io/stephrobert/pepin:v0.3.0 \
+docker run --rm -v "$PWD:/work" ghcr.io/stephrobert/pepin:v0.4.0 \
   scan scaleway --terraform /work/plan.json
 ```
 
@@ -84,7 +84,7 @@ Trois points pratiques, tous mesurés :
 
 - **Les identifiants n'entrent jamais dans l'image.** Pour `--live`, passer
   les variables natives du provider au lancement et rien d'autre :
-  `docker run --rm -e OSC_ACCESS_KEY -e OSC_SECRET_KEY -e OSC_REGION ghcr.io/stephrobert/pepin:v0.3.0 scan outscale --live`
+  `docker run --rm -e OSC_ACCESS_KEY -e OSC_SECRET_KEY -e OSC_REGION ghcr.io/stephrobert/pepin:v0.4.0 scan outscale --live`
   (nommer les variables sans `=` les transmet depuis votre environnement,
   sans mettre leur valeur dans la ligne de commande ni dans l'historique du
   shell).
@@ -109,9 +109,9 @@ Depuis v0.2.0, l'appelant ne passe aucun jeton : l'action vérifie l'empreinte
 par elle-même, et l'attestation quand un jeton se trouve disponible.
 
 ```yaml
-- uses: stephrobert/pepin/.github/actions/pepin-scan@v0.3.0
+- uses: stephrobert/pepin/.github/actions/pepin-scan@v0.4.0
   with:
-    version: 0.3.0
+    version: 0.4.0
     provider: scaleway
     terraform-plan: plan.json
 ```
@@ -132,7 +132,7 @@ codes de sortie comme contrat, mode rapport via
 
 ```yaml
 include:
-  - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.3.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
+  - remote: 'https://raw.githubusercontent.com/stephrobert/pepin/v0.4.0/examples/gitlab-ci/pepin.gitlab-ci.yml'
 ```
 
 Exemple complet : [`examples/gitlab-ci/`](../examples/gitlab-ci/).
