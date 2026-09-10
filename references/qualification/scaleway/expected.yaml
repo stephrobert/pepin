@@ -227,7 +227,9 @@ controls:
       # Le contre-exemple existe : SSE-ONE configuré, la règle se tait. C'est ce qui
       # permettra d'activer le contrôle pour Scaleway avec sa preuve.
       silent: ["${output.bucket_encrypted}"]
-      known_defect: "#192 — contrôle mesuré et juste sur Scaleway, mais déclaré pour Outscale seul (référentiel + matrice ✗)"
+      # #192 CORRIGÉE (#206) : le contrôle est désormais déclaré pour Scaleway, et la
+      # matrice ne dit plus ✗ là où l'outil mesure. Les six écarts étaient JUSTES —
+      # seule la déclaration était fausse —, donc ce pin de statut ne bouge pas.
     terraform: absent
 
   # ── Bases managées (PLAN SEULEMENT : aucune collecte live RDB, et rien n'est

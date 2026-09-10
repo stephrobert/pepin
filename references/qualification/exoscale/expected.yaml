@@ -222,8 +222,17 @@ controls:
     # « conforme » sur le seul cluster observé (`observed=1/2`). Le plan, lui, échoue
     # sur `weak`. Issue #209.
     live:
-      status: pass
-      known_defect: "#209 — faux vert live : audit_enabled dérivé de audit.endpoint, absent quand l'audit est désactivé (API : audit {}) ; le cluster sans audit n'est pas évalué, le contrôle rend pass"
+      # #209 CORRIGÉE (#215) : la règle demande désormais à l'INVENTAIRE si le
+      # fournisseur expose la capacité, au lieu de le demander à chaque ressource. Un
+      # cluster sans `audit_enabled`, à côté d'un cluster qui le porte, est donc un
+      # écart et non plus un silence.
+      #
+      # Le statut attendu passe de `pass` à `fail` sur `weak`. C'est ce que la règle
+      # produit — mesuré sur un inventaire à deux clusters —, mais SEUL un run réel le
+      # confirme de bout en bout. La porte dira NO-GO jusqu'à ce run, et c'est le sens
+      # voulu : une correction se réconcilie par une mesure, pas par une prédiction.
+      status: fail
+      fail: ["${output.sks_weak_name}"]
     terraform:
       fail: [pepin-qual-sks-weak]
       silent: [pepin-qual-sks-strong]

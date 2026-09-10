@@ -493,6 +493,19 @@ l'une ni l'autre appartient au `git log`.
 
 ### Modifié
 
+- **La porte de qualification disait GO alors qu'un faux vert connu subsistait.** Elle
+  comparait un run à `expected.yaml` et concluait GO dès qu'ils coïncidaient — un bon
+  **contrat de non-régression**, mais présenté comme une **porte de qualité de release**.
+  Un défaut épinglé s'y reproduit à l'identique, la comparaison ne trouve aucune
+  différence, et la porte disait GO : elle vérifiait que le produit ment de la même façon
+  qu'hier. Les deux questions reçoivent désormais deux réponses, côte à côte dans le
+  rapport. Un défaut connu déclare sa **classe** et s'il bloque une release : un
+  `false_green` bloque **toujours** et ne se déroge pas — c'est la promesse sur laquelle
+  le produit est bâti —, un `false_positive` bloque par défaut et peut se déroger
+  explicitement, et un `coverage_gap` ne bloque pas, parce qu'un `not-evaluated` justifié
+  est une limite nommée, ce que le produit exige précisément de lui-même. Une chaîne
+  nue, ou une classe que personne n'a déclarée, bloque : un épinglage qui ne dit pas ce
+  qu'il est ne doit pas valoir laissez-passer.
 - **Plans Terraform : une référence déclarée ferme la corrélation qui n'a jamais
   fonctionné.** Un plan ne peut pas connaître l'identifiant d'une ressource qu'il va
   créer — cet attribut n'est pas résolu, il est **absent**. Mesuré sur un tenant de
