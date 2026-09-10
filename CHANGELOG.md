@@ -23,6 +23,29 @@ belongs in `git log`.
 
 ### Added
 
+- **`mise run release-gate -- vX.Y.Z` — one verdict before a tag, GO or NO-GO, with its
+  report** (issue #178, stages 1 and 4). `release-check` and the canary each did what
+  they said; what the repository had no way to produce was a **single** verdict, read
+  from what a user actually experiences. A one-day external audit found by hand five
+  defects that no gate was looking at, and three of them were claims the
+  **documentation** made. So beyond running what already existed as one — preflight,
+  `audit`, `adr-drift`, `falsify:all`, a bounded fuzzing campaign, the generated doc
+  blocks — stage 1 now measures those claims: no Pépin version pinned in
+  `docs/install*.md` or `examples/` predates the minimum
+  `references/release/pinning.yaml` declares safe (and both install pages cite it);
+  every relative link in the documentation resolves, **anchor included**; and the
+  binary's opening sentence names exactly the registered providers, measured by
+  running it. Stage 4 adds the rule the CHANGELOG header already promised: an
+  `expected.yaml` that moved since the previous tag obliges a CHANGELOG that moved
+  too — a verdict changing on an unchanged tenant is what its reader will have to
+  explain to an auditor. Each stage writes `release-gate/stageN.json` and the run ends
+  with `release-gate/REPORT.md`, meant to be attached to the release. Three
+  non-negotiable rules: nothing says GO while a stage is red; a skipped stage carries
+  a **written** reason that appears in the report, and a silent `--skip` is refused;
+  and the gate must be able to go red — `mise run gate:selftest` breaks each rule and
+  demands a refusal, and runs inside `prepush`. Stage 2 (the published artefacts) is
+  not written yet, and the gate says so rather than skipping it silently.
+
 - **Qualification tenants for Outscale and Exoscale** (issue #198). Outscale: 79 Terraform
   resources plus 6 OOS buckets and an inline EIM policy created by the tenant's `extra`
   hook, applied and destroyed on a real account — the two-NIC machine, the root access

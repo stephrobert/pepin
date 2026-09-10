@@ -58,13 +58,50 @@ l'outillage Python doit pouvoir couper une release.
    `docs/assets/quickstart.version` la consigne. Le preflight compare ce fichier
    au tag et refuse d'avancer s'ils diffèrent.
 
-4. **Lancer le preflight**, qui rejoue hors ligne tout ce qui doit tenir :
+4. **Lancer la porte de release**, qui rend un verdict unique et son rapport :
 
    ```bash
-   mise run release-check -- v0.1.0
+   mise run release-gate -- v0.1.0
    ```
 
-   Il vérifie : un arbre propre sur `main` ; le tag libre en local *et* sur
+   Une seule commande, un seul verdict, **GO** ou **NO-GO**. Hors ligne d'abord,
+   puis ce qui exige le réseau : une porte qui réclame le réseau pour dire qu'un
+   CHANGELOG manque est une porte qu'on lance moins souvent. Chaque étape écrit
+   `release-gate/stageN.json` (verdict, preuve, durée) et le run finit sur
+   `release-gate/REPORT.md`, **joint à la GitHub Release** : c'est la preuve que GO
+   a été dit, et pourquoi.
+
+   | Étape | Ce qu'elle mesure | Ce qu'elle exige |
+   |---|---|---|
+   | 1 | le dépôt, et ce que sa documentation affirme | rien |
+   | 3 | le tenant de qualification (plus bas) | un compte cloud, `PEPIN_GATE_LIVE=1` |
+   | 4 | les surfaces gelées, et ce qu'un verdict qui bouge doit avoir écrit | rien |
+
+   Trois règles gouvernent le verdict, et elles ne se négocient pas :
+
+   - **rien ne dit GO tant qu'une étape est rouge**. Le verdict final n'est pas une
+     synthèse au jugé : un seul contrôle rouge suffit ;
+   - **une étape sautée porte un motif ÉCRIT**, qui apparaît dans le rapport
+     (`--skip '4=aucun tag antérieur sur ce clone'`). Un `--skip` muet est refusé :
+     c'est ainsi qu'une porte devient une formalité ;
+   - **la porte doit savoir rougir.** `mise run gate:selftest` casse chacune de ces
+     règles et exige un refus. Il tourne dans `mise run prepush`, comme les
+     autotests de `falsify` et de `qualify`.
+
+   Au-delà des portes que le dépôt possédait déjà, l'étape 1 mesure **ce que la
+   documentation affirme**, parce que c'est là qu'un audit externe a trouvé à la
+   main ce qu'aucune porte ne voyait :
+
+   - aucune version de Pépin épinglée dans `docs/install*.md` ou `examples/` n'est
+     antérieure au minimum que [`references/release/pinning.yaml`](./references/release/pinning.yaml)
+     déclare sûr — et les deux pages d'installation citent bien ce minimum ;
+   - tout lien relatif de la documentation résout, **ancre comprise** ;
+   - la phrase d'accueil du binaire nomme **exactement** les fournisseurs
+     enregistrés, mesurée en lançant `pepin` et `pepin provider list`, pas en
+     relisant le code.
+
+   L'étape 1 lance aussi le **préflight** (`mise run release-check -- v0.1.0`),
+   qui reste utilisable seul. Il vérifie : un arbre propre sur `main` ; le tag libre en local *et* sur
    origin ; `mise run test` (Go avec `-race`, les suites Rego et les gardes de
    surface gelée), `mise run validate` et `mise run vet` ; **zéro dérive
    SCSL** (voir plus bas) ; les codes de sortie répondus par le **binaire
@@ -81,7 +118,7 @@ l'outillage Python doit pouvoir couper une release.
    peut ne pas avoir. La CI les fait tourner à chaque push ; le preflight lui
    demande si elle l'a fait, sur ce commit exact.
 
-5. **Taguer et pousser** :
+5. **Taguer et pousser** — seulement sur **GO** :
 
    ```bash
    git tag -a v0.1.0 -m "v0.1.0"
