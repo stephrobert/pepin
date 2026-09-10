@@ -77,18 +77,26 @@ func CollectInlinePolicies(ctx context.Context, hc *http.Client, provider, baseU
 				return nil, fmt.Errorf("ReadUserPolicy(%s/%s) : %w", user, name, err)
 			}
 			id := user + "/" + name
+			attrs := map[string]any{
+				"policy_name": name,
+				"policy_id":   id,
+				"owner_user":  user,
+				"scope":       "inline",
+			}
+			// Un document ILLISIBLE ne pose pas l'attribut (#227). Le poser à une liste
+			// vide le rendrait indiscernable d'une politique qui n'accorde rien, et
+			// c'est ce bouchon qui obligeait le verrou de capacité à se méfier de
+			// toutes les listes vides, y compris celles qu'un collecteur a vraiment
+			// observées. Une clé absente ferme la garde ; une clé vide la franchit.
+			if st := collect.IAMPolicyStatements(doc.PolicyDocument); st != nil {
+				attrs["statements"] = st
+			}
 			out = append(out, model.Resource{
-				Provider: provider,
-				Type:     "iam_policy",
-				ID:       id,
-				Name:     name,
-				Attributes: map[string]any{
-					"policy_name": name,
-					"policy_id":   id,
-					"owner_user":  user,
-					"scope":       "inline",
-					"statements":  collect.IAMPolicyStatements(doc.PolicyDocument),
-				},
+				Provider:   provider,
+				Type:       "iam_policy",
+				ID:         id,
+				Name:       name,
+				Attributes: attrs,
 				Provenance: inlineProvenance(baseURL+"/ReadUserPolicy", "PolicyDocument", "owner_user"),
 			})
 		}
@@ -114,18 +122,21 @@ func collectGroupPolicies(ctx context.Context, hc *http.Client, provider, baseUR
 		}
 		for _, pol := range policies {
 			id := "group/" + g + "/" + pol.Name
+			attrs := map[string]any{
+				"policy_name": pol.Name,
+				"policy_id":   id,
+				"owner_group": g,
+				"scope":       "inline_group",
+			}
+			if st := collect.IAMPolicyStatements(pol.Body); st != nil {
+				attrs["statements"] = st
+			}
 			out = append(out, model.Resource{
-				Provider: provider,
-				Type:     "iam_policy",
-				ID:       id,
-				Name:     pol.Name,
-				Attributes: map[string]any{
-					"policy_name": pol.Name,
-					"policy_id":   id,
-					"owner_group": g,
-					"scope":       "inline_group",
-					"statements":  collect.IAMPolicyStatements(pol.Body),
-				},
+				Provider:   provider,
+				Type:       "iam_policy",
+				ID:         id,
+				Name:       pol.Name,
+				Attributes: attrs,
 				Provenance: inlineProvenance(baseURL+"/ReadUserGroupPolicies", "Policies.Body", "owner_group"),
 			})
 		}

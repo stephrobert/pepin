@@ -654,18 +654,37 @@ func splitRange(s string) (int64, int64, bool) {
 // format de statements (ex. Outscale EIM).
 // IAMPolicyStatements expose le parseur pour les collecteurs Go qui doivent normaliser
 // un document de politique hors du moteur YAML (ex. policies EIM inline, chaîne à 3 niveaux).
+//
+// REND `nil` QUAND IL N'A PAS SU LIRE, et une liste vide quand il a lu ZÉRO statement.
+// Les deux cas se confondaient en `[]`, et c'est le défaut fondateur de l'issue #227 :
+// un document illisible ressemblait trait pour trait à une politique qui n'accorde
+// rien. Le verrou de capacité s'en défendait en traitant TOUTE liste vide comme non
+// collectée — au prix d'un contrôle rendu muet sur une liste vide légitimement
+// observée, par exemple une instance sans aucun groupe de sécurité.
+//
+// L'appelant DOIT omettre l'attribut quand ce parseur rend `nil`, jamais le poser à
+// nil : c'est le contrat de `Project`, où une clé absente de la source n'est pas
+// projetée. Un attribut posé à une liste nil franchirait la garde de capacité.
 func IAMPolicyStatements(v any) []any { return iamPolicyStatements(v) }
 
 func iamPolicyStatements(v any) []any {
 	doc, ok := v.(string)
 	if !ok || doc == "" {
-		return []any{}
+		return nil // rien à lire
 	}
 	var parsed struct {
 		Statement json.RawMessage `json:"Statement"`
 	}
+	// Un document qui ne s'analyse pas, ou dont la grammaire IAM n'a pas son
+	// `Statement` obligatoire, n'a pas été LU : ce n'est pas une politique vide.
 	if json.Unmarshal([]byte(doc), &parsed) != nil || len(parsed.Statement) == 0 {
-		return []any{}
+		return nil
+	}
+	// `"Statement": null` n'est ni un tableau ni un objet : la grammaire IAM ne l'admet
+	// pas, donc le document n'a pas été lu. Sans ce cas, il se décodait en tranche nil
+	// puis ressortait en `[]` — le bouchon, par une autre porte.
+	if string(parsed.Statement) == "null" {
+		return nil
 	}
 	// La grammaire des policies IAM admet Statement comme TABLEAU ou comme OBJET unique : sans gérer le
 	// second cas, json.Unmarshal échouait et renvoyait [] -> toutes les règles iam_policy
@@ -674,7 +693,7 @@ func iamPolicyStatements(v any) []any {
 	if json.Unmarshal(parsed.Statement, &stmts) != nil {
 		var one map[string]any
 		if json.Unmarshal(parsed.Statement, &one) != nil {
-			return []any{}
+			return nil // ni tableau ni objet : illisible
 		}
 		stmts = []map[string]any{one}
 	}
@@ -899,7 +918,14 @@ func applyTransform(v any, spec any) any {
 			_, to := splitPortRange(v)
 			return to
 		case "iampolicy":
-			return iamPolicyStatements(v)
+			st := iamPolicyStatements(v)
+			if st == nil {
+				// Un nil d'INTERFACE, pas une slice nil typée : c'est ce que
+				// `Project` teste pour ne pas projeter la clé. Rendre `st`
+				// directement poserait un `[]any(nil)` que `v == nil` ne voit pas.
+				return nil
+			}
+			return st
 		case "list":
 			if arr, ok := v.([]any); ok {
 				return arr // idempotent : déjà une liste

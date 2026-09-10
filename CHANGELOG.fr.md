@@ -24,6 +24,28 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une ressource qui n'a rien ne fait plus taire le contrôle qui la cherche**
+  (issue #227). Le tenant de qualification Exoscale contient, délibérément, une instance
+  **sans aucun groupe de sécurité** — l'écart même que
+  `compute_instance_has_security_group` existe pour attraper. Le scan rendait
+  `not-evaluated` : l'inventaire scellé portait bien `security_group_ids: []`, mais une
+  liste vide observée comptait comme *non collectée*, et l'intersection par type retirait
+  alors l'attribut de toutes les instances. La ressource fautive aveuglait son propre
+  contrôle, et ses voisines avec elle.
+
+  Le correctif n'est **pas** d'apprendre au verrou de capacité à tolérer les vides : cela
+  aurait rouvert l'incident fondateur de l'ADR-0006, puisque `IAMPolicyStatements` rendait
+  `[]` aussi bien pour « ce document n'a pas pu être analysé » que pour « cette politique
+  n'accorde rien ». **Le bouchon est retiré à la source** : le parseur ne rend plus rien
+  quand il n'a pas su lire, les collecteurs omettent alors l'attribut au lieu d'en poser
+  un vide, et c'est seulement là que le verrou répond sur la **présence**. Une liste vide
+  observée est une énumération complète qui compte zéro ; `nil` n'établit toujours rien.
+
+  Mesuré : un verdict bouge — `compute_instance_has_security_group` en live Exoscale, de
+  `not-evaluated` à `pass`, et ce `pass` est prouvé : les quatre instances portent leur
+  attribut, et la seule vide est privée (#212). Confirmé de bout en bout par deux runs de
+  qualification réels, Exoscale et Outscale, tous deux GO.
+
 - **La feuille de route annonçait une version que le projet avait dépassée.**
   `ROADMAP.fr.md` disait encore « Où en est Pépin, v0.2.0 » deux releases plus tard.
   Pour la plupart des projets ce serait un détail ; pour celui-ci, dont tout le propos

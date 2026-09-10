@@ -885,15 +885,39 @@ func resourceTypesOf(input any) map[string]bool {
 // `false`, `0` et `""` sont en revanche des informations parfaitement valides
 // (`encrypted: false` est justement ce qu'un contrôle cherche) : seules les
 // collections vides et les valeurs absentes comptent comme non collectées.
+// collected répond à UNE question : cette donnée est-elle arrivée ?
+//
+// La réponse se lit sur la PRÉSENCE, jamais sur le remplissage. Une liste vide qui est
+// arrivée est une énumération complète qui compte zéro — « cette instance n'a aucun
+// groupe de sécurité » est une information, et c'est même exactement celle que
+// `compute_instance_has_security_group` cherche.
+//
+// Le défaut que ce choix corrige (issue #227). `[]` comptait pour non collecté ;
+// l'intersection retirait alors l'attribut de TOUT le type, et le contrôle rendait
+// `not-evaluated`. Autrement dit la ressource fautive — la seule dont la liste est
+// vide — faisait taire le contrôle qui la visait. Mesuré sur le tenant de
+// qualification Exoscale : une instance sans aucun groupe, et pas un mot.
+//
+// Pourquoi c'est SÛR, et c'est la question qui décidait. Le risque serait qu'un
+// collecteur émette `[]` en BOUCHON, là où il n'a rien lu : on transformerait alors un
+// `not-evaluated` honnête en `pass` que rien n'établit — le seul défaut que l'ADR-0006
+// interdit. Ce risque est déjà écarté à la source : `collect.Project` ne projette PAS
+// une clé absente de la réponse, et ne fabrique une collection vide que si la clé est
+// là (`TestProjectDistinguishesAbsentFromEmptyCollection`, motivé par le faux positif
+// CRITICAL qu'un `[]` fabriqué produisait sur un plan Terraform). Un vide qui atteint
+// l'inventaire vient donc toujours de la source.
+//
+// `nil` reste non collecté, et la frontière est là. Une collection vide énumère ; un
+// scalaire nul n'énumère rien — il dit « pas de valeur », ce qui ne permet pas de
+// décider si la propriété est absente ou inconnue. En rester à la présence pour les
+// collections et à la valeur pour les scalaires est la ligne la plus étroite qui
+// rende la capacité perdue.
 func collected(v any) bool {
-	switch t := v.(type) {
+	switch v.(type) {
 	case nil:
 		return false
-	case []any:
-		return len(t) > 0
-	case map[string]any:
-		return len(t) > 0
 	default:
+		// Y COMPRIS `[]any{}` et `map[string]any{}` : présents, donc observés.
 		return true
 	}
 }
