@@ -24,6 +24,8 @@ de défaut que la porte doit trouver avant un tag, et non un auditeur après.
 
     1  hors ligne          ce que le dépôt possède déjà, lancé comme un tout,
                            plus les affirmations que la DOCUMENTATION fait
+    2  réseau              les artefacts tels qu'un utilisateur les reçoit, avec
+                           les commandes EXTRAITES de la documentation
     3  compte cloud        le tenant de qualification, opt-in — il vit dans
                            tools/qualification/ et s'appelle par `mise run qualify`
     4  surfaces et notes   ce qu'un changement de verdict doit avoir écrit
@@ -31,14 +33,11 @@ de défaut que la porte doit trouver avant un tag, et non un auditeur après.
 Hors ligne d'abord : une porte qui exige le réseau pour dire qu'un CHANGELOG manque
 est une porte qu'on lance moins souvent.
 
-L'ÉTAPE 2 N'EXISTE PAS ENCORE. Elle vérifiera les artefacts tels qu'un utilisateur
-les reçoit — le bloc de vérification du README rejoué mot pour mot sur les assets du
-tag précédent, `install.sh` accepté intact et refusé sur un octet corrompu, l'image
-scannant un plan d'exemple. Son numéro est RÉSERVÉ plutôt que réattribué : un rapport
-de la porte doit vouloir dire la même chose d'une release à l'autre, et une étape 2
-qui désignerait deux choses différentes selon la version rendrait les rapports
-archivés illisibles. Elle n'est pas déclarée « sautée » non plus — un saut se motive,
-et « pas encore écrite » n'est pas un motif d'exécution, c'est un état du dépôt.
+Et une étape dont TOUT ce qui mesure a été sauté ne vaut pas GO. L'étape 2 dépend
+d'outils — `cosign`, `docker`, `gh` — que la machine du mainteneur peut ne pas avoir ;
+chaque contrôle sait alors se sauter en le disant, et une étape entièrement sautée se
+déclare SAUTÉE. Un vert qui n'a rien mesuré est le défaut que ce produit reproche aux
+autres, et il n'a pas sa place dans sa propre porte.
 
 # Les trois règles qui la rendent opposable
 
@@ -61,8 +60,11 @@ qui les orchestre.
 import argparse
 import datetime as dt
 import json
+import os
 import pathlib
 import re
+import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -93,11 +95,20 @@ def verdict_de_letape(controles, motif_saut=None):
     Un seul contrôle rouge suffit. Un saut sans motif écrit est un NO-GO : sauter en
     silence est la façon dont une porte devient une formalité, et c'est exactement ce
     qu'on ne peut pas se permettre juste avant un tag.
+
+    Et une étape dont TOUT ce qui mesure a été sauté ne vaut pas GO. C'est le piège
+    que l'étape 2 apporte : elle dépend d'outils et du réseau, chaque contrôle sait se
+    sauter proprement quand son outil manque, et une machine sans `cosign` ni `docker`
+    aurait donc rendu une étape verte n'ayant rien mesuré. Un vert qui ne mesure rien
+    est exactement le défaut que ce produit reproche aux autres.
     """
     if motif_saut is not None:
         return SKIPPED if str(motif_saut).strip() else NOGO
     if any(c["verdict"] == NOGO for c in controles):
         return NOGO
+    mesurants = [c for c in controles if c["verdict"] != REPORTED]
+    if mesurants and all(c["verdict"] == SKIPPED for c in mesurants):
+        return SKIPPED
     return GO
 
 
@@ -483,8 +494,284 @@ def etape4(version):
     ]
 
 
+
+# ── Étape 2 — les artefacts tels qu'un utilisateur les reçoit ──────────────────
+#
+# Ce que cette étape mesure, et pourquoi elle ne peut pas se contenter des tests.
+#
+# La CI prouve que les MÉCANISMES fonctionnent : elle sert des artefacts construits
+# localement sur une boucle locale, et vérifie que l'installeur accepte l'un et refuse
+# l'autre. Elle ne dit rien de la CHAÎNE PUBLIÉE — la signature qui vit chez Sigstore,
+# l'attestation qui vit chez GitHub, l'image qui vit sur ghcr.io. Ces trois-là peuvent
+# cesser de se vérifier sans qu'une ligne du dépôt ait bougé.
+#
+# D'où la règle de cette étape : les commandes ne sont pas RECOPIÉES ici, elles sont
+# EXTRAITES de la documentation et exécutées telles quelles. Recopier prouverait que
+# ma copie marche ; extraire prouve que la page marche. C'est toute la différence, et
+# c'est l'invariant de l'ADR-0016 : « la documentation nomme la commande qui vérifie ».
+
+TITRE_MD = re.compile(r"^#{1,6}\s+(.*?)\s*#*\s*$")
+
+
+def bloc_shell_sous(chemin, titre):
+    """Le premier bloc clôturé sous un titre donné, tel qu'il est écrit.
+
+    Rend None si le titre ou le bloc manquent — l'appelant en fait un refus nommé
+    plutôt qu'une exception : une documentation réorganisée doit faire rougir la
+    porte, pas la faire planter.
+    """
+    lignes = (ROOT / chemin).read_text(encoding="utf-8").splitlines()
+    i = next((n for n, l in enumerate(lignes)
+              if (m := TITRE_MD.match(l)) and m.group(1).strip() == titre), None)
+    if i is None:
+        return None
+    debut = next((n for n in range(i + 1, len(lignes)) if lignes[n].startswith("```")), None)
+    if debut is None:
+        return None
+    fin = next((n for n in range(debut + 1, len(lignes)) if lignes[n].startswith("```")), None)
+    if fin is None:
+        return None
+    return "\n".join(lignes[debut + 1:fin])
+
+
+def version_du_bloc(bloc):
+    """Le tag que le bloc de vérification du README épingle (`V=v0.3.0`)."""
+    m = re.search(r"^\s*V=(v\d+\.\d+\.\d+)\s*$", bloc or "", re.M)
+    return m.group(1) if m else None
+
+
+def outil_absent(*noms):
+    """Le motif de saut si un outil manque, None s'ils sont tous là."""
+    manquants = [n for n in noms if shutil.which(n) is None]
+    return f"outil(s) absent(s) : {', '.join(manquants)}" if manquants else None
+
+
+def saute(nom, motif):
+    return controle(nom, SKIPPED, motif)
+
+
+def shell(nom, script, echec, cwd=None, env=None, timeout=900):
+    """Exécute un script bash et en fait un contrôle.
+
+    `bash --noprofile --norc` : le script vient de la documentation, il ne doit rien
+    devoir au profil de la machine qui lance la porte.
+    """
+    t0 = time.time()
+    e = dict(os.environ)
+    e.update(env or {})
+    try:
+        r = subprocess.run(["bash", "--noprofile", "--norc", "-c", script],
+                           cwd=cwd or ROOT, capture_output=True, text=True,
+                           env=e, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return controle(nom, NOGO, f"{echec}\ndépassement de {timeout} s", time.time() - t0)
+    d = time.time() - t0
+    if r.returncode == 0:
+        return controle(nom, GO, script.strip().splitlines()[0] if script.strip() else "", d)
+    fin = (r.stdout + r.stderr).strip().splitlines()
+    return controle(nom, NOGO, f"{echec}\n" + "\n".join(fin[-12:]), d)
+
+
+def check_binaires_de_release(version):
+    """Les binaires publiés, reconstruits ici avec la LIGNE de build du workflow.
+
+    Le workflow vérifie que le binaire porte son tag et garde ses codes de sortie
+    juste avant de publier — la dernière porte avant l'irréversible. La rejouer ici
+    la déplace AVANT le tag, où elle peut encore servir à quelque chose.
+    """
+    nom = "les binaires se construisent, portent le tag et gardent leurs codes"
+    t0 = time.time()
+    dist = SORTIE / "stage2-dist"
+    script = f"""
+set -eu
+rm -rf {dist} && mkdir -p {dist}
+for cible in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
+  GOOS="${{cible%%/*}}" GOARCH="${{cible##*/}}" CGO_ENABLED=0 \
+    go build -trimpath \
+      -ldflags="-s -w -X github.com/stephrobert/pepin/cmd.version={version}" \
+      -o "{dist}/pepin-${{cible%%/*}}-${{cible##*/}}" .
+done
+cd {dist} && sha256sum pepin-* > checksums.txt
+
+got="$(PEPIN_LANG=fr {dist}/pepin-linux-amd64 version)"
+[ "$got" = "pépin {version}" ] || {{ echo "en français : '$got', tag '{version}'"; exit 1; }}
+got="$(PEPIN_LANG=en {dist}/pepin-linux-amd64 version)"
+[ "$got" = "pepin {version}" ] || {{ echo "en anglais : '$got', tag '{version}'"; exit 1; }}
+
+cd {ROOT}
+rc=0; {dist}/pepin-linux-amd64 scan scaleway examples/scaleway/inventory.json --format json >/dev/null || rc=$?
+[ "$rc" -eq 1 ] || {{ echo "inventaire non conforme : exit $rc, attendu 1"; exit 1; }}
+rc=0; {dist}/pepin-linux-amd64 scan scaleway examples/scaleway/inventory-ok.json --format json >/dev/null || rc=$?
+[ "$rc" -eq 0 ] || {{ echo "inventaire conforme : exit $rc, attendu 0"; exit 1; }}
+"""
+    c = shell(nom, script, "la surface publiée a bougé, ou le binaire ne porte pas son tag")
+    c["duration_s"] = round(time.time() - t0, 1)
+    if c["verdict"] == GO:
+        c["evidence"] = f"4 cibles construites dans {dist.relative_to(ROOT)}, tag et codes vérifiés"
+    return c
+
+
+def check_bloc_verification_readme():
+    """Le bloc « Verify what you downloaded » du README, exécuté TEL QU'IL EST ÉCRIT.
+
+    Recopier ces commandes ici prouverait que ma copie marche. Les extraire prouve que
+    la PAGE marche — et c'est exactement ce que l'ADR-0016 exige : la documentation
+    nomme la commande qui vérifie, donc cette commande doit vérifier.
+    """
+    nom = "le bloc de vérification du README s'exécute tel qu'il est écrit"
+    bloc = bloc_shell_sous("README.md", "Verify what you downloaded")
+    if bloc is None:
+        return controle(nom, NOGO,
+                        "README.md : titre « Verify what you downloaded » ou son bloc introuvable — "
+                        "la page a été réorganisée et la porte ne sait plus quoi rejouer")
+    if (motif := outil_absent("gh", "cosign", "sha256sum")):
+        return saute(nom, motif)
+    tmp = SORTIE / "stage2-readme"
+    return shell(nom, f"rm -rf {tmp} && mkdir -p {tmp} && cd {tmp}\n" + bloc,
+                 "la chaîne publiée ne se vérifie plus avec les commandes du README")
+
+
+def check_bloc_readme_pointe_le_dernier_tag():
+    """Le bloc épingle-t-il encore le dernier tag publié ?
+
+    Une page qui montre `V=v0.1.0` fait vérifier à un lecteur une release que personne
+    n'utilise, et elle le fait avec l'aplomb d'une instruction officielle. C'est la
+    même famille que le défaut #H, sur une autre page.
+    """
+    nom = "le bloc de vérification du README épingle le dernier tag publié"
+    bloc = bloc_shell_sous("README.md", "Verify what you downloaded")
+    v = version_du_bloc(bloc)
+    prec = tag_precedent()
+    if not prec:
+        return saute(nom, "aucun tag antérieur : rien à comparer")
+    if v is None:
+        return controle(nom, NOGO, "le bloc n'épingle aucune version (`V=vX.Y.Z` attendu)")
+    if v != prec:
+        return controle(nom, NOGO,
+                        f"le README fait vérifier {v}, le dernier tag publié est {prec}")
+    return controle(nom, GO, f"V={v}")
+
+
+def check_image_publiee():
+    """L'image publiée se vérifie et scanne, avec les commandes de docs/install.md."""
+    nom = "l'image publiée se vérifie et scanne un plan, avec les commandes documentées"
+    bloc = bloc_shell_sous("docs/install.md", "The container image")
+    if bloc is None:
+        return controle(nom, NOGO, "docs/install.md : le bloc de « The container image » est introuvable")
+    if (motif := outil_absent("cosign", "docker")):
+        return saute(nom, motif)
+    # Le bloc documenté scanne `/work/plan.json` : on lui en donne un, celui du dépôt.
+    tmp = SORTIE / "stage2-image"
+    prep = (f"rm -rf {tmp} && mkdir -p {tmp} && "
+            f"cp {ROOT}/examples/scaleway/terraform/plan.json {tmp}/plan.json && cd {tmp}\n")
+    # `pepin scan` rend 1 sur un plan non conforme : c'est un succès du chemin, pas un
+    # échec de la commande. On ne tolère que le 1, jamais le 2 (erreur technique).
+    return shell(nom, prep + bloc + "\nrc=$?\n[ $rc -le 1 ] || exit $rc\n",
+                 "l'image publiée ne se vérifie plus, ou ne scanne plus un plan")
+
+
+def check_installeur():
+    """`install.sh` accepte le binaire publié, et refuse le même altéré d'un octet.
+
+    Les deux moitiés sont nécessaires et c'est tout l'intérêt : un installeur qui
+    accepte tout a exactement l'aspect d'un installeur qui vérifie. La CI éprouve déjà
+    ce couple sur des artefacts construits localement ; ici, la moitié « accepte »
+    porte sur la chaîne RÉELLEMENT PUBLIÉE — attestation de provenance comprise.
+    """
+    nom = "l'installeur de l'action accepte le binaire publié et refuse le même altéré"
+    if (motif := outil_absent("gh", "curl", "python3")):
+        return saute(nom, motif)
+    prec = tag_precedent()
+    if not prec:
+        return saute(nom, "aucun tag antérieur : rien à installer")
+    sans_v = prec.removeprefix("v")
+    tmp = SORTIE / "stage2-install"
+    # Le port se choisit ICI plutôt qu'en grattant le journal du serveur : une porte
+    # dont la fiabilité dépend du format d'un message d'outil tiers est une porte qui
+    # rougira un matin pour une raison étrangère à ce qu'elle mesure.
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    script = f"""
+set -eu
+rm -rf {tmp} && mkdir -p {tmp}/bin {tmp}/faux
+cd {tmp}
+
+# 1. La chaîne publiée, en entier : provenance puis empreinte.
+{ROOT}/.github/actions/pepin-scan/install.sh "{sans_v}" "{tmp}/bin"
+[ -x "{tmp}/bin/pepin" ] || {{ echo "installeur : rien d'installé"; exit 1; }}
+
+# 2. Le MÊME binaire, un octet changé, servi en boucle locale avec les vraies sommes.
+#    L'attestation est explicitement neutralisée pour isoler ce que ce cas mesure :
+#    le refus vient-il bien de l'empreinte ?
+cd {tmp}/faux
+gh release download "{prec}" --repo stephrobert/pepin \
+  --pattern 'pepin-linux-amd64' --pattern 'checksums.txt'
+printf '\\0' >> pepin-linux-amd64
+python3 -m http.server {port} --bind 127.0.0.1 >{tmp}/httpd.log 2>&1 &
+srv=$!
+trap 'kill $srv 2>/dev/null || true' EXIT
+pret=0
+for _ in $(seq 1 50); do
+  # `-fs` sans `S` : la sonde de disponibilité échoue par construction tant que le
+  # serveur n'a pas démarré, et cinquante messages d'erreur noieraient la preuve.
+  curl -fs -o /dev/null "http://127.0.0.1:{port}/checksums.txt" && {{ pret=1; break; }}
+  sleep 0.1
+done
+[ "$pret" = 1 ] || {{ echo "serveur local non démarré"; cat {tmp}/httpd.log; exit 1; }}
+
+rc=0
+PEPIN_SKIP_ATTESTATION=1 {ROOT}/.github/actions/pepin-scan/install.sh \
+  "{sans_v}" "{tmp}/bin" "http://127.0.0.1:{port}" >{tmp}/altere.log 2>&1 || rc=$?
+[ "$rc" -ne 0 ] || {{ echo "l'installeur a ACCEPTÉ un binaire altéré"; cat {tmp}/altere.log; exit 1; }}
+"""
+    return shell(nom, script,
+                 "l'installeur n'accepte plus le binaire publié, ou n'en refuse plus un altéré")
+
+
+def check_template_gitlab():
+    """Le `before_script` du template, dans l'image qu'il déclare lui-même."""
+    nom = "le template GitLab installe pepin dans l'image qu'il déclare"
+    if (motif := outil_absent("docker")):
+        return saute(nom, motif)
+    chemin = ROOT / "examples/gitlab-ci/pepin.gitlab-ci.yml"
+    tpl = yaml.safe_load(chemin.read_text(encoding="utf-8"))
+    base = tpl.get(".pepin", {})
+    image = base.get("image")
+    avant = base.get("before_script")
+    if not image or not avant:
+        return controle(nom, NOGO, f"{chemin.relative_to(ROOT)} : `.pepin` sans `image` ou sans `before_script`")
+    variables = {**tpl.get("variables", {}), **base.get("variables", {})}
+    # GitLab résout ses variables les unes dans les autres : on fait pareil, une passe
+    # suffit pour la profondeur que ce template utilise.
+    resolues = {}
+    for k, v in variables.items():
+        for k2, v2 in variables.items():
+            v = str(v).replace("${" + k2 + "}", str(v2))
+        resolues[k] = v
+    exports = "\n".join(f'export {k}="{v}"' for k, v in resolues.items())
+    corps = "\n".join(str(l) for l in avant)
+    dedans = f"set -eu\n{exports}\n{corps}\npepin version\n"
+    script = (f"docker run --rm -i {image} sh -s <<'SCRIPT_DU_TEMPLATE'\n"
+              f"{dedans}SCRIPT_DU_TEMPLATE\n")
+    return shell(nom, script,
+                 f"le before_script du template ne s'exécute plus dans {image}")
+
+
+def etape2(version):
+    return [
+        check_binaires_de_release(version),
+        check_bloc_verification_readme(),
+        check_bloc_readme_pointe_le_dernier_tag(),
+        check_image_publiee(),
+        check_installeur(),
+        check_template_gitlab(),
+    ]
+
+
 ETAPES = {
     1: ("hors ligne : le dépôt, et ce que sa documentation affirme", etape1),
+    2: ("réseau : les artefacts tels qu'un utilisateur les reçoit", etape2),
     4: ("surfaces et notes : ce qu'un changement de verdict doit avoir écrit", etape4),
 }
 
@@ -564,6 +851,39 @@ def selftest():
     veut("saut motivé", verdict_de_letape(vert, motif_saut="pas de réseau"), SKIPPED)
     veut("saut muet", verdict_de_letape(vert, motif_saut=""), NOGO)
     veut("saut d'espaces", verdict_de_letape(vert, motif_saut="   "), NOGO)
+
+    # ── Une étape qui n'a RIEN mesuré ne vaut pas GO ───────────────────────────
+    #
+    # Le piège que l'étape 2 apporte : ses contrôles savent se sauter proprement quand
+    # `cosign` ou `docker` manquent, et une machine sans ces outils aurait rendu une
+    # étape verte n'ayant rien vérifié. C'est le faux vert que ce produit reproche aux
+    # autres, dans sa propre porte.
+    tout_saute = [controle("a", SKIPPED, "cosign absent"), controle("b", SKIPPED, "docker absent")]
+    veut("tout sauté ne vaut pas GO", verdict_de_letape(tout_saute), SKIPPED)
+    veut("un seul mesuré suffit à mesurer",
+         verdict_de_letape(tout_saute + [controle("c", GO, "")]), GO)
+    veut("un rouge l'emporte sur des sauts",
+         verdict_de_letape(tout_saute + [controle("c", NOGO, "cassé")]), NOGO)
+    # Un contrôle INDICATIF ne mesure pas au sens de la porte : une étape qui n'a que
+    # lui et des sauts n'a toujours rien établi.
+    veut("un indicatif ne rachète pas des sauts",
+         verdict_de_letape(tout_saute + [controle("c", REPORTED, "en baisse")]), SKIPPED)
+    veut("une étape vide reste GO", verdict_de_letape([]), GO)
+
+    # ── L'extraction des commandes DOCUMENTÉES ─────────────────────────────────
+    #
+    # Recopier ces commandes dans la porte prouverait que la copie marche. Les
+    # extraire prouve que la PAGE marche. Une page réorganisée doit donc faire rougir
+    # la porte, pas la faire planter : `bloc_shell_sous` rend None, et l'appelant en
+    # fait un refus nommé.
+    veut("le bloc du README est retrouvé",
+         bloc_shell_sous("README.md", "Verify what you downloaded") is not None, True)
+    veut("un titre absent rend None",
+         bloc_shell_sous("README.md", "Titre qui n'existe pas"), None)
+    veut("la version épinglée par le bloc est lue",
+         version_du_bloc("V=v0.3.0\ngh release download \"$V\""), "v0.3.0")
+    veut("un bloc sans version rend None", version_du_bloc("gh release download"), None)
+    veut("un bloc absent ne fait pas planter", version_du_bloc(None), None)
 
     # ── Le verdict final ───────────────────────────────────────────────────────
     veut("toutes vertes", verdict_final([{"verdict": GO}, {"verdict": GO}]), GO)

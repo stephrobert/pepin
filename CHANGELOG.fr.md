@@ -45,8 +45,26 @@ l'une ni l'autre appartient au `git log`.
   étape est rouge ; une étape sautée porte un motif **écrit** qui apparaît dans le
   rapport, et un `--skip` muet est refusé ; et la porte doit savoir rougir —
   `mise run gate:selftest` casse chacune de ces règles et exige un refus, et tourne
-  dans `prepush`. L'étape 2 (les artefacts publiés) n'est pas encore écrite, et la
-  porte le dit plutôt que de la sauter en silence.
+  dans `prepush`.
+
+- **Porte de release, étape 2 — les artefacts tels qu'un utilisateur les reçoit**
+  (issue #178). La CI prouve que les *mécanismes* fonctionnent, sur des artefacts
+  qu'elle construit elle-même et sert sur une boucle locale. Elle ne dit rien de la
+  **chaîne publiée** — la signature qui vit chez Sigstore, l'attestation chez GitHub,
+  l'image sur ghcr.io —, laquelle peut cesser de se vérifier sans qu'une ligne du dépôt
+  ait bougé. L'étape 2 reconstruit les binaires avec la ligne de build du workflow (ils
+  doivent porter leur tag et garder leurs codes de sortie), puis, sur les assets réels
+  du tag précédent : le bloc « Verify what you downloaded » du README, le `cosign
+  verify` et le `docker run` de `docs/install.md`, l'installeur de l'action — qui doit
+  accepter le binaire publié **et** refuser le même altéré d'un octet — et le
+  `before_script` du template GitLab dans l'`alpine:3.21` qu'il déclare. Ces commandes
+  sont **extraites** de la documentation, jamais recopiées dans la porte : recopier
+  prouverait que la copie marche, extraire prouve que la page marche, ce qui est
+  l'invariant de l'ADR-0016. Une page réorganisée fait rougir la porte au lieu de
+  passer en silence. Chaque contrôle se saute avec un motif écrit quand son outil
+  manque — et une étape dont **tout** ce qui mesure a été sauté est déclarée SAUTÉE,
+  jamais GO : un vert qui n'a rien mesuré est le défaut que ce produit reproche aux
+  autres.
 
 - **Tenants de qualification Outscale et Exoscale** (issue #198). Outscale : 79 ressources
   Terraform, plus 6 buckets OOS et une politique EIM inline créés par le crochet `extra`

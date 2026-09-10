@@ -74,6 +74,7 @@ l'outillage Python doit pouvoir couper une release.
    | Étape | Ce qu'elle mesure | Ce qu'elle exige |
    |---|---|---|
    | 1 | le dépôt, et ce que sa documentation affirme | rien |
+   | 2 | les artefacts tels qu'un utilisateur les reçoit | le réseau, `gh`, `cosign`, `docker` |
    | 3 | le tenant de qualification (plus bas) | un compte cloud, `PEPIN_GATE_LIVE=1` |
    | 4 | les surfaces gelées, et ce qu'un verdict qui bouge doit avoir écrit | rien |
 
@@ -99,6 +100,26 @@ l'outillage Python doit pouvoir couper une release.
    - la phrase d'accueil du binaire nomme **exactement** les fournisseurs
      enregistrés, mesurée en lançant `pepin` et `pepin provider list`, pas en
      relisant le code.
+
+   **L'étape 2 mesure la chaîne PUBLIÉE**, celle qui vit chez Sigstore, chez GitHub
+   et sur ghcr.io, et qui peut cesser de se vérifier sans qu'une ligne du dépôt ait
+   bougé. Les binaires sont reconstruits avec la ligne de build du workflow et doivent
+   porter leur tag et garder leurs codes de sortie ; puis, sur les assets du **tag
+   précédent** : le bloc « Verify what you downloaded » du README, `cosign verify` et
+   le `docker run` de [`docs/install.md`](./docs/install.md), l'installeur de l'action
+   — qui doit accepter le binaire publié **et** refuser le même altéré d'un octet —,
+   et le `before_script` du template GitLab dans l'image qu'il déclare.
+
+   Ces commandes ne sont pas recopiées dans la porte : elles en sont **extraites**.
+   Recopier prouverait que la copie marche ; extraire prouve que la **page** marche, ce
+   qui est exactement l'invariant de
+   [l'ADR-0016](./docs/adr/0016-chaine-dapprovisionnement-verifiable.md) — « la
+   documentation nomme la commande qui vérifie ». Une page réorganisée fait donc rougir
+   la porte plutôt que de la faire passer en silence.
+
+   Chaque contrôle de cette étape sait se **sauter** quand son outil manque, en le
+   disant. Et une étape dont tout ce qui mesure a été sauté est déclarée SAUTÉE, jamais
+   GO : un vert qui n'a rien mesuré est le défaut que ce produit reproche aux autres.
 
    L'étape 1 lance aussi le **préflight** (`mise run release-check -- v0.1.0`),
    qui reste utilisable seul. Il vérifie : un arbre propre sur `main` ; le tag libre en local *et* sur

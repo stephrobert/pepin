@@ -73,6 +73,7 @@ the Python tooling must still be able to cut a release.
    | Stage | What it measures | What it needs |
    |---|---|---|
    | 1 | the repository, and what its documentation claims | nothing |
+   | 2 | the artefacts as a user gets them | the network, `gh`, `cosign`, `docker` |
    | 3 | the qualification tenant (below) | a cloud account, `PEPIN_GATE_LIVE=1` |
    | 4 | the frozen surfaces, and what a moved verdict must have written | nothing |
 
@@ -98,6 +99,27 @@ the Python tooling must still be able to cut a release.
    - the binary's opening sentence names **exactly** the registered providers,
      measured by running `pepin` and `pepin provider list`, not by re-reading the
      code.
+
+   **Stage 2 measures the PUBLISHED chain** — the one that lives at Sigstore, at
+   GitHub and on ghcr.io, and that can stop verifying without a line of the repository
+   moving. The binaries are rebuilt with the workflow's own build line and must carry
+   their tag and keep their exit codes; then, against the **previous tag's** assets:
+   the README's "Verify what you downloaded" block, the `cosign verify` and `docker
+   run` of [`docs/install.md`](./docs/install.md), the action's installer — which must
+   accept the published binary **and** refuse the same binary with one byte changed —
+   and the GitLab template's `before_script` in the image it declares.
+
+   Those commands are not copied into the gate: they are **extracted** from it. Copying
+   would prove the copy works; extracting proves the **page** works, which is exactly
+   the invariant of
+   [ADR-0016](./docs/adr/0016-chaine-dapprovisionnement-verifiable.md) — "the
+   documentation names the command that verifies". A reorganised page therefore turns
+   the gate red rather than passing silently.
+
+   Every check in this stage knows how to **skip** when its tool is missing, and says
+   so. And a stage whose measuring checks were all skipped is reported as SKIPPED,
+   never GO: a green that measured nothing is the defect this product holds against
+   others.
 
    Stage 1 also runs the **preflight** (`mise run release-check -- v0.1.0`), which
    stays usable on its own. It checks: a clean tree on `main`; the tag free locally *and* on origin;
