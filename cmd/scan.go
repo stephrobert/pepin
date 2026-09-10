@@ -257,7 +257,7 @@ var scanCmd = &cobra.Command{
 				// embarqué : un bundle remis à un tiers ne doit pas exfiltrer les secrets détectés.
 				// INCOMPATIBLE avec `verify --re-derive` (la détection ne rejoue pas sur du caviardé)
 				// → un bundle caviardé s'appuie sur la SIGNATURE cosign, pas sur la re-dérivation.
-				bundleInput = redactInventory(input)
+				bundleInput = redactInventory(input, personalOf(scanTargetProvider))
 			}
 			inputJSON, merr := json.MarshalIndent(bundleInput, "", "  ")
 			if merr != nil {
@@ -273,7 +273,18 @@ var scanCmd = &cobra.Command{
 				return cerr
 			}
 			extras.Config, extras.ConfigSummary = cextras.Config, cextras.ConfigSummary
-			cs, err := assess.WriteBundle(scanSeal, asmt, inputJSON, extras)
+			// L'assessment SCELLÉ suit l'inventaire caviardé : c'est lui qui part chez
+			// le tiers, et il porte les SUJETS. Caviarder l'inventaire seul aurait
+			// laissé l'adresse e-mail dans `assessment.json`, `assessment-oscal.json`
+			// et le SARIF — c'est-à-dire dans tout ce qu'un auditeur lit réellement.
+			//
+			// Le rapport LOCAL, lui, ne bouge pas : un exploitant qui corrige un MFA
+			// doit savoir qui, et rien ne sort de sa machine.
+			bundleAsmt := asmt
+			if scanRedact {
+				bundleAsmt = redactSubjects(asmt, input, personalOf(scanTargetProvider))
+			}
+			cs, err := assess.WriteBundle(scanSeal, bundleAsmt, inputJSON, extras)
 			if err != nil {
 				return err
 			}
@@ -442,7 +453,20 @@ var sensitiveAttrs = map[string]bool{
 // redactInventory retourne une COPIE de l'inventaire dont les valeurs des attributs sensibles
 // sont remplacées par une empreinte (le finding reste, la valeur brute disparaît). Ne mute pas
 // l'input évalué (la détection a déjà eu lieu en amont).
-func redactInventory(input any) any {
+// personalOf rend, par type normalisé, les attributs qui nomment une PERSONNE chez ce
+// fournisseur et l'identifiant stable qui les remplace. Lu au descripteur, jamais codé
+// ici : quel champ nomme une personne dépend du fournisseur.
+func personalOf(provider string) map[string]genprovider.DonneePersonnelle {
+	out := map[string]genprovider.DonneePersonnelle{}
+	for _, d := range genprovider.Descriptors()[provider].DonneesPersonnelles {
+		if d.Type != "" && d.IdentifiantStable != "" {
+			out[d.Type] = d
+		}
+	}
+	return out
+}
+
+func redactInventory(input any, personal map[string]genprovider.DonneePersonnelle) any {
 	m, ok := input.(map[string]any)
 	if !ok {
 		return input
@@ -450,6 +474,35 @@ func redactInventory(input any) any {
 	out := make(map[string]any, len(m))
 	for k, v := range m {
 		out[k] = v
+	}
+	// Une donnée PERSONNELLE ne se hache pas, elle se REMPLACE. Un exploitant qui
+	// corrige un MFA doit savoir QUI : effacer le sujet rendrait le finding inactionnable,
+	// et une empreinte ne se relie à personne. L'identifiant stable du même utilisateur
+	// dit la même chose sans nommer la personne.
+	//
+	// La substitution a lieu dans l'INVENTAIRE, pas seulement dans l'assessment, et c'est
+	// ce qui la rend correcte : `verify --re-derive` rejoue les règles sur cet input.json
+	// et doit retrouver EXACTEMENT les mêmes sujets. Caviarder d'un seul côté ferait
+	// mentir le bundle sur lui-même — précisément ce que l'ADR-0018 refuse.
+	remplacePersonnel := func(typ string, attrs map[string]any) map[string]any {
+		d, ok := personal[typ]
+		if !ok {
+			return attrs
+		}
+		stable, _ := attrs[d.IdentifiantStable].(string)
+		if stable == "" {
+			return attrs // pas d'identifiant stable observé : on ne fabrique rien (ADR-0014)
+		}
+		ac := make(map[string]any, len(attrs))
+		for k, v := range attrs {
+			ac[k] = v
+		}
+		for _, a := range d.Attributs {
+			if _, present := ac[a]; present {
+				ac[a] = stable
+			}
+		}
+		return ac
 	}
 	redactAttrs := func(attrs map[string]any) map[string]any {
 		ac := make(map[string]any, len(attrs))
@@ -468,7 +521,17 @@ func redactInventory(input any) any {
 	case []model.Resource: // source live/terraform (typée)
 		nr := make([]model.Resource, len(rs))
 		for i, r := range rs {
-			r.Attributes = redactAttrs(r.Attributes)
+			r.Attributes = redactAttrs(remplacePersonnel(r.Type, r.Attributes))
+			// Le NOM de la ressource porte souvent la même donnée que l'attribut
+			// personnel : le remplacer aussi, sans quoi l'adresse ressortirait par
+			// l'autre bout.
+			if d, ok := personal[r.Type]; ok {
+				if stable, _ := r.Attributes[d.IdentifiantStable].(string); stable != "" {
+					if r.Name != "" && r.Name != stable {
+						r.Name = stable
+					}
+				}
+			}
 			nr[i] = r
 		}
 		out["resources"] = nr
@@ -484,8 +547,17 @@ func redactInventory(input any) any {
 			for k, v := range rm {
 				rc[k] = v
 			}
+			typ, _ := rm["type"].(string)
 			if attrs, ok := rm["attributes"].(map[string]any); ok {
-				rc["attributes"] = redactAttrs(attrs)
+				sub := remplacePersonnel(typ, attrs)
+				rc["attributes"] = redactAttrs(sub)
+				if d, ok := personal[typ]; ok {
+					if stable, _ := sub[d.IdentifiantStable].(string); stable != "" {
+						if nom, _ := rm["name"].(string); nom != "" && nom != stable {
+							rc["name"] = stable
+						}
+					}
+				}
 			}
 			nr[i] = rc
 		}
@@ -1668,4 +1740,80 @@ func avertirRegionInconnue(w io.Writer, provider, region string, live bool) {
 			"  The scan continues — the catalogue may lag behind the provider — but a region that\n"+
 			"  does not exist makes every call unavailable, and the verdict INCONCLUSIVE.\n"),
 		region, provider, strings.Join(connues, ", "))
+}
+
+// redactSubjects remplace, dans une COPIE de l'assessment, les sujets qui nomment une
+// personne par l'identifiant stable du même utilisateur.
+//
+// La table de correspondance vient de l'inventaire ÉVALUÉ : c'est la seule source qui
+// relie une valeur personnelle à son identifiant stable, et elle évite d'avoir à
+// deviner à quoi ressemble une adresse. Ce qui n'y figure pas n'est pas touché — on ne
+// caviarde jamais au motif qu'une chaîne « ressemble » à une donnée personnelle.
+func redactSubjects(a assessment.Assessment, input any, personal map[string]genprovider.DonneePersonnelle) assessment.Assessment {
+	if len(personal) == 0 {
+		return a
+	}
+	remplace := map[string]string{}
+	forEachResource(input, func(typ, name string, attrs map[string]any) {
+		d, ok := personal[typ]
+		if !ok {
+			return
+		}
+		stable, _ := attrs[d.IdentifiantStable].(string)
+		if stable == "" {
+			return
+		}
+		for _, at := range d.Attributs {
+			if v, _ := attrs[at].(string); v != "" && v != stable {
+				remplace[v] = stable
+			}
+		}
+		if name != "" && name != stable {
+			remplace[name] = stable
+		}
+	})
+	if len(remplace) == 0 {
+		return a
+	}
+	out := a
+	out.Results = make([]assessment.Result, len(a.Results))
+	copy(out.Results, a.Results)
+	for i := range out.Results {
+		if s, ok := remplace[out.Results[i].Subject]; ok {
+			out.Results[i].Subject = s
+		}
+		// La PREUVE porte le message du finding, qui nomme la personne dans sa phrase :
+		// « Compte « … » sans authentification multifacteur ». Ne remplacer que le sujet
+		// laissait l'adresse dans la seule ligne qu'un auditeur lit vraiment.
+		for avant, apres := range remplace {
+			out.Results[i].Evidence.Observed = strings.ReplaceAll(out.Results[i].Evidence.Observed, avant, apres)
+		}
+	}
+	return out
+}
+
+// forEachResource parcourt les ressources d'un inventaire, quelle que soit sa forme
+// (typée pour une collecte, générique pour un export JSON relu).
+func forEachResource(input any, fn func(typ, name string, attrs map[string]any)) {
+	m, ok := input.(map[string]any)
+	if !ok {
+		return
+	}
+	switch rs := m["resources"].(type) {
+	case []model.Resource:
+		for _, r := range rs {
+			fn(r.Type, r.Name, r.Attributes)
+		}
+	case []any:
+		for _, r := range rs {
+			rm, ok := r.(map[string]any)
+			if !ok {
+				continue
+			}
+			typ, _ := rm["type"].(string)
+			name, _ := rm["name"].(string)
+			attrs, _ := rm["attributes"].(map[string]any)
+			fn(typ, name, attrs)
+		}
+	}
 }

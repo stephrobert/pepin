@@ -70,6 +70,18 @@ l'une ni l'autre appartient au `git log`.
 
 ### Sécurité
 
+- **Un bundle de preuve partagé ne nomme plus une personne.** `iam_user.username` est
+  mappé depuis `email` chez Scaleway comme chez Exoscale : le sujet d'un finding MFA
+  était donc une adresse e-mail, et elle voyageait telle quelle dans `assessment.json`,
+  l'OSCAL, le SARIF et l'`input.json` scellé. Un bundle est fait pour être remis à un
+  **tiers** : l'outil y mettait une donnée personnelle sans que personne ne l'ait décidé.
+  `--redact`, qui est déjà l'interrupteur « pour un tiers », y substitue désormais
+  l'**identifiant stable** de l'utilisateur — dans l'inventaire, dans l'assessment
+  scellé, et dans la ligne de preuve qui les cite. L'adresse n'est pas supprimée — un
+  exploitant qui corrige un MFA doit savoir qui — et le **rapport local ne bouge pas** ;
+  seul ce qui quitte le périmètre change. Quel attribut nomme une personne est
+  **déclaré au descripteur du fournisseur avec sa source**, jamais une liste en dur dans
+  la CLI.
 - **Un collecteur ne relit plus une requête dans laquelle il vient d'écrire un secret.**
   CodeQL signalait, en `high`, une clé secrète atteignant un rapport publié : un
   collecteur posait son identifiant en en-tête, puis rebâtissait la signature de l'appel

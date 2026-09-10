@@ -38,6 +38,19 @@ type Descriptor struct {
 	Description string `yaml:"description"`
 	Scope       string `yaml:"scope"`      // "cloud" (défaut) | "in-cluster" : une portée différente ne se compare pas en parité
 	RegionKey   string `yaml:"region_key"` // clé logique alimentée par --region (défaut "region" ; Exoscale: "zone")
+	// DonneesPersonnelles : par TYPE normalisé, les attributs qui identifient une
+	// PERSONNE, et l'attribut non personnel qui les remplace dans un bundle caviardé.
+	//
+	// Chez Scaleway comme chez Exoscale, `iam_user.username` est mappé depuis
+	// `email` : le sujet d'un finding MFA est donc une adresse, et elle voyage telle
+	// quelle dans l'assessment, le SARIF, l'OSCAL et le bundle scellé. Un bundle est
+	// fait pour être remis à un TIERS — un auditeur, un client —, et une adresse
+	// e-mail y est une donnée personnelle que l'outil a mise là sans que personne ne
+	// l'ait décidé.
+	//
+	// Déclaré ici plutôt que codé dans la CLI : quel champ nomme une personne dépend
+	// du fournisseur, et une liste en dur diverge au premier qui change de modèle.
+	DonneesPersonnelles []DonneePersonnelle `yaml:"donnees_personnelles"`
 	// Regions : le catalogue des régions CONNUES de ce fournisseur, celui-là même que
 	// les règles de souveraineté cataloguent (internal/commonrules/rules/lib.rego :
 	// `_eu_regions`, `_trusted_regions`, `_noneu_regions`). Il sert à prévenir tôt
@@ -107,6 +120,20 @@ type Permission struct {
 	Source string `yaml:"source"` // document officiel qui confirme (ou dont l'absence motive `a_verifier`)
 	Note   string `yaml:"note"`   // réserve ou précision, en français
 	NoteEn string `yaml:"note_en"`
+}
+
+// DonneePersonnelle : un type dont certains attributs nomment une personne, et
+// l'identifiant stable qui les remplace quand le bundle part chez un tiers.
+type DonneePersonnelle struct {
+	Type string `yaml:"type"`
+	// Attributs : ceux qui portent la donnée personnelle (ex. `username` = e-mail).
+	Attributs []string `yaml:"attributs"`
+	// IdentifiantStable : l'attribut non personnel qui les remplace. Il DOIT exister
+	// sur le type, sans quoi le caviardage effacerait le sujet au lieu de le
+	// remplacer, et un opérateur ne saurait plus QUI corriger.
+	IdentifiantStable string `yaml:"identifiant_stable"`
+	// Source : d'où l'on tient que ce champ nomme une personne.
+	Source string `yaml:"source"`
 }
 
 // Souverainete porte les FAITS de souveraineté du fournisseur (siège, contrôle
