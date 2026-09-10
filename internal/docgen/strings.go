@@ -20,6 +20,7 @@ type blockStrings struct {
 	orWord, none, totalWord, figControls, figDeclared string
 	noTypeWord                                        string
 	noDeviationFor, noResultFor, quotedPlaceholder    string
+	roadmapStatus                                     string
 }
 
 func blockText(lang string) blockStrings {
@@ -43,6 +44,7 @@ func blockText(lang string) blockStrings {
 			veracityObligations: "Verdicts à prouver au total",
 			veracityRemaining:   "Verdicts restant à prouver",
 			veracityUnavailable: "_Contrat de véracité indisponible : le calcul des obligations a échoué._",
+			roadmapStatus:       "Où en est Pépin",
 			exitExempted:        "Tout écart critical/high est couvert par une dérogation valide",
 			exitExpired:         "La même dérogation, échue : elle ne s'applique plus",
 			colAttributes:       "Attributs communs",
@@ -76,6 +78,7 @@ func blockText(lang string) blockStrings {
 		veracityObligations: "Verdicts to prove in total",
 		veracityRemaining:   "Verdicts left to prove",
 		veracityUnavailable: "_Veracity contract unavailable: the obligation computation failed._",
+		roadmapStatus:       "Where Pépin stands",
 		exitExempted:        "Every critical/high deviation is covered by a valid exemption",
 		exitExpired:         "The same exemption, lapsed: it no longer applies",
 		colAttributes:       "Common attributes",

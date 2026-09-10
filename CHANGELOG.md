@@ -19,6 +19,19 @@ second makes their user explain to an auditor a change they did not make, and
 this file is where that explanation starts. A refactor that changes neither
 belongs in `git log`.
 
+## [Unreleased]
+
+### Fixed
+
+- **The roadmap announced a version the project had left behind.** `ROADMAP.md` still
+  said *"Where Pépin stands, v0.2.0"* two releases later. For most projects that is a
+  detail; for one whose whole claim is that no assertion is worth more than what was
+  measured, a page wrong about its own version undermines the rest. The heading is now
+  **derived** from the CHANGELOG — the same source as
+  `TestTheInstallPagePinsTheLatestRelease`, because two sources of truth for one
+  question end up disagreeing — and a version that cannot be read leaves the heading
+  without a number rather than inventing one (ADR-0014).
+
 ## [0.4.0] - 2026-09-10
 
 ### Fixed

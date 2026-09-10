@@ -20,6 +20,19 @@ leur utilisateur à expliquer à un auditeur un changement qu'il n'a pas fait,
 et c'est ici que cette explication commence. Un refactor qui ne change ni
 l'une ni l'autre appartient au `git log`.
 
+## [Non publié]
+
+### Corrigé
+
+- **La feuille de route annonçait une version que le projet avait dépassée.**
+  `ROADMAP.fr.md` disait encore « Où en est Pépin, v0.2.0 » deux releases plus tard.
+  Pour la plupart des projets ce serait un détail ; pour celui-ci, dont tout le propos
+  est qu'aucune affirmation ne vaut mieux que ce qui est mesuré, une page qui se trompe
+  sur sa propre version décrédibilise le reste. Le titre est désormais **dérivé** du
+  CHANGELOG — la même source que `TestTheInstallPagePinsTheLatestRelease`, parce que
+  deux sources de vérité pour une même question finissent par diverger — et une version
+  illisible laisse le titre sans numéro plutôt que d'en inventer un (ADR-0014).
+
 ## [0.4.0] - 2026-09-10
 
 ### Corrigé

@@ -14,7 +14,9 @@ en CI : les [limites connues](docs/known-limitations.fr.md) pour les angles mort
 la [matrice de couverture](docs/coverage.fr.md) pour ce qui est mesurable contrôle par
 contrôle. Cette page ne les recopie pas.
 
-## Où en est Pépin, v0.2.0
+<!-- pepin:gen roadmap-status-heading -->
+## Où en est Pépin, v0.4.0
+<!-- /pepin:gen roadmap-status-heading -->
 
 Quatre fournisseurs enregistrés : trois clouds souverains, plus un collecteur
 Kubernetes intra-cluster.
@@ -105,6 +107,13 @@ inventé la justification. Cette retenue est le sujet du projet, pas un effet de
 **OVHcloud** est le prochain cloud souverain de la liste. En ajouter un, c'est un
 descripteur et **zéro règle** : les règles sont communes, seule la source change. C'est
 exactement le parcours d'[ajouter un fournisseur](docs/contributing/adding-a-provider.fr.md).
+
+Il vient **après** que les trois fournisseurs actuels aient fermé leurs trous de
+couverture, et c'est une décision, pas un retard. Passer de trois fournisseurs
+imparfaits à quatre fournisseurs imparfaits ne rend le produit indispensable à
+personne ; trois fournisseurs très fiables, très bien qualifiés, utilisables en CI,
+avec la comparaison de campagnes et la remédiation, font d'OVHcloud un accélérateur de
+marché plutôt qu'une nouvelle source de dette.
 
 Rien n'est déclaré couvert avant que son contrat soit vérifié champ par champ contre le
 SDK ou la spécification d'API du fournisseur. Un fournisseur livré avec des champs non
