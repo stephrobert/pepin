@@ -100,12 +100,12 @@ Forme gelée : `{"findings": [...], "summary": {...}}`.
     "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
-    "tf_line": "81"
+    "tf_line": "77"
   },
-  "message": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique).",
+  "message": "Bucket « backups-prod » accessible publiquement (ACL publique).",
   "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
   "severity": "critical",
-  "subject": "scaleway_object_bucket.backups",
+  "subject": "backups-prod",
   "title": "Stockage objet exposé publiquement"
 }
 ```
@@ -255,7 +255,7 @@ Un résultat :
   "control": "objectstorage_bucket_public_access",
   "evidence": {
     "attribute": "acl",
-    "observed": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique).",
+    "observed": "Bucket « backups-prod » accessible publiquement (ACL publique).",
     "source": "acl=terraform-plan:scaleway_object_bucket + terraform-plan:scaleway_object_bucket_acl observed=2/2"
   },
   "labels": {
@@ -263,7 +263,7 @@ Un résultat :
     "confidence": "confirmed",
     "provider": "scaleway",
     "tf_file": "main.tf",
-    "tf_line": "81"
+    "tf_line": "77"
   },
   "references": [
     {
@@ -298,7 +298,7 @@ Un résultat :
   "remediation": "Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.",
   "severity": "critical",
   "status": "fail",
-  "subject": "scaleway_object_bucket.backups",
+  "subject": "backups-prod",
   "title": "Stockage objet exposé publiquement"
 }
 ```
@@ -410,13 +410,13 @@ SARIF 2.1.0, le format que lit l'onglet Code Scanning de GitHub. C'est celui à 
                   "uri": "main.tf"
                 },
                 "region": {
-                  "startLine": 81
+                  "startLine": 77
                 }
               }
             }
           ],
           "message": {
-            "text": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique)."
+            "text": "Bucket « backups-prod » accessible publiquement (ACL publique)."
           },
 […]
 ```
@@ -435,13 +435,13 @@ Un résultat :
           "uri": "main.tf"
         },
         "region": {
-          "startLine": 81
+          "startLine": 77
         }
       }
     }
   ],
   "message": {
-    "text": "Bucket « scaleway_object_bucket.backups » accessible publiquement (ACL publique)."
+    "text": "Bucket « backups-prod » accessible publiquement (ACL publique)."
   },
   "ruleId": "CLD-STO-1"
 }

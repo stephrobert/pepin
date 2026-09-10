@@ -124,6 +124,18 @@ l'une ni l'autre appartient au `git log`.
   bucket qui porte des étiquettes ne prouve rien d'une instance, ce sont deux API et deux
   collectes. Le contre-exemple que chaque garde protégeait tient toujours, avec son
   propre test : un fournisseur qui n'expose la capacité nulle part ne déclenche rien.
+- **Une même base obtenait deux sujets sur un plan Terraform.** L'écart dérivé de l'ACL
+  nommait la ressource ACL, ceux dérivés de l'instance nommaient la base : trois écarts,
+  deux noms — et une dérogation écrite sur l'un ratait l'autre, en silence. Il fallait
+  deux choses. Un mapping qui lit son porteur par `_parent.<champ>` voit désormais ce
+  champ comblé depuis la référence déclarée, comme n'importe quel autre argument
+  (l'ADR-0022 ne comblait que les chemins simples). Et l'adresse ainsi obtenue est
+  ensuite résolue vers l'**identité que la ressource visée porte dans l'inventaire** —
+  une base qui a un `name` est nommée par lui, pas par son adresse Terraform. La
+  réécriture est bornée aux attributs réellement comblés depuis une référence : une
+  valeur qui ressemble seulement à une adresse n'est jamais touchée. La même correction
+  fait lire `backups-prod` au sujet d'un bucket Scaleway au lieu de
+  `scaleway_object_bucket.backups`, ce qu'un lecteur cherche effectivement.
 - **Un contrôle émettait six écarts justes chez un fournisseur pour lequel le
   référentiel ne le déclarait pas.** `objectstorage_bucket_default_encryption` se
   déclenche chez Scaleway — le collecteur S3 commun pose `default_encryption_enabled`
