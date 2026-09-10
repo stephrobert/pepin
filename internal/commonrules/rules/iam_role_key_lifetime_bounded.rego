@@ -20,6 +20,12 @@ import rego.v1
 deny contains f if {
 	some r in resources_of_type("iam_role")
 	truthy(object.get(r.attributes, "editable", true)) # rôles prédéfinis (non éditables) hors scope
+
+	# Même raisonnement que la garde ci-dessus, autre mécanisme : une identité que
+	# la PLATEFORME crée, utilise et supprime pour son propre composant ne se durcit
+	# pas depuis le compte. La remédiation n'aboutirait pas, et un écart
+	# irréparable coûte plus cher que le contrôle ne rapporte (cf. lib.rego).
+	not gere_par_le_fournisseur(r)
 	_role_exposes_lifetime(r)
 	not _lifetime_bounded(r)
 	name := object.get(r.attributes, "name", r.id)

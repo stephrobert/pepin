@@ -1178,7 +1178,8 @@
         }
       ],
       "rego_tests": [
-        "internal/commonrules/rules/iam_role_key_lifetime_bounded_test.rego"
+        "internal/commonrules/rules/iam_role_key_lifetime_bounded_test.rego",
+        "internal/commonrules/rules/provider_managed_test.rego"
       ]
     },
     "iam_role_no_admin_privileges": {
@@ -1205,7 +1206,8 @@
         }
       ],
       "rego_tests": [
-        "internal/commonrules/rules/iam_role_no_admin_privileges_test.rego"
+        "internal/commonrules/rules/iam_role_no_admin_privileges_test.rego",
+        "internal/commonrules/rules/provider_managed_test.rego"
       ]
     },
     "iam_role_source_ip_restricted": {
@@ -1232,7 +1234,8 @@
         }
       ],
       "rego_tests": [
-        "internal/commonrules/rules/iam_role_source_ip_restricted_test.rego"
+        "internal/commonrules/rules/iam_role_source_ip_restricted_test.rego",
+        "internal/commonrules/rules/provider_managed_test.rego"
       ]
     },
     "iam_user_mfa_enabled": {

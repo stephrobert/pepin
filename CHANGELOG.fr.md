@@ -119,6 +119,18 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Une identité que la plateforme crée, utilise et supprime n'apporte plus deux écarts
+  irréparables par cluster.** Le SKS d'Exoscale crée un rôle `sks-ccm-<cluster>` pour le
+  cloud controller manager du cluster et le supprime avec lui. Il est `editable: true`,
+  donc le filtre des rôles prédéfinis ne le couvrait pas — et chaque cluster apportait
+  deux findings IAM que personne ne pouvait faire disparaître : borner le rôle à une IP
+  source exigerait de deviner les adresses du plan de contrôle, et ajouter une clause de
+  durée casserait le composant. Dix clusters valaient vingt findings irréparables. Le
+  fait est désormais **collecté** (`provider_managed`) et **déclaré au descripteur du
+  fournisseur avec sa source**, jamais codé en préfixe de nom dans une règle — une règle
+  commune ne connaît aucune convention de nommage, et un préfixe répété dans chacune
+  divergerait au premier changement. Un helper partagé le lit, et le même rôle **sans**
+  la marque continue de produire les trois findings.
 - **Un stockage objet qui accepte les étiquettes et n'en garde aucune ne produit plus un
   écart sur chaque bucket.** Le SOS d'Exoscale répond `200` à `PutBucketTagging` et ne
   persiste rien : le `GetBucketTagging` qui suit rend aussitôt `NoSuchTagSet` — mesuré à

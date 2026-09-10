@@ -786,7 +786,7 @@ var knownBareTransforms = map[string]bool{
 }
 
 // knownTransformPrefixes : préfixes de transforms paramétrés (`default:val`, `equals:val`…).
-var knownTransformPrefixes = []string{"equals:", "default:", "pluck:", "contains:"}
+var knownTransformPrefixes = []string{"equals:", "default:", "pluck:", "contains:", "matches:"}
 
 // ValidateTransform retourne les noms de transforms INCONNUS d'une spec (chaîne, chaînage
 // []any, ou table de remplacement map). Un transform inconnu (typo `lowercase`) serait un
@@ -845,6 +845,24 @@ func applyTransform(v any, spec any) any {
 				}
 			}
 			return out
+		}
+		if motif, ok := strings.CutPrefix(t, "matches:"); ok {
+			// Booléen : la valeur correspond-elle au MOTIF. Sert à dériver un fait
+			// qu'un fournisseur n'expose pas en champ mais qu'il énonce dans une
+			// convention de nommage — une identité que la plateforme crée et gère
+			// elle-même, par exemple.
+			//
+			// Le motif vit dans le DESCRIPTEUR, avec sa source, jamais dans une règle :
+			// une règle commune ne connaît aucune convention de fournisseur, et coder
+			// un préfixe dans chacune les ferait diverger au premier changement.
+			//
+			// Un motif invalide rend faux plutôt que de paniquer : c'est une entrée du
+			// dépôt, mais le moteur lit aussi des descripteurs externes.
+			re, err := regexp.Compile(motif)
+			if err != nil {
+				return false
+			}
+			return re.MatchString(toStr(v))
 		}
 		if sub, ok := strings.CutPrefix(t, "contains:"); ok {
 			// Booléen : la représentation de la valeur contient-elle le motif.
