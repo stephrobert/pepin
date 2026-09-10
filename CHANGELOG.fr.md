@@ -24,6 +24,18 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **La règle absent/vide est désormais une porte, plus une habitude** (issue #227,
+  seconde moitié). Une règle gouverne chaque attribut qu'une spec de fournisseur mappe —
+  une clé **absente** de la source ne projette rien, une clé présente et **vide** projette
+  la valeur vide — et `TestNoSpecFabricatesAnAttributeFromNothing` la tient en poussant un
+  **item vide** à travers chaque ressource de chaque descripteur : un seul attribut qui en
+  sort casse le build. Son contre-exemple compte autant : une source qui dit « aucun » doit
+  toujours le projeter, sans quoi « ne jamais fabriquer » se satisferait en ne projetant
+  jamais rien. Écrite une fois et tenue mécaniquement, plutôt qu'annotée sur 138 attributs
+  que personne ne relit — et elle vaut pour les fournisseurs qui n'existent pas encore. La
+  règle est aussi énoncée là où quelqu'un qui ajoute un fournisseur la rencontrera, dans
+  les deux langues.
+
 - **Une ressource qui n'a rien ne fait plus taire le contrôle qui la cherche**
   (issue #227). Le tenant de qualification Exoscale contient, délibérément, une instance
   **sans aucun groupe de sécurité** — l'écart même que
