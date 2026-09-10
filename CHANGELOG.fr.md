@@ -109,6 +109,21 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Deux `pass` de plus que rien n'établissait, de la même forme que celui de la règle
+  sans description.** Une garde posait *par ressource* une question qui est *par
+  fournisseur*, et le verrou de capacité — voyant l'attribut collecté sur le type grâce
+  à un voisin — laissait l'assessment conclure faute de finding.
+  `kubernetes_cluster_audit_logging_enabled` prenait un `audit_enabled` absent pour
+  **vrai**, alors que l'API SKS **omet l'objet `audit` quand l'audit est coupé** : un
+  cluster sans audit n'avait pas l'attribut, la règle supposait « activé », et le rapport
+  concluait `pass` sur le cas même qu'elle existe pour attraper.
+  `governance_resource_required_tags` sautait en silence toute ressource dont le type ne
+  porte pas `tags` — mesuré sur un tenant Exoscale où les buckets SOS en portent quand
+  les instances, volumes et clusters n'en portent pas. Les deux questions se posent
+  désormais à l'échelle de l'**inventaire**, et celle des étiquettes **par type** : un
+  bucket qui porte des étiquettes ne prouve rien d'une instance, ce sont deux API et deux
+  collectes. Le contre-exemple que chaque garde protégeait tient toujours, avec son
+  propre test : un fournisseur qui n'expose la capacité nulle part ne déclenche rien.
 - **Un contrôle émettait six écarts justes chez un fournisseur pour lequel le
   référentiel ne le déclarait pas.** `objectstorage_bucket_default_encryption` se
   déclenche chez Scaleway — le collecteur S3 commun pose `default_encryption_enabled`

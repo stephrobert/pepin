@@ -103,3 +103,50 @@ test_configured_scope_still_denies if {
 	some f in deny with input as inv
 	f.code == "governance_resource_required_tags"
 }
+
+# ── LE SILENCE PAR TYPE (#211) ─────────────────────────────────────────────────
+
+_ress(rs) := {"resources": rs}
+
+_tags_code := "governance_resource_required_tags"
+
+_tags_findings(rs) := {f | some f in deny with input as _ress(rs); f.code == _tags_code}
+
+_etiquetee := [{"key": "cost-center", "value": "R&D"}, {"key": "project", "value": "pepin"}, {"key": "environment", "value": "prod"}, {"key": "owner", "value": "sre"}]
+
+# ✗ Mesuré sur un tenant Exoscale : les buckets SOS portent `tags`, les instances non.
+# La garde testait la clé SUR LA RESSOURCE, donc la règle évaluait les buckets et
+# sautait les instances EN SILENCE — sur l'écart même qu'elle vise.
+#
+# La question est posée PAR TYPE : une instance sans étiquette, à côté d'une instance
+# qui en porte, est un écart.
+test_an_untagged_instance_is_denied_when_the_type_exposes_tags if {
+	fs := _tags_findings([
+		{"provider": "exoscale", "type": "compute_instance", "id": "vm-ok", "name": "vm-ok", "attributes": {"tags": _etiquetee}},
+		{"provider": "exoscale", "type": "compute_instance", "id": "vm-nue", "name": "vm-nue", "attributes": {}},
+	])
+	count(fs) == 1
+	some f in fs
+	f.subject == "vm-nue"
+}
+
+# LE CONTRE-EXEMPLE que la garde protégeait, et qui doit tenir : un fournisseur qui ne
+# collecte pas les étiquettes d'un type ne déclenche RIEN dessus. Sans lui, la
+# correction produirait « 4 étiquettes manquantes » sur chaque ressource — la tempête
+# de faux positifs que la garde d'origine évitait.
+test_a_type_that_never_exposes_tags_stays_silent if {
+	count(_tags_findings([
+		{"provider": "exoscale", "type": "compute_instance", "id": "vm-1", "name": "vm-1", "attributes": {}},
+		{"provider": "exoscale", "type": "compute_instance", "id": "vm-2", "name": "vm-2", "attributes": {}},
+	])) == 0
+}
+
+# LA NUANCE qui distingue cette correction de celle de la matrice des flux : la question
+# se pose PAR TYPE. Un bucket qui porte des étiquettes ne prouve RIEN d'une instance —
+# ce sont deux API, deux collectes, et l'une peut les exposer quand l'autre les ignore.
+test_one_type_exposing_tags_says_nothing_of_another if {
+	count(_tags_findings([
+		{"provider": "exoscale", "type": "object_storage_bucket", "id": "b", "name": "b", "attributes": {"tags": _etiquetee}},
+		{"provider": "exoscale", "type": "compute_instance", "id": "vm-nue", "name": "vm-nue", "attributes": {}},
+	])) == 0
+}
