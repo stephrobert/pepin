@@ -470,6 +470,7 @@ func buildBlocks(root, lang string, m Matrix, c captures, rem []RemediationCover
 		"scan-control-encryption":   Fence("text", controlBlock(t, c.vulnerable.Stdout, "CLD-CHF-2")),
 		"scan-control-objectstore":  Fence("text", controlBlock(t, c.vulnerable.Stdout, "CLD-STO-1")),
 		"provider-list":             Fence("text", c.providers.Stdout),
+		"roadmap-status-heading":    roadmapStatusHeading(t, root),
 		"fixture-empty-inventory":   Fence("json", emptyInventory),
 		"fixture-tagless-inventory": Fence("json", taglessInventory),
 		"fixture-partial-inventory": Fence("json", partialInventory),
@@ -1105,4 +1106,42 @@ func mustIndent(v any) string {
 		return "{}"
 	}
 	return string(b)
+}
+
+// roadmapStatusHeading rend le titre « Où en est Pépin » avec la version COURANTE.
+//
+// Le défaut qu'il ferme. La feuille de route annonçait « v0.2.0 » alors que la v0.4.0
+// était publiée. Pour n'importe quel projet ce serait mineur ; pour celui-ci, dont tout
+// le propos est qu'aucune affirmation ne vaut mieux que ce qui est mesuré, une page qui
+// se trompe sur sa propre version est exactement le genre de détail qui décrédibilise
+// le reste. Et un numéro retapé à la main se périme à chaque release, par construction.
+//
+// La source est le CHANGELOG, pas un tag git : un clone de CI peut n'avoir aucun tag,
+// alors que le CHANGELOG est dans l'arbre. C'est déjà la source de
+// `TestTheInstallPagePinsTheLatestRelease`, et deux sources de vérité pour la même
+// question finiraient par diverger.
+func roadmapStatusHeading(t blockStrings, root string) string {
+	v := derniereVersionDuChangelog(root)
+	if v == "" {
+		// Une version illisible ne se fabrique pas (ADR-0014) : le titre reste sans
+		// numéro plutôt que d'en inventer un.
+		return "## " + t.roadmapStatus
+	}
+	return "## " + t.roadmapStatus + ", v" + v
+}
+
+// versionChangelog : la première section `## [X.Y.Z]` du CHANGELOG anglais, celle que
+// la release publie. `## [Unreleased]` ne correspond pas au motif, donc s'ignore seul.
+var versionChangelog = regexp.MustCompile(`(?m)^## \[(\d+\.\d+\.\d+)\]`)
+
+func derniereVersionDuChangelog(root string) string {
+	// #nosec G304 -- nom de fichier constant, sous la racine du dépôt que le générateur reçoit.
+	raw, err := os.ReadFile(filepath.Join(root, "CHANGELOG.md"))
+	if err != nil {
+		return ""
+	}
+	if m := versionChangelog.FindSubmatch(raw); m != nil {
+		return string(m[1])
+	}
+	return ""
 }

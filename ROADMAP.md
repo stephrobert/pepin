@@ -14,7 +14,9 @@ CI: [known limitations](docs/known-limitations.md) for the blind spots, and the
 [coverage matrix](docs/coverage.md) for what is measurable control by control. This
 page does not restate them.
 
-## Where Pépin stands, v0.2.0
+<!-- pepin:gen roadmap-status-heading -->
+## Where Pépin stands, v0.4.0
+<!-- /pepin:gen roadmap-status-heading -->
 
 Four registered providers: three sovereign clouds, plus an in-cluster Kubernetes
 collector.
@@ -103,6 +105,12 @@ justification for. That restraint is the point of the project, not an accident o
 **OVHcloud** is the next sovereign cloud on the list. Adding one is one descriptor and
 **zero rules** — the rules are common, only the source changes — which is what
 [adding a provider](docs/contributing/adding-a-provider.md) walks through.
+
+It comes **after** the three current providers have closed their coverage gaps, and
+that is a decision rather than a delay. Going from three imperfect providers to four
+imperfect providers makes the product indispensable to nobody; three providers that are
+highly reliable, well qualified, usable in CI, with campaign comparison and remediation,
+turn OVHcloud into a market accelerator instead of a new source of debt.
 
 Nothing is declared covered before its contract is verified field by field against the
 provider's own SDK or API specification. A provider that ships with unverified fields
