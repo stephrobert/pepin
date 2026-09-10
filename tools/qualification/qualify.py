@@ -236,10 +236,33 @@ def compare(expected, results, source, exit_code, outputs, prefix, owned=None):
             v.info(f"[{source}] {code} : écart HORS tenant sur « {r.get('subject')} » (non gardé)")
 
         # Forme 1 : un statut au niveau du contrôle (chaîne, ou mapping avec `status:`).
-        if isinstance(want, str) or (isinstance(want, dict) and "status" in want):
+        #
+        # Une attente qui NOMME des sujets (`fail`/`silent`/`inconclusive`) relève de la
+        # forme 2, même si elle porte aussi `status:`. La forme 2 est strictement plus
+        # précise — elle dit QUI doit être fautif —, et la faire avaler par la forme 1
+        # perdait les sujets en silence.
+        #
+        # Trouvé par le premier run réel Exoscale : l'attente de
+        # `kubernetes_cluster_audit_logging_enabled` porte `status: fail` ET
+        # `fail: [${output.sks_weak_name}]`. La forme 1 la prenait, constatait un écart
+        # sur le tenant, et le déclarait « faux positif ou attente périmée » — alors que
+        # cet écart est très exactement ce que `fail` veut dire. Le produit avait
+        # raison, le runner avait tort, et le NO-GO était le sien.
+        nomme_des_sujets = isinstance(want, dict) and any(
+            k in want for k in ("fail", "silent", "inconclusive"))
+        if not nomme_des_sujets and (isinstance(want, str) or (isinstance(want, dict) and "status" in want)):
             status = want if isinstance(want, str) else want["status"]
             if status not in STATUSES | {"evaluated"}:
                 v.problem(f"[{source}] {code} : statut attendu inconnu « {status} »")
+                continue
+            # `fail` attendu : un écart sur le tenant CONFIRME l'attente, il ne la
+            # contredit pas. C'est son absence qui est le faux vert. Le cas ne se
+            # présentait pas encore sans sujets nommés, et c'est justement pourquoi il
+            # fallait le traiter : le piège attendait la prochaine attente écrite.
+            if status == "fail":
+                if not tenant_fails:
+                    v.problem(f"[{source}] {code} : FAUX VERT — attendu fail, aucun écart "
+                              "sur le tenant")
                 continue
             if tenant_fails:
                 v.problem(f"[{source}] {code} : attendu {status}, mais écart sur "
@@ -872,6 +895,14 @@ def selftest():
             "f_absent": {"live": "absent"},
             "g_defect": {"live": {"fail": ["pepin-qual-vm-defect"], "known_defect": "#0 exemple"}},
             "h_inc": {"live": {"fail": ["pepin-qual-vm-prod"], "inconclusive": ["pepin-qual-vm-noenv"]}},
+            # #228 — les deux formes que la comparaison confondait.
+            # `i_both` porte un statut ET des sujets : c'est la forme de
+            # `kubernetes_cluster_audit_logging_enabled` chez Exoscale, la seule du
+            # dépôt, et c'est elle qui a fait dire NO-GO à une correction juste.
+            "i_both": {"live": {"status": "fail", "fail": ["pepin-qual-vm-audit"]}},
+            # `j_fail` porte un statut `fail` SANS sujet : la forme qui n'existait pas
+            # encore, et dont le piège attendait la prochaine attente écrite.
+            "j_fail": {"live": "fail"},
         },
     }
     good = [
@@ -883,6 +914,8 @@ def selftest():
         {"control": "g_defect", "status": "fail", "subject": "pepin-qual-vm-defect"},
         {"control": "h_inc", "status": "fail", "subject": "pepin-qual-vm-prod"},
         {"control": "h_inc", "status": "not-evaluated", "subject": "pepin-qual-vm-noenv"},
+        {"control": "i_both", "status": "fail", "subject": "pepin-qual-vm-audit"},
+        {"control": "j_fail", "status": "fail", "subject": "pepin-qual-vm-any"},
     ]
 
     def mutate(fn):
@@ -907,6 +940,24 @@ def selftest():
         ("un défaut connu corrigé rend NO-GO (la correction se dit)", expected, mutate(lambda r: r.__setitem__(5, {"control": "g_defect", "status": "pass", "subject": "scaleway"})), 1, False),
         ("un inconcluant attendu qui disparaît rend NO-GO", expected, mutate(lambda r: r.__setitem__(7, {"control": "h_inc", "status": "fail", "subject": "pepin-qual-vm-noenv"})), 1, False),
         ("un inconcluant que rien n'attend rend NO-GO", expected, good + [{"control": "a_fail", "status": "not-evaluated", "subject": "pepin-qual-vm-x"}], 1, False),
+        # ── #228 : l'écart ATTENDU ne doit pas être pris pour une régression ──────
+        #
+        # Le premier cas est celui qui a rougi à tort sur un run réel : l'attente porte
+        # `status: fail` ET `fail: [...]`, l'assessment rend très exactement cet écart,
+        # et la comparaison le déclarait « faux positif ou attente périmée ». Une porte
+        # qui crie au loup sur une correction juste s'apprend à être discutée, ce qui
+        # coûte aussi cher que la porte qui dit GO sur un faux vert.
+        ("un fail attendu, sujets nommés : l'écart CONFIRME l'attente", expected, good, 1, True),
+        ("un fail attendu, sujets nommés : c'est son ABSENCE qui rend NO-GO", expected,
+         mutate(lambda r: r.__setitem__(8, {"control": "i_both", "status": "pass", "subject": "scaleway"})), 1, False),
+        ("un fail attendu SANS sujet : l'écart confirme", expected, good, 1, True),
+        ("un fail attendu SANS sujet : aucun écart rend NO-GO", expected,
+         mutate(lambda r: r.__setitem__(9, {"control": "j_fail", "status": "pass", "subject": "scaleway"})), 1, False),
+        # Le contre-exemple : la forme 2 l'emporte, donc un sujet du tenant que rien ne
+        # nomme reste un faux positif — le gain de précision ne doit pas se payer d'un
+        # relâchement.
+        ("la forme qui nomme garde sa rigueur sur les sujets", expected,
+         good + [{"control": "i_both", "status": "fail", "subject": "pepin-qual-vm-autre"}], 1, False),
     ]
     failures = 0
     # ── Ce qu'un défaut connu vaut pour une RELEASE ────────────────────────────
