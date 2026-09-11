@@ -51,6 +51,18 @@ belongs in `git log`.
 
 ### Fixed
 
+- **The Scaleway qualification tenant refuses to run in the default project** (issue
+  #240). It applies deliberately exposed resources, and its proof of destruction relies
+  on a before/after delta for what carries no tag — which a **third-party** resource
+  moving during the run falsifies, in either direction. At Scaleway the default project
+  carries the Organization's ID, cannot be deleted or transferred, and is where
+  everything lands when nobody chose. Measured on 2026-09-10: it held a VM from other
+  work, started two hours earlier; the run could only proceed after emptying the whole
+  account, which is not a procedure. The `identity` hook now refuses, and says which
+  three commands fix it. The project is **emptied**, never recreated: a reused project
+  keeps its consumption history, spends the 25-project quota once, and needs its VPC
+  created once (a project created since 13 May 2025 no longer receives a default one).
+
 - **The absent/empty rule is now a gate, not a habit** (issue #227, second half). One
   rule governs every attribute a provider spec maps — a key **absent** from the source
   projects nothing, a key present and **empty** projects the empty value — and
