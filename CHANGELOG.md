@@ -23,6 +23,15 @@ belongs in `git log`.
 
 ### Added
 
+- **Outscale plans can now judge deletion protection** (issue #203).
+  `compute_instance_deletion_protection` came back `not-evaluated` on the Terraform
+  source while the plan carried the answer: `outscale_vm.deletion_protection` is an
+  **optional** argument, so it is written in clear when the author wrote it. The mapping
+  did not project it. Measured on the qualification tenant's real plan — the control now
+  `fail`s on the deliberately unprotected VM and stays inconclusive on the one with no
+  readable environment — and confirmed by a `--plan-only` qualification run, GO, with
+  **nothing created and nothing billed**.
+
 - **Scaleway live: a root-owned API key is now found** (issue #195).
   `iam_no_root_access_key` — severity `high` — could not conclude on either source. The
   data was in the API-key listing the collector **already calls**: `user_id`, and

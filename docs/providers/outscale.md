@@ -284,8 +284,8 @@ truth is the [coverage matrix](../coverage.md).
 |---|---|---|
 | `blockstorage_snapshot_not_public` | live | this source produces no resource of type "blockstorage_snapshot" |
 | `blockstorage_volume_snapshots_exist` | live | this source produces no resource of type "blockstorage_volume" |
-| `compute_instance_deletion_protection` | live | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_public_ip_with_open_securitygroup` | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_deletion_protection` | live | deciding attribute "deletion_protection" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `iam_accesskey_expiration_set` | live | this source produces no resource of type "access_key" |
 | `iam_accesskey_rotated` | live | this source produces no resource of type "access_key" |
 | `iam_account_mfa_enforced` | live | this source produces no resource of type "api_access_policy" |

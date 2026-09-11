@@ -259,9 +259,9 @@ couples, une source produit le type de ressource et son attribut décisif, et l'
 |---|---|---|---|
 | `blockstorage_snapshot_not_public` | outscale | live | cette source ne produit aucune ressource de type « blockstorage_snapshot » |
 | `blockstorage_volume_snapshots_exist` | outscale | live | cette source ne produit aucune ressource de type « blockstorage_volume » |
-| `compute_instance_deletion_protection` | outscale | live | attribut décisif « deletion_protection » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_deletion_protection` | outscale | live | attribut décisif « deletion_protection » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_no_secrets_in_user_data` | scaleway | terraform | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | outscale | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | outscale | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
@@ -276,7 +276,7 @@ couples, une source produit le type de ressource et son attribut décisif, et l'
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | cette source ne produit aucune ressource de type « iam_policy » |
 | `iam_user_mfa_enabled` | exoscale | live | cette source ne produit aucune ressource de type « iam_user » |
 | `iam_user_mfa_enabled` | scaleway | live | cette source ne produit aucune ressource de type « iam_user » |
-| `kubernetes_cluster_audit_logging_enabled` | exoscale | live | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
+| `kubernetes_cluster_audit_logging_enabled` | exoscale | live | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `kubernetes_cluster_auto_upgrade_enabled` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_deletion_protection` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |

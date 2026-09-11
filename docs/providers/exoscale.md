@@ -200,7 +200,7 @@ truth is the [coverage matrix](../coverage.md).
 | Control | Observable only through | Reason on the blind side |
 |---|---|---|
 | `iam_user_mfa_enabled` | live | this source produces no resource of type "iam_user" |
-| `kubernetes_cluster_audit_logging_enabled` | live | deciding attribute "audit_enabled" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
+| `kubernetes_cluster_audit_logging_enabled` | live | deciding attribute "audit_enabled" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_object_lock_enabled` | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_public_access` | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_versioning_enabled` | live | this source produces no resource of type "object_storage_bucket" |

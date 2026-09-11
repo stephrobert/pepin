@@ -59,7 +59,7 @@ porte son motif :
 
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
-| exoscale | terraform | ◐ `partial` | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
+| exoscale | terraform | ◐ `partial` | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 

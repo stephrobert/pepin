@@ -256,8 +256,8 @@ func cellStatus(l i18n.Lang, provider string, ctl referentiel.Control, src Sourc
 		// n'existe qu'après `apply`. Confondre les deux envoie corriger dans le vide.
 		if proj.measured[typ] && anyProjected(proj.declared[typ], required) {
 			return Cell{Status: Partial, Reason: i18n.TIn(l,
-				"attribut décisif « "+strings.Join(required, " / ")+" » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated »",
-				"deciding attribute \""+strings.Join(required, " / ")+"\" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns \"not-evaluated\"")}
+				"attribut décisif « "+strings.Join(required, " / ")+" » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated »",
+				"deciding attribute \""+strings.Join(required, " / ")+"\" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns \"not-evaluated\"")}
 		}
 		return Cell{Status: Partial, Reason: i18n.TIn(l,
 			"attribut décisif « "+strings.Join(required, " / ")+" » non projeté par cette source : garde de capacité, le scan rend « not-evaluated »",

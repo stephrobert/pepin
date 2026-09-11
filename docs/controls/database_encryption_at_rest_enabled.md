@@ -59,7 +59,7 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
-| scaleway | terraform | ◐ `partial` | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
+| scaleway | terraform | ◐ `partial` | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 
 ## What Pépin can conclude

@@ -65,7 +65,7 @@ but they will never confirm compliance.
 <!-- pepin:gen never-pass -->
 | Control | Severity | Reason |
 |---|---|---|
-| `database_encryption_at_rest_enabled` | high | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
+| `database_encryption_at_rest_enabled` | high | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `governance_resource_required_tags` | medium | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 <!-- /pepin:gen never-pass -->
 
@@ -86,9 +86,9 @@ actually decide them. The reason given is the one that applies to the source tha
 |---|---|---|---|
 | `blockstorage_snapshot_not_public` | outscale | live | this source produces no resource of type "blockstorage_snapshot" |
 | `blockstorage_volume_snapshots_exist` | outscale | live | this source produces no resource of type "blockstorage_volume" |
-| `compute_instance_deletion_protection` | outscale | live | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_deletion_protection` | outscale | live | deciding attribute "deletion_protection" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_no_secrets_in_user_data` | scaleway | terraform | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_public_ip_with_open_securitygroup` | outscale | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | outscale | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
@@ -103,7 +103,7 @@ actually decide them. The reason given is the one that applies to the source tha
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | exoscale | live | this source produces no resource of type "iam_user" |
 | `iam_user_mfa_enabled` | scaleway | live | this source produces no resource of type "iam_user" |
-| `kubernetes_cluster_audit_logging_enabled` | exoscale | live | deciding attribute "audit_enabled" declared by the mapping but ABSENT from the reference plans (value known only after `apply`): a capability guard, so the scan returns "not-evaluated" |
+| `kubernetes_cluster_audit_logging_enabled` | exoscale | live | deciding attribute "audit_enabled" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `kubernetes_cluster_auto_upgrade_enabled` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
