@@ -79,6 +79,18 @@ belongs in `git log`.
 
 ### Fixed
 
+- **Exoscale live now writes the zone it scanned** (issue #210).
+  `governance_resource_region_in_eu` returned `not-evaluated` on **every** Exoscale
+  organisation: no resource carried a region, so the control could never conclude about
+  where anything lived. The collector knew the zone all along — it is the `--region` it
+  was given and the host it talks to — but the engine read the variable `region` where
+  Exoscale declares `zone` (`region_key`), so every resource came out with an **empty**
+  region. The region now follows the declared key, for every provider. Writing the
+  **scanned** zone asserts nothing unobserved: Exoscale's API is zone-scoped by its host,
+  so a scan of `de-fra-1` returns only `de-fra-1` resources — it is the zone whose API
+  answered, not a value inferred. Confirmed by a qualification run on a real account,
+  GO, with the control now `pass` over instances, volumes, snapshots and clusters.
+
 - **The Scaleway qualification tenant refuses to run in the default project** (issue
   #240). It applies deliberately exposed resources, and its proof of destruction relies
   on a before/after delta for what carries no tag — which a **third-party** resource

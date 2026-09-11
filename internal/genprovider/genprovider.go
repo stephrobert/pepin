@@ -303,6 +303,11 @@ func (g GenericProvider) Collect(ctx context.Context, cfg provider.Config) (mode
 		}
 	}
 	spec := g.desc.Collecte
+	// La clé que `--region` alimente chez ce fournisseur, pour que la région POSÉE sur
+	// chaque ressource vienne de la même variable que les chemins substitués. Elle est
+	// déclarée au descripteur (`region_key`), pas devinée : chez Exoscale c'est `zone`,
+	// et une ressource sortait sans région parce que le moteur lisait `region` (#210).
+	spec.RegionKey = g.desc.RegionKey
 	spec.Provider = g.desc.Name
 	eimCfg := collectkit.EIM{}
 	if g.desc.EIM.InlinePolicies {
