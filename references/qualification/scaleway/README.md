@@ -16,6 +16,34 @@ measures, so the resources only a plan reads are behind `terraform_only_resource
 (default `true`): the runner applies with `false` and scans the full plan with
 `--terraform`. `expected.yaml` pins the two sources separately.
 
+## Prerequisite: a dedicated project, never the default one
+
+This stack applies **deliberately exposed** resources — SSH open to the whole internet,
+public buckets, permissive policies — and its proof of destruction relies on a
+before/after delta for what carries no tag. A **third-party** resource moving during the
+run falsifies that delta, in either direction.
+
+At Scaleway, resources live in a **Project** and never leave it, while IAM and quotas
+stay at the **Organization** level. The project is therefore the only boundary this
+tenant can use — and the **default project is not one**: it carries the Organization's
+ID, cannot be deleted or transferred, and is where everything lands when nobody chose.
+
+Measured on 2026-09-10: the default project held a `pavois-repro-…` VM started two hours
+earlier, from other work. The run could only proceed after emptying the whole account,
+which is not a procedure. Hence issue #240, and the refusal the `identity` hook now
+raises.
+
+```bash
+scw account project create name=pepin-qualification     description="Pepin qualification tenant — emptied between runs"
+scw config set default-project-id=<PROJECT_ID>
+export PEPIN_QUAL_SCW_PROJECT=<PROJECT_ID>
+```
+
+The project is **not recreated** on each run — it is **emptied**. A reused project keeps
+its consumption history, consumes the 25-project-per-organization quota only once, and
+needs its VPC created only once (a project created since 13 May 2025 no longer receives
+a default one).
+
 ## What the stack creates
 
 | Family | Count | Faulty resource → control | Counterexample (must stay silent) |

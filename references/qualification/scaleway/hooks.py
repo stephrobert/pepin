@@ -169,6 +169,39 @@ def identity():
     if not project:
         sys.exit("la clé d'API n'a pas de projet par défaut : impossible d'établir le compte")
     p = api("GET", f"/account/v3/projects/{project}")
+    org = p.get("organization_id")
+    # LE PROJET PAR DÉFAUT N'EST PAS UN LIEU DE QUALIFICATION.
+    #
+    # Chez Scaleway, le projet par défaut porte l'ID de l'Organization : `project_id ==
+    # organization_id` le désigne sans ambiguïté. Il ne peut être ni supprimé ni
+    # transféré, et c'est là que vivent par défaut les ressources de tout le monde.
+    #
+    # Ce tenant applique délibérément SSH ouvert à tout Internet, des buckets publics et
+    # des politiques permissives. Deux raisons de refuser, et la seconde est la plus
+    # insidieuse :
+    #
+    #   1. une fenêtre d'exposition dans un projet où quelqu'un travaille ;
+    #   2. la preuve de destruction repose sur un delta avant/après pour ce qui ne
+    #      s'étiquette pas. Une ressource TIERCE qui apparaît ou disparaît pendant le run
+    #      fausse ce delta — dans un sens ou dans l'autre. Le run dirait alors « rien ne
+    #      survit » sans l'avoir établi, ou crierait sur ce qui ne lui appartient pas.
+    #
+    # Mesuré le 2026-09-10 : le projet par défaut portait une VM `pavois-repro-…` lancée
+    # deux heures plus tôt, d'un autre projet du mainteneur. Le run n'a pu avoir lieu
+    # qu'après vidage complet du compte, ce qui n'est pas une procédure (issue #240).
+    if project == org:
+        sys.exit(
+            "REFUS : la clé de qualification pointe le PROJET PAR DÉFAUT de "
+            f"l'organisation ({project}).\n"
+            "  Ce tenant crée délibérément des ressources exposées, et sa preuve de "
+            "destruction\n"
+            "  repose sur un delta avant/après que toute ressource tierce fausse.\n"
+            "  Créer un projet dédié, puis y pointer le projet par défaut de cette clé :\n"
+            "    scw account project create name=pepin-qualification \\\n"
+            "        description=\"Tenant de qualification Pepin — vide entre deux runs\"\n"
+            "    scw config set default-project-id=<ID_DU_PROJET>\n"
+            "  Puis poser PEPIN_QUAL_SCW_PROJECT sur ce même identifiant."
+        )
     bearer = "application" if key.get("application_id") else "user"
     return {
         "project_id": project,

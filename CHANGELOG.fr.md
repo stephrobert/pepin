@@ -53,6 +53,19 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Le tenant de qualification Scaleway refuse de tourner dans le projet par défaut**
+  (issue #240). Il applique des ressources délibérément exposées, et sa preuve de
+  destruction repose sur un delta avant/après pour ce qui ne porte pas d'étiquette — que
+  toute ressource **tierce** qui bouge pendant le run fausse, dans un sens ou dans
+  l'autre. Chez Scaleway, le projet par défaut porte l'ID de l'Organization, ne peut être
+  ni supprimé ni transféré, et c'est là que tout atterrit quand personne n'a choisi.
+  Mesuré le 2026-09-10 : il portait une VM d'un autre travail, lancée deux heures plus
+  tôt ; le run n'a pu avoir lieu qu'après vidage complet du compte, ce qui n'est pas une
+  procédure. Le crochet `identity` refuse désormais, en donnant les trois commandes qui
+  corrigent. Le projet est **vidé**, jamais recréé : un projet réutilisé garde son
+  historique de consommation, ne consomme qu'une fois le plafond de 25 projets, et n'a
+  besoin qu'une fois de son VPC (un projet créé depuis le 13 mai 2025 n'en reçoit plus).
+
 - **La règle absent/vide est désormais une porte, plus une habitude** (issue #227,
   seconde moitié). Une règle gouverne chaque attribut qu'une spec de fournisseur mappe —
   une clé **absente** de la source ne projette rien, une clé présente et **vide** projette

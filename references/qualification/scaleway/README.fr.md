@@ -17,6 +17,35 @@ live ne mesure : les ressources que seul un plan lit sont derrière
 scanne le plan complet en `--terraform`. `expected.yaml` épingle les deux sources
 séparément.
 
+## Prérequis : un projet dédié, jamais celui par défaut
+
+Cette stack applique des ressources **délibérément exposées** — SSH ouvert à tout
+Internet, buckets publics, politiques permissives — et sa preuve de destruction repose
+sur un delta avant/après pour ce qui ne porte pas d'étiquette. Une ressource **tierce**
+qui bouge pendant le run fausse ce delta, dans un sens ou dans l'autre.
+
+Chez Scaleway, les ressources vivent dans un **Projet** et n'en sortent pas, tandis que
+l'IAM et les quotas restent au niveau de l'**Organization**. Le projet est donc la seule
+frontière que ce tenant puisse utiliser — et le **projet par défaut n'en est pas une** :
+il porte l'ID de l'Organization, ne peut être ni supprimé ni transféré, et c'est là que
+tout atterrit quand personne n'a choisi.
+
+Mesuré le 2026-09-10 : le projet par défaut portait une VM `pavois-repro-…` lancée deux
+heures plus tôt, issue d'un autre travail. Le run n'a pu avoir lieu qu'après vidage
+complet du compte, ce qui n'est pas une procédure. D'où l'issue #240, et le refus que le
+crochet `identity` oppose désormais.
+
+```bash
+scw account project create name=pepin-qualification     description="Tenant de qualification Pepin — vide entre deux runs"
+scw config set default-project-id=<ID_DU_PROJET>
+export PEPIN_QUAL_SCW_PROJECT=<ID_DU_PROJET>
+```
+
+Le projet n'est **pas recréé** à chaque run : il est **vidé**. Un projet réutilisé garde
+son historique de consommation, ne consomme qu'une fois le plafond de 25 projets par
+organisation, et n'a besoin qu'une fois de son VPC (un projet créé depuis le
+13 mai 2025 n'en reçoit plus par défaut).
+
 ## Ce que la stack crée
 
 | Famille | Nombre | Ressource fautive → contrôle | Contre-exemple (doit rester muet) |

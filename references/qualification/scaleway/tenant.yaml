@@ -26,6 +26,31 @@ name_prefix: pepin-qual-
 # contrainte flottante (issue scaleway/terraform-provider-scaleway#4338).
 provider_version: "2.82.0"
 
+# UN PROJET DÉDIÉ, JAMAIS LE PROJET PAR DÉFAUT (issue #240).
+#
+# Chez Scaleway, les ressources vivent dans un PROJET et n'en sortent pas, tandis que
+# l'IAM et les quotas restent au niveau de l'Organization. Le projet est donc la seule
+# frontière que ce tenant puisse utiliser — et le projet PAR DÉFAUT n'en est pas une :
+# il porte l'ID de l'Organization, ne peut être ni supprimé ni transféré, et c'est là
+# que tout atterrit quand personne n'a choisi.
+#
+# Ce tenant crée délibérément SSH ouvert à tout Internet, des buckets publics et des
+# politiques permissives. Et sa preuve de destruction repose sur un delta avant/après
+# pour ce qui ne s'étiquette pas : une ressource TIERCE qui bouge pendant le run le
+# fausse. Le crochet `identity` refuse donc de démarrer sur le projet par défaut.
+#
+# Le projet n'est pas recréé à chaque run : il est VIDÉ. Un projet réutilisé garde son
+# historique de consommation, ne consomme qu'une fois le plafond de 25 projets par
+# organisation, et n'a besoin qu'une fois de son VPC (un projet créé depuis le
+# 13 mai 2025 n'en reçoit plus par défaut).
+projet_dedie:
+  exige: true
+  convention: "pepin-qualification"
+  prerequis: >
+    scw account project create name=pepin-qualification ;
+    scw config set default-project-id=<ID> ;
+    PEPIN_QUAL_SCW_PROJECT=<ID>
+
 # Outil requis par le chemin de SECOURS du nettoyage (jamais par la preuve, qui
 # passe par l'API) : le runner refuse de démarrer sans lui.
 required_tools: [scw]
