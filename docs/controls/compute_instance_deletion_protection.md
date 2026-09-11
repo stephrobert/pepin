@@ -56,7 +56,7 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
-| outscale | terraform | ◐ `partial` | deciding attribute "deletion_protection" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| outscale | terraform | ◐ `partial` | deciding attribute "deletion_protection" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 

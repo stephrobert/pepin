@@ -24,6 +24,15 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Un plan Outscale sait juger la protection contre la suppression** (issue #203).
+  `compute_instance_deletion_protection` revenait `not-evaluated` sur la source Terraform
+  alors que le plan portait la réponse : `outscale_vm.deletion_protection` est un
+  argument **optionnel**, donc écrit en clair quand son auteur l'a écrit. Le mapping ne
+  le projetait pas. Mesuré sur le plan réel du tenant de qualification — le contrôle rend
+  désormais `fail` sur la VM délibérément non protégée et reste inconcluant sur celle
+  sans environnement lisible — et confirmé par un run `--plan-only`, GO, **sans rien
+  créer ni facturer**.
+
 - **Scaleway live : une clé d'API du propriétaire est désormais trouvée** (issue #195).
   `iam_no_root_access_key` — sévérité `high` — ne savait conclure sur aucune source. La
   donnée était dans la liste de clés que le collecteur **interroge déjà** : `user_id`, et

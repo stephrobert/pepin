@@ -683,6 +683,12 @@ mapping_terraform:
         state: state
         user_data: user_data              # Outscale UserData (base64) : secrets en clair (CLD-CMP-9)
         tags: tags
+        # Écrit en clair dans le HCL quand il l'est, absent du plan sinon (l'argument
+        # est optionnel chez outscale/outscale). Le plan disait « je ne peux pas
+        # conclure » sur une protection que l'auteur du HCL a pourtant tranchée —
+        # issue #203. Absent du plan, l'attribut reste absent de l'inventaire, donc le
+        # verrou de capacité se ferme : c'est le comportement voulu, pas une lacune.
+        deletion_protection: deletion_protection
       transforms:
         # `list` est IDEMPOTENT (liste gardée, scalaire -> [scalaire]). Il est requis
         # ici parce qu'un plan qui ne connaît pas encore les identifiants fait porter à

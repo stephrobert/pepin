@@ -234,8 +234,18 @@ controls:
       fail: ["${output.vm_unprotected_id}"]
       silent: ["${output.vm_hardened_id}", "${output.vm_exposed_id}"]
       inconclusive: ["${output.vm_untagged_id}"]
-    # Le plan ne mappe pas `deletion_protection`, que `outscale_vm` porte pourtant (#203).
-    terraform: not-evaluated
+    # #203 : le plan mappe désormais `deletion_protection`, que `outscale_vm` portait
+    # déjà — l'argument est optionnel chez outscale/outscale, donc écrit en clair dans le
+    # HCL quand il l'est. Le plan disait « je ne peux pas conclure » sur une protection
+    # que l'auteur du HCL avait pourtant tranchée.
+    #
+    # Les sujets du plan sont les ADRESSES Terraform, l'identifiant n'existant pas encore
+    # à ce stade (ADR-0022). `untagged` reste inconcluante sur les deux sources, et pour
+    # la même raison : sans environnement lisible, la règle dit qu'elle ne sait pas.
+    terraform:
+      fail: ['outscale_vm.public["unprotected"]']
+      silent: ['outscale_vm.public["hardened"]', 'outscale_vm.public["exposed"]']
+      inconclusive: ['outscale_vm.public["untagged"]']
 
   compute_image_not_public:
     live:

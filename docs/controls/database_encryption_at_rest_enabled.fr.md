@@ -60,7 +60,7 @@ porte son motif :
 
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
-| scaleway | terraform | ◐ `partial` | attribut décisif « encryption_at_rest » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
+| scaleway | terraform | ◐ `partial` | attribut décisif « encryption_at_rest » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |
 
 ## Ce que Pépin peut conclure

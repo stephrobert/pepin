@@ -291,8 +291,8 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 |---|---|---|
 | `blockstorage_snapshot_not_public` | live | cette source ne produit aucune ressource de type « blockstorage_snapshot » |
 | `blockstorage_volume_snapshots_exist` | live | cette source ne produit aucune ressource de type « blockstorage_volume » |
-| `compute_instance_deletion_protection` | live | attribut décisif « deletion_protection » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_deletion_protection` | live | attribut décisif « deletion_protection » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `iam_accesskey_expiration_set` | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_accesskey_rotated` | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_account_mfa_enforced` | live | cette source ne produit aucune ressource de type « api_access_policy » |

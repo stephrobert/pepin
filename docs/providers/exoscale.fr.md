@@ -203,7 +203,7 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 | Contrôle | Observable uniquement via | Motif du côté aveugle |
 |---|---|---|
 | `iam_user_mfa_enabled` | live | cette source ne produit aucune ressource de type « iam_user » |
-| `kubernetes_cluster_audit_logging_enabled` | live | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence (valeur connue seulement après `apply`) : garde de capacité, le scan rend « not-evaluated » |
+| `kubernetes_cluster_audit_logging_enabled` | live | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_object_lock_enabled` | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_public_access` | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_versioning_enabled` | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
