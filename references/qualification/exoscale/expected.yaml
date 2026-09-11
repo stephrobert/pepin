@@ -292,11 +292,16 @@ controls:
     # seul constructible. `swiss` n'est que sur le plan (`terraform_only_resources`) :
     # en live, le scan lit de-fra-1 (UE), elle y serait invisible, et l'organisation
     # n'a droit qu'à quatre instances.
-    # DETTE DE COLLECTE NOMMÉE (ADR-0010) : en live, la collecte Exoscale ne projette
-    # `region` sur aucun type (instances, volumes, snapshots, clusters) — la zone
-    # scannée n'est pas reportée sur les ressources —, et la garde de capacité rend
-    # not-evaluated. Le jour où le collecteur le fait, cette ligne devient `pass`.
-    live: not-evaluated
+    # DETTE PAYÉE (#210) : la collecte live reporte désormais la zone scannée sur
+    # chaque ressource. Le collecteur la connaissait depuis toujours — c'est le
+    # `--region` qu'on lui donne, et l'hôte auquel il parle — mais le moteur lisait la
+    # variable `region` là où Exoscale déclare `zone` (`region_key`), si bien que toute
+    # ressource sortait avec une région VIDE.
+    #
+    # Poser la zone SCANNÉE n'affirme rien qu'on n'ait observé : l'API Exoscale est
+    # zone-scopée par son hôte, donc un scan de de-fra-1 ne rend que des ressources de
+    # de-fra-1. C'est la zone dont l'API a répondu, pas une valeur déduite.
+    live: pass
     terraform:
       fail: [pepin-qual-vm-swiss]
       silent: [pepin-qual-vm-hardened]

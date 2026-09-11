@@ -82,6 +82,20 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **La collecte live Exoscale écrit la zone qu'elle a scannée** (issue #210).
+  `governance_resource_region_in_eu` rendait `not-evaluated` sur **toute** organisation
+  Exoscale : aucune ressource ne portait de région, donc le contrôle ne pouvait jamais
+  conclure sur la localisation de quoi que ce soit. Le collecteur connaissait pourtant la
+  zone depuis toujours — c'est le `--region` qu'on lui donne et l'hôte auquel il parle —
+  mais le moteur lisait la variable `region` là où Exoscale déclare `zone`
+  (`region_key`), si bien que chaque ressource sortait avec une région **vide**. La
+  région suit désormais la clé déclarée, pour tous les fournisseurs. Poser la zone
+  **scannée** n'affirme rien qu'on n'ait observé : l'API Exoscale est zone-scopée par son
+  hôte, donc un scan de `de-fra-1` ne rend que des ressources de `de-fra-1` — c'est la
+  zone dont l'API a répondu, pas une valeur déduite. Confirmé par un run de qualification
+  sur un compte réel, GO, le contrôle rendant désormais `pass` sur les instances, les
+  volumes, les instantanés et les clusters.
+
 - **Le tenant de qualification Scaleway refuse de tourner dans le projet par défaut**
   (issue #240). Il applique des ressources délibérément exposées, et sa preuve de
   destruction repose sur un delta avant/après pour ce qui ne porte pas d'étiquette — que

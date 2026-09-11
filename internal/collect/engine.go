@@ -87,9 +87,33 @@ type ResourceSpec struct {
 
 // Spec est la configuration de collecte d'un provider.
 type Spec struct {
-	Provider  string         `yaml:"provider"`
-	BaseURL   string         `yaml:"base_url"`
+	Provider string `yaml:"provider"`
+	BaseURL  string `yaml:"base_url"`
+	// RegionKey : la variable que `--region` alimente chez ce fournisseur. Vide vaut
+	// « region ».
+	//
+	// Elle existe parce que tous les clouds ne nomment pas leur périmètre de la même
+	// façon : Exoscale scanne une ZONE, et chez lui une zone EST sa région. Le nom
+	// logique était déjà déclaré au descripteur (`region_key`) et servait à substituer
+	// `{zone}` dans les chemins ; ce qui manquait, c'est que la RÉGION POSÉE SUR CHAQUE
+	// RESSOURCE en vienne aussi.
+	//
+	// Sans elle, `mapItems` lisait `vars["region"]` — jamais alimentée chez Exoscale —
+	// et toute ressource sortait avec une région VIDE. Le contrôle de souveraineté, qui
+	// exige la région sur chaque type localisé, ne pouvait donc jamais conclure en live
+	// alors que le collecteur connaissait la zone : c'est celle qu'on lui a donnée, et
+	// c'est l'hôte auquel il parle (issue #210).
+	RegionKey string         `yaml:"region_key"`
 	Resources []ResourceSpec `yaml:"resources"`
+}
+
+// regionOf rend la région à poser sur les ressources de cette spec : la valeur de la
+// clé que le fournisseur déclare, `region` par défaut.
+func (s Spec) regionOf(vars map[string]string) string {
+	if s.RegionKey != "" {
+		return vars[s.RegionKey]
+	}
+	return vars["region"]
 }
 
 // Collect exécute toute la spec et retourne l'inventaire normalisé AVEC son état
@@ -166,7 +190,7 @@ func collectResource(ctx context.Context, hc *http.Client, spec Spec, auth Auth,
 		}
 		AttestConst(&prov, r.Const, constRef)
 		id, _ := attrs[r.ID].(string)
-		return []model.Resource{{Provider: spec.Provider, Type: r.Type, ID: id, Name: id, Region: vars["region"], Attributes: attrs, Provenance: prov}}, nil
+		return []model.Resource{{Provider: spec.Provider, Type: r.Type, ID: id, Name: id, Region: spec.regionOf(vars), Attributes: attrs, Provenance: prov}}, nil
 	}
 	return mapItems(spec, r, items, vars, src), nil
 }
@@ -339,7 +363,7 @@ func tokenFromDoc(doc any, path string) string {
 // transforms). La région de collecte (vars["region"]) est propagée sur chaque
 // ressource pour les contrôles de localisation (souveraineté, CLD-GVN-3).
 func mapItems(spec Spec, r ResourceSpec, items []any, vars map[string]string, src Source) []model.Resource {
-	region := vars["region"]
+	region := spec.regionOf(vars)
 	out := make([]model.Resource, 0, len(items))
 	for _, it := range items {
 		attrs, prov := ProjectAttested(it, r.Map, r.Transforms, src)
