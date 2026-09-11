@@ -151,7 +151,19 @@ import (
 //	fil : le collecteur paginait la même liste pour joindre les règles à leur
 //	groupe, sans jamais projeter le champ. Une lacune de couverture, pas une lacune
 //	d'API (issue #195). Contrat vérifié contre l'API réelle le 2026-09-11.
-const InventoryFormat = "pepin-inventory/v10"
+//
+// v11 : une `access_key` peut porter `owner_user_id` et `owner_application_id`, et un
+//
+//	`iam_user` son `user_type` (`owner` | `member`). Ajout PUR. Il est nécessaire parce
+//	que `iam_no_root_access_key` ne savait pas conclure en live chez Scaleway : la
+//	donnée était dans la liste de clés DÉJÀ interrogée, et personne ne la projetait.
+//	Les deux champs d'appartenance vont ensemble — une clé appartient à un
+//	utilisateur OU à une application, et ne projeter que le premier ferait taire le
+//	contrôle sur les clés d'application, dont l'appartenance est pourtant observée.
+//	`user_type` est le SEUL marqueur du propriétaire de l'organisation :
+//	`account_root_user_id`, porté par le même enregistrement, désigne autre chose
+//	(mesuré le 2026-09-11). Contrat vérifié contre l'API réelle.
+const InventoryFormat = "pepin-inventory/v11"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

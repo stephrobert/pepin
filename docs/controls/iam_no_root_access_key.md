@@ -15,7 +15,7 @@
 | Severity | `high` |
 | SCSL requirement (frozen index) | `CLD-IAM-1` |
 | Resource type read | `access_key` |
-| Deciding attribute | `root_owned` / `scope` |
+| Deciding attribute | `owner_application_id` / `owner_user_id` / `root_owned` / `scope` |
 | State | active |
 | Declared for | `outscale`, `scaleway` |
 | Remediation proofs | 0 / 2 |
@@ -51,7 +51,7 @@ source".
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✅ |
-| scaleway | ◐ | ◐ |
+| scaleway | ◐ | ✅ |
 | kubernetes | n/a | ✗ |
 
 Every cell that is not ✅ **while the control is declared for that provider** carries its
@@ -60,17 +60,16 @@ reason:
 | Provider | Source | Status | Reason |
 |---|---|---|---|
 | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
-| scaleway | terraform | ◐ `partial` | deciding attribute "root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| scaleway | live | ◐ `partial` | deciding attribute "root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| scaleway | terraform | ◐ `partial` | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
 | `fail` | a deviation was detected on a real resource | outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | the deciding data was collected, and it is compliant | outscale / live |
+| `pass` | the deciding data was collected, and it is compliant | outscale / live · scaleway / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
-| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | scaleway / terraform · scaleway / live |
+| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | scaleway / terraform |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
 resource of the targeted type: "nothing to look at" is not "compliant".
@@ -78,7 +77,7 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 ## How to investigate
 
 - Normalized resource type the rule reads: `access_key`
-- Attribute the decision depends on: `root_owned` / `scope`
+- Attribute the decision depends on: `owner_application_id` / `owner_user_id` / `root_owned` / `scope`
 - Without that attribute on a resource of the targeted type, the scan returns `not-evaluated` rather than `pass` (`internal/assess`, `requiredAttr` table).
 - What each source projects is readable in the descriptor: [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - The rule that emits this code lives in [`internal/commonrules/rules/`](../../internal/commonrules/rules): it is **common** to every provider, only the source changes.

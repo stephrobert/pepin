@@ -96,7 +96,7 @@ The table below is rendered from that very map — not transcribed from it:
 | `iam_account_mfa_enforced` | `api_access_policy` | `require_trusted_env` |
 | `iam_apiaccesspolicy_max_key_expiration` | `api_access_policy` | `max_access_key_expiration_seconds` |
 | `iam_apiaccessrule_no_public_cidr` | `api_access_rule` | `ip_ranges` |
-| `iam_no_root_access_key` | `access_key` | `root_owned` or `scope` |
+| `iam_no_root_access_key` | `access_key` | `owner_application_id` or `owner_user_id` or `root_owned` or `scope` |
 | `iam_policy_no_administrative_privileges` | `iam_policy` | `statements` |
 | `iam_policy_no_notaction_notresource` | `iam_policy` | `statements` |
 | `iam_policy_no_privilege_escalation` | `iam_policy` | `manages_iam` or `statements` |

@@ -99,6 +99,7 @@ actually decide them. The reason given is the one that applies to the source tha
 | `iam_apiaccessrule_defined` | outscale | live | this source produces no resource of type "api_access_summary" |
 | `iam_apiaccessrule_no_public_cidr` | outscale | live | this source produces no resource of type "api_access_rule" |
 | `iam_no_root_access_key` | outscale | live | this source produces no resource of type "access_key" |
+| `iam_no_root_access_key` | scaleway | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | exoscale | live | this source produces no resource of type "iam_user" |
 | `iam_user_mfa_enabled` | scaleway | live | this source produces no resource of type "iam_user" |
@@ -153,7 +154,7 @@ Per provider and per source, over all controls in the reference:
 | outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
-| scaleway | live | 18 | 3 | 2 | 35 |
+| scaleway | live | 19 | 2 | 2 | 35 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
 
@@ -209,7 +210,7 @@ What is not yet proven is **counted**, not hidden:
 |---|---:|
 | Control x provider x source paths on which Pépin concludes | 182 |
 | Paths whose every reachable verdict is proven end to end | 31 |
-| Verdicts to prove in total | 460 |
+| Verdicts to prove in total | 462 |
 | Verdicts left to prove | 366 |
 <!-- /pepin:gen veracity-debt -->
 

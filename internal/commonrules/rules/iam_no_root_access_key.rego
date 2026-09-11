@@ -30,6 +30,34 @@ _root_key(r) if {
 	not id in _eim_key_ids
 }
 
+# Ensemble des identifiants d'utilisateurs PROPRIÉTAIRES de l'organisation.
+#
+# Scaleway le dit littéralement : chaque utilisateur porte `type`, dont la valeur est
+# `owner` ou `member` (GET /iam/v1alpha1/users, vérifié contre l'API réelle le
+# 2026-09-11). C'est le seul marqueur fiable — `account_root_user_id`, porté par le même
+# enregistrement, désigne autre chose et diffère de l'id du propriétaire.
+_owner_user_ids contains id if {
+	some r in input.resources
+	r.type == "iam_user"
+	lower(object.get(r.attributes, "user_type", "")) == "owner"
+	id := object.get(r.attributes, "user_id", "")
+	id != ""
+}
+
+# root_owned dérivé (Scaleway) : la clé appartient à l'utilisateur PROPRIÉTAIRE.
+#
+# Ce que cette jointure évite. Une clé d'API Scaleway porte `user_id` (un humain) ou
+# `application_id` (une identité de service). S'arrêter à « c'est une clé
+# d'utilisateur » signalerait la clé de CHAQUE membre qui en a une : un faux positif par
+# personne, et dix de ces findings apprennent à ignorer l'outil. Ce que le contrôle vise,
+# c'est la clé qui contourne l'IAM parce qu'elle appartient au compte qui possède
+# l'organisation — pas celle d'un collègue.
+_root_key(r) if {
+	uid := object.get(r.attributes, "owner_user_id", "")
+	uid != ""
+	uid in _owner_user_ids
+}
+
 deny contains f if {
 	some r in input.resources
 	r.type == "access_key"
