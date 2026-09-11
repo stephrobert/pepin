@@ -217,6 +217,34 @@ oks:
   endpoint: "https://api.{region}.oks.acme.example"
 ```
 
+### Absent n'est pas vide, et une spec n'invente jamais
+
+Une règle gouverne chaque attribut que vous mappez, et une porte la tient :
+
+| Ce que la source porte | Ce qui doit atteindre l'inventaire | Ce que ça veut dire |
+|---|---|---|
+| la clé est **absente** | rien — ne projetez pas l'attribut | non observé |
+| la clé est là, à `null`, `[]` ou `{}` | la valeur vide | **observé, et il n'y en a aucun** |
+| la clé est là avec une valeur | la valeur | observé |
+
+Cette distinction décide de ce qu'un contrôle a le droit de conclure. Un attribut qui
+n'est jamais arrivé doit le laisser incapable de conclure ; un attribut arrivé **vide**
+est une énumération complète qui compte zéro — et c'est souvent l'écart lui-même.
+« Cette instance n'a aucun groupe de sécurité » est exactement ce que cherche
+`compute_instance_has_security_group`.
+
+**Ne fabriquez jamais une valeur pour une clé que la source ne portait pas**, valeur par
+défaut comprise. Un `[]` fabriqué est indiscernable d'une observation, franchit le verrou
+de capacité, et fait conclure un contrôle sur zéro information — c'est l'incident
+fondateur de l'[ADR-0006](../adr/0006-jamais-un-pass-non-prouve.md). Le cas s'est
+présenté : un parseur de politique rendait `[]` aussi bien pour « ce document n'a pas pu
+être analysé » que pour « cette politique n'accorde rien » (issue #227).
+
+Vous n'avez pas à vous en souvenir. `TestNoSpecFabricatesAnAttributeFromNothing` projette
+un **item vide** à travers chaque ressource de chaque descripteur et échoue si un seul
+attribut en sort. Si votre collecteur est en Go plutôt que piloté par la spec, tenez le
+même contrat à la main : **omettez l'attribut** au lieu d'en poser un vide.
+
 ## 7. Le contrat : ce qui est vérifié, ce qui ne l'est pas, ce qui n'existe pas
 
 Le contrat est la couche d'honnêteté, et c'est lui qui pilote l'assessment. Pour chaque

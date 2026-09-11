@@ -210,6 +210,34 @@ oks:
   endpoint: "https://api.{region}.oks.acme.example"
 ```
 
+### Absent is not empty, and a spec never invents
+
+One rule governs every attribute you map, and a gate holds it:
+
+| What the source carries | What must reach the inventory | What it means |
+|---|---|---|
+| the key is **absent** | nothing — do not project the attribute | not observed |
+| the key is present, `null` or `[]` or `{}` | the empty value | **observed, and there is none** |
+| the key is present with a value | the value | observed |
+
+The distinction decides what a control may conclude. An attribute that never arrived
+must leave the control unable to conclude; an attribute that arrived **empty** is a
+complete enumeration counting zero — and it is often the deviation itself. "This
+instance has no security group at all" is exactly what
+`compute_instance_has_security_group` is looking for.
+
+**Never fabricate a value for a key the source did not carry**, and that includes a
+default. A fabricated `[]` looks identical to an observation, crosses the capability
+guard, and makes a control conclude on zero information — which is the founding incident
+of [ADR-0006](../adr/0006-jamais-un-pass-non-prouve.md). It happened: a policy parser
+returned `[]` both for *"this document could not be parsed"* and for *"this policy grants
+nothing"* (issue #227).
+
+You do not have to remember this. `TestNoSpecFabricatesAnAttributeFromNothing` projects
+an **empty item** through every resource of every descriptor and fails if a single
+attribute comes out. If your collector is Go rather than spec-driven, hold the same
+contract by hand: **omit the attribute** rather than posting an empty one.
+
 ## 7. The contract: what is verified, what is not, what does not exist
 
 The contract is the honesty layer, and it drives the assessment. For each normalized

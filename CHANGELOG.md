@@ -23,6 +23,17 @@ belongs in `git log`.
 
 ### Fixed
 
+- **The absent/empty rule is now a gate, not a habit** (issue #227, second half). One
+  rule governs every attribute a provider spec maps — a key **absent** from the source
+  projects nothing, a key present and **empty** projects the empty value — and
+  `TestNoSpecFabricatesAnAttributeFromNothing` holds it by pushing an **empty item**
+  through every resource of every descriptor: a single attribute coming out fails the
+  build. Its counterexample matters as much: a source that says *"none"* must still
+  project it, or "never fabricate" would be satisfied by projecting nothing ever. Written
+  once, mechanically enforced, rather than annotated across 138 attributes nobody
+  re-reads — and it applies to providers not written yet. The rule is also stated where
+  someone adding a provider will meet it, in both languages.
+
 - **A resource with nothing no longer silences the control looking for it** (issue #227).
   The Exoscale qualification tenant contains, deliberately, an instance with **no
   security group at all** — the very deviation `compute_instance_has_security_group`
