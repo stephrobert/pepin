@@ -71,10 +71,18 @@ controls:
       silent: [scaleway_iam_api_key.expiring]
 
   iam_no_root_access_key:
-    # `root_owned` est DÉRIVÉ et non encore projeté (contrat a_verifier, issue #195) :
-    # le verrou de capacité tient sur les deux sources. Un pass ou un fail qui apparaîtrait ici
-    # sans changement du collecteur serait une régression.
-    live: not-evaluated
+    # #195 : la dérivation est projetée depuis la liste de clés DÉJÀ interrogée
+    # (`APIKey.user_id`) et le type de l'utilisateur (`IAM User.type` = owner|member),
+    # tous deux vérifiés contre l'API réelle le 2026-09-11. Aucun appel supplémentaire.
+    #
+    # Le tenant ne crée AUCUNE clé du propriétaire — on ne provisionne pas un écart qui
+    # consisterait à donner une clé au compte qui possède l'organisation. Les clés qu'il
+    # crée appartiennent à des applications, et elles doivent rester muettes : c'est le
+    # contre-exemple, et il vaut autant que l'écart. Le compte du mainteneur, lui, porte
+    # une vraie clé de propriétaire et le contrôle la trouve — mesuré, hors tenant.
+    live:
+      status: evaluated
+      reason: "aucune clé du propriétaire dans le tenant ; les écarts hors tenant ne sont pas gardés"
     terraform: not-evaluated
 
   iam_user_mfa_enabled:

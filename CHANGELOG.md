@@ -23,6 +23,21 @@ belongs in `git log`.
 
 ### Added
 
+- **Scaleway live: a root-owned API key is now found** (issue #195).
+  `iam_no_root_access_key` — severity `high` — could not conclude on either source. The
+  data was in the API-key listing the collector **already calls**: `user_id`, and
+  `application_id` for a service identity. The naive derivation the issue sketched —
+  *"a user key is a root key"* — would have flagged **every member's own key**, one false
+  positive per person. The real marker is the user's `type`, literally `owner`, verified
+  against the live API on 2026-09-11; `account_root_user_id`, carried by the same record,
+  designates something else and differs from the owner's id. So the rule joins the key's
+  owner to the user of type `owner`, which is what its contract already said. Both
+  ownership fields are projected together: a key belongs to a user **or** to an
+  application, and projecting only the first would silence the control on application
+  keys whose ownership is perfectly observed. Confirmed on a real account — where it
+  finds a genuine deviation — and by a qualification run, GO with destruction proven.
+  Inventory format `v11`, a pure addition.
+
 - **Scaleway live: a security group's default policy is now collected** (issue #195).
   `network_securitygroup_default_deny` — severity `high` — came back `not-evaluated` on
   the live source while the same fault was found on the plan. The gap was not a missing

@@ -46,7 +46,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 1 · ∅ 1 · ✗ 3 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
-| `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 3 · ◐ 1 · ∅ 0 · ✗ 11 |
+| `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 |
 | `journalisation` | 2 | ✅ 1 · ◐ 0 · ∅ 1 · ✗ 0 | ✅ 1 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 0 · ◐ 0 · ∅ 0 · ✗ 2 |
 | `reseau` | 15 | ✅ 8 · ◐ 0 · ∅ 1 · ✗ 6 | ✅ 11 · ◐ 0 · ∅ 0 · ✗ 4 | ✅ 9 · ◐ 1 · ∅ 0 · ✗ 5 |
 | `stockage` | 7 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 | ✅ 6 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 |
@@ -75,7 +75,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_defined` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_no_public_cidr` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
-| `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✗ | ✅ | ◐ | ◐ |
+| `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✗ | ✅ | ◐ | ✅ |
 | `iam_policy_no_administrative_privileges` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_policy_no_notaction_notresource` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_policy_no_privilege_escalation` | high | CLD-IAM-12 | ✗ | ✗ | ✅ | ✅ | ✅ | ✗ |
@@ -153,8 +153,7 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `iam_apiaccessrule_defined` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_summary » |
 | `iam_apiaccessrule_no_public_cidr` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_rule » |
 | `iam_no_root_access_key` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
-| `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | attribut décisif « root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `iam_no_root_access_key` | scaleway | live | ◐ `partial` | attribut décisif « root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_policy_no_privilege_escalation` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « iam_policy » |
 | `iam_user_mfa_enabled` | exoscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « iam_user » |
 | `iam_user_mfa_enabled` | outscale | terraform | ∅ `not-applicable` | type de ressource « iam_user » absent de l'API outscale |
@@ -218,5 +217,5 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 | outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
-| scaleway | live | 18 | 3 | 2 | 35 |
+| scaleway | live | 19 | 2 | 2 | 35 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

@@ -74,7 +74,9 @@ var requiredAttr = map[string]map[string][]string{
 	// `not-evaluated` une machine dont on avait parfaitement lu les cartes.
 	"compute_instance_public_ip_with_open_securitygroup": {"": {"public_ip", "nic_public_ips"}},
 	"compute_image_not_public":                           {"": {"public"}},
-	"iam_no_root_access_key":                             {"": {"root_owned", "scope"}},
+	// `owner_user_id` (Scaleway, #195) : la cle porte l'utilisateur auquel elle
+	// appartient, et la regle le joint a l'utilisateur de type `owner`.
+	"iam_no_root_access_key": {"": {"root_owned", "scope", "owner_user_id", "owner_application_id"}},
 	// Sans date de création, l'ÂGE d'une clé ne se déduit pas : une absence n'est pas
 	// une rotation récente. Le contrôle sort « non évalué » plutôt que conforme.
 	"iam_accesskey_rotated":                    {"": {"creation_date"}},

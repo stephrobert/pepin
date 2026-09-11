@@ -157,7 +157,7 @@ pepin scan scaleway --terraform plan.json
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
 | terraform | 17 | 8 | 2 | 31 |
-| live | 18 | 3 | 2 | 35 |
+| live | 19 | 2 | 2 | 35 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
 Control by control, with the reason for every cell that is not fully supported, the source of
@@ -184,6 +184,7 @@ A `not-applicable` is a claim, so it carries its justification, taken from the p
 | `compute_instance_public_ip_with_open_securitygroup` | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | terraform | this source produces no resource of type "managed_database" |
+| `iam_no_root_access_key` | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | live | this source produces no resource of type "iam_user" |
 | `objectstorage_bucket_default_encryption` | live | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |

@@ -115,6 +115,23 @@ collecte:
       map:
         access_key_id: access_key
         expiration_date: expires_at
+        # À QUI la clé appartient. Aucun appel supplémentaire : la liste des clés
+        # porte déjà `user_id` (et `application_id` pour une identité de service).
+        # Vérifié contre l'API réelle le 2026-09-11.
+        #
+        # Le champ ne dit PAS « root » à lui seul, et c'est le piège : une clé
+        # d'utilisateur est la clé d'un humain, pas celle du propriétaire de
+        # l'organisation. Signaler toutes les clés d'utilisateur ferait crier sur
+        # chaque membre qui a la sienne — un faux positif par personne. La règle
+        # joint donc cet identifiant à l'utilisateur de type `owner`.
+        owner_user_id: user_id
+        # L'autre moitié de l'appartenance, et elle est nécessaire. Une clé Scaleway
+        # appartient à un utilisateur OU à une application : sans ce champ, une clé
+        # d'application n'a aucun attribut d'appartenance, le verrou de capacité se
+        # ferme, et le contrôle ne conclut plus sur elle — alors qu'« appartient à une
+        # application » est précisément l'observation qui le rend muet à bon droit.
+        # C'est le motif de l'issue #227, un cran plus haut.
+        owner_application_id: application_id
       paging: { style: page, param: page, size_param: page_size, size: 100 }
   
     # Utilisateurs IAM → iam_user (alimente iam_user_mfa_enabled). Champ natif
@@ -127,6 +144,11 @@ collecte:
         user_id: id
         username: email
         mfa_enabled: mfa
+        # `owner` | `member` — c'est ce champ qui désigne le propriétaire de
+        # l'organisation, et il n'y en a pas d'autre. `account_root_user_id`, porté par
+        # le même enregistrement, désigne AUTRE CHOSE : mesuré le 2026-09-11, il diffère
+        # de l'id du propriétaire, et ce n'est pas lui que les clés référencent.
+        user_type: type
       paging: { style: page, param: page, size_param: page_size, size: 100 }
   
     # Groupes de sécurité → security_group. AUCUN APPEL SUPPLÉMENTAIRE : c'est la
@@ -469,7 +491,8 @@ contrat:
       mapping:
         access_key_id: AccessKey
         expiration_date: ExpiresAt (*time.Time)
-        root_owned: 'DÉRIVÉ : APIKey rattachée à un UserID (vs ApplicationID) — a_verifier'
+        owner_user_id: 'APIKey.UserID — l''utilisateur auquel la clé appartient (absent pour une clé d''application). VÉRIFIÉ contre l''API réelle le 2026-09-11.'
+        user_type: 'IAM User.Type — `owner` | `member`. C''est le SEUL marqueur du propriétaire de l''organisation : `account_root_user_id`, porté par le même enregistrement, désigne autre chose et diffère de l''id du propriétaire (mesuré). La règle joint owner_user_id à l''utilisateur de type owner ; s''arrêter à « clé d''utilisateur » signalerait la clé de chaque membre.'
     iam_user:
       etat: verifie
       source: api/iam/v1alpha1 User (GET /iam/v1alpha1/users)

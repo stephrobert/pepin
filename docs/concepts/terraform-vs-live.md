@@ -267,6 +267,7 @@ source produces the resource type and its deciding attribute, and the other does
 | `iam_apiaccessrule_defined` | outscale | live | this source produces no resource of type "api_access_summary" |
 | `iam_apiaccessrule_no_public_cidr` | outscale | live | this source produces no resource of type "api_access_rule" |
 | `iam_no_root_access_key` | outscale | live | this source produces no resource of type "access_key" |
+| `iam_no_root_access_key` | scaleway | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | exoscale | live | this source produces no resource of type "iam_user" |
 | `iam_user_mfa_enabled` | scaleway | live | this source produces no resource of type "iam_user" |

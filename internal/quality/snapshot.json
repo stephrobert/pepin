@@ -2,12 +2,12 @@
   "controls": 58,
   "paths": 182,
   "paths_proven": 31,
-  "obligations": 460,
-  "proven": 94,
+  "obligations": 462,
+  "proven": 96,
   "verdicts": {
     "fail": {
-      "required": 139,
-      "proven": 24
+      "required": 140,
+      "proven": 25
     },
     "not-applicable": {
       "required": 24,
@@ -18,8 +18,8 @@
       "proven": 22
     },
     "pass": {
-      "required": 139,
-      "proven": 36
+      "required": 140,
+      "proven": 37
     }
   },
   "live_paths": 103,
@@ -995,9 +995,15 @@
         {
           "provider": "scaleway",
           "source": "live",
-          "status": "partial",
+          "status": "supported",
           "required": [
+            "fail",
+            "pass",
             "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass"
           ]
         },
         {
@@ -1008,6 +1014,9 @@
             "not-evaluated"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/root-access-key-scaleway-live.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/iam_no_root_access_key_test.rego"
@@ -2641,8 +2650,8 @@
   },
   "precision": {
     "controls": 43,
-    "detection_proven": 20,
-    "with_counterexample": 18,
+    "detection_proven": 21,
+    "with_counterexample": 19,
     "false_positives": 0,
     "counterwitnesses": 2
   }

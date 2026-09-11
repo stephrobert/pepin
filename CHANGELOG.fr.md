@@ -24,6 +24,22 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Scaleway live : une clé d'API du propriétaire est désormais trouvée** (issue #195).
+  `iam_no_root_access_key` — sévérité `high` — ne savait conclure sur aucune source. La
+  donnée était dans la liste de clés que le collecteur **interroge déjà** : `user_id`, et
+  `application_id` pour une identité de service. La dérivation naïve que l'issue
+  esquissait — « une clé d'utilisateur est une clé root » — aurait signalé **la clé de
+  chaque membre**, un faux positif par personne. Le vrai marqueur est le `type` de
+  l'utilisateur, littéralement `owner`, vérifié contre l'API réelle le 2026-09-11 ;
+  `account_root_user_id`, porté par le même enregistrement, désigne autre chose et diffère
+  de l'id du propriétaire. La règle joint donc le propriétaire de la clé à l'utilisateur
+  de type `owner`, ce que son contrat disait déjà. Les deux champs d'appartenance sont
+  projetés ensemble : une clé appartient à un utilisateur **ou** à une application, et ne
+  projeter que le premier ferait taire le contrôle sur les clés d'application, dont
+  l'appartenance est pourtant parfaitement observée. Confirmé sur un compte réel — où il
+  trouve un écart véritable — et par un run de qualification, GO avec destruction prouvée.
+  Format d'inventaire `v11`, ajout pur.
+
 - **Scaleway live : la politique par défaut d'un groupe de sécurité est collectée**
   (issue #195). `network_securitygroup_default_deny` — sévérité `high` — revenait
   `not-evaluated` sur la source live alors que la même faute était trouvée sur le plan.

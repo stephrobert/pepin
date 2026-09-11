@@ -15,7 +15,7 @@
 | Sévérité | `high` |
 | Exigence SCSL (index gelé) | `CLD-IAM-1` |
 | Type de ressource lu | `access_key` |
-| Attribut décisif | `root_owned` / `scope` |
+| Attribut décisif | `owner_application_id` / `owner_user_id` / `root_owned` / `scope` |
 | État | actif |
 | Déclaré pour | `outscale`, `scaleway` |
 | Preuves de remédiation | 0 / 2 |
@@ -52,7 +52,7 @@ déclaré, ou type absent de cette source ».
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✅ |
-| scaleway | ◐ | ◐ |
+| scaleway | ◐ | ✅ |
 | kubernetes | sans objet | ✗ |
 
 Chaque case qui n'est pas ✅, **alors que le contrôle est déclaré pour ce fournisseur**,
@@ -61,17 +61,16 @@ porte son motif :
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
 | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
-| scaleway | terraform | ◐ `partial` | attribut décisif « root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| scaleway | live | ◐ `partial` | attribut décisif « root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| scaleway | terraform | ◐ `partial` | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
 | `fail` | un écart a été détecté sur une ressource réelle | outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / live · scaleway / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
-| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | scaleway / terraform · scaleway / live |
+| `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | scaleway / terraform |
 
 Un contrôle observable rend tout de même `not-evaluated` sur un inventaire qui ne
 contient aucune ressource du type visé : « rien à voir » n'est pas « conforme ».
@@ -79,7 +78,7 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 ## Comment enquêter
 
 - Type de ressource normalisé lu par la règle : `access_key`
-- Attribut dont la décision dépend : `root_owned` / `scope`
+- Attribut dont la décision dépend : `owner_application_id` / `owner_user_id` / `root_owned` / `scope`
 - Sans cet attribut sur une ressource du type visé, le scan rend `not-evaluated` et non `pass` (`internal/assess`, table `requiredAttr`).
 - Ce que chaque source projette se lit dans le descripteur : [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - La règle qui émet ce code vit dans [`internal/commonrules/rules/`](../../internal/commonrules/rules) : elle est **commune** à tous les fournisseurs, seule la source change.
