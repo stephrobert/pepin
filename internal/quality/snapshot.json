@@ -1,28 +1,28 @@
 {
   "controls": 58,
-  "paths": 181,
-  "paths_proven": 30,
-  "obligations": 457,
-  "proven": 91,
+  "paths": 182,
+  "paths_proven": 31,
+  "obligations": 460,
+  "proven": 94,
   "verdicts": {
     "fail": {
-      "required": 138,
-      "proven": 23
+      "required": 139,
+      "proven": 24
     },
     "not-applicable": {
       "required": 24,
       "proven": 12
     },
     "not-evaluated": {
-      "required": 157,
-      "proven": 21
+      "required": 158,
+      "proven": 22
     },
     "pass": {
-      "required": 138,
-      "proven": 35
+      "required": 139,
+      "proven": 36
     }
   },
-  "live_paths": 102,
+  "live_paths": 103,
   "live_validated": 0,
   "counterwitnesses": 2,
   "tenants": 6,
@@ -2170,6 +2170,21 @@
       "paths": [
         {
           "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "scaleway",
           "source": "terraform",
           "status": "supported",
           "required": [
@@ -2184,6 +2199,7 @@
         }
       ],
       "scenarios": [
+        "internal/veracity/testdata/scenarios/sg-default-deny-scaleway-live.yaml",
         "internal/veracity/testdata/scenarios/sg-default-deny-scaleway-terraform.yaml"
       ],
       "rego_tests": [

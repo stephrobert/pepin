@@ -22,6 +22,19 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Non publié]
 
+### Ajouté
+
+- **Scaleway live : la politique par défaut d'un groupe de sécurité est collectée**
+  (issue #195). `network_securitygroup_default_deny` — sévérité `high` — revenait
+  `not-evaluated` sur la source live alors que la même faute était trouvée sur le plan.
+  La lacune n'était pas une API manquante : le collecteur **paginait déjà**
+  `/instance/v1/zones/{zone}/security_groups` pour joindre les règles à leur groupe, et
+  cette réponse portait `inbound_default_policy` depuis toujours. Personne ne la
+  projetait. Le contrat a été vérifié contre l'API réelle le 2026-09-11 avant d'écrire
+  une ligne, et le contrôle conclut désormais sur les deux sources — confirmé par un run
+  de qualification sur un compte réel, GO avec sa destruction prouvée. Le format
+  d'inventaire passe en `v10` : un ajout pur, le nouveau type `security_group`.
+
 ### Corrigé
 
 - **La règle absent/vide est désormais une porte, plus une habitude** (issue #227,

@@ -16,7 +16,7 @@ with no measurement behind it is a false green moved into a dashboard, and it is
 worse there than anywhere else: nobody re-reads a dashboard.
 
 The figures are therefore ugly, and that is the point. "58 controls" says nothing
-about the quality of a detection; "91 verdicts proven out of 457" says where the
+about the quality of a detection; "94 verdicts proven out of 460" says where the
 product stands, and shrinks the right way with every scenario written.
 
 ## The figures
@@ -24,10 +24,10 @@ product stands, and shrinks the right way with every scenario written.
 | Figure | Count |
 |---|---:|
 | Controls in the reference | 58 |
-| Control x provider x source paths on which Pépin concludes | 181 |
-| Paths whose EVERY reachable verdict is proven end to end | 30 |
-| Verdicts to prove in total | 457 |
-| Verdicts proven | 91 |
+| Control x provider x source paths on which Pépin concludes | 182 |
+| Paths whose EVERY reachable verdict is proven end to end | 31 |
+| Verdicts to prove in total | 460 |
+| Verdicts proven | 94 |
 
 ## Veracity coverage, by verdict
 
@@ -37,11 +37,11 @@ inventing a non-applicability.
 
 | Verdict | What it stages | To prove | Proven | % |
 |---|---|---:|---:|---:|
-| `fail` | a vulnerable configuration is detected | 138 | 23 | 16 |
-| `pass` | a genuinely correct configuration is confirmed | 138 | 35 | 25 |
-| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 157 | 21 | 13 |
+| `fail` | a vulnerable configuration is detected | 139 | 24 | 17 |
+| `pass` | a genuinely correct configuration is confirmed | 139 | 36 | 25 |
+| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 158 | 22 | 13 |
 | `not-applicable` | the provider's contract declares the mechanism non-existent | 24 | 12 | 50 |
-| **Total** | | **457** | **91** | **19** |
+| **Total** | | **460** | **94** | **20** |
 
 ## Validated live
 
@@ -56,7 +56,7 @@ will rise on its own.
 
 | Figure | Count |
 |---|---:|
-| Paths whose source is a live collection | 102 |
+| Paths whose source is a live collection | 103 |
 | Validated live | **0 %** |
 
 ## What the real control planes answered

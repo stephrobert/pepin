@@ -142,8 +142,16 @@ controls:
       silent: [scaleway_instance_security_group.hardened]
 
   network_securitygroup_default_deny:
-    # InboundDefaultPolicy n'est pas encore projetée par la collecte live (#195).
-    live: not-evaluated
+    # #195 : la collecte live projette désormais `inbound_default_policy`. AUCUN appel
+    # nouveau — le collecteur paginait déjà `ListSecurityGroups` pour joindre les règles
+    # à leur groupe, et la réponse portait le champ depuis toujours. Contrat vérifié
+    # contre l'API réelle le 2026-09-11.
+    #
+    # Le sujet live est l'UUID du groupe ; le sujet du plan est son nom, l'identifiant
+    # n'existant pas encore au stade du plan (ADR-0022).
+    live:
+      fail: ["${output.sg_default_accept_id}"]
+      silent: ["${output.sg_hardened_id}", "${output.sg_ssh_open_id}"]
     terraform:
       fail: [pepin-qual-sg-default-accept]
       silent: [pepin-qual-sg-hardened, pepin-qual-sg-ssh-open]

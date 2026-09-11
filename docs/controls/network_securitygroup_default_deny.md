@@ -51,22 +51,20 @@ source".
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✗ |
-| scaleway | ✅ | ✗ |
+| scaleway | ✅ | ✅ |
 | kubernetes | n/a | ✗ |
 
 Every cell that is not ✅ **while the control is declared for that provider** carries its
 reason:
 
-| Provider | Source | Status | Reason |
-|---|---|---|---|
-| scaleway | live | ✗ `unsupported` | this source produces no resource of type "security_group" |
+_None: every declared cell is fully observable._
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
-| `fail` | a deviation was detected on a real resource | scaleway / terraform |
-| `pass` | the deciding data was collected, and it is compliant | scaleway / terraform |
+| `fail` | a deviation was detected on a real resource | scaleway / terraform · scaleway / live |
+| `pass` | the deciding data was collected, and it is compliant | scaleway / terraform · scaleway / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
 | `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
 
@@ -98,6 +96,9 @@ is, or a note anchored on the official documentation. See
 ```bash
 # from a Terraform plan: nothing is provisioned
 ./pepin scan scaleway --terraform plan.json --format assessment
+
+# from the provider API: effective configuration
+./pepin scan scaleway --live --format assessment
 ```
 
 In the `assessment` output, look for `"control": "network_securitygroup_default_deny"`: its `status` must be `pass`.

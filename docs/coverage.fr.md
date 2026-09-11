@@ -104,7 +104,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports` | high | CLD-NET-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_tcp_port_22` | high | CLD-NET-1, CLD-IAM-6, CLD-NET-6 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389` | high | CLD-NET-1, CLD-IAM-6, CLD-NET-6 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `network_securitygroup_default_deny` | high | CLD-NET-2 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
+| `network_securitygroup_default_deny` | high | CLD-NET-2 | ✗ | ✗ | ✗ | ✗ | ✅ | ✅ |
 | `network_securitygroup_default_restrict_traffic` | high | CLD-NET-4 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `network_securitygroup_unrestricted_egress` | medium | CLD-NET-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_subnet_no_public_ip_by_default` | medium | CLD-NET-3 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
@@ -180,7 +180,6 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `network_peering_cross_organization` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « network_peering » |
 | `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | terraform | ∅ `not-applicable` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
 | `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | live | ∅ `not-applicable` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
-| `network_securitygroup_default_deny` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « security_group » |
 | `network_securitygroup_default_restrict_traffic` | outscale | terraform | ◐ `partial` | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_default_encryption` | scaleway | terraform | ◐ `partial` | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
@@ -219,5 +218,5 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 | outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
-| scaleway | live | 17 | 3 | 2 | 36 |
+| scaleway | live | 18 | 3 | 2 | 35 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

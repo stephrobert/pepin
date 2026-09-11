@@ -109,7 +109,6 @@ pas.
 | `loadbalancer_logging_enabled` | outscale | live | cette source ne produit aucune ressource de type « load_balancer » |
 | `loadbalancer_ssl_listeners` | outscale | live | cette source ne produit aucune ressource de type « load_balancer » |
 | `network_peering_cross_organization` | outscale | live | cette source ne produit aucune ressource de type « network_peering » |
-| `network_securitygroup_default_deny` | scaleway | terraform | cette source ne produit aucune ressource de type « security_group » |
 | `network_securitygroup_default_restrict_traffic` | outscale | live | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_default_encryption` | scaleway | live | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
@@ -154,7 +153,7 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 | outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
-| scaleway | live | 17 | 3 | 2 | 36 |
+| scaleway | live | 18 | 3 | 2 | 35 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
 
@@ -208,9 +207,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 <!-- pepin:gen veracity-debt -->
 | Chiffre | Nombre |
 |---|---:|
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 181 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 30 |
-| Verdicts à prouver au total | 457 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 182 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 31 |
+| Verdicts à prouver au total | 460 |
 | Verdicts restant à prouver | 366 |
 <!-- /pepin:gen veracity-debt -->
 
