@@ -24,6 +24,14 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Un plan Outscale juge les règles d'accès à l'API** (issue #203).
+  `iam_apiaccessrule_no_public_cidr` revenait `not-evaluated` sur la source Terraform
+  alors que le plan portait `ip_ranges` — argument **obligatoire** de
+  `outscale_api_access_rule` quand aucun autre critère n'est donné, donc toujours écrit
+  dans le HCL. Pépin ne savait pas conclure sur un `0.0.0.0/0` écrit noir sur blanc.
+  Mesuré sur le plan réel du tenant de qualification et confirmé par un run
+  `--plan-only`, GO, sans rien créer.
+
 - **Un plan Outscale sait juger la protection contre la suppression** (issue #203).
   `compute_instance_deletion_protection` revenait `not-evaluated` sur la source Terraform
   alors que le plan portait la réponse : `outscale_vm.deletion_protection` est un

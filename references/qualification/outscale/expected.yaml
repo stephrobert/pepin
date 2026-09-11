@@ -114,8 +114,16 @@ controls:
     live:
       fail: ["${output.api_rule_public_id}"]
       silent: ["${output.api_rule_private_id}"]
-    # `outscale_api_access_rule` n'est pas mappé sur le plan (#203).
-    terraform: not-evaluated
+    # #203 : `outscale_api_access_rule` est mappé. `ip_ranges` est un argument
+    # OBLIGATOIRE quand aucun autre critère n'est donné, donc toujours écrit en clair
+    # dans le HCL — Pépin disait pourtant « je ne peux pas conclure » sur un
+    # `0.0.0.0/0` noir sur blanc.
+    #
+    # Sujets = adresses Terraform, l'identifiant n'existant pas au stade du plan
+    # (ADR-0022).
+    terraform:
+      fail: [outscale_api_access_rule.public]
+      silent: [outscale_api_access_rule.private]
 
   # ── Groupes de sécurité ───────────────────────────────────────────────────────
   # Sujet live = identifiant du groupe ; sujet Terraform = adresse du groupe (les

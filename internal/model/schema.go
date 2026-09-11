@@ -163,7 +163,15 @@ import (
 //	`user_type` est le SEUL marqueur du propriétaire de l'organisation :
 //	`account_root_user_id`, porté par le même enregistrement, désigne autre chose
 //	(mesuré le 2026-09-11). Contrat vérifié contre l'API réelle.
-const InventoryFormat = "pepin-inventory/v11"
+//
+// v12 : un plan Terraform Outscale produit le type `api_access_rule`, porteur de
+//
+//	`ip_ranges`, `ca_ids`, `cns` et `description`, et une `compute_instance` y porte
+//	`deletion_protection`. Ajout PUR. Il est nécessaire parce que le plan portait ces
+//	réponses en clair — `ip_ranges` est un argument OBLIGATOIRE quand aucun autre
+//	critère n'est donné — pendant que Pépin rendait « non évalué » sur un
+//	`0.0.0.0/0` écrit noir sur blanc (issue #203).
+const InventoryFormat = "pepin-inventory/v12"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

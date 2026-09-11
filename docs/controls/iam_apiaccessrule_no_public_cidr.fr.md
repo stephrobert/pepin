@@ -51,23 +51,21 @@ déclaré, ou type absent de cette source ».
 | Fournisseur | Plan Terraform | Collecte live |
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
-| outscale | ✗ | ✅ |
+| outscale | ✅ | ✅ |
 | scaleway | ✗ | ✗ |
 | kubernetes | sans objet | ✗ |
 
 Chaque case qui n'est pas ✅, **alors que le contrôle est déclaré pour ce fournisseur**,
 porte son motif :
 
-| Fournisseur | Source | Statut | Motif |
-|---|---|---|---|
-| outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_rule » |
+_Aucune : toutes les cases déclarées sont pleinement observables._
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
-| `fail` | un écart a été détecté sur une ressource réelle | outscale / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / live |
+| `fail` | un écart a été détecté sur une ressource réelle | outscale / terraform · outscale / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / terraform · outscale / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
 | `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | aucun |
 
@@ -97,6 +95,9 @@ tel quel, ou une note ancrée sur la documentation officielle. Voir
 ## Comment vérifier la correction
 
 ```bash
+# depuis un plan Terraform : aucune ressource n'est créée
+./pepin scan outscale --terraform plan.json --format assessment
+
 # depuis l'API du fournisseur : configuration effective
 ./pepin scan outscale --live --format assessment
 ```
