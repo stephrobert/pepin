@@ -745,6 +745,36 @@ mapping_terraform:
     #
     # L'identifiant n'existe pas au stade du plan : le sujet est l'adresse Terraform
     # (ADR-0022), comme pour les autres types de ce mapping.
+    # Répartiteurs de charge. Le plan porte les écouteurs en clair, avec leur protocole
+    # et leur port : un LBU exposé à Internet qui n'écoute qu'en HTTP est écrit noir sur
+    # blanc dans le HCL, et Pépin rendait pourtant « non évalué » (issue #203).
+    #
+    # PAS de `snake_keys` ici, contrairement à la collecte live : Terraform écrit déjà
+    # ses clés en snake_case. Le transform est destiné aux réponses OAPI, en PascalCase.
+    #
+    # `access_log` n'est PAS mappé : il vit sur `outscale_load_balancer_attributes`, une
+    # ressource distincte que ce plan ne porte pas. `loadbalancer_logging_enabled` reste
+    # donc « non évalué » sur cette source, et c'est honnête — la donnée n'y est pas.
+    - tf_type: outscale_load_balancer
+      type: load_balancer
+      id: load_balancer_name
+      # La région, DÉRIVÉE de la sous-région comme pour les VM. Sans elle, ajouter ce
+      # type RETIRAIT de la couverture au lieu d'en ajouter : le contrôle de
+      # souveraineté juge l'intersection sur tous les types, et un type sans région
+      # l'empêche de conclure sur les autres. Mesuré : `governance_resource_region_in_eu`
+      # est passé de `pass` à `not-evaluated` au premier essai.
+      region: subregion_names.0
+      map:
+        load_balancer_name: load_balancer_name
+        load_balancer_type: load_balancer_type   # internet-facing | internal
+        listeners: listeners
+        tags: tags
+      transforms:
+        listeners: list
+        # Le transform de la région se déclare sous le CHEMIN du champ source, comme
+        # pour `outscale_vm` : la région n'est pas un attribut de `map`.
+        subregion_names.0: region_of_zone
+
     - tf_type: outscale_api_access_rule
       type: api_access_rule
       id: api_access_rule_id

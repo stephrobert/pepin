@@ -23,6 +23,17 @@ belongs in `git log`.
 
 ### Added
 
+- **Outscale plans now judge load-balancer listeners** (issue #203).
+  `loadbalancer_ssl_listeners` came back `not-evaluated` on the Terraform source while the
+  plan wrote the listeners in clear — protocol and port. An internet-facing load balancer
+  listening only in HTTP is now a `fail`, and a TCP 443 one stays inconclusive with its
+  subject, as it does live. The type's **region** is projected too, and that is not a
+  detail: the sovereignty control judges the intersection across every type, so adding a
+  type without a region **removes** coverage instead of adding it —
+  `governance_resource_region_in_eu` dropped from `pass` to `not-evaluated` on the first
+  attempt. `access_log` is deliberately not mapped: it lives on a separate resource this
+  plan does not carry, so `loadbalancer_logging_enabled` honestly stays unevaluated.
+
 - **Outscale plans now judge API access rules** (issue #203).
   `iam_apiaccessrule_no_public_cidr` came back `not-evaluated` on the Terraform source
   while the plan carried `ip_ranges` — a **required** argument of

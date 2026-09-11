@@ -12,7 +12,7 @@ gelée, avec les mêmes égards que la surface CLI.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v12
+pepin-inventory/v13
 ```
 <!-- /pepin:gen inventory-format -->
 

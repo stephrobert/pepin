@@ -94,8 +94,8 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `kubernetes_cluster_deletion_protection` | medium | CLD-K8S-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `kubernetes_cluster_not_publicly_accessible` | critical | CLD-K8S-1 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `loadbalancer_http_redirect_to_https` | medium | CLD-CHF-1 | ∅ | ∅ | ∅ | ∅ | ✗ | ✗ |
-| `loadbalancer_logging_enabled` | medium | CLD-LOG-1 | ∅ | ∅ | ✗ | ✅ | ✗ | ✗ |
-| `loadbalancer_ssl_listeners` | high | CLD-CHF-1 | ∅ | ∅ | ✗ | ✅ | ✗ | ✗ |
+| `loadbalancer_logging_enabled` | medium | CLD-LOG-1 | ∅ | ∅ | ◐ | ✅ | ✗ | ✗ |
+| `loadbalancer_ssl_listeners` | high | CLD-CHF-1 | ∅ | ∅ | ◐ | ✅ | ✗ | ✗ |
 | `network_documented` | low | CLD-NET-5 | ✅ | ✅ | ✅ | ✅ | ◐ | ✗ |
 | `network_flow_matrix_documented` | medium | CLD-NET-5 | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
 | `network_peering_cross_organization` | high | CLD-NET-7 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
@@ -169,10 +169,10 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `loadbalancer_http_redirect_to_https` | outscale | live | ∅ `not-applicable` | Le LBU Outscale ne peut pas rediriger : `ListenerRule.Action` est documenté « always forward » au contrat OAPI (aucune action de redirection), et aucun attribut de redirection n'existe sur `Listener`. Le mécanisme est inexistant → contrôle non applicable (CHF-1). |
 | `loadbalancer_logging_enabled` | exoscale | terraform | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
 | `loadbalancer_logging_enabled` | exoscale | live | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
-| `loadbalancer_logging_enabled` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « load_balancer » |
+| `loadbalancer_logging_enabled` | outscale | terraform | ◐ `partial` | attribut décisif « access_log » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `loadbalancer_ssl_listeners` | exoscale | terraform | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
 | `loadbalancer_ssl_listeners` | exoscale | live | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
-| `loadbalancer_ssl_listeners` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « load_balancer » |
+| `loadbalancer_ssl_listeners` | outscale | terraform | ◐ `partial` | attribut décisif « load_balancer_type » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `network_documented` | scaleway | terraform | ◐ `partial` | contrat du fournisseur : le type « network » n'est pas déclaré `verifie` (état : a_verifier) |
 | `network_documented` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « network » |
 | `network_peering_cross_organization` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « network_peering » |
@@ -213,7 +213,7 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 18 | 4 | 4 | 32 |
+| outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 19 | 2 | 2 | 35 |

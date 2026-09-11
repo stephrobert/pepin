@@ -275,8 +275,8 @@ source produces the resource type and its deciding attribute, and the other does
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_not_publicly_accessible` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
-| `loadbalancer_logging_enabled` | outscale | live | this source produces no resource of type "load_balancer" |
-| `loadbalancer_ssl_listeners` | outscale | live | this source produces no resource of type "load_balancer" |
+| `loadbalancer_logging_enabled` | outscale | live | deciding attribute "access_log" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `loadbalancer_ssl_listeners` | outscale | live | deciding attribute "load_balancer_type" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `network_peering_cross_organization` | outscale | live | this source produces no resource of type "network_peering" |
 | `network_securitygroup_default_restrict_traffic` | outscale | live | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | outscale | live | this source produces no resource of type "object_storage_bucket" |

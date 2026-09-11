@@ -171,7 +171,18 @@ import (
 //	réponses en clair — `ip_ranges` est un argument OBLIGATOIRE quand aucun autre
 //	critère n'est donné — pendant que Pépin rendait « non évalué » sur un
 //	`0.0.0.0/0` écrit noir sur blanc (issue #203).
-const InventoryFormat = "pepin-inventory/v12"
+//
+// v13 : un plan Terraform Outscale produit le type `load_balancer`, porteur de ses
+//
+//	écouteurs, de son type d'exposition et de sa région dérivée. Ajout PUR. Le plan
+//	écrivait ces écouteurs en clair — protocole et port — pendant que Pépin rendait
+//	« non évalué » sur un répartiteur exposé à Internet qui n'écoute qu'en HTTP
+//	(issue #203). La RÉGION du type est projetée elle aussi, et ce n'est pas un
+//	détail : le contrôle de souveraineté juge l'intersection sur tous les types, si
+//	bien qu'ajouter un type sans région RETIRE de la couverture au lieu d'en ajouter
+//	— mesuré au premier essai, `governance_resource_region_in_eu` passant de `pass` à
+//	« non évalué ».
+const InventoryFormat = "pepin-inventory/v13"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

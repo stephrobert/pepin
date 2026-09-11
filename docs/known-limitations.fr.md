@@ -106,8 +106,8 @@ pas.
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_deletion_protection` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_not_publicly_accessible` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
-| `loadbalancer_logging_enabled` | outscale | live | cette source ne produit aucune ressource de type « load_balancer » |
-| `loadbalancer_ssl_listeners` | outscale | live | cette source ne produit aucune ressource de type « load_balancer » |
+| `loadbalancer_logging_enabled` | outscale | live | attribut décisif « access_log » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `loadbalancer_ssl_listeners` | outscale | live | attribut décisif « load_balancer_type » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `network_peering_cross_organization` | outscale | live | cette source ne produit aucune ressource de type « network_peering » |
 | `network_securitygroup_default_restrict_traffic` | outscale | live | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
@@ -150,7 +150,7 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 18 | 4 | 4 | 32 |
+| outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 19 | 2 | 2 | 35 |
@@ -207,9 +207,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 <!-- pepin:gen veracity-debt -->
 | Chiffre | Nombre |
 |---|---:|
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 183 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 31 |
-| Verdicts à prouver au total | 465 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 185 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 33 |
+| Verdicts à prouver au total | 467 |
 | Verdicts restant à prouver | 369 |
 <!-- /pepin:gen veracity-debt -->
 

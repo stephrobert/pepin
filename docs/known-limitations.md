@@ -107,8 +107,8 @@ actually decide them. The reason given is the one that applies to the source tha
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_not_publicly_accessible` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
-| `loadbalancer_logging_enabled` | outscale | live | this source produces no resource of type "load_balancer" |
-| `loadbalancer_ssl_listeners` | outscale | live | this source produces no resource of type "load_balancer" |
+| `loadbalancer_logging_enabled` | outscale | live | deciding attribute "access_log" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `loadbalancer_ssl_listeners` | outscale | live | deciding attribute "load_balancer_type" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `network_peering_cross_organization` | outscale | live | this source produces no resource of type "network_peering" |
 | `network_securitygroup_default_restrict_traffic` | outscale | live | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | outscale | live | this source produces no resource of type "object_storage_bucket" |
@@ -150,7 +150,7 @@ Per provider and per source, over all controls in the reference:
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 18 | 4 | 4 | 32 |
+| outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 19 | 2 | 2 | 35 |
@@ -207,9 +207,9 @@ What is not yet proven is **counted**, not hidden:
 <!-- pepin:gen veracity-debt -->
 | Figure | Count |
 |---|---:|
-| Control x provider x source paths on which Pépin concludes | 183 |
-| Paths whose every reachable verdict is proven end to end | 31 |
-| Verdicts to prove in total | 465 |
+| Control x provider x source paths on which Pépin concludes | 185 |
+| Paths whose every reachable verdict is proven end to end | 33 |
+| Verdicts to prove in total | 467 |
 | Verdicts left to prove | 369 |
 <!-- /pepin:gen veracity-debt -->
 

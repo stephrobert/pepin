@@ -1,9 +1,9 @@
 {
   "controls": 58,
-  "paths": 183,
-  "paths_proven": 31,
-  "obligations": 465,
-  "proven": 96,
+  "paths": 185,
+  "paths_proven": 33,
+  "obligations": 467,
+  "proven": 98,
   "verdicts": {
     "fail": {
       "required": 141,
@@ -14,8 +14,8 @@
       "proven": 12
     },
     "not-evaluated": {
-      "required": 159,
-      "proven": 22
+      "required": 161,
+      "proven": 24
     },
     "pass": {
       "required": 141,
@@ -1610,11 +1610,23 @@
             "pass",
             "not-evaluated"
           ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
         }
       ],
       "tenants": [
         "exoscale/eu-data-bootstrap",
-        "exoscale/zone-demo"
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier"
       ],
       "rego_tests": [
         "internal/commonrules/rules/oks_lbu_governance_test.rego"
@@ -1650,11 +1662,23 @@
             "pass",
             "not-evaluated"
           ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
         }
       ],
       "tenants": [
         "exoscale/eu-data-bootstrap",
-        "exoscale/zone-demo"
+        "exoscale/zone-demo",
+        "outscale/ztiac-two-tier"
       ],
       "rego_tests": [
         "internal/commonrules/rules/oks_lbu_governance_test.rego"

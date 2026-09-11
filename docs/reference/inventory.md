@@ -12,7 +12,7 @@ with the same regard as the CLI surface.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v12
+pepin-inventory/v13
 ```
 <!-- /pepin:gen inventory-format -->
 

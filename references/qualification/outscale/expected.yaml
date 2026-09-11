@@ -320,8 +320,15 @@ controls:
     live:
       fail: ["${output.lb_http_name}"]
       inconclusive: ["${output.lb_tcp443_name}"]
-    # `outscale_load_balancer` n'est pas mappé sur le plan (#203).
-    terraform: not-evaluated
+    # #203 : `outscale_load_balancer` est mappé. Le plan porte les écouteurs en clair,
+    # avec leur protocole et leur port — un LBU exposé à Internet qui n'écoute qu'en
+    # HTTP est écrit noir sur blanc dans le HCL.
+    #
+    # Le sujet est le NOM du répartiteur sur les deux sources : c'est son identifiant
+    # chez Outscale, et il est connu dès le plan.
+    terraform:
+      fail: [pepin-qual-lb-http]
+      inconclusive: [pepin-qual-lb-tcp443]
 
   loadbalancer_logging_enabled:
     live:

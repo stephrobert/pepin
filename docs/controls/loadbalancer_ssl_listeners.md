@@ -50,7 +50,7 @@ source".
 | Provider | Terraform plan | Live collection |
 |---|:-:|:-:|
 | exoscale | ∅ | ∅ |
-| outscale | ✗ | ✅ |
+| outscale | ◐ | ✅ |
 | scaleway | ✗ | ✗ |
 | kubernetes | n/a | ✗ |
 
@@ -61,16 +61,16 @@ reason:
 |---|---|---|---|
 | exoscale | terraform | ∅ `not-applicable` | resource type "load_balancer" absent from the exoscale API |
 | exoscale | live | ∅ `not-applicable` | resource type "load_balancer" absent from the exoscale API |
-| outscale | terraform | ✗ `unsupported` | this source produces no resource of type "load_balancer" |
+| outscale | terraform | ◐ `partial` | deciding attribute "load_balancer_type" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
-| `fail` | a deviation was detected on a real resource | outscale / live |
+| `fail` | a deviation was detected on a real resource | outscale / terraform · outscale / live |
 | `pass` | the deciding data was collected, and it is compliant | outscale / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | exoscale / terraform · exoscale / live |
-| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
+| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | outscale / terraform |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
 resource of the targeted type: "nothing to look at" is not "compliant".
@@ -98,6 +98,9 @@ is, or a note anchored on the official documentation. See
 ## How to verify the fix
 
 ```bash
+# from a Terraform plan: nothing is provisioned
+./pepin scan outscale --terraform plan.json --format assessment
+
 # from the provider API: effective configuration
 ./pepin scan outscale --live --format assessment
 ```
@@ -105,6 +108,10 @@ is, or a note anchored on the official documentation. See
 In the `assessment` output, look for `"control": "loadbalancer_ssl_listeners"`: its `status` must be `pass`.
 If it stays `not-evaluated`, the deciding data was not collected and the fix is **not**
 demonstrated: the reasons table above says why.
+
+**One of the two sources cannot lift the `pass` lock** for this control: the provider
+quoted does produce the targeted type there, but the scan will return `not-evaluated`.
+The reasons table says which one, and why.
 
 ## See also
 

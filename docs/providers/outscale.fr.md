@@ -244,6 +244,7 @@ n'en montre aucune.
 |---|---|---|
 | `outscale_api_access_rule` | `api_access_rule` | — |
 | `outscale_image_launch_permission` | `compute_image` | — |
+| `outscale_load_balancer` | `load_balancer` | — |
 | `outscale_net` | `network` | — |
 | `outscale_policy` | `iam_policy` | — |
 | `outscale_security_group_rule` | `security_group_rule` | — |
@@ -267,7 +268,7 @@ rend un booléen. Les règles normalisent les deux
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 18 | 4 | 4 | 32 |
+| terraform | 18 | 6 | 4 | 30 |
 | live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
@@ -304,8 +305,8 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 | `kubernetes_cluster_control_plane_highly_available` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_deletion_protection` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_not_publicly_accessible` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
-| `loadbalancer_logging_enabled` | live | cette source ne produit aucune ressource de type « load_balancer » |
-| `loadbalancer_ssl_listeners` | live | cette source ne produit aucune ressource de type « load_balancer » |
+| `loadbalancer_logging_enabled` | live | attribut décisif « access_log » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `loadbalancer_ssl_listeners` | live | attribut décisif « load_balancer_type » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `network_peering_cross_organization` | live | cette source ne produit aucune ressource de type « network_peering » |
 | `network_securitygroup_default_restrict_traffic` | live | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
