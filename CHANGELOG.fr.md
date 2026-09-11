@@ -24,6 +24,18 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **Un plan Outscale juge les écouteurs d'un répartiteur de charge** (issue #203).
+  `loadbalancer_ssl_listeners` revenait `not-evaluated` sur la source Terraform alors que
+  le plan écrivait les écouteurs en clair — protocole et port. Un répartiteur exposé à
+  Internet qui n'écoute qu'en HTTP est désormais un `fail`, et celui en TCP 443 reste
+  inconcluant avec son sujet, comme en live. La **région** du type est projetée aussi, et
+  ce n'est pas un détail : le contrôle de souveraineté juge l'intersection sur tous les
+  types, si bien qu'ajouter un type sans région **retire** de la couverture au lieu d'en
+  ajouter — `governance_resource_region_in_eu` est passé de `pass` à `not-evaluated` au
+  premier essai. `access_log` n'est délibérément pas mappé : il vit sur une ressource
+  distincte que ce plan ne porte pas, donc `loadbalancer_logging_enabled` reste
+  honnêtement non évalué.
+
 - **Un plan Outscale juge les règles d'accès à l'API** (issue #203).
   `iam_apiaccessrule_no_public_cidr` revenait `not-evaluated` sur la source Terraform
   alors que le plan portait `ip_ranges` — argument **obligatoire** de

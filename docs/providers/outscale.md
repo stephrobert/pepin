@@ -237,6 +237,7 @@ keys for an EIM user, that is the next thing to measure; `ReadAccessKeys` shows 
 |---|---|---|
 | `outscale_api_access_rule` | `api_access_rule` | — |
 | `outscale_image_launch_permission` | `compute_image` | — |
+| `outscale_load_balancer` | `load_balancer` | — |
 | `outscale_net` | `network` | — |
 | `outscale_policy` | `iam_policy` | — |
 | `outscale_security_group_rule` | `security_group_rule` | — |
@@ -260,7 +261,7 @@ API returns a boolean. The rules normalize both
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 18 | 4 | 4 | 32 |
+| terraform | 18 | 6 | 4 | 30 |
 | live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
@@ -297,8 +298,8 @@ truth is the [coverage matrix](../coverage.md).
 | `kubernetes_cluster_control_plane_highly_available` | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_not_publicly_accessible` | live | this source produces no resource of type "kubernetes_cluster" |
-| `loadbalancer_logging_enabled` | live | this source produces no resource of type "load_balancer" |
-| `loadbalancer_ssl_listeners` | live | this source produces no resource of type "load_balancer" |
+| `loadbalancer_logging_enabled` | live | deciding attribute "access_log" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `loadbalancer_ssl_listeners` | live | deciding attribute "load_balancer_type" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `network_peering_cross_organization` | live | this source produces no resource of type "network_peering" |
 | `network_securitygroup_default_restrict_traffic` | live | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | live | this source produces no resource of type "object_storage_bucket" |
