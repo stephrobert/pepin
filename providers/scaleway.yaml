@@ -79,6 +79,12 @@ permissions:
     grant: "IAMReadOnly (Organization scope)"
     etat: verifie
     source: "scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx"
+  - unit: security_group
+    grant: "InstancesReadOnly (Project scope)"
+    etat: verifie
+    source: "scaleway/docs-content — pages/iam/reference-content/permission-sets.md"
+    note: "Le MÊME appel que `security_group_rule` : `ListSecurityGroups` sert de jointure parent pour les règles et porte, dans la même réponse, la politique par défaut du groupe. Aucun droit supplémentaire."
+    note_en: "The SAME call as `security_group_rule`: `ListSecurityGroups` acts as the parent join for the rules and carries, in that same response, the group's default policy. No extra grant."
   - unit: security_group_rule
     grant: "InstancesReadOnly (Project scope)"
     etat: verifie
@@ -123,6 +129,37 @@ collecte:
         mfa_enabled: mfa
       paging: { style: page, param: page, size_param: page_size, size: 100 }
   
+    # Groupes de sécurité → security_group. AUCUN APPEL SUPPLÉMENTAIRE : c'est la
+    # MÊME liste que le `for_each` ci-dessous parcourt déjà pour joindre les règles à
+    # leur groupe. La réponse portait `inbound_default_policy` depuis toujours, et
+    # personne ne la projetait — `network_securitygroup_default_deny` (sévérité `high`)
+    # revenait donc « non évalué » en live alors que sa donnée était sur le fil.
+    #
+    # Contrat vérifié contre l'API RÉELLE le 2026-09-11
+    # (GET /instance/v1/zones/fr-par-1/security_groups) : la réponse porte
+    # inbound_default_policy et outbound_default_policy (accept|drop), tags, stateful,
+    # description, project_default, organization_default.
+    #
+    # `tags` est projeté pour ce qu'il EST, pas pour ce qu'on en fera : un groupe sans
+    # étiquette est une observation, et c'est `governance_resource_required_tags` qui
+    # décide. Le projeter ici ne fabrique rien — la clé vient de la réponse.
+    - type: security_group
+      path: /instance/v1/zones/{zone}/security_groups
+      items: security_groups
+      id: security_group_id
+      paging: { style: page, param: page, size_param: per_page, size: 100 }
+      map:
+        # `id:` ci-dessus nomme un ATTRIBUT PROJETÉ, pas un chemin de la source : sans
+        # cette ligne, la ressource n'a pas d'identifiant et le finding nomme un groupe
+        # vide — « Security group «  » ». Mesuré sur le compte réel avant correction.
+        security_group_id: id
+        inbound_default_policy: inbound_default_policy   # accept|drop
+        outbound_default_policy: outbound_default_policy # accept|drop
+        description: description
+        tags: tags
+      transforms:
+        tags: list
+
     # Règles de security group → security_group_rule. Jointure parent→enfant :
     # lister les SG (api/instance/v1 ListSecurityGroups) puis les règles de chacun
     # (ListSecurityGroupRules). Champs ancrés sur api/instance/v1 SecurityGroupRule.

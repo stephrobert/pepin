@@ -52,22 +52,20 @@ déclaré, ou type absent de cette source ».
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✗ |
-| scaleway | ✅ | ✗ |
+| scaleway | ✅ | ✅ |
 | kubernetes | sans objet | ✗ |
 
 Chaque case qui n'est pas ✅, **alors que le contrôle est déclaré pour ce fournisseur**,
 porte son motif :
 
-| Fournisseur | Source | Statut | Motif |
-|---|---|---|---|
-| scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « security_group » |
+_Aucune : toutes les cases déclarées sont pleinement observables._
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
-| `fail` | un écart a été détecté sur une ressource réelle | scaleway / terraform |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | scaleway / terraform |
+| `fail` | un écart a été détecté sur une ressource réelle | scaleway / terraform · scaleway / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | scaleway / terraform · scaleway / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
 | `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | aucun |
 
@@ -99,6 +97,9 @@ tel quel, ou une note ancrée sur la documentation officielle. Voir
 ```bash
 # depuis un plan Terraform : aucune ressource n'est créée
 ./pepin scan scaleway --terraform plan.json --format assessment
+
+# depuis l'API du fournisseur : configuration effective
+./pepin scan scaleway --live --format assessment
 ```
 
 Dans la sortie `assessment`, chercher `"control": "network_securitygroup_default_deny"` : son `status` doit être

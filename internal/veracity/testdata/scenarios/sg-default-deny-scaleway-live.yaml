@@ -1,0 +1,65 @@
+# Politique par defaut d'un groupe de securite Scaleway, sur une collecte LIVE.
+#
+# Le chemin traverse le collecteur REEL : la liste
+# `/instance/v1/zones/{zone}/security_groups` que le collecteur parcourait DEJA pour
+# joindre les regles a leur groupe, le mapping declaratif du descripteur
+# (`inbound_default_policy`), le verrou de capacite, la regle, puis l'assessment.
+# C'est l'entree exigee par le contrat : le type `security_group` est produit par la
+# spec `collecte`, donc un scenario `live` ne peut pas passer par `inventory:`.
+#
+# # Ce que ce scenario prouve, et qui n'existait pas
+#
+# Ce controle revenait `not-evaluated` en live alors que sa donnee etait deja sur le
+# fil : la reponse portait `inbound_default_policy`, et personne ne la projetait. Une
+# lacune de couverture n'est pas une lacune d'API (issue #195).
+#
+# # Pourquoi le contre-exemple garde le MEME groupe
+#
+# Seule la politique par defaut change entre les deux cas. Retirer le groupe, ou ses
+# regles, prouverait autre chose : que la regle se tait quand il n'y a rien a juger.
+# Ce qu'il faut prouver ici, c'est qu'elle discrimine sur le champ qu'elle lit.
+control: network_securitygroup_default_deny
+provider: scaleway
+source: live
+
+scenarios:
+  - expect: fail
+    why: "politique entrante par defaut a accept : tout ce que les regles n'interdisent pas passe"
+    api:
+      /instance/v1/zones/fr-par-1/security_groups: |
+        {"security_groups": [{"id": "11111111-2222-3333-4444-555555555555",
+                              "name": "web",
+                              "inbound_default_policy": "accept",
+                              "outbound_default_policy": "accept",
+                              "description": "",
+                              "tags": []}],
+         "total_count": 1}
+      /instance/v1/zones/fr-par-1/security_groups/11111111-2222-3333-4444-555555555555/rules: |
+        {"rules": [], "total_count": 0}
+
+  - expect: pass
+    why: "le MEME groupe, les MEMES regles, mais la politique par defaut a drop"
+    api:
+      /instance/v1/zones/fr-par-1/security_groups: |
+        {"security_groups": [{"id": "11111111-2222-3333-4444-555555555555",
+                              "name": "web",
+                              "inbound_default_policy": "drop",
+                              "outbound_default_policy": "accept",
+                              "description": "",
+                              "tags": []}],
+         "total_count": 1}
+      /instance/v1/zones/fr-par-1/security_groups/11111111-2222-3333-4444-555555555555/rules: |
+        {"rules": [], "total_count": 0}
+
+  - expect: not-evaluated
+    why: "la reponse ne porte pas le champ : on ne conclut pas sur ce qu'on n'a pas vu"
+    api:
+      /instance/v1/zones/fr-par-1/security_groups: |
+        {"security_groups": [{"id": "11111111-2222-3333-4444-555555555555",
+                              "name": "web",
+                              "outbound_default_policy": "accept",
+                              "description": "",
+                              "tags": []}],
+         "total_count": 1}
+      /instance/v1/zones/fr-par-1/security_groups/11111111-2222-3333-4444-555555555555/rules: |
+        {"rules": [], "total_count": 0}

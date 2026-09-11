@@ -21,6 +21,19 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+### Added
+
+- **Scaleway live: a security group's default policy is now collected** (issue #195).
+  `network_securitygroup_default_deny` — severity `high` — came back `not-evaluated` on
+  the live source while the same fault was found on the plan. The gap was not a missing
+  API: the collector **already paginates** `/instance/v1/zones/{zone}/security_groups`
+  to join rules to their group, and that response has carried
+  `inbound_default_policy` all along. Nobody projected it. The contract was verified
+  against the real API on 2026-09-11 before a line was written, and the control now
+  concludes on both sources — confirmed by a qualification run on a real account, GO with
+  its destruction proven. The inventory format moves to `v10`: a pure addition, the new
+  `security_group` type.
+
 ### Fixed
 
 - **The absent/empty rule is now a gate, not a habit** (issue #227, second half). One

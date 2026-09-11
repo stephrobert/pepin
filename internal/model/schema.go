@@ -141,7 +141,17 @@ import (
 //	cluster apportait deux écarts IAM que personne ne pouvait faire disparaître. Le
 //	fait est déclaré par le descripteur, avec sa source ; aucune règle ne connaît de
 //	convention de nommage.
-const InventoryFormat = "pepin-inventory/v9"
+//
+// v10 : la collecte live Scaleway produit le type `security_group`, porteur de
+//
+//	`inbound_default_policy` et `outbound_default_policy` (accept|drop), de sa
+//	description et de ses étiquettes. Ajout PUR : aucun type existant ne change.
+//	Il est nécessaire parce que `network_securitygroup_default_deny` — sévérité
+//	`high` — revenait « non évalué » en live alors que sa donnée était DÉJÀ sur le
+//	fil : le collecteur paginait la même liste pour joindre les règles à leur
+//	groupe, sans jamais projeter le champ. Une lacune de couverture, pas une lacune
+//	d'API (issue #195). Contrat vérifié contre l'API réelle le 2026-09-11.
+const InventoryFormat = "pepin-inventory/v10"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

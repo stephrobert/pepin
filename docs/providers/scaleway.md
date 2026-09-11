@@ -65,6 +65,7 @@ key has to cover.
 | `access_key` | `GET /iam/v1alpha1/api-keys?organization_id={org}` | — |
 | `compute_instance` | `GET /instance/v1/zones/{zone}/servers` | — |
 | `iam_user` | `GET /iam/v1alpha1/users?organization_id={org}` | — |
+| `security_group` | `GET /instance/v1/zones/{zone}/security_groups` | — |
 | `security_group_rule` | `GET /instance/v1/zones/{zone}/security_groups` | parent listing of a join (called first) |
 | `security_group_rule` | `GET /instance/v1/zones/{zone}/security_groups/{sg.id}/rules` | — |
 | `object_storage_bucket` | `https://s3.{region}.scw.cloud` | object storage S3 API (Go collector) |
@@ -94,12 +95,14 @@ credentials and no automated check reaches a provider API.
 |---|---|:-:|---|
 | `access_key` | `IAMReadOnly (Organization scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
 | `iam_user` | `IAMReadOnly (Organization scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
+| `security_group` | `InstancesReadOnly (Project scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.md |
 | `security_group_rule` | `InstancesReadOnly (Project scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
 | `compute_instance` | `InstancesReadOnly (Project scope)` | yes | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
 | `object_storage_bucket` | `ObjectStorageReadOnly (Project scope)` | no | scaleway/docs-content — pages/object-storage/reference-content/s3-iam-permissions-equivalence.mdx |
 
 **Reservations, stated rather than papered over.**
 
+- **`security_group`** — The SAME call as `security_group_rule`: `ListSecurityGroups` acts as the parent join for the rules and carries, in that same response, the group's default policy. No extra grant.
 - **`object_storage_bucket`** — Covers ListBuckets, GetBucketAcl, GetBucketVersioning, GetBucketTagging and GetObjectLockConfiguration. GetBucketPolicy and GetBucketEncryption appear in NO read-only permission set of the equivalence table: the right that grants them could not be established, and it is not guessed. Both calls are best-effort - a 403 costs coverage, never correctness.
 <!-- /pepin:gen provider-scaleway-permissions -->
 
@@ -154,7 +157,7 @@ pepin scan scaleway --terraform plan.json
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
 | terraform | 17 | 8 | 2 | 31 |
-| live | 17 | 3 | 2 | 36 |
+| live | 18 | 3 | 2 | 35 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
 Control by control, with the reason for every cell that is not fully supported, the source of
@@ -183,7 +186,6 @@ A `not-applicable` is a claim, so it carries its justification, taken from the p
 | `database_service_not_open_to_internet` | terraform | this source produces no resource of type "managed_database" |
 | `iam_policy_no_privilege_escalation` | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | live | this source produces no resource of type "iam_user" |
-| `network_securitygroup_default_deny` | terraform | this source produces no resource of type "security_group" |
 | `objectstorage_bucket_default_encryption` | live | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_kms_encryption` | live | deciding attribute "sse_kms_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_versioning_enabled` | live | deciding attribute "versioning" not projected by this source: a capability guard, so the scan returns "not-evaluated" |

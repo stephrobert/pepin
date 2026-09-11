@@ -130,8 +130,9 @@ resource "scaleway_instance_security_group" "egress_any" {
 }
 
 # ÉCART network_securitygroup_default_deny (high) : politique entrante par défaut
-# « accept » — observable sur le PLAN seulement (la collecte live ne projette pas
-# encore InboundDefaultPolicy, cf. providers/scaleway.yaml, contrat security_group).
+# « accept » — observable sur les DEUX sources depuis #195. La collecte live projette
+# désormais `inbound_default_policy`, lu dans la réponse de ListSecurityGroups que le
+# collecteur paginait déjà pour joindre les règles à leur groupe.
 resource "scaleway_instance_security_group" "default_accept" {
   name                    = "pepin-qual-sg-default-accept"
   description             = "Politique entrante par defaut accept"

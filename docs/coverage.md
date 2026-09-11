@@ -103,7 +103,7 @@ and the report says so on every scan, control by control, with the reason.
 | `network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports` | high | CLD-NET-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_tcp_port_22` | high | CLD-NET-1, CLD-IAM-6, CLD-NET-6 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389` | high | CLD-NET-1, CLD-IAM-6, CLD-NET-6 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `network_securitygroup_default_deny` | high | CLD-NET-2 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
+| `network_securitygroup_default_deny` | high | CLD-NET-2 | ✗ | ✗ | ✗ | ✗ | ✅ | ✅ |
 | `network_securitygroup_default_restrict_traffic` | high | CLD-NET-4 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `network_securitygroup_unrestricted_egress` | medium | CLD-NET-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `network_subnet_no_public_ip_by_default` | medium | CLD-NET-3 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
@@ -179,7 +179,6 @@ already shows them, and they add nothing.
 | `network_peering_cross_organization` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "network_peering" |
 | `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | terraform | ∅ `not-applicable` | An Exoscale security group rule has no "all protocols" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case. |
 | `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | live | ∅ `not-applicable` | An Exoscale security group rule has no "all protocols" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case. |
-| `network_securitygroup_default_deny` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "security_group" |
 | `network_securitygroup_default_restrict_traffic` | outscale | terraform | ◐ `partial` | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_default_encryption` | scaleway | terraform | ◐ `partial` | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
@@ -218,5 +217,5 @@ the other's scope. One source only: live collection through a kubeconfig.
 | outscale | terraform | 17 | 4 | 4 | 33 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
-| scaleway | live | 17 | 3 | 2 | 36 |
+| scaleway | live | 18 | 3 | 2 | 35 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
