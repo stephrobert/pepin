@@ -97,7 +97,6 @@ actually decide them. The reason given is the one that applies to the source tha
 | `iam_account_mfa_enforced` | outscale | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | outscale | live | this source produces no resource of type "api_access_summary" |
-| `iam_apiaccessrule_no_public_cidr` | outscale | live | this source produces no resource of type "api_access_rule" |
 | `iam_no_root_access_key` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_no_root_access_key` | scaleway | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | this source produces no resource of type "iam_policy" |
@@ -151,7 +150,7 @@ Per provider and per source, over all controls in the reference:
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | terraform | 18 | 4 | 4 | 32 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 19 | 2 | 2 | 35 |
@@ -208,10 +207,10 @@ What is not yet proven is **counted**, not hidden:
 <!-- pepin:gen veracity-debt -->
 | Figure | Count |
 |---|---:|
-| Control x provider x source paths on which Pépin concludes | 182 |
+| Control x provider x source paths on which Pépin concludes | 183 |
 | Paths whose every reachable verdict is proven end to end | 31 |
-| Verdicts to prove in total | 462 |
-| Verdicts left to prove | 366 |
+| Verdicts to prove in total | 465 |
+| Verdicts left to prove | 369 |
 <!-- /pepin:gen veracity-debt -->
 
 The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a

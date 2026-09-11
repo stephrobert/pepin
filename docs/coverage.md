@@ -73,7 +73,7 @@ and the report says so on every scan, control by control, with the reason.
 | `iam_account_mfa_enforced` | high | CLD-IAM-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_defined` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
-| `iam_apiaccessrule_no_public_cidr` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
+| `iam_apiaccessrule_no_public_cidr` | high | CLD-IAM-4 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✗ | ✅ | ◐ | ✅ |
 | `iam_policy_no_administrative_privileges` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_policy_no_notaction_notresource` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
@@ -150,7 +150,6 @@ already shows them, and they add nothing.
 | `iam_account_mfa_enforced` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_summary" |
-| `iam_apiaccessrule_no_public_cidr` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_rule" |
 | `iam_no_root_access_key` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
 | `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "iam_policy" |
@@ -213,7 +212,7 @@ the other's scope. One source only: live collection through a kubeconfig.
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | terraform | 18 | 4 | 4 | 32 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 19 | 2 | 2 | 35 |

@@ -23,6 +23,14 @@ belongs in `git log`.
 
 ### Added
 
+- **Outscale plans now judge API access rules** (issue #203).
+  `iam_apiaccessrule_no_public_cidr` came back `not-evaluated` on the Terraform source
+  while the plan carried `ip_ranges` — a **required** argument of
+  `outscale_api_access_rule` when no other criterion is given, so always written in the
+  HCL. Pépin could not conclude about a `0.0.0.0/0` written in plain sight. Measured on
+  the qualification tenant's real plan and confirmed by a `--plan-only` run, GO, with
+  nothing created.
+
 - **Outscale plans can now judge deletion protection** (issue #203).
   `compute_instance_deletion_protection` came back `not-evaluated` on the Terraform
   source while the plan carried the answer: `outscale_vm.deletion_protection` is an

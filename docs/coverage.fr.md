@@ -74,7 +74,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 | `iam_account_mfa_enforced` | high | CLD-IAM-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_defined` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
-| `iam_apiaccessrule_no_public_cidr` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
+| `iam_apiaccessrule_no_public_cidr` | high | CLD-IAM-4 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✗ | ✅ | ◐ | ✅ |
 | `iam_policy_no_administrative_privileges` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_policy_no_notaction_notresource` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
@@ -151,7 +151,6 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `iam_account_mfa_enforced` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_summary » |
-| `iam_apiaccessrule_no_public_cidr` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_rule » |
 | `iam_no_root_access_key` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
 | `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_policy_no_privilege_escalation` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « iam_policy » |
@@ -214,7 +213,7 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | terraform | 18 | 4 | 4 | 32 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 19 | 2 | 2 | 35 |

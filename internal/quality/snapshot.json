@@ -1,12 +1,12 @@
 {
   "controls": 58,
-  "paths": 182,
+  "paths": 183,
   "paths_proven": 31,
-  "obligations": 462,
+  "obligations": 465,
   "proven": 96,
   "verdicts": {
     "fail": {
-      "required": 140,
+      "required": 141,
       "proven": 25
     },
     "not-applicable": {
@@ -14,11 +14,11 @@
       "proven": 12
     },
     "not-evaluated": {
-      "required": 158,
+      "required": 159,
       "proven": 22
     },
     "pass": {
-      "required": 140,
+      "required": 141,
       "proven": 37
     }
   },
@@ -968,6 +968,16 @@
         {
           "provider": "outscale",
           "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
           "status": "supported",
           "required": [
             "fail",

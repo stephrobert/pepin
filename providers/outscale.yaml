@@ -738,6 +738,28 @@ mapping_terraform:
         image_id: image_id
         public: permission_additions.0.global_permission
 
+    # Règles d'accès à l'API. Un plan les porte en clair — `ip_ranges` est un argument
+    # OBLIGATOIRE de outscale_api_access_rule quand aucun autre critère n'est donné —,
+    # et Pépin disait pourtant « je ne peux pas conclure » sur un `0.0.0.0/0` écrit noir
+    # sur blanc dans le HCL (issue #203).
+    #
+    # L'identifiant n'existe pas au stade du plan : le sujet est l'adresse Terraform
+    # (ADR-0022), comme pour les autres types de ce mapping.
+    - tf_type: outscale_api_access_rule
+      type: api_access_rule
+      id: api_access_rule_id
+      map:
+        ip_ranges: ip_ranges
+        ca_ids: ca_ids
+        cns: cns
+        description: description
+      transforms:
+        # `list` est idempotent : il garde une liste et enveloppe un scalaire. Un plan
+        # peut porter l'une ou l'autre forme selon l'écriture du HCL.
+        ip_ranges: list
+        ca_ids: list
+        cns: list
+
 # Contrat d'API (ancrage §2) + applicabilité SCSL (non_applicable) — lu par `pepin scsl`.
 contrat:
   types:

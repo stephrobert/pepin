@@ -8,7 +8,7 @@
 # Une ligne qui disparaît est une dette payée. Une ligne qui apparaît sans
 # scénario est un contrôle ajouté sans sa preuve, et la CI la refuse.
 #
-# chemins : 181 · entierement prouves : 30 · obligations : 457 · restantes : 366
+# chemins : 183 · entierement prouves : 31 · obligations : 465 · restantes : 369
 
 blockstorage_snapshot_not_public exoscale live not-applicable
 blockstorage_snapshot_not_public outscale live fail,pass,not-evaluated
@@ -63,6 +63,7 @@ iam_account_mfa_enforced outscale live fail,pass,not-evaluated
 iam_apiaccesspolicy_max_key_expiration outscale live fail,pass,not-evaluated
 iam_apiaccessrule_defined outscale live fail,pass,not-evaluated
 iam_apiaccessrule_no_public_cidr outscale live fail,pass,not-evaluated
+iam_apiaccessrule_no_public_cidr outscale terraform fail,pass,not-evaluated
 iam_no_root_access_key outscale live fail,pass,not-evaluated
 iam_no_root_access_key scaleway live not-evaluated
 iam_no_root_access_key scaleway terraform not-evaluated

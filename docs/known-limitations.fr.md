@@ -96,7 +96,6 @@ pas.
 | `iam_account_mfa_enforced` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | outscale | live | cette source ne produit aucune ressource de type « api_access_summary » |
-| `iam_apiaccessrule_no_public_cidr` | outscale | live | cette source ne produit aucune ressource de type « api_access_rule » |
 | `iam_no_root_access_key` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_no_root_access_key` | scaleway | live | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | cette source ne produit aucune ressource de type « iam_policy » |
@@ -151,7 +150,7 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 |---|---|---:|---:|---:|---:|
 | exoscale | terraform | 19 | 2 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 17 | 4 | 4 | 33 |
+| outscale | terraform | 18 | 4 | 4 | 32 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
 | scaleway | live | 19 | 2 | 2 | 35 |
@@ -208,10 +207,10 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 <!-- pepin:gen veracity-debt -->
 | Chiffre | Nombre |
 |---|---:|
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 182 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 183 |
 | Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 31 |
-| Verdicts à prouver au total | 462 |
-| Verdicts restant à prouver | 366 |
+| Verdicts à prouver au total | 465 |
+| Verdicts restant à prouver | 369 |
 <!-- /pepin:gen veracity-debt -->
 
 Le reste est listé chemin par chemin dans `internal/veracity/testdata/debt.txt`. Ce registre est

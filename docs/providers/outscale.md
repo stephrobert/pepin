@@ -235,6 +235,7 @@ keys for an EIM user, that is the next thing to measure; `ReadAccessKeys` shows 
 <!-- pepin:gen provider-outscale-terraform -->
 | Terraform resource | Normalized type | Exploded block |
 |---|---|---|
+| `outscale_api_access_rule` | `api_access_rule` | — |
 | `outscale_image_launch_permission` | `compute_image` | — |
 | `outscale_net` | `network` | — |
 | `outscale_policy` | `iam_policy` | — |
@@ -259,7 +260,7 @@ API returns a boolean. The rules normalize both
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 4 | 4 | 33 |
+| terraform | 18 | 4 | 4 | 32 |
 | live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
@@ -291,7 +292,6 @@ truth is the [coverage matrix](../coverage.md).
 | `iam_account_mfa_enforced` | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | live | this source produces no resource of type "api_access_summary" |
-| `iam_apiaccessrule_no_public_cidr` | live | this source produces no resource of type "api_access_rule" |
 | `iam_no_root_access_key` | live | this source produces no resource of type "access_key" |
 | `kubernetes_cluster_auto_upgrade_enabled` | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_control_plane_highly_available` | live | this source produces no resource of type "kubernetes_cluster" |

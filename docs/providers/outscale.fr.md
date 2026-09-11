@@ -242,6 +242,7 @@ n'en montre aucune.
 <!-- pepin:gen provider-outscale-terraform -->
 | Ressource Terraform | Type normalisé | Bloc éclaté |
 |---|---|---|
+| `outscale_api_access_rule` | `api_access_rule` | — |
 | `outscale_image_launch_permission` | `compute_image` | — |
 | `outscale_net` | `network` | — |
 | `outscale_policy` | `iam_policy` | — |
@@ -266,7 +267,7 @@ rend un booléen. Les règles normalisent les deux
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 4 | 4 | 33 |
+| terraform | 18 | 4 | 4 | 32 |
 | live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
@@ -298,7 +299,6 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 | `iam_account_mfa_enforced` | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | live | cette source ne produit aucune ressource de type « api_access_summary » |
-| `iam_apiaccessrule_no_public_cidr` | live | cette source ne produit aucune ressource de type « api_access_rule » |
 | `iam_no_root_access_key` | live | cette source ne produit aucune ressource de type « access_key » |
 | `kubernetes_cluster_auto_upgrade_enabled` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_control_plane_highly_available` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
