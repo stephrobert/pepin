@@ -95,6 +95,7 @@ pas.
 | `iam_accesskey_rotated` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_account_mfa_enforced` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
+| `iam_apiaccesspolicy_max_key_expiration` | scaleway | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | outscale | live | cette source ne produit aucune ressource de type « api_access_summary » |
 | `iam_no_root_access_key` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_no_root_access_key` | scaleway | live | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
@@ -153,7 +154,7 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 | outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
-| scaleway | live | 19 | 2 | 2 | 35 |
+| scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
 
@@ -173,8 +174,8 @@ note documentée. À ce jour :
 | exoscale | 26 / 26 |
 | kubernetes | 0 / 4 |
 | outscale | 0 / 41 |
-| scaleway | 0 / 26 |
-| **Total** | **26 / 97** |
+| scaleway | 0 / 27 |
+| **Total** | **26 / 98** |
 <!-- /pepin:gen remediation-coverage -->
 
 Ce contrôle n'est **délibérément pas** branché sur `mise run validate` : tous fournisseurs
@@ -207,9 +208,9 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 <!-- pepin:gen veracity-debt -->
 | Chiffre | Nombre |
 |---|---:|
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 185 |
-| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 33 |
-| Verdicts à prouver au total | 467 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 186 |
+| Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 34 |
+| Verdicts à prouver au total | 470 |
 | Verdicts restant à prouver | 369 |
 <!-- /pepin:gen veracity-debt -->
 

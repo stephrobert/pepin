@@ -17,8 +17,8 @@
 | Resource type read | `api_access_policy` |
 | Deciding attribute | `max_access_key_expiration_seconds` |
 | State | active |
-| Declared for | `outscale` |
-| Remediation proofs | 0 / 1 |
+| Declared for | `outscale`, `scaleway` |
+| Remediation proofs | 0 / 2 |
 
 ## The risk
 
@@ -50,7 +50,7 @@ source".
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✅ |
-| scaleway | ✗ | ✗ |
+| scaleway | ✗ | ✅ |
 | kubernetes | n/a | ✗ |
 
 Every cell that is not ✅ **while the control is declared for that provider** carries its
@@ -59,13 +59,14 @@ reason:
 | Provider | Source | Status | Reason |
 |---|---|---|---|
 | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
+| scaleway | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
-| `fail` | a deviation was detected on a real resource | outscale / live |
-| `pass` | the deciding data was collected, and it is compliant | outscale / live |
+| `fail` | a deviation was detected on a real resource | outscale / live · scaleway / live |
+| `pass` | the deciding data was collected, and it is compliant | outscale / live · scaleway / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
 | `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
 
@@ -77,7 +78,7 @@ resource of the targeted type: "nothing to look at" is not "compliant".
 - Normalized resource type the rule reads: `api_access_policy`
 - Attribute the decision depends on: `max_access_key_expiration_seconds`
 - Without that attribute on a resource of the targeted type, the scan returns `not-evaluated` rather than `pass` (`internal/assess`, `requiredAttr` table).
-- What each source projects is readable in the descriptor: [`providers/outscale.yaml`](../../providers/outscale.yaml)
+- What each source projects is readable in the descriptor: [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - The rule that emits this code lives in [`internal/commonrules/rules/`](../../internal/commonrules/rules): it is **common** to every provider, only the source changes.
 
 ## How to remediate
@@ -87,6 +88,7 @@ Configure a maximum access key expiry (90 days, for instance).
 | Provider | Deployable setup |
 |---|---|
 | outscale | _no proof filed yet_ |
+| scaleway | _no proof filed yet_ |
 
 A remediation proof is a self-contained, **compliant** Terraform module that deploys as
 is, or a note anchored on the official documentation. See

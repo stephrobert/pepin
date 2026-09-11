@@ -825,7 +825,7 @@ func lookup(v any, path string) any {
 var knownBareTransforms = map[string]bool{
 	"lower": true, "upper": true, "first": true, "range_from": true, "range_to": true,
 	"iampolicy": true, "list": true, "kv": true, "to_int": true, "nonempty": true,
-	"snake_keys": true, "region_of_zone": true,
+	"snake_keys": true, "region_of_zone": true, "duration_seconds": true,
 }
 
 // knownTransformPrefixes : préfixes de transforms paramétrés (`default:val`, `equals:val`…).
@@ -985,6 +985,17 @@ func applyTransform(v any, spec any) any {
 				out = append(out, map[string]any{"key": k, "value": val})
 			}
 			return out
+		case "duration_seconds":
+			// Une DURÉE, rendue en secondes. Scaleway exprime la sienne en chaîne
+			// suffixée — `"31536000.000000000s"` pour 365 jours —, là où Outscale rend
+			// un entier de secondes. Le modèle normalisé est le NOMBRE, parce que c'est
+			// lui que la règle compare ; le format est une affaire de fournisseur.
+			//
+			// Une valeur illisible ne se remplace PAS par zéro : zéro veut dire « aucune
+			// limite » dans la sémantique OAPI, donc en fabriquer un transformerait une
+			// lecture ratée en écart affirmé. Rendre nil laisse l'attribut non projeté,
+			// et le verrou de capacité fait son travail (ADR-0014).
+			return durationSeconds(toStr(v))
 		case "to_int":
 			if n, err := strconv.ParseInt(toStr(v), 10, 64); err == nil {
 				return n
@@ -1148,4 +1159,23 @@ func RegionOfZone(zone string) string { return regionOfZone(zone) }
 // est CALCULÉE tôt et n'est UTILISÉE qu'après une réponse.
 func CallSignature(method string, u *url.URL) string {
 	return method + " " + u.Scheme + "://" + u.Host + u.Path
+}
+
+// durationSeconds lit une durée et rend ses secondes, ou nil si elle est illisible.
+//
+// Deux formes acceptées, et aucune devinée : le suffixe `s` que les API Scaleway
+// emploient pour une durée en secondes (`"31536000.000000000s"`), et un nombre nu.
+// Tout le reste — une durée Go composite comme `"2h45m"`, une chaîne vide, du texte —
+// rend nil, parce qu'une durée qu'on n'a pas su lire n'est pas une durée de zéro.
+func durationSeconds(raw string) any {
+	t := strings.TrimSpace(raw)
+	if t == "" {
+		return nil
+	}
+	t = strings.TrimSuffix(t, "s")
+	f, err := strconv.ParseFloat(t, 64)
+	if err != nil {
+		return nil
+	}
+	return f
 }

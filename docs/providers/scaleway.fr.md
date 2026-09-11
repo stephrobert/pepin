@@ -63,6 +63,7 @@ clé en lecture seule doit couvrir.
 | Type normalisé | Appel | Note |
 |---|---|---|
 | `access_key` | `GET /iam/v1alpha1/api-keys?organization_id={org}` | — |
+| `api_access_policy` | `GET /iam/v1alpha1/organizations/{org}/security-settings` | — |
 | `compute_instance` | `GET /instance/v1/zones/{zone}/servers` | — |
 | `iam_user` | `GET /iam/v1alpha1/users?organization_id={org}` | — |
 | `security_group` | `GET /instance/v1/zones/{zone}/security_groups` | — |
@@ -97,6 +98,7 @@ API de fournisseur.
 |---|---|:-:|---|
 | `access_key` | `IAMReadOnly (Organization scope)` | oui | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
 | `iam_user` | `IAMReadOnly (Organization scope)` | oui | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
+| `api_access_policy` | `IAMReadOnly (Organization scope)` | oui | scaleway/docs-content — pages/iam/reference-content/permission-sets.md |
 | `security_group` | `InstancesReadOnly (Project scope)` | oui | scaleway/docs-content — pages/iam/reference-content/permission-sets.md |
 | `security_group_rule` | `InstancesReadOnly (Project scope)` | oui | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
 | `compute_instance` | `InstancesReadOnly (Project scope)` | oui | scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx |
@@ -104,6 +106,7 @@ API de fournisseur.
 
 **Réserves, dites plutôt que masquées.**
 
+- **`api_access_policy`** — Les réglages de sécurité sont au niveau de l'ORGANISATION : la portée du jeu de permissions doit l'être aussi, contrairement aux unités d'infrastructure qui se portent sur un projet.
 - **`security_group`** — Le MÊME appel que `security_group_rule` : `ListSecurityGroups` sert de jointure parent pour les règles et porte, dans la même réponse, la politique par défaut du groupe. Aucun droit supplémentaire.
 - **`object_storage_bucket`** — Couvre ListBuckets, GetBucketAcl, GetBucketVersioning, GetBucketTagging et GetObjectLockConfiguration. GetBucketPolicy et GetBucketEncryption n'apparaissent dans AUCUN jeu de permissions en lecture seule de la table d'équivalence : le droit qui les accorde n'a pas pu être établi, et il n'est pas deviné. Les deux appels sont best effort — un 403 coûte de la couverture, jamais de la justesse.
 <!-- /pepin:gen provider-scaleway-permissions -->
@@ -160,7 +163,7 @@ pepin scan scaleway --terraform plan.json
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
 | terraform | 17 | 8 | 2 | 31 |
-| live | 19 | 2 | 2 | 35 |
+| live | 20 | 2 | 2 | 34 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
 Contrôle par contrôle, avec le motif de chaque case qui n'est pas pleinement supportée, la
@@ -188,6 +191,7 @@ fournisseur.
 | `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | terraform | cette source ne produit aucune ressource de type « managed_database » |
+| `iam_apiaccesspolicy_max_key_expiration` | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_no_root_access_key` | live | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `iam_policy_no_privilege_escalation` | terraform | cette source ne produit aucune ressource de type « iam_policy » |
 | `iam_user_mfa_enabled` | live | cette source ne produit aucune ressource de type « iam_user » |

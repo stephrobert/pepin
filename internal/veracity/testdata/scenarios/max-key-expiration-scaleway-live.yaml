@@ -1,0 +1,56 @@
+# Duree maximale d'expiration d'une cle d'API, reglee au niveau de l'ORGANISATION.
+#
+# Le chemin traverse le collecteur REEL : `/iam/v1alpha1/organizations/{org}/
+# security-settings`, le mapping declaratif du descripteur (une duree en CHAINE
+# suffixee, convertie en secondes par le transform `duration_seconds`), le verrou de
+# capacite, la regle, puis l'assessment.
+#
+# # Ce que ce controle dit, et que l'inventaire des cles ne dit pas
+#
+# Lister les cles apprend ce qui est vrai AUJOURD'HUI : chacune a-t-elle une echeance.
+# Ce reglage-ci apprend ce que l'organisation refusera DEMAIN. C'est la difference entre
+# un controle detectif et un controle preventif, que SecNumCloud 9.5 et CIS 5.4
+# distinguent tous deux.
+#
+# Decouvert en appliquant le tenant de qualification : l'API a REFUSE de creer une cle
+# sans echeance, avec « organization security settings require an expiration date for
+# API keys ». Le refus etait la mesure (issue #196).
+#
+# # Le troisieme cas est le plus important
+#
+# Une duree illisible ne vaut pas zero. La regle signale un ecart sur `<= 0`, donc
+# fabriquer un zero sur une lecture ratee transformerait l'echec de lecture en ecart
+# AFFIRME. L'attribut reste non projete, et le scan dit qu'il ne sait pas (ADR-0014).
+control: iam_apiaccesspolicy_max_key_expiration
+provider: scaleway
+source: live
+
+scenarios:
+  - expect: pass
+    why: "l'organisation impose une echeance : 365 jours, la valeur mesuree sur le compte reel"
+    api:
+      /iam/v1alpha1/organizations/org-test/security-settings: |
+        {"enforce_password_renewal": true,
+         "grace_period_duration": "259200.000000000s",
+         "login_attempts_before_locked": 5,
+         "max_login_session_duration": "2592000.000000000s",
+         "max_api_key_expiration_duration": "31536000.000000000s"}
+
+  - expect: fail
+    why: "aucune limite : une cle peut etre creee sans echeance, et le rester indefiniment"
+    api:
+      /iam/v1alpha1/organizations/org-test/security-settings: |
+        {"enforce_password_renewal": true,
+         "grace_period_duration": "259200.000000000s",
+         "login_attempts_before_locked": 5,
+         "max_login_session_duration": "2592000.000000000s",
+         "max_api_key_expiration_duration": "0s"}
+
+  - expect: not-evaluated
+    why: "le reglage n'est pas dans la reponse : on ne deduit pas « aucune limite » d'un silence"
+    api:
+      /iam/v1alpha1/organizations/org-test/security-settings: |
+        {"enforce_password_renewal": true,
+         "grace_period_duration": "259200.000000000s",
+         "login_attempts_before_locked": 5,
+         "max_login_session_duration": "2592000.000000000s"}

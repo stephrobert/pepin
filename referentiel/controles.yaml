@@ -291,7 +291,7 @@ controles:
     frameworks:
       secnumcloud_3_2: ["9.5", "10.5"]
       iso_27001_2022: ["A.5.17"]
-    fournisseurs: [outscale]
+    fournisseurs: [outscale, scaleway]
 
   - code: iam_apiaccessrule_no_public_cidr
     famille: iam
