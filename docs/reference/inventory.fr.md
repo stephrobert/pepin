@@ -12,7 +12,7 @@ gelée, avec les mêmes égards que la surface CLI.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v13
+pepin-inventory/v14
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -58,22 +58,47 @@ rendre : une unité qui a rendu zéro ressource sans erreur est complète — «
 une mesure — alors qu'une unité qui a rendu cent ressources sur mille avant un `403` ne l'est
 pas.
 
-`error` est une classe stable, pas un message : `permission_denied`, `not_found`,
-`rate_limited`, `timeout`, `truncated`, `unreadable`, `unavailable`. Un pipeline doit pouvoir
-distinguer « le compte de scan ne voit pas cette surface » (à corriger sur la politique du
-compte) de « le service n'a pas répondu » (à réessayer). `detail` porte la réponse du
-fournisseur telle quelle, non traduite : c'est une donnée, pas de la prose de Pépin.
+`error` est une classe stable, pas un message : `permission_denied`, `unauthenticated`,
+`rejected`, `not_found`, `rate_limited`, `timeout`, `truncated`, `unreadable`, `unavailable`. Un
+pipeline doit pouvoir distinguer « le compte de scan ne voit pas cette surface » (à corriger sur
+la politique du compte) de « le service n'a pas répondu » (à réessayer). `detail` porte la
+réponse du fournisseur telle quelle, non traduite : c'est une donnée, pas de la prose de Pépin.
+
+Trois classes disent trois gestes différents, et les confondre coûte le temps de qui les lit :
+`unauthenticated` = corriger les **identifiants** (clé inconnue, signature invalide),
+`permission_denied` = corriger les **droits**, `rejected` = l'API a **répondu** et refusé la
+requête, donc le service fonctionne. Un `4xx` n'est jamais rangé en `unavailable`, qui ne
+désigne que ce qui n'a pas répondu du tout.
 
 **Jusqu'où chaque classe est mesurée.** La *correspondance* l'est contre de vraies sockets :
 `internal/collect/status_test.go` pilote un serveur qui refuse vraiment, expire vraiment et
 tronque vraiment une page, et un `403` y ressort bien en `permission_denied`. Une session
 enregistrée contre l'émulateur (`internal/genprovider/testdata/transcripts/`) y ajoute
 `not_found` et `unavailable` observés sur le réseau, y compris à travers l'interface d'erreur du
-SDK AWS sur le chemin du stockage objet. Ce qu'aucun contrôle de ce dépôt n'établit, c'est
-quelle classe un **fournisseur donné** déclenchera : si Outscale répond `403` plutôt que `200`
-accompagné d'un corps `Errors`, si un appel Scaleway limité rend `429` plutôt que `503`.
-L'émulateur ne peut pas trancher non plus, puisqu'il accepte n'importe quel identifiant et ne
-sait donc jamais refuser. Cela reste dû à un scan réel ; voir
+SDK AWS sur le chemin du stockage objet.
+
+**Le refus d'Outscale, lui, a été mesuré sur le vrai plan de contrôle** (2026-09-12, `eu-west-2`,
+identité EIM créée pour la mesure puis détruite, ne portant que `api:ReadVms`) :
+
+| Situation du compte de scan | HTTP | `Type` · `Code` | Classe |
+|---|---|---|---|
+| Clé d'accès inexistante | `400` | `InvalidParameterValue` · `4120` | `unauthenticated` |
+| Clé existante, signature invalide | `401` | `AccessDenied` · `1` | `unauthenticated` |
+| Clé valide, droit manquant | `403` | `AccessDenied` · `4` | `permission_denied` |
+
+Le premier cas est le seul qu'un identifiant synthétique sache produire, et c'est pourquoi il
+avait longtemps été rangé en `unavailable` : le statut `400` ne dit pas qu'il s'agit
+d'authentification, le **code d'erreur** le dit
+([table officielle](https://docs.outscale.com/api-errors.html), `4120` =
+`ErrorAuthenticationexception`). Le troisième cas exigeait un droit réellement manquant sur une
+clé réellement valide ; il n'a donc pu être établi qu'avec un compte. À noter, et c'est une
+limite : le code `4` n'est pas dans la table publiée — il est **mesuré**, pas documenté, et
+Pépin ne s'y adosse pas (le statut `403` suffit).
+
+Ce qu'aucun contrôle de ce dépôt n'établit reste : quelle classe les **autres** fournisseurs
+déclencheront, par exemple si un appel Scaleway limité rend `429` plutôt que `503`. L'émulateur
+ne peut pas trancher, puisqu'il accepte n'importe quel identifiant et ne sait donc jamais
+refuser. Cela reste dû à un scan réel ; voir
 [Limites connues](../known-limitations.fr.md) et
 [Tracer les appels réels](../guides/tracing-api-calls.fr.md).
 

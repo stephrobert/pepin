@@ -12,7 +12,7 @@ with the same regard as the CLI surface.
 
 <!-- pepin:gen inventory-format -->
 ```text
-pepin-inventory/v13
+pepin-inventory/v14
 ```
 <!-- /pepin:gen inventory-format -->
 
@@ -57,22 +57,47 @@ types. `complete` is true when the unit returned everything the API had to retur
 returned zero resources without error is complete — "there is nothing" is a measurement — while
 a unit that returned a hundred resources out of a thousand before a `403` is not.
 
-`error` is a stable class, not a message: `permission_denied`, `not_found`, `rate_limited`,
-`timeout`, `truncated`, `unreadable`, `unavailable`. A pipeline must be able to tell "the
-scanning account cannot see this" (fix the account policy) from "the service did not answer"
-(retry). `detail` carries the provider's own response, untranslated — it is data, not Pépin
-prose.
+`error` is a stable class, not a message: `permission_denied`, `unauthenticated`, `rejected`,
+`not_found`, `rate_limited`, `timeout`, `truncated`, `unreadable`, `unavailable`. A pipeline must
+be able to tell "the scanning account cannot see this" (fix the account policy) from "the service
+did not answer" (retry). `detail` carries the provider's own response, untranslated — it is data,
+not Pépin prose.
+
+Three classes name three different actions, and confusing them costs the reader's time:
+`unauthenticated` = fix the **credentials** (unknown key, invalid signature), `permission_denied`
+= fix the **rights**, `rejected` = the API **answered** and refused the request, so the service
+is working. A `4xx` is never filed under `unavailable`, which only names what did not answer at
+all.
 
 **How far each class is measured.** The *mapping* is measured against real sockets:
 `internal/collect/status_test.go` drives a server that really refuses, really times out and
 really truncates a page, and a `403` there really comes out as `permission_denied`. A recorded
 emulator session (`internal/genprovider/testdata/transcripts/`) adds `not_found` and
 `unavailable` on the wire, including through the AWS SDK's error interface on the object-storage
-path. What no check in this repository establishes is which class a **given provider** will
-trigger: whether Outscale answers `403` rather than `200` with an `Errors` body, whether a
-throttled Scaleway call is `429` rather than `503`. The emulator cannot settle it either — it
-accepts every credential and can therefore never refuse. That is owed to a real scan; see
-[Known limitations](../known-limitations.md) and
+path.
+
+**Outscale's refusal, however, was measured against the real control plane** (2026-09-12,
+`eu-west-2`, with an EIM identity created for the measurement and then destroyed, carrying only
+`api:ReadVms`):
+
+| Situation of the scanning account | HTTP | `Type` · `Code` | Class |
+|---|---|---|---|
+| Access key does not exist | `400` | `InvalidParameterValue` · `4120` | `unauthenticated` |
+| Key exists, invalid signature | `401` | `AccessDenied` · `1` | `unauthenticated` |
+| Valid key, missing right | `403` | `AccessDenied` · `4` | `permission_denied` |
+
+The first case is the only one a synthetic credential can produce, which is why it was long
+filed under `unavailable`: the `400` status does not say this is about authentication — the
+**error code** does ([official table](https://docs.outscale.com/api-errors.html), `4120` =
+`ErrorAuthenticationexception`). The third case required a genuinely missing right on a
+genuinely valid key, so it could only be established with an account. One limit worth naming:
+code `4` is not in the published table — it is **measured**, not documented, and Pépin does not
+rely on it (the `403` status is enough).
+
+What no check in this repository establishes remains: which class the **other** providers will
+trigger, for instance whether a throttled Scaleway call is `429` rather than `503`. The emulator
+cannot settle it — it accepts every credential and can therefore never refuse. That is owed to a
+real scan; see [Known limitations](../known-limitations.md) and
 [Tracing real API calls](../guides/tracing-api-calls.md).
 
 Every control that reads a type fed by an incomplete unit becomes `not-evaluated`, with that

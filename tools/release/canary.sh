@@ -35,9 +35,11 @@
 #   que le chemin déclaré existe encore     | ce qu'un tenant contient
 #   la classe qu'un refus reçoit            | qu'un droit SUFFISANT rende 200
 #
-# Un refus de SIGNATURE n'est pas un refus de DROIT. Que le fournisseur réponde
-# la même chose à une clé valide sans permission reste dû à un scan authentifié,
-# et le relevé le dit à sa place.
+# Un refus de SIGNATURE n'est pas un refus de DROIT. Chez Outscale, la mesure a
+# été faite (issue #91, 2026-09-12) et elle tranche : clé inconnue → 400 · 4120
+# (`unauthenticated`), clé valide sans le droit → 403 · 4 (`permission_denied`).
+# Le canari ne produit que le premier, faute de clé. Pour les autres
+# fournisseurs, la question reste due à un scan authentifié.
 #
 # ─── CE QU'IL ENVOIE, ET À QUELLE FRÉQUENCE ──────────────────────────────────
 #

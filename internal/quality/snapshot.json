@@ -37,9 +37,9 @@
     },
     {
       "provider": "outscale",
-      "recorded": "2026-08-21",
+      "recorded": "2026-09-12",
       "authenticated": false,
-      "answered": 17,
+      "answered": 18,
       "moved": 0,
       "unreachable": 0
     },

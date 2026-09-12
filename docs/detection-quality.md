@@ -67,7 +67,7 @@ An endpoint that answers exists and resolves; a `moved` (404) says it has shifte
 | Provider | Recorded | Answered | Moved | Unreachable |
 |---|---|---:|---:|---:|
 | `exoscale` | 2026-08-21 | 9 | 0 | 0 |
-| `outscale` | 2026-08-21 | 17 | 0 | 0 |
+| `outscale` | 2026-09-12 | 18 | 0 | 0 |
 | `scaleway` | 2026-08-21 | 5 | 0 | 0 |
 
 ## Precision of the high/critical rules
