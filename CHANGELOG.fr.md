@@ -95,6 +95,45 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un refus n'est plus présenté comme une panne, et une clé inconnue n'est plus présentée
+  comme un droit manquant** (issue #91). Outscale répond `400` là où Scaleway répond `401`
+  et Exoscale `403` ; un `4xx` qu'aucune classe plus fine ne réclamait retombait sur
+  `unavailable`, si bien que le relevé de canari rangeait les dix-huit endpoints Outscale
+  en **« service indisponible »** — alors que tous avaient répondu. L'opérateur qui lit ça
+  va consulter une page d'état pendant que le plan de contrôle fonctionne parfaitement.
+
+  La distinction que l'issue laissait ouverte — *un `400`, est-ce une signature invalide ou
+  un droit manquant ?* — ne pouvait pas se trancher avec des identifiants synthétiques, qui
+  ne produisent jamais que le premier cas. Elle a été mesurée le 2026-09-12 sur
+  `eu-west-2`, avec une identité EIM créée pour la mesure ne portant que `api:ReadVms`,
+  puis détruite ; un appel autorisé a été joué d'abord comme témoin, pour qu'un refus ne
+  puisse pas venir de la signature :
+
+  | Situation du compte de scan | HTTP | `Type` · `Code` | Classe |
+  |---|---|---|---|
+  | Clé d'accès inexistante | `400` | `InvalidParameterValue` · `4120` | `unauthenticated` |
+  | Clé existante, signature invalide | `401` | `AccessDenied` · `1` | `unauthenticated` |
+  | Clé valide, droit manquant | `403` | `AccessDenied` · `4` | `permission_denied` |
+
+  Deux classes s'ajoutent à l'état de collecte — `unauthenticated` (l'API n'a pas reconnu
+  les identifiants) et `rejected` (l'API a répondu et refusé la requête) — et un `4xx`
+  n'est plus jamais `unavailable`. Le statut seul ne peut pas porter cette distinction :
+  Outscale documente son erreur d'**authentification** en `400` et son erreur
+  d'**autorisation** en `401` ([table officielle](https://docs.outscale.com/api-errors.html)),
+  si bien qu'un classement par statut se trompe sur les deux, dans les deux sens. C'est le
+  **code** d'erreur qui tranche, et seuls les codes que cette table documente sont mappés —
+  le `403 · 4` mesuré n'en fait pas partie et reste classé par son statut.
+  `InvalidAccessKeyId` et `SignatureDoesNotMatch` sur le chemin du stockage objet passent à
+  `unauthenticated` pour la même raison : élargir une politique ne rend pas connue une clé
+  qui ne l'est pas. **Aucun verdict ne bouge sur un tenant inchangé** — un refus dégradait
+  un contrôle en `not-evaluated` avant, et le fait toujours ; ce qui change, c'est la phrase
+  que lit l'opérateur, et l'erreur qu'elle lui envoie corriger.
+
+  `pepin-inventory` passe en **v14** : le schéma ne bouge pas, mais l'éventail de valeurs
+  que `error` peut prendre, si — et un consommateur qui les énumère doit le savoir
+  (ADR-0003).
+
+
 - **La collecte live Exoscale écrit la zone qu'elle a scannée** (issue #210).
   `governance_resource_region_in_eu` rendait `not-evaluated` sur **toute** organisation
   Exoscale : aucune ressource ne portait de région, donc le contrôle ne pouvait jamais

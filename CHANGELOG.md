@@ -90,6 +90,42 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A refusal is no longer reported as an outage, and an unknown key is no longer reported
+  as a missing right** (issue #91). Outscale answers `400` where Scaleway answers `401` and
+  Exoscale `403`; a `4xx` that no finer class claimed fell through to `unavailable`, so the
+  canary record filed all eighteen Outscale endpoints under **"service unavailable"** —
+  every one of which had answered. An operator reading that goes to check a status page
+  while the control plane works perfectly.
+
+  The distinction the issue left open — *is a `400` a bad signature or a missing right?* —
+  could not be settled with synthetic credentials, which only ever produce the first. It
+  was measured on 2026-09-12 against `eu-west-2`, with an EIM identity created for the
+  measurement carrying only `api:ReadVms`, then destroyed; an authorized call was played
+  first as a witness, so that a refusal could not come from the signature:
+
+  | Situation of the scanning account | HTTP | `Type` · `Code` | Class |
+  |---|---|---|---|
+  | Access key does not exist | `400` | `InvalidParameterValue` · `4120` | `unauthenticated` |
+  | Key exists, invalid signature | `401` | `AccessDenied` · `1` | `unauthenticated` |
+  | Valid key, missing right | `403` | `AccessDenied` · `4` | `permission_denied` |
+
+  Two classes are added to the collection state — `unauthenticated` (the API did not
+  recognize the credentials) and `rejected` (the API answered and refused the request) —
+  and a `4xx` is never `unavailable` again. The status alone cannot carry this: Outscale
+  documents its **authentication** error at `400` and its **authorization** error at `401`
+  ([official table](https://docs.outscale.com/api-errors.html)), so classifying by status
+  gets both wrong, in both directions. The error **code** settles it, and only codes that
+  table documents are mapped — the measured `403 · 4` is not among them and is left to its
+  status. `InvalidAccessKeyId` and `SignatureDoesNotMatch` on the object-storage path move
+  to `unauthenticated` for the same reason: widening a policy does not make an unknown key
+  known. **No verdict moves on an unchanged tenant** — a refusal degraded a control to
+  `not-evaluated` before and still does; what changes is the sentence the operator reads,
+  and which mistake it sends them to fix.
+
+  `pepin-inventory` goes to **v14**: the schema is unchanged, but the set of values `error`
+  can take is not, and a consumer enumerating them must be told (ADR-0003).
+
+
 - **Exoscale live now writes the zone it scanned** (issue #210).
   `governance_resource_region_in_eu` returned `not-evaluated` on **every** Exoscale
   organisation: no resource carried a region, so the control could never conclude about

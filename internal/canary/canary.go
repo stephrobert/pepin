@@ -23,6 +23,13 @@
 // que d'emprunter ce chiffre-ci — un relevé d'accessibilité d'endpoint n'est pas
 // une preuve de verdict.
 //
+// La distinction a été MESURÉE chez Outscale, et le résultat explique pourquoi
+// le canari ne pouvait pas la faire (issue #91, 2026-09-12) : une clé inconnue
+// sort en 400 · code 4120, une clé valide sans le droit en 403 · code 4. Le
+// canari ne produit jamais que le premier, puisqu'il n'a pas de clé. Ce qu'il
+// classe désormais `unauthenticated` est donc juste — et c'est précisément la
+// preuve qu'il ne peut rien dire du second.
+//
 // # Pourquoi la fraîcheur se juge au préflight, et pas en CI
 //
 // Une porte de test qui rougirait avec le temps est une porte qui rougira un

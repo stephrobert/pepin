@@ -182,7 +182,17 @@ import (
 //	bien qu'ajouter un type sans région RETIRE de la couverture au lieu d'en ajouter
 //	— mesuré au premier essai, `governance_resource_region_in_eu` passant de `pass` à
 //	« non évalué ».
-const InventoryFormat = "pepin-inventory/v13"
+//
+// v14 : l'état de collecte peut porter deux classes d'échec de plus,
+//
+//	`unauthenticated` (l'API n'a pas reconnu les identifiants) et `rejected` (l'API
+//	a répondu et refusé la requête). Le SCHÉMA ne change pas — `error` était déjà une
+//	chaîne libre — mais l'ÉVENTAIL de ses valeurs, si, et un consommateur qui
+//	l'énumère doit le savoir. Un 4xx non classé rendait `unavailable`, ce qui faisait
+//	lire « service indisponible » à dix-huit endpoints Outscale qui répondaient tous
+//	(issue #91). Le bump existe pour cette raison : un contrat gelé dont les VALEURS
+//	bougent en silence est un contrat cassé sans avertissement (ADR-0003).
+const InventoryFormat = "pepin-inventory/v14"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

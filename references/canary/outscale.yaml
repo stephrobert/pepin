@@ -6,11 +6,11 @@
 #
 # Ce relevé ne porte aucun identifiant : le canari n'en a jamais eu.
 provider: outscale
-recorded: 2026-08-21
-pepin_version: "v0.3.0-2-g1ee97f5"
+recorded: 2026-09-12
+pepin_version: "v0.4.0-11-gbf8bf63-dirty"
 authenticated: false
 summary:
-  answered: 17
+  answered: 18
   moved: 0
   unreachable: 0
 units:
@@ -20,70 +20,70 @@ units:
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadAccessKeys"
-    classified: unavailable
+    classified: unauthenticated
   - unit: api_access_policy
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadApiAccessPolicy"
-    classified: unavailable
+    classified: unauthenticated
   - unit: api_access_rule
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadApiAccessRules"
-    classified: unavailable
+    classified: unauthenticated
   - unit: api_access_summary
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadApiAccessRules"
-    classified: unavailable
+    classified: unauthenticated
   - unit: blockstorage_snapshot
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadAccounts"
-    classified: unavailable
+    classified: unauthenticated
   - unit: blockstorage_volume
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadVolumes"
-    classified: unavailable
+    classified: unauthenticated
   - unit: compute_image
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadAccounts"
-    classified: unavailable
+    classified: unauthenticated
   - unit: compute_instance
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadVms"
-    classified: unavailable
+    classified: unauthenticated
   - unit: iam_policy
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadPolicies"
-    classified: unavailable
+    classified: unauthenticated
   - unit: iam_policy_inline
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadUsers"
-    classified: unavailable
+    classified: unauthenticated
   - unit: kubernetes_cluster
     verdict: answered
     status: 500
@@ -97,21 +97,28 @@ units:
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadLoadBalancers"
-    classified: unavailable
+    classified: unauthenticated
   - unit: network
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadNets"
-    classified: unavailable
+    classified: unauthenticated
+  - unit: network_interface
+    verdict: answered
+    status: 400
+    method: POST
+    host: api.eu-west-2.outscale.com
+    path: "/api/v1/ReadVms"
+    classified: unauthenticated
   - unit: network_peering
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadNetPeerings"
-    classified: unavailable
+    classified: unauthenticated
   - unit: object_storage_bucket
     verdict: answered
     status: 403
@@ -122,11 +129,11 @@ units:
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadSecurityGroups"
-    classified: unavailable
+    classified: unauthenticated
   - unit: subnet
     verdict: answered
     status: 400
     method: POST
     host: api.eu-west-2.outscale.com
     path: "/api/v1/ReadSubnets"
-    classified: unavailable
+    classified: unauthenticated

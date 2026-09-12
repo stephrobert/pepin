@@ -61,6 +61,28 @@ const (
 	// OutcomeUnreadable : la réponse n'était pas le document attendu (JSON
 	// invalide, schéma inconnu).
 	OutcomeUnreadable CollectionOutcome = "unreadable"
+	// OutcomeUnauthenticated : l'API n'a pas RECONNU les identifiants — clé
+	// inconnue, signature invalide. Distinct de OutcomePermissionDenied, et la
+	// distinction est celle de l'action à mener : ici on corrige les
+	// IDENTIFIANTS du compte de scan, là on corrige ses DROITS. Dire
+	// « privilège insuffisant » sur une clé inconnue envoie élargir une
+	// politique attachée à une identité qui n'existe pas.
+	//
+	// Cette classe ne se déduit JAMAIS d'un statut HTTP seul. Outscale place son
+	// erreur d'authentification en 400 (code 4120) et son erreur de DROIT en 401
+	// (code 5, `ErrorNotAuthorized`) : le statut ne sépare pas les deux, et le
+	// croire produirait l'inverse exact du défaut qu'on corrige. Seul un code
+	// d'erreur documenté par le fournisseur y mène.
+	OutcomeUnauthenticated CollectionOutcome = "unauthenticated"
+	// OutcomeRejected : l'API a RÉPONDU et a refusé la requête (4xx non classé
+	// par ailleurs). Le service fonctionne ; c'est la requête, ou ce qu'elle
+	// porte, qu'il n'a pas voulu.
+	//
+	// Elle existe parce que la seule autre issue était un mensonge. Un 400 rangé
+	// en « service indisponible » envoie l'opérateur consulter une page d'état
+	// pendant que le plan de contrôle répond parfaitement — le défaut que
+	// l'issue #91 a mesuré sur les trois fournisseurs.
+	OutcomeRejected CollectionOutcome = "rejected"
 	// OutcomeUnavailable : le service n'a pas répondu (5xx, erreur de transport,
 	// cause non classée).
 	OutcomeUnavailable CollectionOutcome = "unavailable"

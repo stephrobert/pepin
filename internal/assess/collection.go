@@ -160,6 +160,12 @@ func OutcomeLabel(o model.CollectionOutcome) string {
 			"pagination interrupted (truncated inventory)")
 	case model.OutcomeUnreadable:
 		return i18n.T("réponse illisible", "unreadable response")
+	case model.OutcomeUnauthenticated:
+		return i18n.T("identifiants non reconnus par l'API",
+			"credentials not recognized by the API")
+	case model.OutcomeRejected:
+		return i18n.T("requête refusée par l'API (le service, lui, répond)",
+			"request refused by the API (the service itself is answering)")
 	case model.OutcomeUnavailable:
 		return i18n.T("service indisponible", "service unavailable")
 	}

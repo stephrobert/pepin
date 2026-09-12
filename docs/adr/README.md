@@ -88,10 +88,10 @@ Avant d'implémenter, établir si A, B et C ont cessé d'être vraies.
 |---|---|
 | Architecture des règles, providers | [0001](0001-regles-communes-providers-collecteurs.md), [0022](0022-une-reference-declaree-est-une-observation.md) |
 | Moteur, findings, rendu, scoring | [0002](0002-moteur-partage-scankit.md) |
-| Modèle de données, inventaire | [0003](0003-inventaire-contrat-gele.md), [0007](0007-provenance-index-parallele.md), [0017](0017-provenance-atteste-une-recherche.md), [0020](0020-lorigine-declaree-dun-inventaire-fait-foi.md), [0022](0022-une-reference-declaree-est-une-observation.md) |
+| Modèle de données, inventaire | [0003](0003-inventaire-contrat-gele.md), [0007](0007-provenance-index-parallele.md), [0017](0017-provenance-atteste-une-recherche.md), [0020](0020-lorigine-declaree-dun-inventaire-fait-foi.md), [0022](0022-une-reference-declaree-est-une-observation.md), [0023](0023-un-statut-http-ne-classe-pas-un-refus.md) |
 | Référentiel, frameworks normatifs | [0004](0004-index-scsl-gele.md), [0009](0009-configuration-lie-mapping.md) |
 | Codes de sortie, portes de CI | [0005](0005-codes-de-sortie.md), [0008](0008-derogation-nest-pas-conformite.md), [0019](0019-un-profil-filtre-la-porte-jamais-le-rapport.md) |
-| Assessment, verdicts, dégradation | [0006](0006-jamais-un-pass-non-prouve.md), [0014](0014-jamais-fabriquer-une-donnee-absente.md), [0015](0015-une-regle-qui-ne-peut-conclure-le-dit.md), [0017](0017-provenance-atteste-une-recherche.md), [0020](0020-lorigine-declaree-dun-inventaire-fait-foi.md) |
+| Assessment, verdicts, dégradation | [0006](0006-jamais-un-pass-non-prouve.md), [0014](0014-jamais-fabriquer-une-donnee-absente.md), [0015](0015-une-regle-qui-ne-peut-conclure-le-dit.md), [0017](0017-provenance-atteste-une-recherche.md), [0020](0020-lorigine-declaree-dun-inventaire-fait-foi.md), [0023](0023-un-statut-http-ne-classe-pas-un-refus.md) |
 | Tests, preuve, véracité | [0010](0010-dette-de-veracite-comptee.md) |
 | Bundle de preuve, persistance | [0018](0018-ce-quun-bundle-prouve-de-lui-meme.md) |
 | Langue, documentation | [0011](0011-bilinguisme-francais-normatif.md) |
