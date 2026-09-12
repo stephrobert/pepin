@@ -229,7 +229,7 @@ piece of evidence, the normative references, and the provenance of the run.
 | `pass` | 6 |
 | `fail` | 10 |
 | `not-applicable` | 2 |
-| `not-evaluated` | 10 |
+| `not-evaluated` | 11 |
 <!-- /pepin:gen assessment-counts -->
 
 Four measured statuses, and the two that the other formats cannot express are

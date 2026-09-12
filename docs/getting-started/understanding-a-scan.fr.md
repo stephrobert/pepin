@@ -388,7 +388,7 @@ marqueurs ; tout le reste est le document capturé.)*
 | `pass` | 6 |
 | `fail` | 10 |
 | `not-applicable` | 2 |
-| `not-evaluated` | 10 |
+| `not-evaluated` | 11 |
 <!-- /pepin:gen assessment-counts -->
 
 Un unique scan sans compte cloud produit les quatre. Le cinquième statut, `exempted`, relève

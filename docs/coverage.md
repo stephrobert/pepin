@@ -45,7 +45,7 @@ and the report says so on every scan, control by control, with the reason.
 | `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 1 · ∅ 1 · ✗ 3 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
-| `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 |
+| `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 5 · ◐ 0 · ∅ 0 · ✗ 10 |
 | `journalisation` | 2 | ✅ 1 · ◐ 0 · ∅ 1 · ✗ 0 | ✅ 1 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 0 · ◐ 0 · ∅ 0 · ✗ 2 |
 | `reseau` | 15 | ✅ 8 · ◐ 0 · ∅ 1 · ✗ 6 | ✅ 11 · ◐ 0 · ∅ 0 · ✗ 4 | ✅ 9 · ◐ 1 · ∅ 0 · ✗ 5 |
 | `stockage` | 7 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 | ✅ 6 · ◐ 0 · ∅ 0 · ✗ 1 | ✅ 4 · ◐ 0 · ∅ 1 · ✗ 2 |
@@ -71,7 +71,7 @@ and the report says so on every scan, control by control, with the reason.
 | `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✅ | ✅ |
 | `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_account_mfa_enforced` | high | CLD-IAM-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
-| `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
+| `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✅ |
 | `iam_apiaccessrule_defined` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_no_public_cidr` | high | CLD-IAM-4 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✗ | ✅ | ◐ | ✅ |
@@ -149,6 +149,7 @@ already shows them, and they add nothing.
 | `iam_accesskey_rotated` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
 | `iam_account_mfa_enforced` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
+| `iam_apiaccesspolicy_max_key_expiration` | scaleway | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_summary" |
 | `iam_no_root_access_key` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
 | `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
@@ -215,5 +216,5 @@ the other's scope. One source only: live collection through a kubeconfig.
 | outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
 | scaleway | terraform | 17 | 8 | 2 | 31 |
-| scaleway | live | 19 | 2 | 2 | 35 |
+| scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

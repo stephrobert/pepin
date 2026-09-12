@@ -17,8 +17,8 @@
 | Type de ressource lu | `api_access_policy` |
 | Attribut décisif | `max_access_key_expiration_seconds` |
 | État | actif |
-| Déclaré pour | `outscale` |
-| Preuves de remédiation | 0 / 1 |
+| Déclaré pour | `outscale`, `scaleway` |
+| Preuves de remédiation | 0 / 2 |
 
 ## Le risque
 
@@ -51,7 +51,7 @@ déclaré, ou type absent de cette source ».
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✅ |
-| scaleway | ✗ | ✗ |
+| scaleway | ✗ | ✅ |
 | kubernetes | sans objet | ✗ |
 
 Chaque case qui n'est pas ✅, **alors que le contrôle est déclaré pour ce fournisseur**,
@@ -60,13 +60,14 @@ porte son motif :
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
 | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
+| scaleway | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
-| `fail` | un écart a été détecté sur une ressource réelle | outscale / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / live |
+| `fail` | un écart a été détecté sur une ressource réelle | outscale / live · scaleway / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / live · scaleway / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
 | `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | aucun |
 
@@ -78,7 +79,7 @@ contient aucune ressource du type visé : « rien à voir » n'est pas « confor
 - Type de ressource normalisé lu par la règle : `api_access_policy`
 - Attribut dont la décision dépend : `max_access_key_expiration_seconds`
 - Sans cet attribut sur une ressource du type visé, le scan rend `not-evaluated` et non `pass` (`internal/assess`, table `requiredAttr`).
-- Ce que chaque source projette se lit dans le descripteur : [`providers/outscale.yaml`](../../providers/outscale.yaml)
+- Ce que chaque source projette se lit dans le descripteur : [`providers/outscale.yaml`](../../providers/outscale.yaml) · [`providers/scaleway.yaml`](../../providers/scaleway.yaml)
 - La règle qui émet ce code vit dans [`internal/commonrules/rules/`](../../internal/commonrules/rules) : elle est **commune** à tous les fournisseurs, seule la source change.
 
 ## Comment corriger
@@ -88,6 +89,7 @@ Configurer une expiration maximale des clés d'accès (ex. 90 jours).
 | Fournisseur | Montage déployable |
 |---|---|
 | outscale | _aucune preuve déposée à ce jour_ |
+| scaleway | _aucune preuve déposée à ce jour_ |
 
 Une preuve de remédiation est un module Terraform autonome, **conforme**, qui se déploie
 tel quel, ou une note ancrée sur la documentation officielle. Voir

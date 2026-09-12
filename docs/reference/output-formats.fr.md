@@ -230,7 +230,7 @@ typé, une preuve, les références normatives et la provenance de l'exécution.
 | `pass` | 6 |
 | `fail` | 10 |
 | `not-applicable` | 2 |
-| `not-evaluated` | 10 |
+| `not-evaluated` | 11 |
 <!-- /pepin:gen assessment-counts -->
 
 Quatre statuts mesurés, et les deux que les autres formats ne savent pas exprimer sont

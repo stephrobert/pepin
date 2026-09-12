@@ -23,6 +23,17 @@ belongs in `git log`.
 
 ### Added
 
+- **Scaleway: the organisation's API-key expiry policy is read** (issue #196).
+  `iam_apiaccesspolicy_max_key_expiration` was active for Outscale only. Scaleway has the
+  equivalent, at **organisation** level, and enforces it — the qualification tenant found
+  it by being refused: *"organization security settings require an expiration date for API
+  keys"*. The refusal was the measurement. `GET /iam/v1alpha1/organizations/{id}/security-settings`
+  carries `max_api_key_expiration_duration`, verified against the live API on 2026-09-11.
+  The control is now active for Scaleway and concludes `pass` on an organisation enforcing
+  365 days. This is a **preventive** control: listing keys says what is true today, this
+  setting says what the organisation will refuse tomorrow — the distinction SecNumCloud 9.5
+  and CIS 5.4 both draw. One rule, unchanged, on normalised data (ADR-0001).
+
 - **Outscale plans now judge load-balancer listeners** (issue #203).
   `loadbalancer_ssl_listeners` came back `not-evaluated` on the Terraform source while the
   plan wrote the listeners in clear — protocol and port. An internet-facing load balancer

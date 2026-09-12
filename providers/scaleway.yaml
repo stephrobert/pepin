@@ -79,6 +79,12 @@ permissions:
     grant: "IAMReadOnly (Organization scope)"
     etat: verifie
     source: "scaleway/docs-content — pages/iam/reference-content/permission-sets.mdx"
+  - unit: api_access_policy
+    grant: "IAMReadOnly (Organization scope)"
+    etat: verifie
+    source: "scaleway/docs-content — pages/iam/reference-content/permission-sets.md"
+    note: "Les réglages de sécurité sont au niveau de l'ORGANISATION : la portée du jeu de permissions doit l'être aussi, contrairement aux unités d'infrastructure qui se portent sur un projet."
+    note_en: "Security settings live at the ORGANISATION level, so the permission set's scope must be too — unlike the infrastructure units, which are project-scoped."
   - unit: security_group
     grant: "InstancesReadOnly (Project scope)"
     etat: verifie
@@ -151,6 +157,36 @@ collecte:
         user_type: type
       paging: { style: page, param: page, size_param: page_size, size: 100 }
   
+    # Réglages de sécurité de l'ORGANISATION → api_access_policy. La réponse est un
+    # OBJET, pas une liste : `items: .` désigne la racine, comme pour le
+    # `/ReadApiAccessPolicy` d'Outscale.
+    #
+    # `max_api_key_expiration_duration` est le pendant Scaleway du
+    # `MaxAccessKeyExpirationSeconds` d'Outscale : un réglage PRÉVENTIF, qui dit ce que
+    # l'organisation refusera demain, là où l'inventaire des clés ne dit que ce qui est
+    # vrai aujourd'hui. C'est la différence entre un contrôle détectif et un contrôle
+    # préventif, que SecNumCloud 9.5 et CIS 5.4 distinguent tous deux.
+    #
+    # Mesuré contre l'API réelle le 2026-09-11 :
+    #   GET /iam/v1alpha1/organizations/{org}/security-settings
+    #   → {"enforce_password_renewal":true, "grace_period_duration":"259200.000000000s",
+    #      "login_attempts_before_locked":5, "max_login_session_duration":"2592000.000000000s",
+    #      "max_api_key_expiration_duration":"31536000.000000000s"}
+    #
+    # La durée est une CHAÎNE suffixée ; le modèle normalisé porte un nombre de
+    # secondes, parce que c'est lui que la règle compare (ADR-0001 : une règle, une
+    # donnée normalisée).
+    - type: api_access_policy
+      path: /iam/v1alpha1/organizations/{org}/security-settings
+      items: .
+      id: id
+      const:
+        id: security-settings
+      map:
+        max_access_key_expiration_seconds: max_api_key_expiration_duration
+      transforms:
+        max_access_key_expiration_seconds: duration_seconds
+
     # Groupes de sécurité → security_group. AUCUN APPEL SUPPLÉMENTAIRE : c'est la
     # MÊME liste que le `for_each` ci-dessous parcourt déjà pour joindre les règles à
     # leur groupe. La réponse portait `inbound_default_policy` depuis toujours, et
@@ -531,8 +567,19 @@ contrat:
       etat: a_verifier
       source: équivalent restriction IP de l'API à vérifier (iam / account)
     api_access_policy:
-      etat: a_verifier
-      source: équivalent expiration max des clés à vérifier (iam)
+      etat: verifie
+      source: >
+        api/iam/v1alpha1 SecuritySettings
+        (GET /iam/v1alpha1/organizations/{organization_id}/security-settings).
+        MESURÉ contre l'API réelle le 2026-09-11 : la réponse porte
+        enforce_password_renewal, grace_period_duration, login_attempts_before_locked,
+        max_login_session_duration et max_api_key_expiration_duration.
+      mapping:
+        max_access_key_expiration_seconds: >
+          DÉRIVÉ de max_api_key_expiration_duration, une durée en CHAÎNE suffixée
+          (« 31536000.000000000s ») convertie en secondes par le transform
+          `duration_seconds`. Le pendant Scaleway du MaxAccessKeyExpirationSeconds
+          d'Outscale, au niveau de l'ORGANISATION.
   non_applicable:
   # CHF-2 : le chiffrement au repos des volumes block est CÔTÉ INVITÉ (LUKS/Cryptsetup),
   # responsabilité du client (modèle de responsabilité partagée) ; l'API block n'expose

@@ -1,28 +1,28 @@
 {
   "controls": 58,
-  "paths": 185,
-  "paths_proven": 33,
-  "obligations": 467,
-  "proven": 98,
+  "paths": 186,
+  "paths_proven": 34,
+  "obligations": 470,
+  "proven": 101,
   "verdicts": {
     "fail": {
-      "required": 141,
-      "proven": 25
+      "required": 142,
+      "proven": 26
     },
     "not-applicable": {
       "required": 24,
       "proven": 12
     },
     "not-evaluated": {
-      "required": 161,
-      "proven": 24
+      "required": 162,
+      "proven": 25
     },
     "pass": {
-      "required": 141,
-      "proven": 37
+      "required": 142,
+      "proven": 38
     }
   },
-  "live_paths": 103,
+  "live_paths": 104,
   "live_validated": 0,
   "counterwitnesses": 2,
   "tenants": 6,
@@ -940,7 +940,25 @@
             "pass",
             "not-evaluated"
           ]
+        },
+        {
+          "provider": "scaleway",
+          "source": "live",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/max-key-expiration-scaleway-live.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/iam_apiaccess_test.rego"

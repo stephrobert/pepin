@@ -173,6 +173,7 @@ func TestTheRecordedCollectionStillHappens(t *testing.T) {
 			var mu sync.Mutex
 			got := map[string]bool{}
 			var unknown []string
+			base := basePath(desc.Collecte.BaseURL)
 
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_, _ = io.Copy(io.Discard, io.LimitReader(r.Body, 1<<20))
@@ -180,7 +181,13 @@ func TestTheRecordedCollectionStillHappens(t *testing.T) {
 				mu.Lock()
 				defer mu.Unlock()
 				e, known := replay[k]
-				if !known {
+				if !known && !declaredUnobservable(m, r.URL.Path, base) {
+					// Un endpoint que le registre `non_observes` DÉCLARE inobservable
+					// n'est pas une surprise : c'est un trou nommé, avec sa raison. Sans
+					// cette exception, les deux portes se contredisaient — l'une exigeait
+					// le registre, l'autre le refusait —, et le mécanisme devenait
+					// inutilisable pour le cas même qu'il vise : un endpoint NEUF que
+					// l'émulateur ne sert pas encore.
 					unknown = append(unknown, k)
 					w.WriteHeader(http.StatusNotFound)
 					_, _ = w.Write([]byte(`{"error":"cet appel n'est pas dans la transcription"}`))
@@ -342,4 +349,26 @@ func dedupe(in []string) []string {
 		out = append(out, s)
 	}
 	return out
+}
+
+// declaredUnobservable dit si le registre `non_observes` de cette transcription déclare
+// ce chemin, avec sa raison.
+//
+// Les deux portes d'endpoints doivent lire le MÊME registre, sans quoi elles se
+// contredisent : `TestEveryDeclaredEndpointIsObservedOrDeclaredUnobserved` exige qu'un
+// endpoint jamais observé y figure, et `TestTheRecordedCollectionStillHappens` le
+// signalait alors comme un appel inconnu. Un mécanisme qu'une porte impose et qu'une
+// autre refuse n'est pas un mécanisme.
+//
+// Ce que cette exception NE fait pas : rendre un endpoint muet. Le registre exige une
+// raison écrite, et l'autre porte vérifie qu'une entrée devenue observable en sort —
+// une dette payée qui reste écrite masque la suivante.
+func declaredUnobservable(m transcriptManifest, path, base string) bool {
+	rel := strings.TrimPrefix(path, base)
+	for _, u := range m.NonObserves {
+		if matchesRecorded(u.Endpoint, map[string]bool{rel: true}) {
+			return true
+		}
+	}
+	return false
 }

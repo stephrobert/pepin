@@ -386,7 +386,7 @@ everything else is the captured document.)*
 | `pass` | 6 |
 | `fail` | 10 |
 | `not-applicable` | 2 |
-| `not-evaluated` | 10 |
+| `not-evaluated` | 11 |
 <!-- /pepin:gen assessment-counts -->
 
 A single account-free scan produces all four. The fifth status, `exempted`, is a decision

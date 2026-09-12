@@ -23,7 +23,7 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | `high` | 33 |
 | `medium` | 13 |
 | `low` | 2 |
-| Preuves de remédiation déployables | 26 / 97 |
+| Preuves de remédiation déployables | 26 / 98 |
 
 ## Comment lire ce catalogue
 
@@ -45,7 +45,7 @@ vue d'ensemble par fournisseur et par source, voir la [matrice de couverture](..
 | [`iam_accesskey_expiration_set`](iam_accesskey_expiration_set.fr.md) Clé d'accès sans expiration ni rotation | critical | `CLD-IAM-2` | `outscale`, `scaleway` | 0 / 2 |
 | [`iam_accesskey_rotated`](iam_accesskey_rotated.fr.md) Clé d'accès jamais renouvelée | high | `CLD-IAM-2` | `outscale` | 0 / 1 |
 | [`iam_account_mfa_enforced`](iam_account_mfa_enforced.fr.md) MFA non imposée au niveau du compte | high | `CLD-IAM-3` | `outscale` | 0 / 1 |
-| [`iam_apiaccesspolicy_max_key_expiration`](iam_apiaccesspolicy_max_key_expiration.fr.md) Politique d'accès API sans expiration maximale des clés | medium | `CLD-IAM-2` | `outscale` | 0 / 1 |
+| [`iam_apiaccesspolicy_max_key_expiration`](iam_apiaccesspolicy_max_key_expiration.fr.md) Politique d'accès API sans expiration maximale des clés | medium | `CLD-IAM-2` | `outscale`, `scaleway` | 0 / 2 |
 | [`iam_apiaccessrule_defined`](iam_apiaccessrule_defined.fr.md) Aucune règle d'accès API définie | high | `CLD-IAM-4` | `outscale` | 0 / 1 |
 | [`iam_apiaccessrule_no_public_cidr`](iam_apiaccessrule_no_public_cidr.fr.md) Règle d'accès API ouverte à un CIDR public | high | `CLD-IAM-4` | `outscale` | 0 / 1 |
 | [`iam_no_root_access_key`](iam_no_root_access_key.fr.md) Clé d'accès rattachée au compte root | high | `CLD-IAM-1` | `outscale`, `scaleway` | 0 / 2 |

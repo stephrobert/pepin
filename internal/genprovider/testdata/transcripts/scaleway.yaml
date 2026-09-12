@@ -37,4 +37,14 @@ vars:
 # exercés, et pourquoi. La porte échoue dans les deux sens : un endpoint qui
 # disparaît d'ici sans être observé est une régression, un endpoint qui y
 # apparaît sans raison écrite est une couverture qu'on s'accorde.
-non_observes: []
+non_observes:
+  - endpoint: /iam/v1alpha1/organizations/{org}/security-settings
+    raison: >-
+      Réglages de sécurité de l'ORGANISATION, que l'émulateur local ne sert pas. Le
+      contrat a donc été vérifié contre l'API RÉELLE le 2026-09-11, et la réponse
+      mesurée est consignée dans providers/scaleway.yaml : enforce_password_renewal,
+      grace_period_duration, login_attempts_before_locked, max_login_session_duration,
+      max_api_key_expiration_duration. Ce qui reste non mesuré ici, c'est le CÂBLAGE —
+      que le collecteur émette bien cet appel —, et il l'est par les trois scénarios de
+      véracité du contrôle, qui servent des réponses canned au collecteur réel
+      (internal/veracity/testdata/scenarios/max-key-expiration-scaleway-live.yaml).

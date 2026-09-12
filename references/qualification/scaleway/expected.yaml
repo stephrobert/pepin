@@ -85,6 +85,20 @@ controls:
       reason: "aucune clé du propriétaire dans le tenant ; les écarts hors tenant ne sont pas gardés"
     terraform: not-evaluated
 
+  iam_apiaccesspolicy_max_key_expiration:
+    live:
+      status: evaluated
+      perimeter: organisation
+      reason: >
+        Le réglage est au niveau de l'ORGANISATION, pas du tenant : aucune ressource
+        Terraform ne le pose, et le durcir ou l'affaiblir pour un run changerait la
+        politique de sécurité d'un compte réel. Le contrôle doit CONCLURE — et sur ce
+        compte il rend `pass`, l'organisation imposant 365 jours (mesuré). Le cas
+        `fail` est prouvé par le scénario de véracité, pas par le tenant, parce qu'il
+        exigerait de retirer cette protection.
+    # Aucune ressource Terraform ne porte ce réglage : il n'est pas dans un plan.
+    terraform: not-evaluated
+
   iam_user_mfa_enabled:
     live:
       status: evaluated
