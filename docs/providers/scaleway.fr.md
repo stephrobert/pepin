@@ -162,7 +162,7 @@ pepin scan scaleway --terraform plan.json
 <!-- pepin:gen provider-scaleway-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 8 | 2 | 31 |
+| terraform | 18 | 7 | 2 | 31 |
 | live | 20 | 2 | 2 | 34 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
@@ -190,6 +190,7 @@ fournisseur.
 | `compute_instance_no_secrets_in_user_data` | terraform | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | terraform | cette source ne produit aucune ressource de type « managed_database » |
+| `database_encryption_at_rest_enabled` | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `iam_apiaccesspolicy_max_key_expiration` | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_no_root_access_key` | live | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |

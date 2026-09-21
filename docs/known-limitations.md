@@ -65,7 +65,6 @@ but they will never confirm compliance.
 <!-- pepin:gen never-pass -->
 | Control | Severity | Reason |
 |---|---|---|
-| `database_encryption_at_rest_enabled` | high | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `governance_resource_required_tags` | medium | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 <!-- /pepin:gen never-pass -->
 
@@ -91,6 +90,7 @@ actually decide them. The reason given is the one that applies to the source tha
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_accesskey_rotated` | outscale | live | this source produces no resource of type "access_key" |
@@ -153,7 +153,7 @@ Per provider and per source, over all controls in the reference:
 | exoscale | live | 24 | 1 | 6 | 27 |
 | outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | terraform | 18 | 7 | 2 | 31 |
 | scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
@@ -210,7 +210,7 @@ What is not yet proven is **counted**, not hidden:
 |---|---:|
 | Control x provider x source paths on which Pépin concludes | 186 |
 | Paths whose every reachable verdict is proven end to end | 34 |
-| Verdicts to prove in total | 470 |
+| Verdicts to prove in total | 472 |
 | Verdicts left to prove | 369 |
 <!-- /pepin:gen veracity-debt -->
 

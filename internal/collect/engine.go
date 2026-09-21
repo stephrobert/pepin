@@ -824,7 +824,7 @@ func lookup(v any, path string) any {
 // knownBareTransforms : noms de transforms de valeur sans préfixe (liste fermée).
 var knownBareTransforms = map[string]bool{
 	"lower": true, "upper": true, "first": true, "range_from": true, "range_to": true,
-	"iampolicy": true, "list": true, "kv": true, "to_int": true, "nonempty": true,
+	"iampolicy": true, "list": true, "kv": true, "to_int": true, "to_bool": true, "nonempty": true,
 	"snake_keys": true, "region_of_zone": true, "duration_seconds": true,
 }
 
@@ -999,6 +999,27 @@ func applyTransform(v any, spec any) any {
 		case "to_int":
 			if n, err := strconv.ParseInt(toStr(v), 10, 64); err == nil {
 				return n
+			}
+			return v
+		case "to_bool":
+			// Un booléen reste un booléen, quelle que soit la SOURCE.
+			//
+			// `default:false` rend une chaîne, parce que le défaut est écrit en YAML.
+			// Sans conversion, le même attribut sortirait `false` depuis la collecte
+			// live et `"false"` depuis un plan Terraform — deux types pour un attribut
+			// que l'inventaire déclare gelé (ADR-0003), et un consommateur qui compare
+			// des types casse sur la seconde forme sans que rien ne l'ait annoncé.
+			//
+			// Une valeur qui n'est NI un booléen ni « true »/« false » est rendue telle
+			// quelle : la convertir de force reviendrait à décider à la place de la
+			// source, ce qui est exactement ce qu'ADR-0014 refuse.
+			switch x := v.(type) {
+			case bool:
+				return x
+			case string:
+				if b, err := strconv.ParseBool(x); err == nil {
+					return b
+				}
 			}
 			return v
 		case "snake_keys":

@@ -51,7 +51,7 @@ source".
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
 | outscale | ✗ | ✗ |
-| scaleway | ◐ | ✗ |
+| scaleway | ✅ | ✗ |
 | kubernetes | n/a | ✗ |
 
 Every cell that is not ✅ **while the control is declared for that provider** carries its
@@ -59,7 +59,6 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
-| scaleway | terraform | ◐ `partial` | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 
 ## What Pépin can conclude
@@ -67,9 +66,9 @@ reason:
 | Status | What the status asserts | Reachable from |
 |---|---|---|
 | `fail` | a deviation was detected on a real resource | scaleway / terraform |
-| `pass` | the deciding data was collected, and it is compliant | — |
+| `pass` | the deciding data was collected, and it is compliant | scaleway / terraform |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
-| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | scaleway / terraform |
+| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
 resource of the targeted type: "nothing to look at" is not "compliant".
@@ -104,10 +103,6 @@ is, or a note anchored on the official documentation. See
 In the `assessment` output, look for `"control": "database_encryption_at_rest_enabled"`: its `status` must be `pass`.
 If it stays `not-evaluated`, the deciding data was not collected and the fix is **not**
 demonstrated: the reasons table above says why.
-
-**One of the two sources cannot lift the `pass` lock** for this control: the provider
-quoted does produce the targeted type there, but the scan will return `not-evaluated`.
-The reasons table says which one, and why.
 
 ## See also
 
