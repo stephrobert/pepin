@@ -87,9 +87,28 @@ pepin scan scaleway --live --s3-endpoint http://127.0.0.1:4601
 ```
 
 L'émulateur ne sert aucune surface de stockage objet : `ListBuckets` revient donc en `404`.
-C'est tout de même une mesure, et une mesure utile. C'est la première fois que la branche S3
-de `collect.Classify`, celle qui lit l'erreur du SDK AWS par une interface anonyme plutôt que
-par un type, est éprouvée contre une vraie réponse HTTP plutôt que contre une erreur construite.
+C'est tout de même une mesure, mais elle ne suffisait pas — et c'est ce qu'elle laissait passer
+qui compte.
+
+Un `404` ne porte aucun CODE d'erreur. La branche S3 de `collect.Classify`, celle qui lit
+l'erreur du SDK AWS par une interface anonyme plutôt que par un type, restait donc à moitié
+inéprouvée : on savait que le statut était lu, jamais que le code l'était. Il ne l'était pas.
+Une erreur du SDK expose toujours son statut, si bien que la branche qui le lisait rendait
+toujours une classe, et celle qui lisait le code n'était **jamais atteinte** (issue #96) :
+
+| Réponse S3 réelle | Classait | Devait classer |
+|---|---|---|
+| `403` · `InvalidAccessKeyId` | `permission_denied` | `unauthenticated` |
+| `403` · `SignatureDoesNotMatch` | `permission_denied` | `unauthenticated` |
+| `503` · `SlowDown` | `unavailable` | `rate_limited` |
+
+Le code est désormais lu avant le statut — la règle qu'ADR-0023 pose pour les corps HTTP, un
+contrat publié l'emportant sur une convention — et `internal/objectstorage/classify_s3_test.go`
+fait passer le XML d'erreur de la spécification S3 par le vrai client du SDK, classe par classe.
+
+Ce qu'aucune de ces mesures n'établit reste écrit : qu'un OOS ou un SOS ÉMETTE tel code dans tel
+cas est dû à un scan réel. Le corps mesuré est celui de la spécification, pas celui d'un
+fournisseur donné.
 
 ## Lire un enregistrement
 

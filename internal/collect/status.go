@@ -102,12 +102,26 @@ func Classify(err error) (model.CollectionOutcome, string) {
 	// d'erreur sans qu'on importe leurs paquets. Leurs MÉTHODES, elles, sont un
 	// contrat suffisant : on les reconnaît par interface anonyme, donc sans
 	// dépendance nouvelle et sans correspondance de chaînes.
-	var withStatus interface{ HTTPStatusCode() int }
-	if errors.As(err, &withStatus) {
-		if o := outcomeForStatus(withStatus.HTTPStatusCode()); o != "" {
-			return o, detailf("HTTP %d · %s", withStatus.HTTPStatusCode(), err.Error())
-		}
-	}
+	//
+	// LE CODE AVANT LE STATUT, et l'ordre est tout. C'est la règle qu'ADR-0023
+	// pose pour les corps HTTP, appliquée ici au même titre : le code d'erreur est
+	// un contrat que le fournisseur publie, le statut n'est qu'une convention qu'il
+	// applique à sa façon.
+	//
+	// L'ordre inverse n'était pas une préférence, c'était un défaut, et il était
+	// invisible : une erreur du SDK expose TOUJOURS son statut, donc la première
+	// branche rendait toujours une classe et la seconde n'était JAMAIS atteinte.
+	// Mesuré contre de vraies erreurs S3 (issue #96) :
+	//
+	//	403 · InvalidAccessKeyId     rendait permission_denied
+	//	403 · SignatureDoesNotMatch  rendait permission_denied
+	//	503 · SlowDown               rendait unavailable
+	//
+	// Les deux premiers envoyaient élargir une politique pour une clé que le
+	// fournisseur ne reconnaît pas ; le troisième faisait attendre une panne
+	// pendant que l'API plafonnait simplement le débit. Aucun test ne le disait,
+	// parce qu'aucun ne faisait passer une vraie erreur du SDK — la réserve que
+	// `docs/guides/tracing-api-calls.md` portait depuis la vague 4.
 	var withCode interface{ ErrorCode() string }
 	if errors.As(err, &withCode) {
 		switch withCode.ErrorCode() {
@@ -120,6 +134,14 @@ func Classify(err error) (model.CollectionOutcome, string) {
 			return model.OutcomePermissionDenied, detailf("%s", err.Error())
 		case "SlowDown", "RequestLimitExceeded", "TooManyRequests", "Throttling":
 			return model.OutcomeRateLimited, detailf("%s", err.Error())
+		}
+	}
+	// Le statut à défaut : un code que la table ne connaît pas ne doit pas faire
+	// perdre ce que le statut, lui, sait dire.
+	var withStatus interface{ HTTPStatusCode() int }
+	if errors.As(err, &withStatus) {
+		if o := outcomeForStatus(withStatus.HTTPStatusCode()); o != "" {
+			return o, detailf("HTTP %d · %s", withStatus.HTTPStatusCode(), err.Error())
 		}
 	}
 

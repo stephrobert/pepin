@@ -95,6 +95,42 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un scan de stockage objet plafonné ne se lit plus comme une panne, ni une clé inconnue comme
+  un droit manquant** (issue #96). `Classify` reconnaît les erreurs des SDK tiers par deux
+  interfaces anonymes, `HTTPStatusCode()` et `ErrorCode()`. Il lisait le statut en premier — or
+  une erreur de SDK expose toujours son statut, si bien que la première branche rendait toujours
+  une classe et que **la seconde n'était jamais atteinte**. Le code d'erreur était du code mort.
+
+  Mesuré en faisant passer le XML d'erreur de la spécification S3 par le vrai client du SDK AWS,
+  ce qu'aucun test n'avait jamais fait — l'émulateur ne sert aucune surface de stockage objet,
+  si bien que la seule réponse que cette branche avait vue était un `404` ne portant aucun code :
+
+  | Réponse S3 réelle | Classait | Devait classer |
+  |---|---|---|
+  | `403` · `InvalidAccessKeyId` | `permission_denied` | `unauthenticated` |
+  | `403` · `SignatureDoesNotMatch` | `permission_denied` | `unauthenticated` |
+  | `503` · `SlowDown` | `unavailable` | `rate_limited` |
+
+  Le troisième est le plus coûteux en exploitation : un scan que l'API plafonnait simplement
+  annonçait un service indisponible, et l'opérateur attendait une panne qui n'existait pas. Les
+  deux premiers l'envoyaient élargir une politique pour une clé que le fournisseur ne reconnaît
+  pas — et ils le faisaient depuis la release précédente, puisque le correctif qui avait déplacé
+  ces deux codes vers `unauthenticated` avait atterri dans une branche que rien n'atteignait.
+
+  Le code est désormais lu avant le statut : la règle qu'ADR-0023 pose pour les corps HTTP,
+  appliquée au chemin SDK pour la même raison. Un contrat publié l'emporte sur une convention que
+  chaque fournisseur applique à sa façon. Un code que la table ne connaît pas retombe toujours
+  sur le statut, donc rien de ce qui marchait ne cesse de marcher.
+
+  `internal/objectstorage/classify_s3_test.go` atteint maintenant chaque classe par une vraie
+  erreur S3, de bout en bout — décodage du SDK, reconnaissance par interface, classement. Ce
+  qu'il n'établit pas est écrit : qu'un fournisseur souverain donné émette tel code dans tel cas
+  reste dû à un scan réel.
+
+  **Aucun verdict ne bouge sur un tenant inchangé** — chacune de ces classes dégradait déjà un
+  contrôle en `not-evaluated`. Ce qui change, c'est l'erreur que l'opérateur est envoyé corriger.
+
+
 - **Scaleway : un identifiant inconnu n'est plus présenté comme un droit manquant** (issue
   #250). Scaleway répond `401` quand il ne reconnaît pas une clé, et un `401` seul se rangeait
   `permission_denied` — « privilège insuffisant du compte de scan ». Le relevé de canari

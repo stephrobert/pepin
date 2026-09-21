@@ -382,8 +382,12 @@ One consequence is structural rather than incidental. The emulator **accepts eve
 — measured: no auth header returns `200`, a junk token returns `200`, and it exposes no fault
 injection. It can therefore never produce a `403`, and no recording against it can measure how
 a real permission refusal is classified. That classification is exercised by
-`internal/collect/status_test.go` against a socket that really refuses; what stays unknown is
-whether a given provider refuses with that status at all.
+`internal/collect/status_test.go` against a socket that really refuses and — since issue #96 —
+by `internal/objectstorage/classify_s3_test.go`, which drives the S3 specification's error XML
+through the real AWS SDK client, class by class. That second measurement found what the emulator
+could not show: its `404` carries no error code, so half the S3 branch had never been reached and
+three classes were wrong. What stays unknown is unchanged: whether a given provider refuses with
+that status at all, and with that code.
 
 The same holds for every value in a recording: they are minted by the emulator at startup, not
 returned by a cloud. They are safe to commit for exactly that reason, and useless as evidence

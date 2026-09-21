@@ -84,9 +84,27 @@ pepin scan scaleway --live --s3-endpoint http://127.0.0.1:4601
 ```
 
 The emulator serves no object-storage surface, so `ListBuckets` comes back `404`. That is still
-a measurement, and a useful one: it is the first time the S3 branch of `collect.Classify` — the
-one that reads the AWS SDK's error through an anonymous interface rather than a typed error —
-has been exercised against a real HTTP response rather than a constructed one.
+a measurement, but it was not enough — and what it let through is the point.
+
+A `404` carries no error CODE. The S3 branch of `collect.Classify` — the one that reads the AWS
+SDK's error through an anonymous interface rather than a typed error — was therefore only half
+exercised: the status was known to be read, the code never was. It was not. An SDK error always
+exposes its status, so the branch reading it always returned a class and the branch reading the
+code was **never reached** (issue #96):
+
+| Real S3 response | Classified as | Should have been |
+|---|---|---|
+| `403` · `InvalidAccessKeyId` | `permission_denied` | `unauthenticated` |
+| `403` · `SignatureDoesNotMatch` | `permission_denied` | `unauthenticated` |
+| `503` · `SlowDown` | `unavailable` | `rate_limited` |
+
+The code is now read before the status — the rule ADR-0023 sets for HTTP bodies, a published
+contract outranking a convention — and `internal/objectstorage/classify_s3_test.go` drives the
+S3 specification's error XML through the real SDK client, class by class.
+
+What none of these measurements establishes is still written down: that an OOS or an SOS
+actually EMITS a given code in a given case is owed to a real scan. The measured body is the
+specification's, not a given provider's.
 
 ## Reading a recording
 
