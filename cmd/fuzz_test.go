@@ -57,6 +57,24 @@ func FuzzInventoryWalk(f *testing.F) {
 	f.Add([]byte(`{"resources":[{"type":"vm","attributes":{"sg":null}}]}`))
 	// Et le contre-exemple : la clé manque à une ressource du même type.
 	f.Add([]byte(`{"resources":[{"type":"vm","attributes":{"sg":[]}},{"type":"vm","attributes":{}}]}`))
+	// LE MÊME CAS, DANS L'AUTRE ORDRE — et l'ordre est tout.
+	//
+	// Le verrou replie les ressources d'un type par intersection. La façon de le
+	// casser est d'écraser l'accumulateur à chaque tour, ce qui fait décider la
+	// DERNIÈRE ressource pour toutes. La graine ci-dessus ne voit pas ce défaut :
+	// sa dernière ressource est justement la muette, si bien que « le dernier
+	// gagne » rend un résultat PLUS restrictif que l'intersection — faux, mais
+	// jamais du côté qui déclenche l'assertion.
+	//
+	// Il faut donc que la muette PRÉCÈDE la porteuse : l'intersection dit « non
+	// collecté », le défaut dit « collecté », et le verrou ouvrirait la porte du
+	// `pass` à une ressource jamais observée. C'est l'issue #227 dans le sens qui
+	// coûte cher. Mesuré : sans cette graine, la mutation
+	// `one-resource-cannot-vouch-for-its-neighbour` traverse le test au vert.
+	f.Add([]byte(`{"resources":[{"type":"vm","attributes":{}},{"type":"vm","attributes":{"sg":[]}}]}`))
+	// Trois ressources, la muette au MILIEU : ni la première ni la dernière ne
+	// suffisent à trancher, donc seule une vraie intersection conclut.
+	f.Add([]byte(`{"resources":[{"type":"vm","attributes":{"sg":["a"]}},{"type":"vm","attributes":{}},{"type":"vm","attributes":{"sg":[]}}]}`))
 	f.Add([]byte(`[]`))
 	f.Add([]byte(`null`))
 	f.Add([]byte(`"chaine"`))
