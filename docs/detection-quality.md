@@ -16,7 +16,7 @@ with no measurement behind it is a false green moved into a dashboard, and it is
 worse there than anywhere else: nobody re-reads a dashboard.
 
 The figures are therefore ugly, and that is the point. "58 controls" says nothing
-about the quality of a detection; "101 verdicts proven out of 470" says where the
+about the quality of a detection; "103 verdicts proven out of 472" says where the
 product stands, and shrinks the right way with every scenario written.
 
 ## The figures
@@ -26,8 +26,8 @@ product stands, and shrinks the right way with every scenario written.
 | Controls in the reference | 58 |
 | Control x provider x source paths on which Pépin concludes | 186 |
 | Paths whose EVERY reachable verdict is proven end to end | 34 |
-| Verdicts to prove in total | 470 |
-| Verdicts proven | 101 |
+| Verdicts to prove in total | 472 |
+| Verdicts proven | 103 |
 
 ## Veracity coverage, by verdict
 
@@ -37,11 +37,11 @@ inventing a non-applicability.
 
 | Verdict | What it stages | To prove | Proven | % |
 |---|---|---:|---:|---:|
-| `fail` | a vulnerable configuration is detected | 142 | 26 | 18 |
-| `pass` | a genuinely correct configuration is confirmed | 142 | 38 | 26 |
+| `fail` | a vulnerable configuration is detected | 143 | 27 | 18 |
+| `pass` | a genuinely correct configuration is confirmed | 143 | 39 | 27 |
 | `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 162 | 25 | 15 |
 | `not-applicable` | the provider's contract declares the mechanism non-existent | 24 | 12 | 50 |
-| **Total** | | **470** | **101** | **21** |
+| **Total** | | **472** | **103** | **21** |
 
 ## Validated live
 
@@ -84,8 +84,8 @@ in `internal/veracity/testdata/counterexamples-debt.txt`.
 | Figure | Count |
 |---|---:|
 | Active high/critical controls | 43 |
-| Of which a detection path is proven end to end | 21 |
-| Of which a legitimate counterexample is proven | 19 |
+| Of which a detection path is proven end to end | 22 |
+| Of which a legitimate counterexample is proven | 20 |
 | False positives measured on the counter-witnesses | 0 |
 
 There is no "false negatives" row, and its absence is the most honest figure on
