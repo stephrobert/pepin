@@ -10,6 +10,18 @@ name: campaigns
 # D'où ce fichier, hebdomadaire et déclenchable à la main. Ce qu'il trouve
 # devient une graine versionnée ou une issue — jamais un échec qu'on referme
 # en relançant.
+#
+# Le rejeu des specs de FALSIFICATION vivait ici, et c'était un classement par
+# famille d'outillage plutôt que par nature. Il applique un jeu FIXE de mutations
+# et rend le même verdict sur la même entrée : il répond « ce commit tient-il »,
+# donc c'est une porte. Il est passé dans `ci.yml`, où il tourne sur chaque pull
+# request pour 3 min 27 s mesurées — en parallèle d'un `Build + Test` de 8 min,
+# donc sans rien ajouter à l'attente. Le classement avait laissé une garde tenir
+# treize jours sans mordre.
+#
+# Ce qui reste ici est ce qui CHERCHE vraiment, et les deux raisons de l'en-tête
+# lui restent entières : vingt minutes de fuzzing délibéré, et la possibilité de
+# rougir sur une trouvaille sans aucun rapport avec la pull request en cours.
 on:
   schedule:
     # Lundi matin : ce qui est trouvé a la semaine pour être traité.
@@ -90,28 +102,3 @@ jobs:
             internal/tfparse/testdata/fuzz/
             cmd/testdata/fuzz/
           if-no-files-found: ignore
-
-  # Rejeu de TOUTES les specs de falsification. Chaque spec casse une garde et
-  # exige que le test qui la nomme rougisse : c'est ce qui distingue un test qui
-  # mesure une propriété d'un test qu'on n'a jamais vu échouer.
-  falsify:
-    name: Les gardes rougissent-elles encore quand on les casse
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      # Le harnais se prouve sur ses propres erreurs historiques AVANT de juger
-      # quoi que ce soit. Un harnais cassé rendrait un vert qui ne veut rien dire.
-      - name: Le harnais se prouve lui-même
-        run: python3 tools/falsify/falsify.py --selftest
-
-      - name: Rejouer toutes les specs
-        run: python3 tools/falsify/falsify.py --all tools/falsify/specs

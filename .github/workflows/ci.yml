@@ -157,3 +157,49 @@ jobs:
         with:
           version: v2.12.2
           args: --timeout=5m
+
+  # Le rejeu des specs de falsification. Il est ICI, parmi les portes, et non
+  # dans `campaigns.yml`, parce que le critère est celui que campaigns.yml écrit
+  # lui-même : « une porte répond "ce commit tient-il", une campagne répond "que
+  # trouve-t-on si l'on cherche assez longtemps" ». Le rejeu ne cherche rien — il
+  # applique un jeu FIXE de mutations enregistrées et exige que chaque garde
+  # nommée rougisse. Même entrée, même verdict : c'est une porte, et elle était
+  # classée parmi les campagnes.
+  #
+  # Ce que le classement a coûté, mesuré : la garde du verrou de capacité a tenu
+  # TREIZE JOURS sans mordre, parce que seul un rendez-vous hebdomadaire la
+  # regardait. Un test qu'on n'a jamais vu échouer ne mesure rien, et c'est
+  # précisément ce que ce rejeu est là pour empêcher.
+  #
+  # Le coût est nul, et c'est ce qui rend le déplacement évident : 3 min 27 s
+  # mesurées pour les trois specs, en parallèle d'un `Build + Test` de 8 min 26 s.
+  # La porte finit cinq minutes avant le chemin critique. Le fuzzing, lui, reste
+  # hebdomadaire : vingt minutes de recherche délibérée, et une campagne qui
+  # CHERCHE peut rougir sur une trouvaille sans rapport avec la pull request —
+  # les deux raisons que campaigns.yml donne, et qui restent vraies pour lui.
+  falsify:
+    name: Les gardes rougissent-elles encore quand on les casse
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Le harnais se prouve sur ses propres erreurs historiques AVANT de juger
+      # quoi que ce soit. Un harnais cassé rendrait un vert qui ne veut rien dire.
+      - name: Le harnais se prouve lui-même
+        run: python3 tools/falsify/falsify.py --selftest
+
+      - name: Rejouer toutes les specs
+        run: python3 tools/falsify/falsify.py --all tools/falsify/specs
