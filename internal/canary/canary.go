@@ -54,6 +54,17 @@ import (
 // Dir est le dossier des relevés, relatif à la racine du dépôt.
 const Dir = "references/canary"
 
+// SyntheticTenantID est l'identifiant d'organisation et de projet que canary.sh
+// substitue aux variables de chemin. Il est entièrement à zéro : il ne désigne
+// aucun tenant, chez aucun fournisseur.
+//
+// Il doit rester de FORME valide, et c'est la raison d'être de cette constante.
+// Un UUID malformé ferait répondre « argument invalide » là où le canari cherche
+// à mesurer un REFUS d'authentification : le relevé changerait de sujet sans que
+// personne le remarque. La garde qui interdit les identifiants dans un relevé
+// connaît donc cette valeur, et elle seule — tout autre UUID reste refusé.
+const SyntheticTenantID = "00000000-0000-4000-8000-000000000000"
+
 // MaxAge est la fenêtre de fraîcheur qu'exige la qualification de release.
 //
 // Quatre-vingt-dix jours : assez long pour qu'un mainteneur ne relance pas le

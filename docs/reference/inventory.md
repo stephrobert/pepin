@@ -86,6 +86,24 @@ path.
 | Key exists, invalid signature | `401` | `AccessDenied` · `1` | `unauthenticated` |
 | Valid key, missing right | `403` | `AccessDenied` · `4` | `permission_denied` |
 
+**Scaleway** is classified by the `type` its official SDK defines — `scw/errors.go` demultiplexes
+that field into a Go error type, so it is a compiled table, not prose:
+
+| Situation of the scanning account | HTTP | `type` | Class |
+|---|---|---|---|
+| Key unknown, malformed or expired | `401` | `denied_authentication` | `unauthenticated` |
+| Valid key, missing right | `403` | `permissions_denied` | `permission_denied` |
+
+The first case is measured (2026-09-21, `GET /iam/v1alpha1/users`, synthetic key); the second is
+documented by the SDK. A bare `401` used to be filed `permission_denied` — "insufficient
+privilege" on an identity the API does not know.
+
+**Exoscale is not classified by its body, and that is a decision.** Measured on 2026-09-21, it
+answers `403` with `{"message":"Invalid key or request signature"}`: no structured field, no type,
+no code. The only discriminator would be the message TEXT, which ADR-0023 refuses — a string match
+breaks the first time the wording changes. Its refusal stays classified by its status, which is
+broad and true rather than narrow and brittle.
+
 The first case is the only one a synthetic credential can produce, which is why it was long
 filed under `unavailable`: the `400` status does not say this is about authentication — the
 **error code** does ([official table](https://docs.outscale.com/api-errors.html), `4120` =

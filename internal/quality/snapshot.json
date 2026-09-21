@@ -45,9 +45,9 @@
     },
     {
       "provider": "scaleway",
-      "recorded": "2026-08-21",
+      "recorded": "2026-09-21",
       "authenticated": false,
-      "answered": 5,
+      "answered": 7,
       "moved": 0,
       "unreachable": 0
     }

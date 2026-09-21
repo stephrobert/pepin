@@ -68,7 +68,7 @@ Un endpoint qui répond existe et se résout ; un `moved` (404) dit qu'il a boug
 |---|---|---:|---:|---:|
 | `exoscale` | 2026-08-21 | 9 | 0 | 0 |
 | `outscale` | 2026-09-12 | 18 | 0 | 0 |
-| `scaleway` | 2026-08-21 | 5 | 0 | 0 |
+| `scaleway` | 2026-09-21 | 7 | 0 | 0 |
 
 ## Précision des règles high/critical
 

@@ -84,10 +84,10 @@ func TestEveryCanaryRecordIsSubstantive(t *testing.T) {
 // exporte. Aucun ne doit atteindre un relevé — le canari n'en produit pas, et
 // c'est ce test qui permet de l'AFFIRMER plutôt que de l'espérer.
 var credentialShaped = []*regexp.Regexp{
-	regexp.MustCompile(`SCW[A-Z0-9]{17}`),                     // clé d'accès Scaleway
-	regexp.MustCompile(`EXO[A-Za-z0-9]{20}`),                  // clé d'accès Exoscale
-	regexp.MustCompile(`\bCANARY[A-Z]{5,}`),                   // les jetons synthétiques du script
-	regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}`), // UUID d'organisation/projet
+	regexp.MustCompile(`SCW[A-Z0-9]{17}`),                       // clé d'accès Scaleway
+	regexp.MustCompile(`EXO[A-Za-z0-9]{20}`),                    // clé d'accès Exoscale
+	regexp.MustCompile(`\bCANARY[A-Z]{5,}`),                     // les jetons synthétiques du script
+	regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}\b`), // UUID d'organisation/projet
 	regexp.MustCompile(`(?i)\b(authorization|x-auth-token)\b`),
 }
 
@@ -102,7 +102,17 @@ func TestNoCanaryRecordCarriesACredentialOrATenant(t *testing.T) {
 				t.Fatalf("lecture de %s : %v", r.Path, err)
 			}
 			for _, re := range credentialShaped {
-				if m := re.Find(raw); m != nil {
+				for _, m := range re.FindAll(raw, -1) {
+					// La SEULE exception, et elle est nommée : le substitut que canary.sh
+					// met à la place d'une variable de chemin. Il est entièrement à zéro,
+					// donc il ne désigne aucun tenant — mais il doit rester de forme
+					// valide, sans quoi le fournisseur répondrait « argument invalide »
+					// et le relevé mesurerait autre chose que le refus qu'il vise.
+					// Tout autre UUID reste refusé : c'est une exception à une valeur,
+					// pas un assouplissement du motif.
+					if strings.Contains(canary.SyntheticTenantID, string(m)) {
+						continue
+					}
 					t.Errorf("%s porte une forme d'identifiant (%s) : %q", r.Path, re, m)
 				}
 			}

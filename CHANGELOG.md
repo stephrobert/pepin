@@ -90,6 +90,39 @@ belongs in `git log`.
 
 ### Fixed
 
+- **Scaleway: an unknown credential is no longer reported as a missing right** (issue #250).
+  Scaleway answers `401` when it does not recognize a key, and a bare `401` was filed
+  `permission_denied` — "insufficient privilege on the scanning account". The canary record
+  carried that on **six of its seven** Scaleway endpoints, while the canary holds no key at
+  all. The sentence sent the operator to widen a policy attached to an identity the API does
+  not know: the defect #91 fixed for Outscale, one provider along.
+
+  The contract is the official SDK. `scw/errors.go` demultiplexes the response's `type` field
+  into a Go error type, and it gives the two cases two distinct ones — so this is a compiled
+  table, not prose:
+
+  | Situation of the scanning account | HTTP | `type` | Class |
+  |---|---|---|---|
+  | Key unknown, malformed or expired | `401` | `denied_authentication` | `unauthenticated` |
+  | Valid key, missing right | `403` | `permissions_denied` | `permission_denied` |
+
+  The first row is measured (2026-09-21, `GET /iam/v1alpha1/users`, synthetic key, no account
+  involved); the second is the SDK's. Both are mapped, including the one whose status already
+  classified it correctly — ADR-0023 holds that the class derives from the documented code
+  when one exists, and anchoring half a pair to the contract and half to a convention would
+  make the distinction depend on a status that can move while the contract does not.
+
+  **Exoscale is deliberately left to its status.** Measured the same day, it answers `403`
+  with `{"message":"Invalid key or request signature"}` — no type, no code, no structured
+  field. The only discriminator would be the message text, which ADR-0023 refuses: a string
+  match breaks the first time the wording changes. Its refusal stays broadly and truly
+  classified rather than narrowly and brittly. A counterexample guards that decision.
+
+  **No verdict moves on an unchanged tenant** — a refusal degraded a control to
+  `not-evaluated` before and still does. What changes is which mistake the operator is sent
+  to fix.
+
+
 - **A refusal is no longer reported as an outage, and an unknown key is no longer reported
   as a missing right** (issue #91). Outscale answers `400` where Scaleway answers `401` and
   Exoscale `403`; a `4xx` that no finer class claimed fell through to `unavailable`, so the
