@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/tfmap"
 )
 
 // AUCUNE SPEC NE FABRIQUE UN ATTRIBUT À PARTIR DE RIEN.
@@ -34,10 +35,49 @@ import (
 // vide peut atteindre l'inventaire sans avoir été observé. Elle vaut pour les 138
 // attributs d'aujourd'hui, et pour ceux qu'un fournisseur futur ajoutera sans avoir lu
 // cette histoire.
+// specProjetante réduit les deux formes de spec — collecte live et mapping
+// Terraform — à ce que cette porte a besoin d'en savoir. Les deux projettent par
+// le même `collect.Project` ; seuls leurs types Go diffèrent.
+type specProjetante struct {
+	Type       string
+	Map        map[string]string
+	Transforms map[string]any
+}
+
+func projetantes(rs []collect.ResourceSpec) []specProjetante {
+	out := make([]specProjetante, 0, len(rs))
+	for _, r := range rs {
+		out = append(out, specProjetante{Type: r.Type, Map: r.Map, Transforms: r.Transforms})
+	}
+	return out
+}
+
+func projetantesTF(rs []tfmap.ResourceSpec) []specProjetante {
+	out := make([]specProjetante, 0, len(rs))
+	for _, r := range rs {
+		out = append(out, specProjetante{Type: r.Type, Map: r.Map, Transforms: r.Transforms})
+	}
+	return out
+}
+
 func TestNoSpecFabricatesAnAttributeFromNothing(t *testing.T) {
 	vide := map[string]any{}
 	for name, d := range loadAllDescriptors(t) {
-		for _, r := range d.Collecte.Resources {
+		// LES DEUX SOURCES, et la seconde manquait.
+		//
+		// La porte n'itérait que `Collecte` — la collecte live. Le mapping Terraform
+		// projette pourtant par le MÊME `collect.Project`, avec les mêmes transforms,
+		// et c'est lui que l'issue #243 vise. Une spec de mapping pouvait donc
+		// fabriquer un attribut depuis rien sans que rien ne le dise, ce qui est
+		// exactement ce que cette porte existe pour interdire.
+		//
+		// La distinction entre les deux chemins n'est pas dans ce qu'ils ont le droit
+		// de projeter : elle est dans ce qu'un vide y SIGNIFIE (ADR-0024). Une clé
+		// absente ne projette rien des deux côtés ; ce qu'un `null` ÉCRIT vaut est une
+		// déclaration sourcée, et elle se garde ailleurs.
+		specs := append(append([]specProjetante{}, projetantes(d.Collecte.Resources)...),
+			projetantesTF(d.MappingTerraform.Resources)...)
+		for _, r := range specs {
 			attrs := collect.Project(vide, r.Map, r.Transforms)
 			for attr, v := range attrs {
 				t.Errorf("%s / type %q : l'attribut %q est projeté (%#v) depuis un item VIDE.\n"+

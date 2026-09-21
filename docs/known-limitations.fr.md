@@ -63,7 +63,6 @@ aucune source** ne peut actuellement lever les quatre verrous du `pass`. Ils peu
 <!-- pepin:gen never-pass -->
 | Contrôle | Sévérité | Motif |
 |---|---|---|
-| `database_encryption_at_rest_enabled` | high | attribut décisif « encryption_at_rest » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `governance_resource_required_tags` | medium | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
 <!-- /pepin:gen never-pass -->
 
@@ -90,6 +89,7 @@ pas.
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `iam_accesskey_expiration_set` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_accesskey_rotated` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
@@ -153,7 +153,7 @@ Par fournisseur et par source, sur l'ensemble des contrôles du référentiel :
 | exoscale | live | 24 | 1 | 6 | 27 |
 | outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | terraform | 18 | 7 | 2 | 31 |
 | scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
@@ -210,7 +210,7 @@ Ce qui n'est pas encore prouvé est **compté**, pas masqué :
 |---|---:|
 | Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 186 |
 | Chemins dont tous les verdicts atteignables sont prouvés de bout en bout | 34 |
-| Verdicts à prouver au total | 470 |
+| Verdicts à prouver au total | 472 |
 | Verdicts restant à prouver | 369 |
 <!-- /pepin:gen veracity-debt -->
 
@@ -391,8 +391,12 @@ identifiant**. C'est mesuré : sans en-tête d'authentification il rend `200`, a
 il rend `200`, et il n'expose aucune injection de panne. Il ne peut donc jamais produire de
 `403`, et aucun enregistrement pris contre lui ne peut mesurer la classification d'un vrai refus
 de droits. Cette classification est éprouvée par `internal/collect/status_test.go` contre une
-socket qui refuse vraiment ; ce qui reste inconnu, c'est de savoir si tel fournisseur refuse
-bien avec ce statut.
+socket qui refuse vraiment, et — depuis l'issue #96 — par
+`internal/objectstorage/classify_s3_test.go`, qui fait passer le XML d'erreur de la
+spécification S3 par le vrai client du SDK AWS, classe par classe. Cette seconde mesure a trouvé
+ce que l'émulateur ne pouvait pas montrer : son `404` ne portant aucun code d'erreur, la moitié
+de la branche S3 n'avait jamais été atteinte, et trois classes étaient fausses. Ce qui reste
+inconnu est inchangé : savoir si tel fournisseur refuse bien avec ce statut, et avec ce code.
 
 Il en va de même de chaque valeur d'un enregistrement : elles sont frappées par l'émulateur au
 démarrage, pas rendues par un cloud. C'est exactement pour cela qu'elles sont sûres à committer,

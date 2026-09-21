@@ -95,6 +95,92 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Un plan Terraform qui écrit la réponse par son silence est désormais lu** (issue #243).
+  `database_encryption_at_rest_enabled` rendait `not-evaluated` sur tout plan Scaleway
+  laissant `encryption_at_rest` non écrit — alors que le plan prouve que la base sera créée
+  non chiffrée. Mesuré de bout en bout sur le tenant de référence `ducklake` :
+
+  ```
+  avant : not-evaluated — « attribut « encryption_at_rest » non collecté (garde de capacité) »
+  après : fail          — « Base de données managée « ducklake » sans chiffrement au repos. »
+  ```
+
+  Terraform distingue deux silences, et Pépin les confondait. Un argument optionnel que
+  l'auteur n'a pas écrit apparaît dans `planned_values` avec la valeur `null` ; une valeur
+  connue seulement après l'apply est **absente** de ce bloc. Mesuré sur les plans complets du
+  dépôt, recoupé attribut par attribut avec les schémas des providers : 62 valeurs nulles,
+  toutes portées par un attribut `optional` non `computed`, **zéro contre-exemple**.
+
+  Ce qu'un nul *vaut* n'est pas dans le plan : c'est ce que le provider envoie à l'API quand
+  l'argument est omis, et cela se lit dans son code. Pour celui-ci :
+  `internal/services/rdb/instance.go` déclare `encryption_at_rest` en `TypeBool, Optional`
+  sans `Default`, et la création envoie toujours
+  `Encryption: &rdb.EncryptionAtRest{Enabled: d.Get(...)}` — un argument omis envoie donc
+  `false` explicitement.
+
+### Ajouté
+
+- **Quatre gardes autour des déclarations `default:`, qui n'en avaient aucune** (issue #243,
+  ADR-0024). Le mécanisme que l'issue réclamait existait déjà — le transform `default:`, avec
+  exactement la sémantique « présent et nul » — et il était déjà en production sur les règles
+  de groupe de sécurité qui alimentent un contrôle CRITICAL, sans documentation ni source.
+
+  - Un `default:` sur un attribut **`computed`** est refusé : son silence part en
+    `after_unknown`, donc le plan ne le connaît pas, et le déclarer fabriquerait une donnée
+    absente (ADR-0014).
+  - Un `default:` sur un attribut **`required`** est refusé : il ne peut jamais tirer. Quatre
+    déclarations de ce genre existaient sur `action`, écrites depuis la documentation et
+    jamais vérifiées contre le schéma — un no-op trompeur, retiré.
+  - Toute déclaration de `mapping_terraform` **cite sa source provider**, vérifié
+    mécaniquement. Une déclaration fausse n'a pas l'air fausse : elle produit un verdict
+    plausible.
+  - `TestNoSpecFabricatesAnAttributeFromNothing` couvre désormais le **mapping Terraform**,
+    ce qu'il ne faisait pas — le chemin de projection visé par l'issue était hors de la porte.
+
+  Au passage : `TestProviderMappingsMatchSchema` sautait silencieusement tout fournisseur
+  dont le dossier d'exemple n'était pas initialisé, si bien que le mapping Outscale n'était
+  ancré sur **aucun schéma**, sans le dire. Le saut est maintenant nommé, et la porte échoue
+  franchement si aucun fournisseur n'a été ancré. Un transform `to_bool` garde enfin un
+  booléen booléen quelle que soit la source, au lieu de `false` en live et `"false"` depuis
+  un plan.
+
+
+- **Un scan de stockage objet plafonné ne se lit plus comme une panne, ni une clé inconnue comme
+  un droit manquant** (issue #96). `Classify` reconnaît les erreurs des SDK tiers par deux
+  interfaces anonymes, `HTTPStatusCode()` et `ErrorCode()`. Il lisait le statut en premier — or
+  une erreur de SDK expose toujours son statut, si bien que la première branche rendait toujours
+  une classe et que **la seconde n'était jamais atteinte**. Le code d'erreur était du code mort.
+
+  Mesuré en faisant passer le XML d'erreur de la spécification S3 par le vrai client du SDK AWS,
+  ce qu'aucun test n'avait jamais fait — l'émulateur ne sert aucune surface de stockage objet,
+  si bien que la seule réponse que cette branche avait vue était un `404` ne portant aucun code :
+
+  | Réponse S3 réelle | Classait | Devait classer |
+  |---|---|---|
+  | `403` · `InvalidAccessKeyId` | `permission_denied` | `unauthenticated` |
+  | `403` · `SignatureDoesNotMatch` | `permission_denied` | `unauthenticated` |
+  | `503` · `SlowDown` | `unavailable` | `rate_limited` |
+
+  Le troisième est le plus coûteux en exploitation : un scan que l'API plafonnait simplement
+  annonçait un service indisponible, et l'opérateur attendait une panne qui n'existait pas. Les
+  deux premiers l'envoyaient élargir une politique pour une clé que le fournisseur ne reconnaît
+  pas — et ils le faisaient depuis la release précédente, puisque le correctif qui avait déplacé
+  ces deux codes vers `unauthenticated` avait atterri dans une branche que rien n'atteignait.
+
+  Le code est désormais lu avant le statut : la règle qu'ADR-0023 pose pour les corps HTTP,
+  appliquée au chemin SDK pour la même raison. Un contrat publié l'emporte sur une convention que
+  chaque fournisseur applique à sa façon. Un code que la table ne connaît pas retombe toujours
+  sur le statut, donc rien de ce qui marchait ne cesse de marcher.
+
+  `internal/objectstorage/classify_s3_test.go` atteint maintenant chaque classe par une vraie
+  erreur S3, de bout en bout — décodage du SDK, reconnaissance par interface, classement. Ce
+  qu'il n'établit pas est écrit : qu'un fournisseur souverain donné émette tel code dans tel cas
+  reste dû à un scan réel.
+
+  **Aucun verdict ne bouge sur un tenant inchangé** — chacune de ces classes dégradait déjà un
+  contrôle en `not-evaluated`. Ce qui change, c'est l'erreur que l'opérateur est envoyé corriger.
+
+
 - **Scaleway : un identifiant inconnu n'est plus présenté comme un droit manquant** (issue
   #250). Scaleway répond `401` quand il ne reconnaît pas une clé, et un `401` seul se rangeait
   `permission_denied` — « privilège insuffisant du compte de scan ». Le relevé de canari

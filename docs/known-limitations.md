@@ -65,7 +65,6 @@ but they will never confirm compliance.
 <!-- pepin:gen never-pass -->
 | Control | Severity | Reason |
 |---|---|---|
-| `database_encryption_at_rest_enabled` | high | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `governance_resource_required_tags` | medium | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 <!-- /pepin:gen never-pass -->
 
@@ -91,6 +90,7 @@ actually decide them. The reason given is the one that applies to the source tha
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_accesskey_rotated` | outscale | live | this source produces no resource of type "access_key" |
@@ -153,7 +153,7 @@ Per provider and per source, over all controls in the reference:
 | exoscale | live | 24 | 1 | 6 | 27 |
 | outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | terraform | 18 | 7 | 2 | 31 |
 | scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
@@ -210,7 +210,7 @@ What is not yet proven is **counted**, not hidden:
 |---|---:|
 | Control x provider x source paths on which Pépin concludes | 186 |
 | Paths whose every reachable verdict is proven end to end | 34 |
-| Verdicts to prove in total | 470 |
+| Verdicts to prove in total | 472 |
 | Verdicts left to prove | 369 |
 <!-- /pepin:gen veracity-debt -->
 
@@ -382,8 +382,12 @@ One consequence is structural rather than incidental. The emulator **accepts eve
 — measured: no auth header returns `200`, a junk token returns `200`, and it exposes no fault
 injection. It can therefore never produce a `403`, and no recording against it can measure how
 a real permission refusal is classified. That classification is exercised by
-`internal/collect/status_test.go` against a socket that really refuses; what stays unknown is
-whether a given provider refuses with that status at all.
+`internal/collect/status_test.go` against a socket that really refuses and — since issue #96 —
+by `internal/objectstorage/classify_s3_test.go`, which drives the S3 specification's error XML
+through the real AWS SDK client, class by class. That second measurement found what the emulator
+could not show: its `404` carries no error code, so half the S3 branch had never been reached and
+three classes were wrong. What stays unknown is unchanged: whether a given provider refuses with
+that status at all, and with that code.
 
 The same holds for every value in a recording: they are minted by the emulator at startup, not
 returned by a cloud. They are safe to commit for exactly that reason, and useless as evidence

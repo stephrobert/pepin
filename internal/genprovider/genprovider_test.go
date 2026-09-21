@@ -32,6 +32,7 @@ func TestProvidersValid(t *testing.T) {
 // sur le schéma réel du provider Terraform (anti-invention §2). Ignoré par
 // provider si terraform/le schéma ne sont pas disponibles.
 func TestProviderMappingsMatchSchema(t *testing.T) {
+	var verifies, sautes []string
 	entries, err := os.ReadDir(providersDir)
 	if err != nil {
 		t.Skipf("dossier providers indisponible : %v", err)
@@ -48,11 +49,28 @@ func TestProviderMappingsMatchSchema(t *testing.T) {
 		}
 		missing, ok := tfmap.CheckSchema(filepath.Join("../../examples", name, "terraform"), desc.MappingTerraform)
 		if !ok {
+			// UN SAUT QUI SE VOIT. `CheckSchema` rend ok=false quand terraform manque
+			// ou quand le dossier d'exemple n'a jamais été initialisé — et il rendait
+			// alors la porte muette pour ce fournisseur, sans le dire. Mesuré :
+			// `examples/outscale/terraform` n'a pas de `.terraform/`, si bien que le
+			// mapping Outscale n'était ancré sur AUCUN schéma, depuis toujours.
+			// Une porte qui ne tourne pas est une porte qui ment sur sa couverture.
+			sautes = append(sautes, name)
 			continue
 		}
+		verifies = append(verifies, name)
 		for _, m := range missing {
 			t.Errorf("%s : %s", name, m)
 		}
+	}
+	if len(verifies) == 0 {
+		t.Fatalf("aucun fournisseur n'a été ancré sur un schéma (sautés : %v).\n"+
+			"  La porte entière était inerte : `terraform` est-il dans le PATH, et les\n"+
+			"  dossiers `examples/<fournisseur>/terraform` initialisés ?", sautes)
+	}
+	if len(sautes) > 0 {
+		t.Logf("schéma non lu, donc mapping NON ancré, pour : %v\n"+
+			"  (dossier d'exemple non initialisé — `terraform init` l'y ramènerait)", sautes)
 	}
 }
 
