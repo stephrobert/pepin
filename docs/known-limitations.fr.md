@@ -391,8 +391,12 @@ identifiant**. C'est mesuré : sans en-tête d'authentification il rend `200`, a
 il rend `200`, et il n'expose aucune injection de panne. Il ne peut donc jamais produire de
 `403`, et aucun enregistrement pris contre lui ne peut mesurer la classification d'un vrai refus
 de droits. Cette classification est éprouvée par `internal/collect/status_test.go` contre une
-socket qui refuse vraiment ; ce qui reste inconnu, c'est de savoir si tel fournisseur refuse
-bien avec ce statut.
+socket qui refuse vraiment, et — depuis l'issue #96 — par
+`internal/objectstorage/classify_s3_test.go`, qui fait passer le XML d'erreur de la
+spécification S3 par le vrai client du SDK AWS, classe par classe. Cette seconde mesure a trouvé
+ce que l'émulateur ne pouvait pas montrer : son `404` ne portant aucun code d'erreur, la moitié
+de la branche S3 n'avait jamais été atteinte, et trois classes étaient fausses. Ce qui reste
+inconnu est inchangé : savoir si tel fournisseur refuse bien avec ce statut, et avec ce code.
 
 Il en va de même de chaque valeur d'un enregistrement : elles sont frappées par l'émulateur au
 démarrage, pas rendues par un cloud. C'est exactement pour cela qu'elles sont sûres à committer,
