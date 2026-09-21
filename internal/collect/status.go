@@ -210,6 +210,13 @@ type apiErrorEnvelope struct {
 // Tout code non listé retombe sur le statut. Une classe large et vraie vaut
 // mieux qu'une classe fine et devinée.
 func outcomeForAPIErrorCode(body string) model.CollectionOutcome {
+	if o := outcomeForOutscaleError(body); o != "" {
+		return o
+	}
+	return outcomeForScalewayError(body)
+}
+
+func outcomeForOutscaleError(body string) model.CollectionOutcome {
 	var env apiErrorEnvelope
 	if err := json.Unmarshal([]byte(body), &env); err != nil {
 		return ""
@@ -221,6 +228,61 @@ func outcomeForAPIErrorCode(body string) model.CollectionOutcome {
 		case e.Code == "1" && e.Type == "AccessDenied":
 			return model.OutcomeUnauthenticated
 		}
+	}
+	return ""
+}
+
+// scalewayErrorEnvelope est l'enveloppe d'erreur de l'API SCALEWAY. Elle est
+// plate — un `type` à la racine — là où celle d'Outscale est une liste.
+type scalewayErrorEnvelope struct {
+	Type string `json:"type"`
+}
+
+// outcomeForScalewayError classe un refus Scaleway par le TYPE que son SDK
+// officiel définit.
+//
+// Source du contrat : `scw/errors.go` du SDK officiel
+// (github.com/scaleway/scaleway-sdk-go), qui démultiplexe le champ `type` de la
+// réponse vers un type d'erreur Go. Ce n'est pas une lecture de prose : c'est la
+// table que le fournisseur compile et publie.
+//
+//	"denied_authentication" → DeniedAuthenticationError{Method, Reason}
+//	"permissions_denied"    → PermissionsDeniedError
+//
+// Les deux ne veulent pas dire la même chose, et le SDK le dit en leur donnant
+// deux types distincts. `DeniedAuthenticationError` porte même la raison du
+// refus — `not_found`, `expired`, `invalid_argument` — qui toutes désignent
+// l'IDENTIFIANT, jamais un droit.
+//
+// # Pourquoi le statut ne suffit pas ici non plus
+//
+// Mesuré le 2026-09-21 contre `api.scaleway.com`, sans aucun compte, avec une
+// clé synthétique — c'est-à-dire exactement ce que produit le relevé de canari :
+//
+//	GET /iam/v1alpha1/users  →  HTTP 401
+//	{"message":"authentication is denied","method":"api_key",
+//	 "reason":"not_found","type":"denied_authentication"}
+//
+// Un `401` seul se range `permission_denied`, donc « privilège insuffisant du
+// compte de scan ». C'est faux et c'est coûteux : l'opérateur va élargir une
+// politique attachée à une identité que l'API ne connaît pas. Le relevé de
+// canari portait ce classement sur ses cinq endpoints Scaleway (issue #250).
+//
+// `permissions_denied` est mappé lui aussi, bien que son statut le classe déjà
+// correctement. La raison n'est pas la redondance : ADR-0023 pose que la classe
+// se dérive du code documenté quand il existe, et le statut seulement à défaut.
+// Adosser la moitié d'une paire au contrat et l'autre à une convention ferait
+// dépendre la distinction d'un statut qui peut changer sans que le contrat bouge.
+func outcomeForScalewayError(body string) model.CollectionOutcome {
+	var env scalewayErrorEnvelope
+	if err := json.Unmarshal([]byte(body), &env); err != nil {
+		return ""
+	}
+	switch env.Type {
+	case "denied_authentication":
+		return model.OutcomeUnauthenticated
+	case "permissions_denied":
+		return model.OutcomePermissionDenied
 	}
 	return ""
 }

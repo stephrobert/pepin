@@ -86,6 +86,24 @@ identité EIM créée pour la mesure puis détruite, ne portant que `api:ReadVms
 | Clé existante, signature invalide | `401` | `AccessDenied` · `1` | `unauthenticated` |
 | Clé valide, droit manquant | `403` | `AccessDenied` · `4` | `permission_denied` |
 
+**Scaleway** classe par le `type` que son SDK officiel définit — `scw/errors.go` démultiplexe
+ce champ vers un type d'erreur Go, donc c'est une table compilée, pas de la prose :
+
+| Situation du compte de scan | HTTP | `type` | Classe |
+|---|---|---|---|
+| Clé inconnue, mal formée ou expirée | `401` | `denied_authentication` | `unauthenticated` |
+| Clé valide, droit manquant | `403` | `permissions_denied` | `permission_denied` |
+
+Le premier cas est mesuré (2026-09-21, `GET /iam/v1alpha1/users`, clé synthétique) ; le second
+est documenté par le SDK. Un `401` seul se rangeait `permission_denied`, c'est-à-dire
+« privilège insuffisant » sur une identité que l'API ne connaît pas.
+
+**Exoscale n'est pas classé par son corps, et c'est une décision.** Mesuré le 2026-09-21,
+il répond `403` avec `{"message":"Invalid key or request signature"}` : aucun champ structuré,
+ni type, ni code. Le seul discriminant serait le TEXTE du message, ce qu'ADR-0023 refuse — une
+correspondance de chaînes casse au premier changement de formulation. Son refus reste donc
+classé par son statut, ce qui est large et vrai plutôt que fin et fragile.
+
 Le premier cas est le seul qu'un identifiant synthétique sache produire, et c'est pourquoi il
 avait longtemps été rangé en `unavailable` : le statut `400` ne dit pas qu'il s'agit
 d'authentification, le **code d'erreur** le dit

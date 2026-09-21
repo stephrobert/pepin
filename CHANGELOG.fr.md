@@ -95,6 +95,39 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Scaleway : un identifiant inconnu n'est plus présenté comme un droit manquant** (issue
+  #250). Scaleway répond `401` quand il ne reconnaît pas une clé, et un `401` seul se rangeait
+  `permission_denied` — « privilège insuffisant du compte de scan ». Le relevé de canari
+  portait ce classement sur **six de ses sept** endpoints Scaleway, alors que le canari n'a
+  aucune clé. La phrase envoyait l'opérateur élargir une politique attachée à une identité que
+  l'API ne connaît pas : le défaut d'#91, transposé d'un fournisseur à l'autre.
+
+  Le contrat est celui du SDK officiel. `scw/errors.go` démultiplexe le champ `type` de la
+  réponse vers un type d'erreur Go, et il donne aux deux cas deux types distincts — c'est donc
+  une table compilée, pas de la prose :
+
+  | Situation du compte de scan | HTTP | `type` | Classe |
+  |---|---|---|---|
+  | Clé inconnue, mal formée ou expirée | `401` | `denied_authentication` | `unauthenticated` |
+  | Clé valide, droit manquant | `403` | `permissions_denied` | `permission_denied` |
+
+  La première ligne est mesurée (2026-09-21, `GET /iam/v1alpha1/users`, clé synthétique, aucun
+  compte engagé) ; la seconde vient du SDK. Les deux sont mappées, y compris celle que son
+  statut classait déjà correctement : ADR-0023 pose que la classe se dérive du code documenté
+  quand il existe, et adosser la moitié d'une paire au contrat et l'autre à une convention
+  ferait dépendre la distinction d'un statut qui peut bouger sans que le contrat change.
+
+  **Exoscale est délibérément laissé à son statut.** Mesuré le même jour, il répond `403` avec
+  `{"message":"Invalid key or request signature"}` — ni type, ni code, aucun champ structuré.
+  Le seul discriminant serait le texte du message, ce qu'ADR-0023 refuse : une correspondance
+  de chaînes casse au premier changement de formulation. Son refus reste classé largement et
+  vrai plutôt que finement et fragile. Un contre-exemple garde cette décision.
+
+  **Aucun verdict ne bouge sur un tenant inchangé** — un refus dégradait un contrôle en
+  `not-evaluated` avant, et le fait toujours. Ce qui change, c'est l'erreur que l'opérateur est
+  envoyé corriger.
+
+
 - **Un refus n'est plus présenté comme une panne, et une clé inconnue n'est plus présentée
   comme un droit manquant** (issue #91). Outscale répond `400` là où Scaleway répond `401`
   et Exoscale `403` ; un `4xx` qu'aucune classe plus fine ne réclamait retombait sur

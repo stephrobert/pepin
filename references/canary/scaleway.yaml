@@ -6,11 +6,11 @@
 #
 # Ce relevé ne porte aucun identifiant : le canari n'en a jamais eu.
 provider: scaleway
-recorded: 2026-08-21
-pepin_version: "v0.3.0-2-g1ee97f5"
+recorded: 2026-09-21
+pepin_version: "v0.4.0-16-g39dac0c-dirty"
 authenticated: false
 summary:
-  answered: 5
+  answered: 7
   moved: 0
   unreachable: 0
 units:
@@ -20,29 +20,43 @@ units:
     method: GET
     host: api.scaleway.com
     path: "/iam/v1alpha1/api-keys"
-    classified: permission_denied
+    classified: unauthenticated
+  - unit: api_access_policy
+    verdict: answered
+    status: 401
+    method: GET
+    host: api.scaleway.com
+    path: "/iam/v1alpha1/organizations/00000000-0000-4000-8000-000000000000/security-settings"
+    classified: unauthenticated
   - unit: compute_instance
     verdict: answered
     status: 401
     method: GET
     host: api.scaleway.com
     path: "/instance/v1/zones/fr-par-1/servers"
-    classified: permission_denied
+    classified: unauthenticated
   - unit: iam_user
     verdict: answered
     status: 401
     method: GET
     host: api.scaleway.com
     path: "/iam/v1alpha1/users"
-    classified: permission_denied
+    classified: unauthenticated
   - unit: object_storage_bucket
     verdict: answered
     status: 403
     classified: permission_denied
+  - unit: security_group
+    verdict: answered
+    status: 401
+    method: GET
+    host: api.scaleway.com
+    path: "/instance/v1/zones/fr-par-1/security_groups"
+    classified: unauthenticated
   - unit: security_group_rule
     verdict: answered
     status: 401
     method: GET
     host: api.scaleway.com
     path: "/instance/v1/zones/fr-par-1/security_groups"
-    classified: permission_denied
+    classified: unauthenticated
