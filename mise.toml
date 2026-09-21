@@ -3,10 +3,26 @@
 # Build/test/audit/validate sont les portes de qualité (cf. CLAUDE.md §1).
 
 [tools]
+go = "1.26.6"         # ALIGNÉ sur `go` de go.mod, d'où la CI tire la sienne
+                      # (`go-version-file: go.mod`). Sans cet épinglage, la chaîne
+                      # de la machine du mainteneur dérive toute seule — un Go
+                      # installé par snap se met à jour sans rien demander — et
+                      # les portes locales cessent de mesurer ce que la CI mesure.
+                      # Constaté : Go passé en 1.27.1 fait PANIQUER golangci-lint
+                      # 2.12.2 sur `internal/poll` de la stdlib, alors que la CI
+                      # restait verte. Une porte qui casse sans que le code bouge
+                      # est une porte qu'on finit par désarmer.
 opa = "1.18.2"        # tests des règles Rego : ALIGNÉ sur la lib OPA du runtime (go.mod)
 terraform = "1.15.4"  # validation des preuves de remédiation + mapping TF
 gitleaks = "8.30.0"   # scan de secrets par MOTIF : couvre les clés souveraines,
                       # que trufflehog --only-verified ne sait pas reconnaître
+osv-scanner = "2.5.1" # ALIGNÉ sur l'action épinglée dans osv-scanner.yml. Il est
+                      # ici, et non dans la tâche `tools`, parce qu'un `go install`
+                      # dépose son binaire dans ~/go/bin — que n'importe quel autre
+                      # gestionnaire peut MASQUER dans le PATH. Constaté : une
+                      # formule Homebrew figée en 2.3.8 passait devant, si bien que
+                      # l'audit local scannait avec un outil que le dépôt n'a jamais
+                      # choisi. Le shim de mise, lui, prime.
 
 [tasks.build]
 description = "Compile le binaire (version injectée)"
@@ -250,7 +266,6 @@ run = [
   "go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2",
   "go install github.com/securego/gosec/v2/cmd/gosec@v2.28.0",
   "go install golang.org/x/vuln/cmd/govulncheck@v1.7.0",
-  "go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.5.1",
 ]
 
 [tasks.adr-drift]
