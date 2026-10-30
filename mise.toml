@@ -230,7 +230,11 @@ run = "govulncheck ./..."
 
 [tasks.osv]
 description = "Dépendances vulnérables ET paquets malveillants (OSV-Scanner)"
-run = "osv-scanner scan -L go.mod"
+# Les DEUX manifestes, parce que la CI scanne l'arbre entier. Avec `-L go.mod`
+# seul, la porte locale passait au vert sur un avis CRITIQUE que la CI voyait
+# depuis le 2026-10-26 (certifi, GHSA-6q48-6c7w-9gw2) : une porte qui mesure
+# moins que celle de la CI ne prévient de rien, elle rassure.
+run = "osv-scanner scan -L go.mod -L scripts/requirements.txt"
 
 [tasks.audit]
 description = "Qualité complète (vet + lint + sécurité + vulnérabilités + OSV)"

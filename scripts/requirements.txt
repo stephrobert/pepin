@@ -11,6 +11,16 @@
 trafilatura==2.1.0
 PyYAML==6.0.1
 
+# ÉPINGLÉE bien que TRANSITIVE : trafilatura 2.1.0 déclare `certifi` sans aucune
+# contrainte de version, si bien que le maillon qui porte le magasin de CA de toute
+# la chaîne d'extraction flottait — dans un fichier dont l'objet est précisément
+# qu'il ne flotte rien. Il a flotté jusqu'à un avis CRITIQUE : GHSA-6q48-6c7w-9gw2
+# (PYSEC-2026-4320, CVSS 9.1), huit intermédiaires eMudhra à clé privée compromise
+# chaînés au root `emSign ECC Root CA - G3` du bundle. 2026.10.18 a retiré tous les
+# roots emSign, 2026.10.19 a restauré les sains : la version sûre est donc
+# 2026.10.19 ou plus, pas 2026.10.18.
+certifi==2026.10.23
+
 # Dépendance de scripts/generer-marque.py, outil de mainteneur lui aussi : il
 # convertit « Pépin » en courbes depuis Poppins SemiBold. Épinglée pour la même
 # raison, la sortie étant versionnée dans docs/assets/brand/.
