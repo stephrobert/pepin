@@ -309,6 +309,17 @@ belongs in `git log`.
   question end up disagreeing — and a version that cannot be read leaves the heading
   without a number rather than inventing one (ADR-0014).
 
+### Security
+
+- **Toolchain moved to Go 1.26.10**, which resolves ten standard-library
+  advisories reachable from this code: GO-2026-6809 (`crypto/x509`, compromised
+  intermediate certificates no longer trusted) and GO-2026-6617 (`net/http`,
+  HTTP/2 server crash on an HPACK encoder race), among the ten traces
+  `govulncheck` reported on 1.26.6. The gate was red on `main`, so nothing was
+  committable without it. `mise.toml` follows `go.mod`, which is where CI reads
+  its own version from, and `osv-scanner.toml` says which version its exception
+  was measured under.
+
 ## [0.4.0] - 2026-09-10
 
 ### Fixed
