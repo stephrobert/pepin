@@ -259,6 +259,7 @@ source produces the resource type and its deciding attribute, and the other does
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
 | `iam_accesskey_rotated` | outscale | live | this source produces no resource of type "access_key" |

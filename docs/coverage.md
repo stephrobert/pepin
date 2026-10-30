@@ -42,7 +42,7 @@ and the report says so on every scan, control by control, with the reason.
 
 | Family | Controls | exoscale | outscale | scaleway |
 |---|---:|---|---|---|
-| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 1 · ∅ 1 · ✗ 3 |
+| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 3 · ◐ 0 · ∅ 1 · ✗ 3 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
 | `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 5 · ◐ 0 · ∅ 0 · ✗ 10 |
@@ -63,7 +63,7 @@ and the report says so on every scan, control by control, with the reason.
 | `compute_instance_no_secrets_in_user_data` | high | CLD-CMP-9 | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ |
 | `compute_instance_public_ip_with_open_securitygroup` | critical | CLD-NET-3 | ✅ | ✅ | ◐ | ✅ | ◐ | ✅ |
 | `database_backup_enabled` | high | CLD-STO-3 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
-| `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ |
+| `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `database_service_not_open_to_internet` | high | CLD-NET-1 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `governance_provider_sovereignty` | high | CLD-GVN-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -136,7 +136,6 @@ already shows them, and they add nothing.
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
-| `database_encryption_at_rest_enabled` | scaleway | terraform | ◐ `partial` | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `database_encryption_at_rest_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `governance_resource_required_tags` | exoscale | terraform | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
@@ -215,6 +214,6 @@ the other's scope. One source only: live collection through a kubeconfig.
 | exoscale | live | 24 | 1 | 6 | 27 |
 | outscale | terraform | 18 | 6 | 4 | 30 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | terraform | 18 | 7 | 2 | 31 |
 | scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

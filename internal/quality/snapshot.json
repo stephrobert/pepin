@@ -2,12 +2,12 @@
   "controls": 58,
   "paths": 186,
   "paths_proven": 34,
-  "obligations": 470,
-  "proven": 101,
+  "obligations": 472,
+  "proven": 103,
   "verdicts": {
     "fail": {
-      "required": 142,
-      "proven": 26
+      "required": 143,
+      "proven": 27
     },
     "not-applicable": {
       "required": 24,
@@ -18,8 +18,8 @@
       "proven": 25
     },
     "pass": {
-      "required": 142,
-      "proven": 38
+      "required": 143,
+      "proven": 39
     }
   },
   "live_paths": 104,
@@ -558,14 +558,21 @@
         {
           "provider": "scaleway",
           "source": "terraform",
-          "status": "partial",
+          "status": "supported",
           "required": [
+            "fail",
+            "pass",
             "not-evaluated"
           ],
           "proven": [
+            "fail",
+            "pass",
             "not-evaluated"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/database-encryption-scaleway-terraform.yaml"
       ],
       "tenants": [
         "scaleway/ducklake"
@@ -2702,8 +2709,8 @@
   },
   "precision": {
     "controls": 43,
-    "detection_proven": 21,
-    "with_counterexample": 19,
+    "detection_proven": 22,
+    "with_counterexample": 20,
     "false_positives": 0,
     "counterwitnesses": 2
   }

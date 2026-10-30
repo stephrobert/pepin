@@ -16,7 +16,7 @@ pourcentage sans mesure derrière est un faux vert déplacé dans un tableau de
 bord, et il y est pire qu'ailleurs : personne ne relit un tableau de bord.
 
 Les chiffres sont donc laids, et c'est le point. « 58 contrôles » ne dit rien de
-la qualité d'une détection ; « 101 verdicts prouvés sur 470 » dit où en est le
+la qualité d'une détection ; « 103 verdicts prouvés sur 472 » dit où en est le
 produit, et rétrécit dans le bon sens à chaque scénario écrit.
 
 ## Les chiffres
@@ -26,8 +26,8 @@ produit, et rétrécit dans le bon sens à chaque scénario écrit.
 | Contrôles au référentiel | 58 |
 | Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 186 |
 | Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 34 |
-| Verdicts à prouver au total | 470 |
-| Verdicts prouvés | 101 |
+| Verdicts à prouver au total | 472 |
+| Verdicts prouvés | 103 |
 
 ## Couverture de véracité, par verdict
 
@@ -37,11 +37,11 @@ demanderait d'inventer une non-applicabilité.
 
 | Verdict | Ce qu'il met en scène | À prouver | Prouvés | % |
 |---|---|---:|---:|---:|
-| `fail` | une configuration vulnérable est détectée | 142 | 26 | 18 |
-| `pass` | une configuration réellement correcte est confirmée | 142 | 38 | 26 |
+| `fail` | une configuration vulnérable est détectée | 143 | 27 | 18 |
+| `pass` | une configuration réellement correcte est confirmée | 143 | 39 | 27 |
 | `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 162 | 25 | 15 |
 | `not-applicable` | le contrat du fournisseur déclare le mécanisme inexistant | 24 | 12 | 50 |
-| **Total** | | **470** | **101** | **21** |
+| **Total** | | **472** | **103** | **21** |
 
 ## Validé en live
 
@@ -85,8 +85,8 @@ n'en ont pas encore sont comptés dans
 | Chiffre | Nombre |
 |---|---:|
 | Contrôles high/critical actifs | 43 |
-| Dont un chemin de détection est prouvé de bout en bout | 21 |
-| Dont un contre-exemple légitime est prouvé | 19 |
+| Dont un chemin de détection est prouvé de bout en bout | 22 |
+| Dont un contre-exemple légitime est prouvé | 20 |
 | Faux positifs mesurés sur les contre-témoins | 0 |
 
 Il n'y a pas de ligne « faux négatifs », et son absence est le chiffre le plus

@@ -278,9 +278,12 @@ mapping_terraform:
         port_from: port||port_range
         port_to: port||port_range
       transforms:
-        action: ["default:accept", lower]     # action omise ⇒ accept (défaut du bloc de règle)
+        action: lower     # `action` est REQUIRED au schéma : toujours écrite, jamais omise
         protocol: [lower, { any: all, "": all }]
-        cidrs: ["default:0.0.0.0/0", list]   # ip_range ET ip omis ⇒ toute origine
+        # source: provider scaleway, internal/services/instance/security_group.go,
+        # securityGroupRuleExpand : ip_range omis ⇒ ip + "/32", et "/32" ⇒ "0.0.0.0/0".
+        # Les deux omis valent donc bien toute origine (ADR-0024).
+        cidrs: ["default:0.0.0.0/0", list]
         port_from: range_from                 # port ET port_range omis ⇒ nil (tous ports via covers_port)
         port_to: range_to
 
@@ -297,8 +300,11 @@ mapping_terraform:
         port_from: port||port_range
         port_to: port||port_range
       transforms:
-        action: ["default:accept", lower]
+        action: lower
         protocol: [lower, { any: all, "": all }]
+        # source: provider scaleway, internal/services/instance/security_group.go,
+        # securityGroupRuleExpand : ip_range omis ⇒ ip + "/32", et "/32" ⇒ "0.0.0.0/0".
+        # Les deux omis valent donc bien toute origine (ADR-0024).
         cidrs: ["default:0.0.0.0/0", list]
         port_from: range_from
         port_to: range_to
@@ -319,8 +325,11 @@ mapping_terraform:
         port_from: port||port_range
         port_to: port||port_range
       transforms:
-        action: ["default:accept", lower]
+        action: lower
         protocol: [lower, { any: all, "": all }]
+        # source: provider scaleway, internal/services/instance/security_group.go,
+        # securityGroupRuleExpand : ip_range omis ⇒ ip + "/32", et "/32" ⇒ "0.0.0.0/0".
+        # Les deux omis valent donc bien toute origine (ADR-0024).
         cidrs: ["default:0.0.0.0/0", list]
         port_from: range_from
         port_to: range_to
@@ -338,8 +347,11 @@ mapping_terraform:
         port_from: port||port_range
         port_to: port||port_range
       transforms:
-        action: ["default:accept", lower]
+        action: lower
         protocol: [lower, { any: all, "": all }]
+        # source: provider scaleway, internal/services/instance/security_group.go,
+        # securityGroupRuleExpand : ip_range omis ⇒ ip + "/32", et "/32" ⇒ "0.0.0.0/0".
+        # Les deux omis valent donc bien toute origine (ADR-0024).
         cidrs: ["default:0.0.0.0/0", list]
         port_from: range_from
         port_to: range_to
@@ -377,6 +389,18 @@ mapping_terraform:
         database_id: name
         encryption_at_rest: encryption_at_rest
         disable_backup: disable_backup
+      transforms:
+        # source: provider scaleway, internal/services/rdb/instance.go.
+        # `encryption_at_rest` y est déclaré `TypeBool, Optional` SANS `Default` ni
+        # `Computed` (l. 352-356), et la création envoie TOUJOURS le champ :
+        #   Encryption: &rdb.EncryptionAtRest{Enabled: d.Get("encryption_at_rest").(bool)}
+        # (l. 566-569). Un argument omis vaut donc le zéro de TypeBool, `false`, envoyé
+        # explicitement à l'API : le plan PROUVE que la base sera créée non chiffrée.
+        # Sans cette déclaration, le contrôle rendait « ne peut conclure » sur une
+        # configuration que le plan écrit noir sur blanc (issue #243, ADR-0024).
+        # Comparer avec `disable_backup`, qui porte un `Default: false` au schéma : là,
+        # Terraform inscrit `false` dans le plan et aucune déclaration n'est nécessaire.
+        encryption_at_rest: ["default:false", to_bool]
 
     - tf_type: scaleway_object_bucket_acl
       type: object_storage_bucket

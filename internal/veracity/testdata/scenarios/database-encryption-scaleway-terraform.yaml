@@ -1,0 +1,77 @@
+# Chiffrement au repos d'une base manageee Scaleway, sur un PLAN.
+#
+# Ce scenario garde la decision d'ADR-0024, et il la garde par son troisieme cas.
+#
+# Les deux premiers sont ordinaires : la valeur est ECRITE, a false puis a true, et
+# la regle conclut. Le troisieme est celui qui compte : l'argument est ecrit a `null`,
+# c'est-a-dire que l'auteur du HCL ne l'a pas ecrit du tout. Terraform l'inscrit ainsi
+# dans `planned_values`, et le provider Scaleway envoie alors `Enabled: false` a l'API
+# — donc le plan PROUVE que la base sera creee non chiffree.
+#
+# Sans la declaration `default:false`, ce cas rendait `not-evaluated` : Pepin se taisait
+# sur une configuration que le plan ecrit noir sur blanc. Avec elle, il conclut.
+#
+# Ce que ce scenario empeche, si quelqu'un retire la declaration ou l'etend a un
+# attribut `computed` : le troisieme cas cesse de rendre `fail`, et il rougit.
+control: database_encryption_at_rest_enabled
+provider: scaleway
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "encryption_at_rest ECRIT a false : la base n'est pas chiffree, et la source le dit"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_rdb_instance.main
+              type: scaleway_rdb_instance
+              name: main
+              values:
+                name: rdb-prod
+                encryption_at_rest: false
+                disable_backup: false
+
+  - expect: pass
+    why: "MEME base, encryption_at_rest a true : le contre-exemple legitime, qui prouve que la regle ne crie pas sur tout"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_rdb_instance.main
+              type: scaleway_rdb_instance
+              name: main
+              values:
+                name: rdb-prod
+                encryption_at_rest: true
+                disable_backup: false
+
+  - expect: fail
+    why: "argument NON ECRIT (null dans le plan) : le provider envoie false a l'API, donc la base sera creee non chiffree (ADR-0024)"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_rdb_instance.main
+              type: scaleway_rdb_instance
+              name: main
+              values:
+                name: rdb-prod
+                encryption_at_rest: null
+                disable_backup: false
+
+  - expect: not-evaluated
+    why: "un plan qui ne cree AUCUNE base : il n'y a rien a juger, et se taire est la seule reponse juste"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_instance_server.web
+              type: scaleway_instance_server
+              name: web
+              values:
+                name: web-prod

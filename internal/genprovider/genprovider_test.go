@@ -32,6 +32,7 @@ func TestProvidersValid(t *testing.T) {
 // sur le schéma réel du provider Terraform (anti-invention §2). Ignoré par
 // provider si terraform/le schéma ne sont pas disponibles.
 func TestProviderMappingsMatchSchema(t *testing.T) {
+	var verifies, sautes []string
 	entries, err := os.ReadDir(providersDir)
 	if err != nil {
 		t.Skipf("dossier providers indisponible : %v", err)
@@ -48,11 +49,40 @@ func TestProviderMappingsMatchSchema(t *testing.T) {
 		}
 		missing, ok := tfmap.CheckSchema(filepath.Join("../../examples", name, "terraform"), desc.MappingTerraform)
 		if !ok {
+			// UN SAUT QUI SE VOIT. `CheckSchema` rend ok=false quand terraform manque
+			// ou quand le dossier d'exemple n'a jamais été initialisé — et il rendait
+			// alors la porte muette pour ce fournisseur, sans le dire. Mesuré :
+			// `examples/outscale/terraform` n'a pas de `.terraform/`, si bien que le
+			// mapping Outscale n'était ancré sur AUCUN schéma, depuis toujours.
+			// Une porte qui ne tourne pas est une porte qui ment sur sa couverture.
+			sautes = append(sautes, name)
 			continue
 		}
+		verifies = append(verifies, name)
 		for _, m := range missing {
 			t.Errorf("%s : %s", name, m)
 		}
+	}
+	if len(sautes) > 0 {
+		t.Logf("schéma non lu, donc mapping NON ancré, pour : %v\n"+
+			"  (dossier d'exemple non initialisé — `terraform init` l'y ramènerait)", sautes)
+	}
+	if len(verifies) == 0 {
+		// UNE PORTE QUI NE TOURNE PAS LE DIT, plutôt que de passer au vert.
+		//
+		// `CheckSchema` a besoin d'un `terraform providers schema -json`, donc d'un
+		// dossier d'exemple RÉELLEMENT initialisé — ce qui suppose d'avoir téléchargé
+		// les providers. La CI ne le fait pas : mesuré, elle saute les quatre
+		// fournisseurs. Cette porte n'y a donc jamais tourné, et elle y comptait
+		// pourtant comme verte.
+		//
+		// Échouer serait faux : l'environnement n'est pas fautif, il est simplement
+		// dépourvu. Passer en silence serait pire : la matrice de couverture
+		// afficherait un ancrage que personne n'a fait. Un SKIP nommé est la seule
+		// réponse honnête — il se voit dans la sortie, et il ne prétend rien.
+		t.Skipf("aucun fournisseur ancré sur un schéma : cette porte n'a pas tourné.\n" +
+			"  `terraform` dans le PATH, et `terraform init` dans examples/<fournisseur>/terraform,\n" +
+			"  la rendraient effective. Voir #260.")
 	}
 }
 
