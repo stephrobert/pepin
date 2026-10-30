@@ -3,7 +3,7 @@
 # Build/test/audit/validate sont les portes de qualité (cf. CLAUDE.md §1).
 
 [tools]
-go = "1.26.6"         # ALIGNÉ sur `go` de go.mod, d'où la CI tire la sienne
+go = "1.26.10"        # ALIGNÉ sur `go` de go.mod, d'où la CI tire la sienne
                       # (`go-version-file: go.mod`). Sans cet épinglage, la chaîne
                       # de la machine du mainteneur dérive toute seule — un Go
                       # installé par snap se met à jour sans rien demander — et
