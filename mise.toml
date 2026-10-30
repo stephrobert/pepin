@@ -16,7 +16,7 @@ opa = "1.18.2"        # tests des règles Rego : ALIGNÉ sur la lib OPA du runti
 terraform = "1.15.4"  # validation des preuves de remédiation + mapping TF
 gitleaks = "8.30.0"   # scan de secrets par MOTIF : couvre les clés souveraines,
                       # que trufflehog --only-verified ne sait pas reconnaître
-osv-scanner = "2.5.1" # ALIGNÉ sur l'action épinglée dans osv-scanner.yml. Il est
+osv-scanner = "2.7.0" # ALIGNÉ sur l'action épinglée dans osv-scanner.yml. Il est
                       # ici, et non dans la tâche `tools`, parce qu'un `go install`
                       # dépose son binaire dans ~/go/bin — que n'importe quel autre
                       # gestionnaire peut MASQUER dans le PATH. Constaté : une
