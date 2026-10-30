@@ -273,6 +273,17 @@ l'une ni l'autre appartient au `git log`.
   deux sources de vérité pour une même question finissent par diverger — et une version
   illisible laisse le titre sans numéro plutôt que d'en inventer un (ADR-0014).
 
+### Sécurité
+
+- **Toolchain en Go 1.26.10**, qui annule dix avis de la bibliothèque standard
+  atteignables depuis ce code : GO-2026-6809 (`crypto/x509`, les certificats
+  intermédiaires compromis ne sont plus accordés) et GO-2026-6617 (`net/http`,
+  plantage du serveur HTTP/2 sur une course de l'encodeur HPACK), parmi les dix
+  traces que `govulncheck` relevait en 1.26.6. La porte était rouge sur `main` :
+  rien n'était committable sans cela. `mise.toml` suit `go.mod`, d'où la CI tire
+  sa propre version, et `osv-scanner.toml` dit sous quelle version son exception
+  a été mesurée.
+
 ## [0.4.0] - 2026-09-10
 
 ### Corrigé
