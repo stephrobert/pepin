@@ -147,7 +147,7 @@ Son bloc, extrait du run ci-dessus :
   Remédiation
     Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
 ```
 <!-- /pepin:gen scan-control-encryption -->
 

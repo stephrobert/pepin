@@ -69,7 +69,7 @@ l'identifiant du projet : c'est là-dessus que la preuve de destruction filtre.
 
 Lu avant de choisir les types de ressources, dans `scaleway/terraform-provider-scaleway`
 et dans les notes de terrain du mainteneur
-([Terraform sur Scaleway : provisionner, et surtout détruire](https://blog.stephane-robert.info/docs/cloud/scaleway/iac/terraform-provider-scaleway/),
+([Terraform sur Scaleway : provisionner, et surtout détruire](https://www.stephane-robert.info/docs/cloud/scaleway/iac/terraform-provider-scaleway/),
 2026-09-09). Ce que chacune a changé dans cette stack :
 
 | Amont | État | Ce que ça fait | Ce que ce tenant en fait |

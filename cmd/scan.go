@@ -1464,7 +1464,12 @@ func hasGovernanceResource(resources any) bool {
 // posée par le composant `Exigences`. La concaténation à plat qui précédait —
 // `…/scsl/CLD-NET-1` — ne servait aucune page, et chaque finding imprimait donc un
 // lien qui renvoyait le lecteur à la racine du site.
-const scslDocBase = "https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/"
+//
+// L'hôte est `www.stephane-robert.info` : `blog.stephane-robert.info` répond 301
+// vers lui (mesuré le 2026-10-30). Un finding imprime le lien que la publication
+// sert, pas celui qu'elle redirige — un rapport archivé survit mal à une
+// redirection qu'on ne contrôle pas.
+const scslDocBase = "https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/"
 
 // scslFamilyPage associe le préfixe de famille d'une exigence à sa page publiée.
 // `mise run validate` ne peut pas vérifier une URL distante ; c'est

@@ -78,7 +78,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CHF-2  ·  scaleway
@@ -92,7 +92,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Enable encryption at rest on the instance (at creation time, or through an upgrade).
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CMP-9  ·  scaleway
@@ -106,7 +106,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Ban secrets from user data; use a secrets vault and inject them at boot. Revoke the exposed secret.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/compute-instances/#socle-cld-cmp-9
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/compute-instances/#socle-cld-cmp-9
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-IAM-12  ·  scaleway
@@ -120,7 +120,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Reserve IAM management for a dedicated administration policy; remove the management PermissionSet from everyday policies.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/iam-acces-cloud/#socle-cld-iam-12
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/iam-acces-cloud/#socle-cld-iam-12
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-1  ·  scaleway
@@ -134,7 +134,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Restrict the database ACL to the application CIDRs only (a private network where one is available); remove 0.0.0.0/0.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-1  ·  scaleway
@@ -148,7 +148,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Restrict the rule to legitimate sources/destinations and ports (administration CIDR, bastion, VPN); never expose a sensitive service to 0.0.0.0/0.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-2  ·  scaleway
@@ -162,7 +162,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Switch the default inbound policy to "drop" and open only the legitimate flows through explicit rules.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-2
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-2
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-STO-3  ·  scaleway
@@ -176,7 +176,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Re-enable automatic backups and set a retention that matches the RPO.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-3
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-3
 
 ──────────────────────────────────────────────────────────────────────────────
  MEDIUM  ·  CLD-GVN-1  ·  scaleway
@@ -190,7 +190,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Add the mandatory tags (CostCenter, Project, Env, Owner) to the resource.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/gouvernance-inventaire-cloud/#socle-cld-gvn-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/gouvernance-inventaire-cloud/#socle-cld-gvn-1
 
 ──────────────────────────────────────────────────────────────────────────────
  LOW  ·  CLD-STO-8  ·  scaleway
@@ -204,7 +204,7 @@ large tenant, you want to know the tool started. The closing line is
   Remediation
     Enable Object Lock (compliance or governance mode) on backup buckets and critical objects.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-8
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-8
 
   Controls
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
@@ -275,7 +275,7 @@ screen of a long report is already actionable.
   Remediation
     Make the bucket private (private ACL, remove the AllUsers grant, delete the public policy); serve through pre-signed URLs if needed.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
 ```
 <!-- /pepin:gen scan-control-objectstore -->
 

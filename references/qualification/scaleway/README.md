@@ -67,7 +67,7 @@ project id: that is what the proof of destruction filters on.
 
 Read before choosing the resource types, in `scaleway/terraform-provider-scaleway`
 and in the maintainer's own field notes
-([Terraform sur Scaleway : provisionner, et surtout détruire](https://blog.stephane-robert.info/docs/cloud/scaleway/iac/terraform-provider-scaleway/),
+([Terraform sur Scaleway : provisionner, et surtout détruire](https://www.stephane-robert.info/docs/cloud/scaleway/iac/terraform-provider-scaleway/),
 2026-09-09). What each one changed in this stack:
 
 | Upstream | State | What it does | What this tenant does about it |

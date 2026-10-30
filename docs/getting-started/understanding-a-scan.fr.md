@@ -77,7 +77,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CHF-2  ·  scaleway
@@ -91,7 +91,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Activer le chiffrement au repos de l'instance (à la création ou par mise à niveau).
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/chiffrement-cles/#socle-cld-chf-2
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-CMP-9  ·  scaleway
@@ -105,7 +105,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Bannir les secrets des données utilisateur ; utiliser un coffre de secrets et l'injection au démarrage. Révoquer le secret exposé.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/compute-instances/#socle-cld-cmp-9
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/compute-instances/#socle-cld-cmp-9
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-IAM-12  ·  scaleway
@@ -119,7 +119,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Réserver la gestion IAM à une politique d'administration dédiée ; retirer le PermissionSet de gestion des politiques d'usage.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/iam-acces-cloud/#socle-cld-iam-12
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/iam-acces-cloud/#socle-cld-iam-12
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-1  ·  scaleway
@@ -133,7 +133,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Restreindre l'ACL de la base aux seuls CIDR applicatifs (réseau privé quand disponible) ; retirer 0.0.0.0/0.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-1  ·  scaleway
@@ -147,7 +147,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Restreindre la règle à des sources/destinations et ports légitimes (CIDR d'administration, bastion, VPN) ; ne jamais exposer un service sensible à 0.0.0.0/0.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-1
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-NET-2  ·  scaleway
@@ -161,7 +161,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Basculer la politique entrante par défaut sur « drop » et n'ouvrir que les flux légitimes par des règles explicites.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-2
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/exposition-filtrage-reseau/#socle-cld-net-2
 
 ──────────────────────────────────────────────────────────────────────────────
  HIGH  ·  CLD-STO-3  ·  scaleway
@@ -175,7 +175,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Réactiver les sauvegardes automatiques et fixer une rétention adaptée au RPO.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-3
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-3
 
 ──────────────────────────────────────────────────────────────────────────────
  MEDIUM  ·  CLD-GVN-1  ·  scaleway
@@ -189,7 +189,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Ajouter les étiquettes obligatoires (CostCenter, Project, Env, Owner) sur la ressource.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/gouvernance-inventaire-cloud/#socle-cld-gvn-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/gouvernance-inventaire-cloud/#socle-cld-gvn-1
 
 ──────────────────────────────────────────────────────────────────────────────
  LOW  ·  CLD-STO-8  ·  scaleway
@@ -203,7 +203,7 @@ gros tenant, vous voulez savoir que l'outil a démarré. La dernière ligne est
   Remédiation
     Activer l'Object Lock (mode conformité/gouvernance) sur les buckets de sauvegarde et d'objets critiques.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-8
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-8
 
   Contrôles
   ╭────────────┬──────────────────────────────────────────────────┬──────────┬──────────┬───╮
@@ -275,7 +275,7 @@ premier écran d'un long rapport soit déjà actionnable.
   Remédiation
     Rendre le bucket privé (ACL private, retrait du grant AllUsers, suppression de la policy publique) ; servir via des URLs pré-signées si nécessaire.
 
-  ↳ docs: https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
+  ↳ docs: https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/stockage-donnees/#socle-cld-sto-1
 ```
 <!-- /pepin:gen scan-control-objectstore -->
 
