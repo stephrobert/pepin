@@ -90,6 +90,13 @@ belongs in `git log`.
 
 ### Fixed
 
+- **A finding's documentation link points at the page the publication serves, not at a
+  redirect**. Every finding printed `blog.stephane-robert.info/…`, which answers `301`
+  towards `www.stephane-robert.info/…` (measured on 2026-10-30). A reader following the
+  link still arrived, but an archived report carried a host nobody controls any more, and
+  a redirect that disappears takes the evidence of an audited control with it. The base
+  URL is now the served host.
+
 - **A throttled object-storage scan no longer reads as an outage, and an unknown key no longer
   as a missing right** (issue #96). `Classify` recognizes third-party SDK errors through two
   anonymous interfaces, `HTTPStatusCode()` and `ErrorCode()`. It read the status first — and an

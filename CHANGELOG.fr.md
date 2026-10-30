@@ -95,6 +95,13 @@ l'une ni l'autre appartient au `git log`.
 
 ### Corrigé
 
+- **Le lien de documentation d'un finding désigne la page que la publication sert, et non une
+  redirection**. Chaque finding imprimait `blog.stephane-robert.info/…`, qui répond `301` vers
+  `www.stephane-robert.info/…` (mesuré le 2026-10-30). Un lecteur qui suivait le lien arrivait
+  quand même, mais un rapport archivé portait un hôte que plus personne ne maîtrise, et une
+  redirection qui disparaît emporte avec elle la preuve du contrôle audité. L'URL de base est
+  désormais l'hôte servi.
+
 - **Un scan de stockage objet plafonné ne se lit plus comme une panne, ni une clé inconnue comme
   un droit manquant** (issue #96). `Classify` reconnaît les erreurs des SDK tiers par deux
   interfaces anonymes, `HTTPStatusCode()` et `ErrorCode()`. Il lisait le statut en premier — or

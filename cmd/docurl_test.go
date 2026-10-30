@@ -87,7 +87,7 @@ func TestNoDocLinkIsInventedForANonSCSLCode(t *testing.T) {
 // famille, puis ancre en minuscules.
 func TestDocLinkShape(t *testing.T) {
 	got := scslDocURL("CLD-NET-1")
-	want := "https://blog.stephane-robert.info/docs/securiser/socle/referentiel/cloud/" +
+	want := "https://www.stephane-robert.info/docs/securiser/socle/referentiel/cloud/" +
 		"exposition-filtrage-reseau/#socle-cld-net-1"
 	if got != want {
 		t.Errorf("lien construit :\n  %s\nattendu :\n  %s", got, want)
