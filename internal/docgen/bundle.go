@@ -59,6 +59,12 @@ var sha64 = regexp.MustCompile(`[0-9a-f]{64}`)
 // vcsDigest repère l'empreinte de provenance du binaire (`vcs:<commit>[+modified]`).
 var vcsDigest = regexp.MustCompile(`vcs:[0-9a-f]+(\+modified)?`)
 
+// toolDigest repère l'empreinte du binaire dans une propriété OSCAL.
+var toolDigest = regexp.MustCompile(`(?s)("name":\s*"tool-digest",\s*"value":\s*")[^"]+(")`)
+
+// componentDigest repère l'empreinte du binaire dans un composant d'assessment.
+var componentDigest = regexp.MustCompile(`(?s)("tool":\s*\{[^}]*"digest":\s*")[^"]+(")`)
+
 // rfc3339 repère un horodatage UTC.
 var rfc3339 = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`)
 
@@ -74,6 +80,8 @@ var uuidRe = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 // horodatage, identifiants dérivés de cet horodatage, empreinte de provenance du binaire.
 // Ce qui décrit la POSTURE, lui, reste intact — c'est ce que la page doit montrer.
 func normalizeVolatile(s string) string {
+	s = toolDigest.ReplaceAllString(s, `${1}<provenance>${2}`)
+	s = componentDigest.ReplaceAllString(s, `${1}<provenance>${2}`)
 	s = vcsDigest.ReplaceAllString(s, "<provenance>")
 	s = rfc3339.ReplaceAllString(s, "<timestamp>")
 	return uuidRe.ReplaceAllString(s, "<uuid>")
@@ -198,6 +206,7 @@ func normalizeBundleText(s, tmp, version string) string {
 	if nue := strings.TrimPrefix(version, "v"); nue != "" {
 		s = strings.ReplaceAll(s, `"`+nue+`"`, `"<version>"`)
 	}
+	s = componentDigest.ReplaceAllString(s, `${1}<provenance>${2}`)
 	s = vcsDigest.ReplaceAllString(s, "<provenance>")
 	s = sha64.ReplaceAllString(s, "<sha256>")
 	s = rfc3339.ReplaceAllString(s, "<timestamp>")
