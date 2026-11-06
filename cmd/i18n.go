@@ -79,6 +79,12 @@ func localize() {
 	rootCmd.Short = tr(
 		"Pépin — trouve les pépins de votre cloud souverain",
 		"Pepin — finds the flaws in your sovereign cloud")
+	diffCmd.Use = tr(
+		"diff <bundle-avant> <bundle-après>",
+		"diff <before-bundle> <after-bundle>")
+	setUsage(diffCmd, "format", tr(
+		"format de sortie : table | json",
+		"output format: table | json"))
 	// La liste des clouds est DÉRIVÉE du registre, jamais écrite à la main.
 	//
 	// Elle l'était, et elle avait dérivé : la première phrase qu'un nouvel utilisateur
@@ -147,6 +153,16 @@ func localize() {
 	setUsage(scanCmd, "redact", tr(
 		"caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive",
 		"redact the sensitive values (user-data, policies) from the bundle's input.json — for sharing with a third party; INCOMPATIBLE with verify --re-derive"))
+
+	diffCmd.Short = tr("Comparer deux bundles de preuve", "Compare two evidence bundles")
+	diffCmd.Long = tr(
+		"Vérifie l'intégrité interne de deux bundles scellés puis compare leurs verdicts et leurs ressources.\n\n"+
+			"Les changements de version d'outil ou de règles sont signalés. La perte de visibilité n'est jamais présentée comme une correction.\n"+
+			"Cette commande ne vérifie pas les signatures détachées : utiliser `pepin verify --pubkey` pour authentifier l'auteur.",
+		"Verifies the internal integrity of two sealed bundles, then compares their verdicts and resources.\n\n"+
+			"Tool and ruleset version changes are reported. Loss of visibility is never presented as a fix.\n"+
+			"This command does not verify detached signatures: use `pepin verify --pubkey` to authenticate the signer.")
+	setUsage(diffCmd, "format", tr("format de sortie : table | json", "output format: table | json"))
 
 	providerCmd.Short = tr(
 		"Gérer les providers déclaratifs (lister, valider, créer)",

@@ -7,17 +7,24 @@
 package objectstorage
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 
+	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/model"
 )
 
@@ -47,6 +54,15 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 	if err != nil {
 		return nil, fmt.Errorf("configuration S3 : %w", err)
 	}
+	listBucketsPath, err := endpointPath(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("endpoint S3 : %w", err)
+	}
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	cfg.HTTPClient = listBucketsHTTPClient{next: httpClient, path: listBucketsPath}
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		if endpoint != "" {
 			o.BaseEndpoint = &endpoint
@@ -66,6 +82,59 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 		out = append(out, collectBucket(ctx, client, provider, region, *b.Name, sseKMS, tagsPersisted))
 	}
 	return out, nil
+}
+
+type listBucketsHTTPClient struct {
+	next aws.HTTPClient
+	path string
+}
+
+func (c listBucketsHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	resp, err := c.next.Do(req)
+	if err != nil || resp == nil || req.Method != http.MethodGet ||
+		strings.TrimRight(req.URL.Path, "/") != strings.TrimRight(c.path, "/") ||
+		resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return resp, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		return nil, &collect.UnreadableError{Call: "s3:ListBuckets", Err: err}
+	}
+	if err := validateListBucketsResponse(body); err != nil {
+		return nil, &collect.UnreadableError{Call: "s3:ListBuckets", Err: err}
+	}
+	resp.Body = io.NopCloser(bytes.NewReader(body))
+	return resp, nil
+}
+
+func endpointPath(endpoint string) (string, error) {
+	if endpoint == "" {
+		return "/", nil
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return "", err
+	}
+	if !u.IsAbs() || u.Host == "" {
+		return "", fmt.Errorf("URL absolue attendue")
+	}
+	return "/" + strings.Trim(u.Path, "/"), nil
+}
+
+func validateListBucketsResponse(body []byte) error {
+	var response struct {
+		XMLName xml.Name  `xml:"ListAllMyBucketsResult"`
+		Buckets *struct{} `xml:"Buckets"`
+	}
+	if err := xml.Unmarshal(body, &response); err != nil {
+		return fmt.Errorf("réponse ListBuckets illisible (XML invalide) : %w", err)
+	}
+	if response.XMLName.Local != "ListAllMyBucketsResult" || response.Buckets == nil {
+		return fmt.Errorf("réponse ListBuckets illisible : document S3 ListAllMyBucketsResult avec Buckets attendu")
+	}
+	return nil
 }
 
 // collectBucket interroge ACL, versioning, policy et tags d'un bucket (best

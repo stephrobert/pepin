@@ -135,6 +135,12 @@ const (
 // simple disparition d'un écart.
 const remediationWitness = "objectstorage_bucket_public_access"
 
+var oscalToolDigest = regexp.MustCompile(`("name": "tool-digest",\s+"value": )"[^"]+"`)
+
+func normalizeOSCALToolDigest(document string) string {
+	return oscalToolDigest.ReplaceAllString(document, `${1}"<binary-digest>"`)
+}
+
 // Chemins des fixtures du dépôt utilisées par les captures.
 const (
 	planVulnerable = "examples/scaleway/terraform/plan.json"
@@ -551,7 +557,7 @@ func formatBlocks(lang string, c captures) map[string]string {
 		"format-json-finding": jsonField(c.jsonReport, "findings", "0"),
 		"format-sarif-head":   Fence("json", Head(c.sarif.Stdout, 22)),
 		"format-sarif-result": jsonField(c.sarif, "runs", "0", "results", "0"),
-		"format-oscal-head":   Fence("json", Head(c.oscal.Stdout, 24)),
+		"format-oscal-head":   Fence("json", normalizeOSCALToolDigest(Head(c.oscal.Stdout, 24))),
 	}
 }
 

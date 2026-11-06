@@ -27,7 +27,7 @@ const frozenDir = "cmd/testdata/frozen"
 // un verbe ajouté à la CLI et oublié ici fait échouer la génération, plutôt que de manquer
 // silencieusement à la page.
 var documentedVerbs = []string{
-	"scan", "verify", "provider", "provider list", "provider validate", "provider new",
+	"scan", "verify", "diff", "provider", "provider list", "provider validate", "provider new",
 	"scsl", "control", "control explain", "version",
 }
 

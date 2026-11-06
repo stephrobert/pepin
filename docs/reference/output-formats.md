@@ -26,7 +26,7 @@ See [Exit codes](exit-codes.md).
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v7** |
+| `cli` | verbs, flags and exit codes | **v8** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
@@ -372,7 +372,7 @@ The same assessment, rendered as an OSCAL 1.1.2 `assessment-results` document.
         },
         {
           "name": "tool-digest",
-          "value": "<provenance>",
+          "value": "<binary-digest>",
           "ns": "https://github.com/stephrobert/scankit/ns/oscal"
         },
 […]

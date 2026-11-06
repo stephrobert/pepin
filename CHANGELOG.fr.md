@@ -26,6 +26,13 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **`pepin diff` compare deux bundles de preuve** après vérification de leurs
+  sommes de contrôle internes. La commande distingue corrections, régressions,
+  pertes ou retours de visibilité, compare les inventaires de ressources et
+  signale les changements de provenance ; `--format json` fournit une sortie
+  JSON. Elle n'authentifie pas les signatures détachées : utiliser
+  `pepin verify --pubkey` pour authentifier le signataire.
+
 - **Scaleway : la politique d'expiration des clés d'API de l'organisation est lue**
   (issue #196). `iam_apiaccesspolicy_max_key_expiration` n'était actif que pour Outscale.
   Scaleway a l'équivalent, au niveau de l'**organisation**, et l'impose — le tenant de
@@ -96,6 +103,11 @@ l'une ni l'autre appartient au `git log`.
   d'inventaire passe en `v10` : un ajout pur, le nouveau type `security_group`.
 
 ### Corrigé
+
+- **Une réponse S3 de succès invalide n'est plus interprétée comme une liste de
+  buckets vide**. Un statut HTTP réussi doit contenir un document
+  `ListAllMyBucketsResult` lisible ; sinon la preuve est classée illisible, et non
+  comme un compte conforme.
 
 - **Le lien de documentation d'un finding désigne la page que la publication sert, et non une
   redirection**. Chaque finding imprimait `blog.stephane-robert.info/…`, qui répond `301` vers

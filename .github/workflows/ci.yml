@@ -51,10 +51,19 @@ jobs:
       - name: Build
         run: mise run build
 
+      - name: Initialize pinned Terraform provider schemas
+        run: |
+          for provider in exoscale outscale scaleway; do
+            mise exec -- terraform -chdir="examples/$provider/terraform" init \
+              -backend=false -input=false -lockfile=readonly
+          done
+
       - name: Vet
         run: mise run vet
 
       - name: Go unit tests
+        env:
+          PEPIN_REQUIRE_TF_SCHEMA: "1"
         run: mise run test-go
 
       - name: Rego policy tests

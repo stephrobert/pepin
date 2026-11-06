@@ -75,7 +75,8 @@ const (
 //
 // Le drapeau ne s'appelle PAS `--profile` : ce nom désigne déjà le profil
 // d'identifiants de la collecte live.
-const cliSurfaceVersion = 7
+// v8 : ajout de `diff <bundle-avant> <bundle-après>`, avec une sortie JSON optionnelle.
+const cliSurfaceVersion = 8
 
 // findingsSurfaceVersion est la version de FORME de `--format json`
 // ({"findings": [...], "summary": {...}}), la sortie qu'un pipeline parse le

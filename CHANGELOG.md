@@ -25,6 +25,12 @@ belongs in `git log`.
 
 ### Added
 
+- **`pepin diff` compares two evidence bundles** after checking their internal
+  checksums. It separates fixes, regressions, and lost or restored visibility,
+  compares resource inventories, and reports provenance changes; JSON output is
+  available with `--format json`. It does not authenticate detached signatures:
+  use `pepin verify --pubkey` when signer authenticity is required.
+
 - **Scaleway: the organisation's API-key expiry policy is read** (issue #196).
   `iam_apiaccesspolicy_max_key_expiration` was active for Outscale only. Scaleway has the
   equivalent, at **organisation** level, and enforces it — the qualification tenant found
@@ -91,6 +97,10 @@ belongs in `git log`.
   `security_group` type.
 
 ### Fixed
+
+- **An invalid S3 success response is no longer reported as an empty bucket list**.
+  A successful HTTP status must contain a readable `ListAllMyBucketsResult`;
+  otherwise the evidence is classified as unreadable, not as a clean account.
 
 - **A finding's documentation link points at the page the publication serves, not at a
   redirect**. Every finding printed `blog.stephane-robert.info/…`, which answers `301`

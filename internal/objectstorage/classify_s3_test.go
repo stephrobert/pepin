@@ -124,3 +124,24 @@ func TestEveryClassIsReachedByARealS3Error(t *testing.T) {
 		})
 	}
 }
+
+func TestUnreadableSuccessResponseDoesNotBecomeAnEmptyInventory(t *testing.T) {
+	got, detail := classe(t, http.StatusOK, "<html><body>gateway error</body></html>")
+	if got != model.OutcomeUnreadable {
+		t.Fatalf("HTTP 200 HTML classified as %q, want %q (%s)",
+			got, model.OutcomeUnreadable, detail)
+	}
+}
+
+func TestValidEmptyBucketListingRemainsACompleteObservation(t *testing.T) {
+	endpoint := serveurS3(t, http.StatusOK,
+		`<ListAllMyBucketsResult><Buckets></Buckets></ListAllMyBucketsResult>`)
+	buckets, err := objectstorage.CollectBuckets(context.Background(),
+		"scaleway", endpoint, "fr-par", "PEPINTESTACCESSKEY00", "pepin-test-secret-key", false, true)
+	if err != nil {
+		t.Fatalf("valid empty ListBuckets response failed: %v", err)
+	}
+	if len(buckets) != 0 {
+		t.Fatalf("valid empty response returned %d bucket(s), want 0", len(buckets))
+	}
+}
