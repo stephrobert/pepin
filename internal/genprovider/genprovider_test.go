@@ -1,11 +1,17 @@
 package genprovider
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/internal/tfmap"
 )
 
@@ -157,5 +163,79 @@ func TestEveryContractJustificationIsBilingual(t *testing.T) {
 	}
 	if seen == 0 {
 		t.Fatal("aucune justification de non-applicabilité lue : le test ne mesurerait rien")
+	}
+}
+
+func TestCredentialFileSecretsAreNotProjectedIntoInventory(t *testing.T) {
+	const secret = "fake-credential-marker"
+
+	tests := []struct {
+		name, format, pathEnv, contents string
+	}{
+		{
+			name:    "scaleway",
+			format:  "scw",
+			pathEnv: "SCW_CONFIG_PATH",
+			contents: `access_key: fake-access-key
+secret_key: fake-credential-marker
+`,
+		},
+		{
+			name:     "outscale",
+			format:   "osc",
+			pathEnv:  "OSC_CONFIG_FILE",
+			contents: `{"default":{"access_key":"fake-access-key","secret_key":"fake-credential-marker"}}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			credentialsPath := filepath.Join(t.TempDir(), "credentials")
+			if err := os.WriteFile(credentialsPath, []byte(tt.contents), 0o600); err != nil {
+				t.Fatalf("écriture des identifiants de test : %v", err)
+			}
+			t.Setenv(tt.pathEnv, credentialsPath)
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("X-Auth-Token") != secret {
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+				_, _ = w.Write([]byte(`{"items":[{"id":"safe-resource","secret_key":"` + secret + `"}]}`))
+			}))
+			defer server.Close()
+
+			g := GenericProvider{desc: Descriptor{Name: "test"}}
+			g.desc.Auth.Type = "header"
+			g.desc.Auth.Header = "X-Auth-Token"
+			g.desc.Auth.Value = "{secret_key}"
+			g.desc.Credentials.File = credFile{Format: tt.format}
+			g.desc.Collecte = collect.Spec{
+				BaseURL: server.URL,
+				Resources: []collect.ResourceSpec{{
+					Type:  "test_resource",
+					Path:  "/resources",
+					Items: "items",
+					ID:    "id",
+					Map:   map[string]string{"id": "id"},
+				}},
+			}
+
+			inv, err := g.Collect(context.Background(), provider.Config{})
+			if err != nil {
+				t.Fatalf("collecte de test : %v", err)
+			}
+			if len(inv.Resources) != 1 || inv.Resources[0].ID != "safe-resource" {
+				t.Fatalf("la collecte authentifiée n'a pas produit la ressource attendue : %+v", inv.Resources)
+			}
+
+			encoded, err := json.Marshal(inv)
+			if err != nil {
+				t.Fatalf("sérialisation de l'inventaire : %v", err)
+			}
+			if strings.Contains(string(encoded), secret) {
+				t.Fatal("le secret d'authentification est entré dans l'inventaire normalisé")
+			}
+		})
 	}
 }
