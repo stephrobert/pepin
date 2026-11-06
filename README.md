@@ -84,7 +84,7 @@ exempted one is not either.
 Every release artefact is covered. One command each, and nothing to trust on faith.
 
 ```bash
-V=v0.3.0
+V=v0.4.0
 gh release download "$V" --repo stephrobert/pepin
 
 # 1. the checksums are signed, and they cover the binaries AND the SBOM
