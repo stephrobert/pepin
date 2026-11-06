@@ -7,7 +7,7 @@
 Ce que Pépin peut PROUVER de ses propres verdicts, et ce qu'il ne peut pas.
 Chaque chiffre de cette page est dérivé des artefacts du dépôt — obligations
 calculées depuis la matrice de couverture, scénarios de véracité, tenants de
-référence, relevés de canari. Aucun n'est saisi.
+référence, relevés de canari et de qualification. Aucun n'est saisi.
 
 ## La règle
 
@@ -16,7 +16,7 @@ pourcentage sans mesure derrière est un faux vert déplacé dans un tableau de
 bord, et il y est pire qu'ailleurs : personne ne relit un tableau de bord.
 
 Les chiffres sont donc laids, et c'est le point. « 58 contrôles » ne dit rien de
-la qualité d'une détection ; « 103 verdicts prouvés sur 472 » dit où en est le
+la qualité d'une détection ; « 111 verdicts prouvés sur 478 » dit où en est le
 produit, et rétrécit dans le bon sens à chaque scénario écrit.
 
 ## Les chiffres
@@ -24,10 +24,10 @@ produit, et rétrécit dans le bon sens à chaque scénario écrit.
 | Chiffre | Nombre |
 |---|---:|
 | Contrôles au référentiel | 58 |
-| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 186 |
-| Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 34 |
-| Verdicts à prouver au total | 472 |
-| Verdicts prouvés | 103 |
+| Chemins contrôle × fournisseur × source sur lesquels Pépin conclut | 190 |
+| Chemins dont TOUS les verdicts atteignables sont prouvés de bout en bout | 38 |
+| Verdicts à prouver au total | 478 |
+| Verdicts prouvés | 111 |
 
 ## Couverture de véracité, par verdict
 
@@ -37,11 +37,11 @@ demanderait d'inventer une non-applicabilité.
 
 | Verdict | Ce qu'il met en scène | À prouver | Prouvés | % |
 |---|---|---:|---:|---:|
-| `fail` | une configuration vulnérable est détectée | 143 | 27 | 18 |
-| `pass` | une configuration réellement correcte est confirmée | 143 | 39 | 27 |
-| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 162 | 25 | 15 |
+| `fail` | une configuration vulnérable est détectée | 144 | 29 | 20 |
+| `pass` | une configuration réellement correcte est confirmée | 144 | 41 | 28 |
+| `not-evaluated` | l'attribut décisif manque, et le scan refuse de conclure | 166 | 29 | 17 |
 | `not-applicable` | le contrat du fournisseur déclare le mécanisme inexistant | 24 | 12 | 50 |
-| **Total** | | **472** | **103** | **21** |
+| **Total** | | **478** | **111** | **23** |
 
 ## Validé en live
 
@@ -50,14 +50,33 @@ identifiant** : il prouve qu'un endpoint existe et refuse, jamais qu'un droit
 *suffisant* rende `200` sur un tenant réel. Il ne vaut donc pas validation live
 d'un contrôle.
 
-Ce compteur ne s'incrémente que sur un relevé **authentifié**, et il n'en existe
-aucun. Le zéro est dérivé, pas écrit : le jour où un mainteneur consigne un
-relevé authentifié, il montera tout seul.
+Un chemin compte lorsqu'au moins un verdict `pass` ou `fail` requis a été
+explicitement comparé sur un tenant authentifié, pour ce contrôle et ce
+fournisseur. Cela ne prouve pas tous les verdicts de ce chemin et ne modifie
+pas le registre de véracité. Les contre-exemples silencieux, attentes hors tenant
+et défauts connus ne constituent pas une preuve de `pass`.
+
+Les relevés sont des faits historiques réévalués avec les attentes dont le
+hachage est consigné. Ils indiquent le binaire réellement exécuté, pas celui
+de la release. Le bundle vérifie l'intégrité, pas l'identité de son auteur.
+Un tenant que nous avons écrit ne prouve pas la justesse universelle d'une
+règle ; les tenants tiers la complètent.
+
+Instantané historique au 2026-09-11T07:34:27Z. Chaque relevé expire 90 jours après son
+horodatage ; le binaire retire les preuves périmées au moment de l'exécution ;
+le préflight refuse un fournisseur dont les relevés sont tous non frais.
 
 | Chiffre | Nombre |
 |---|---:|
 | Chemins dont la source est une collecte live | 104 |
-| Validé en live | **0 %** |
+| Chemins avec au moins un verdict live validé | 40 |
+| Verdicts distincts validés en live | 40 |
+| Validé en live | **38 %** |
+
+| Fournisseur | Relevé le | Expire à (UTC) | Binaire qualifié | Relevé |
+|---|---|---|---|---|
+| `exoscale` | 2026-09-11T07:34:27Z | 2026-12-10T07:34:27Z | `0.1.0-dev` (`vcs:2cf48ca9cd0967a16aa6b2f5396749503a6a04dd+modified`) | [JSON](../references/qualification/evidence/exoscale-2026-09-11.json) |
+| `scaleway` | 2026-09-11T05:13:16Z | 2026-12-10T05:13:16Z | `0.1.0-dev` (`vcs:74ebd40a490ddf0905957982e814949a0eb20584+modified`) | [JSON](../references/qualification/evidence/scaleway-2026-09-11.json) |
 
 ## Ce que les vrais plans de contrôle ont répondu
 

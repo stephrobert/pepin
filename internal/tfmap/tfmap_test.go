@@ -78,3 +78,53 @@ resources:
 		t.Errorf("id KO : %v", rule.ID)
 	}
 }
+
+func TestOutscaleAccessKeyPlanDistinguishesRootFromEIMUser(t *testing.T) {
+	spec := Spec{
+		Provider: "outscale",
+		Resources: []ResourceSpec{{
+			TFType: "outscale_access_key",
+			Type:   "access_key",
+			ID:     "access_key_id",
+			Map: map[string]string{
+				"access_key_id":   "access_key_id",
+				"expiration_date": "expiration_date",
+				"root_owned":      "user_name",
+			},
+			Transforms: map[string]any{
+				"root_owned": "matches:^$",
+			},
+		}},
+	}
+
+	inv := Apply(spec, []tfparse.Resource{
+		{
+			Type:    "outscale_access_key",
+			Address: "outscale_access_key.root",
+			Values: map[string]any{
+				"user_name":       nil,
+				"expiration_date": "2027-01-01T00:00:00Z",
+			},
+		},
+		{
+			Type:    "outscale_access_key",
+			Address: "outscale_access_key.member",
+			Values: map[string]any{
+				"user_name": "pepin-qual-user",
+			},
+		},
+	})
+	if len(inv.Resources) != 2 {
+		t.Fatalf("got %d resources, want 2", len(inv.Resources))
+	}
+
+	if got := inv.Resources[0].Attributes["root_owned"]; got != true {
+		t.Errorf("root key root_owned = %#v, want true", got)
+	}
+	if got := inv.Resources[1].Attributes["root_owned"]; got != false {
+		t.Errorf("EIM key root_owned = %#v, want false", got)
+	}
+	if _, ok := inv.Resources[1].Attributes["expiration_date"]; ok {
+		t.Error("missing expiry must remain absent in the projected attributes")
+	}
+}

@@ -60,7 +60,7 @@ reason:
 |---|---|---|---|
 | exoscale | terraform | ∅ `not-applicable` | resource type "load_balancer" absent from the exoscale API |
 | exoscale | live | ∅ `not-applicable` | resource type "load_balancer" absent from the exoscale API |
-| outscale | terraform | ◐ `partial` | deciding attribute "access_log" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| outscale | terraform | ◐ `partial` | deciding attribute "access_log" not projected on correlated type "load_balancer": a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 

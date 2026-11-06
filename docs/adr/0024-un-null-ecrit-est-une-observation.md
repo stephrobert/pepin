@@ -121,6 +121,9 @@ d'API n'est pas celle d'un plan. Il est signalé ici pour ne pas être oublié.
   `TestEveryTerraformDefaultCitesItsSource`*
 - Un booléen garde le même type quelle que soit la source — *garde : transform
   `to_bool`, exercé par les scénarios de véracité*
+- La provenance distingue un défaut appliqué à `null` (`observed`, `derived`) d'un
+  booléen explicite recopié (`observed`, non `derived`), et un champ inconnu d'un
+  champ non mappé — *garde : `TestNullDefaultProvenanceDistinguishesExplicitAndDerivedValues`*.
 
 ## Validation
 

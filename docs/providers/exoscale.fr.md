@@ -177,7 +177,7 @@ pepin scan exoscale --terraform plan.json
 <!-- pepin:gen provider-exoscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 19 | 2 | 6 | 31 |
+| terraform | 18 | 3 | 6 | 31 |
 | live | 24 | 1 | 6 | 27 |
 <!-- /pepin:gen provider-exoscale-coverage -->
 
@@ -202,6 +202,7 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 <!-- pepin:gen provider-exoscale-onesource -->
 | Contrôle | Observable uniquement via | Motif du côté aveugle |
 |---|---|---|
+| `blockstorage_volume_snapshots_exist` | live | la source ne projette pas le type corrélé « blockstorage_snapshot » : le contrôle rend « not-evaluated » plutôt que de conclure sans cette ressource |
 | `iam_user_mfa_enabled` | live | cette source ne produit aucune ressource de type « iam_user » |
 | `kubernetes_cluster_audit_logging_enabled` | live | attribut décisif « audit_enabled » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_object_lock_enabled` | live | cette source ne produit aucune ressource de type « object_storage_bucket » |

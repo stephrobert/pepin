@@ -149,6 +149,15 @@ else
   fi
 fi
 
+# Les qualifications authentifiées ne sont pas des canaris. Un historique ancien
+# reste conservé, mais chaque fournisseur qui en a un doit posséder au moins un
+# relevé encore frais ; le même code Go sert au compteur embarqué et à cette porte.
+if qualification_report="$(mise exec -- go run ./tools/release/qualification_preflight.go 2>&1)"; then
+  ok "$qualification_report"
+else
+  ko "qualifications authentifiées absentes, invalides ou périmées" "$qualification_report"
+fi
+
 # --- les promesses que le README publie, éprouvées en les déclenchant ---------
 #
 # Les codes de sortie et le bundle sont la surface que les CI des consommateurs

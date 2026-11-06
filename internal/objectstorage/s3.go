@@ -28,6 +28,11 @@ import (
 	"github.com/stephrobert/pepin/internal/model"
 )
 
+const (
+	maxListBucketsPages = 1000
+	maxListBucketsBytes = 64 << 20
+)
+
 // CollectBuckets liste les buckets d'un endpoint S3-compatible et projette
 // chacun dans le modèle normalisé. `provider` étiquette les ressources ;
 // `endpoint` vide = endpoint S3 par défaut (sinon endpoint souverain custom).
@@ -70,18 +75,35 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 		o.UsePathStyle = true // requis par les endpoints S3-compatibles souverains.
 	})
 
-	listed, err := client.ListBuckets(ctx, &s3.ListBucketsInput{})
-	if err != nil {
-		return nil, fmt.Errorf("ListBuckets : %w", err)
-	}
 	var out []model.Resource
-	for _, b := range listed.Buckets {
-		if b.Name == nil {
-			continue
+	var token *string
+	seenTokens := map[string]bool{}
+	for page := 0; page < maxListBucketsPages; page++ {
+		listed, err := client.ListBuckets(ctx, &s3.ListBucketsInput{ContinuationToken: token})
+		if err != nil {
+			return out, fmt.Errorf("ListBuckets : %w", err)
 		}
-		out = append(out, collectBucket(ctx, client, provider, region, *b.Name, sseKMS, tagsPersisted))
+		for _, b := range listed.Buckets {
+			if b.Name == nil || strings.TrimSpace(*b.Name) == "" {
+				return out, &collect.UnreadableError{
+					Call: "s3:ListBuckets", Err: fmt.Errorf("bucket sans nom"),
+				}
+			}
+			out = append(out, collectBucket(ctx, client, provider, region, *b.Name, sseKMS, tagsPersisted))
+		}
+		if listed.ContinuationToken == nil || *listed.ContinuationToken == "" {
+			return out, nil
+		}
+		next := *listed.ContinuationToken
+		if seenTokens[next] {
+			return out, &collect.UnreadableError{
+				Call: "s3:ListBuckets", Err: fmt.Errorf("jeton de pagination répété"),
+			}
+		}
+		seenTokens[next] = true
+		token = &next
 	}
-	return out, nil
+	return out, &collect.TruncatedError{Call: "s3:ListBuckets", MaxPages: maxListBucketsPages}
 }
 
 type listBucketsHTTPClient struct {
@@ -97,7 +119,10 @@ func (c listBucketsHTTPClient) Do(req *http.Request) (*http.Response, error) {
 		return resp, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	if resp.Body == nil {
+		return nil, &collect.UnreadableError{Call: "s3:ListBuckets", Err: fmt.Errorf("corps absent")}
+	}
+	body, err := readListBucketsBody(resp.Body, maxListBucketsBytes)
 	_ = resp.Body.Close()
 	if err != nil {
 		return nil, &collect.UnreadableError{Call: "s3:ListBuckets", Err: err}
@@ -107,6 +132,17 @@ func (c listBucketsHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	}
 	resp.Body = io.NopCloser(bytes.NewReader(body))
 	return resp, nil
+}
+
+func readListBucketsBody(body io.Reader, limit int64) ([]byte, error) {
+	raw, err := io.ReadAll(io.LimitReader(body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(raw)) > limit {
+		return nil, fmt.Errorf("réponse ListBuckets supérieure à %d octets", limit)
+	}
+	return raw, nil
 }
 
 func endpointPath(endpoint string) (string, error) {

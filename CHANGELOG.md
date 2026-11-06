@@ -25,6 +25,12 @@ belongs in `git log`.
 
 ### Added
 
+- **The quality map counts authenticated live verdicts per control and
+  provider**, from verified anonymized records. It distinguishes historical
+  Scaleway and Exoscale evidence from unauthenticated canaries and preserves the
+  version of the binary actually run. Evidence expires after 90 days and does
+  not alter the veracity ledger.
+
 - **`pepin diff` compares two evidence bundles** after checking their internal
   checksums. It separates fixes, regressions, and lost or restored visibility,
   compares resource inventories, and reports provenance changes; JSON output is
@@ -69,6 +75,14 @@ belongs in `git log`.
   `fail`s on the deliberately unprotected VM and stays inconclusive on the one with no
   readable environment — and confirmed by a `--plan-only` qualification run, GO, with
   **nothing created and nothing billed**.
+
+- **Outscale plans now evaluate access-key expiry and account ownership** (issue #203).
+  `iam_accesskey_expiration_set` and `iam_no_root_access_key` were unevaluated even
+  though the plan carries `expiration_date` and distinguishes an account key from an
+  EIM user's key: `user_name` is null only for the former. The mapping derives
+  `root_owned` from that explicit null, so an ordinary user's key is not mislabeled.
+  The checked-in qualification plan now pins the missing-expiry key and the root key
+  separately, with the other keys as counterexamples.
 
 - **Scaleway live: a root-owned API key is now found** (issue #195).
   `iam_no_root_access_key` — severity `high` — could not conclude on either source. The
@@ -118,12 +132,17 @@ belongs in `git log`.
   all**, and said nothing. Skips are now named locally, and CI requires a schema for every
   provider with a Terraform mapping. A new `to_bool` transform keeps a boolean a boolean
   whichever source it comes from, rather than `false` live and `"false"` from a plan.
+  Provenance also distinguishes an explicit `false` from a value derived from `null`,
+  while an unknown or unmapped attribute remains distinguishable from both.
 
 ### Fixed
 
 - **An invalid S3 success response is no longer reported as an empty bucket list**.
   A successful HTTP status must contain a readable `ListAllMyBucketsResult`;
-  otherwise the evidence is classified as unreadable, not as a clean account.
+  otherwise the evidence is classified as unreadable, not as a clean account. Bucket
+  names and continuation pages are checked, partial observations are retained, and
+  cross-resource tagging follows the configured resource types. Sealed assessments
+  with a custom policy now replay its relaxations during `verify --re-derive`.
 
 - **A finding's documentation link points at the page the publication serves, not at a
   redirect**. Every finding printed `blog.stephane-robert.info/…`, which answers `301`

@@ -49,8 +49,8 @@ source".
 
 | Provider | Terraform plan | Live collection |
 |---|:-:|:-:|
-| exoscale | ✅ | ✅ |
-| outscale | ✗ | ✅ |
+| exoscale | ◐ | ✅ |
+| outscale | ◐ | ✅ |
 | scaleway | ✗ | ✗ |
 | kubernetes | n/a | ✗ |
 
@@ -59,16 +59,17 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
-| outscale | terraform | ✗ `unsupported` | this source produces no resource of type "blockstorage_volume" |
+| exoscale | terraform | ◐ `partial` | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
+| outscale | terraform | ◐ `partial` | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
-| `fail` | a deviation was detected on a real resource | exoscale / terraform · exoscale / live · outscale / live |
-| `pass` | the deciding data was collected, and it is compliant | exoscale / terraform · exoscale / live · outscale / live |
+| `fail` | a deviation was detected on a real resource | exoscale / terraform · exoscale / live · outscale / terraform · outscale / live |
+| `pass` | the deciding data was collected, and it is compliant | exoscale / live · outscale / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
-| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
+| `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | exoscale / terraform · outscale / terraform |
 
 An observable control still returns `not-evaluated` on an inventory that contains no
 resource of the targeted type: "nothing to look at" is not "compliant".
@@ -107,6 +108,10 @@ is, or a note anchored on the official documentation. See
 In the `assessment` output, look for `"control": "blockstorage_volume_snapshots_exist"`: its `status` must be `pass`.
 If it stays `not-evaluated`, the deciding data was not collected and the fix is **not**
 demonstrated: the reasons table above says why.
+
+**One of the two sources cannot lift the `pass` lock** for this control: the provider
+quoted does produce the targeted type there, but the scan will return `not-evaluated`.
+The reasons table says which one, and why.
 
 ## See also
 

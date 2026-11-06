@@ -60,7 +60,7 @@ porte son motif :
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
 | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| scaleway | terraform | ◐ `partial` | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| scaleway | terraform | ◐ `partial` | attribut décisif « default_encryption_enabled » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 

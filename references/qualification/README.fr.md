@@ -77,6 +77,31 @@ La sortie va dans `release-gate/` (ignoré par git) : `qualification-<fournisseu
 Ces artefacts portent les identifiants de ressources d'un compte réel : rien n'en
 entre au dépôt sans relecture.
 
+## Relevé public des verdicts live
+
+Après un run live `GO`, détruire et vérifier les ressources comme ci-dessus, puis
+construire le binaire et dériver un relevé sans identifiant de compte ni de ressource :
+
+```bash
+mise run build
+PROVIDER=scaleway mise run qualify:record > /tmp/scaleway-evidence.json
+```
+
+Le générateur refuse un plan seul, un destroy non prouvé, une comparaison historique
+en échec ou un bundle dont `pepin verify` refuse l'intégrité. Il compare chaque
+contrôle avec les **attentes courantes**, exclut les défauts connus et ne retient que
+les verdicts `pass` ou `fail` explicitement attendus et vérifiés sur le tenant. Un
+contre-exemple silencieux ne prouve pas un `pass`. Relire le JSON avant de l'ajouter
+à `evidence/`, puis lancer `mise run gen-docs`.
+
+Le relevé garde l'horodatage exact et l'empreinte du binaire réellement utilisé, ainsi que les
+empreintes du rapport, de l'assessment et des attentes **réévaluées**
+(`reevaluated_expected_sha256`). Il ne prétend pas que le binaire de release a été
+qualifié. Un bundle non signé permet de vérifier son intégrité, pas d'authentifier son
+auteur. La [carte de qualité](../../docs/detection-quality.fr.md) publie l'instantané
+historique et les expirations ; à l'exécution, une preuve future ou âgée de plus de
+90 jours ne compte plus.
+
 ## Ce que NO-GO veut dire
 
 | Différence | Ce que c'est |

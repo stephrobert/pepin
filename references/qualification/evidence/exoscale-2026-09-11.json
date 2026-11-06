@@ -1,0 +1,104 @@
+{
+  "provider": "exoscale",
+  "source": "live",
+  "recorded_at": "2026-09-11T07:34:27Z",
+  "tool_version": "0.1.0-dev",
+  "tool_digest": "vcs:2cf48ca9cd0967a16aa6b2f5396749503a6a04dd+modified",
+  "report_sha256": "a91afd146b7857ad5dd429eef7f4154174b43991130a1e8b2c05bc6f70952b87",
+  "assessment_sha256": "484b5e4b1967161408a043df72492922afd3e846b7cc3e87bc24c4f5052d596a",
+  "reevaluated_expected_sha256": "d655e8534ed6fe7398720a292083d25dad9587d9fa9acf37df945ee3a50e3ed7",
+  "observations": [
+    {
+      "control": "blockstorage_volume_encryption",
+      "verdict": "pass"
+    },
+    {
+      "control": "blockstorage_volume_snapshots_exist",
+      "verdict": "fail"
+    },
+    {
+      "control": "compute_instance_has_security_group",
+      "verdict": "pass"
+    },
+    {
+      "control": "compute_instance_no_secrets_in_user_data",
+      "verdict": "fail"
+    },
+    {
+      "control": "compute_instance_public_ip_with_open_securitygroup",
+      "verdict": "fail"
+    },
+    {
+      "control": "governance_provider_sovereignty",
+      "verdict": "fail"
+    },
+    {
+      "control": "governance_resource_region_in_eu",
+      "verdict": "pass"
+    },
+    {
+      "control": "iam_role_key_lifetime_bounded",
+      "verdict": "fail"
+    },
+    {
+      "control": "iam_role_no_admin_privileges",
+      "verdict": "fail"
+    },
+    {
+      "control": "iam_role_source_ip_restricted",
+      "verdict": "fail"
+    },
+    {
+      "control": "kubernetes_cluster_audit_logging_enabled",
+      "verdict": "fail"
+    },
+    {
+      "control": "kubernetes_cluster_auto_upgrade_enabled",
+      "verdict": "fail"
+    },
+    {
+      "control": "kubernetes_cluster_control_plane_highly_available",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_documented",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_flow_matrix_documented",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_unrestricted_egress",
+      "verdict": "fail"
+    },
+    {
+      "control": "objectstorage_bucket_object_lock_enabled",
+      "verdict": "fail"
+    },
+    {
+      "control": "objectstorage_bucket_public_access",
+      "verdict": "fail"
+    },
+    {
+      "control": "objectstorage_bucket_versioning_enabled",
+      "verdict": "fail"
+    }
+  ]
+}

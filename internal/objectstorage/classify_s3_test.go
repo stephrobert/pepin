@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stephrobert/pepin/internal/collect"
@@ -126,10 +127,23 @@ func TestEveryClassIsReachedByARealS3Error(t *testing.T) {
 }
 
 func TestUnreadableSuccessResponseDoesNotBecomeAnEmptyInventory(t *testing.T) {
-	got, detail := classe(t, http.StatusOK, "<html><body>gateway error</body></html>")
-	if got != model.OutcomeUnreadable {
-		t.Fatalf("HTTP 200 HTML classified as %q, want %q (%s)",
-			got, model.OutcomeUnreadable, detail)
+	for _, tt := range []struct {
+		name, body string
+	}{
+		{"HTML", "<html><body>gateway error</body></html>"},
+		{"empty body", ""},
+		{"truncated XML", "<ListAllMyBucketsResult><Buckets>"},
+		{"missing buckets", "<ListAllMyBucketsResult></ListAllMyBucketsResult>"},
+		{"bucket without name", "<ListAllMyBucketsResult><Buckets><Bucket/></Buckets></ListAllMyBucketsResult>"},
+		{"bucket with empty name", "<ListAllMyBucketsResult><Buckets><Bucket><Name></Name></Bucket></Buckets></ListAllMyBucketsResult>"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, detail := classe(t, http.StatusOK, tt.body)
+			if got != model.OutcomeUnreadable {
+				t.Fatalf("HTTP 200 classified as %q, want %q (%s)",
+					got, model.OutcomeUnreadable, detail)
+			}
+		})
 	}
 }
 
@@ -143,5 +157,58 @@ func TestValidEmptyBucketListingRemainsACompleteObservation(t *testing.T) {
 	}
 	if len(buckets) != 0 {
 		t.Fatalf("valid empty response returned %d bucket(s), want 0", len(buckets))
+	}
+}
+
+func TestListBucketsFollowsPagesAndRejectsUnreadableLaterPages(t *testing.T) {
+	for _, tt := range []struct {
+		name       string
+		secondPage string
+		wantCount  int
+		wantError  model.CollectionOutcome
+	}{
+		{"complete", `<ListAllMyBucketsResult><Buckets><Bucket><Name>bucket-two</Name></Bucket></Buckets></ListAllMyBucketsResult>`, 2, ""},
+		{"unreadable second page", "<html>gateway error</html>", 1, model.OutcomeUnreadable},
+		{"repeated continuation", `<ListAllMyBucketsResult><Buckets></Buckets><ContinuationToken>next</ContinuationToken></ListAllMyBucketsResult>`, 1, model.OutcomeUnreadable},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var lists atomic.Int32
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/" {
+					http.Error(w, erreurS3("NoSuchBucket", "not configured"), http.StatusNotFound)
+					return
+				}
+				lists.Add(1)
+				w.Header().Set("Content-Type", "application/xml")
+				if r.URL.Query().Get("continuation-token") == "" {
+					_, _ = fmt.Fprint(w, `<ListAllMyBucketsResult><Buckets><Bucket><Name>bucket-one</Name></Bucket></Buckets><ContinuationToken>next</ContinuationToken></ListAllMyBucketsResult>`)
+					return
+				}
+				_, _ = fmt.Fprint(w, tt.secondPage)
+			}))
+			defer srv.Close()
+			buckets, err := objectstorage.CollectBuckets(context.Background(),
+				"scaleway", srv.URL, "fr-par", "PEPINTESTACCESSKEY00", "pepin-test-secret-key", false, true)
+			if len(buckets) != tt.wantCount {
+				t.Fatalf("got %d buckets, want %d", len(buckets), tt.wantCount)
+			}
+			if tt.wantError == "" && err != nil {
+				t.Fatalf("complete listing returned an error: %v", err)
+			}
+			if tt.wantError != "" {
+				if err == nil {
+					t.Fatal("an incomplete listing must return an error")
+				}
+				if got, _ := collect.Classify(err); got != tt.wantError {
+					t.Fatalf("classified as %q, want %q: %v", got, tt.wantError, err)
+				}
+			}
+			if lists.Load() < 2 || lists.Load() > 4 {
+				t.Errorf("made %d ListBuckets calls, want 2 pages with at most 3 SDK retries", lists.Load())
+			}
+			if tt.name != "unreadable second page" && lists.Load() != 2 {
+				t.Errorf("made %d ListBuckets calls, want exactly 2", lists.Load())
+			}
+		})
 	}
 }

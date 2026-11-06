@@ -26,6 +26,12 @@ l'une ni l'autre appartient au `git log`.
 
 ### Ajouté
 
+- **La carte de qualité compte les verdicts live authentifiés par contrôle et
+  fournisseur**, à partir de relevés anonymisés vérifiés. Elle distingue les
+  preuves historiques de Scaleway et Exoscale des canaris non authentifiés et
+  conserve la version du binaire réellement exécuté. Les preuves expirent après
+  90 jours et ne modifient pas le registre de véracité.
+
 - **`pepin diff` compare deux bundles de preuve** après vérification de leurs
   sommes de contrôle internes. La commande distingue corrections, régressions,
   pertes ou retours de visibilité, compare les inventaires de ressources et
@@ -74,6 +80,15 @@ l'une ni l'autre appartient au `git log`.
   désormais `fail` sur la VM délibérément non protégée et reste inconcluant sur celle
   sans environnement lisible — et confirmé par un run `--plan-only`, GO, **sans rien
   créer ni facturer**.
+
+- **Un plan Outscale évalue désormais l'expiration et la propriété des clés d'accès**
+  (issue #203). `iam_accesskey_expiration_set` et `iam_no_root_access_key` n'étaient pas
+  évalués alors que le plan porte `expiration_date` et distingue une clé du compte d'une
+  clé d'utilisateur EIM : `user_name` est nul uniquement pour la première. Le mapping
+  dérive `root_owned` de ce nul explicite, sans confondre les clés des utilisateurs
+  ordinaires avec une clé root. Le plan de qualification versionné épingle maintenant
+  séparément la clé sans échéance et la clé root, avec les autres clés comme
+  contre-exemples.
 
 - **Scaleway live : une clé d'API du propriétaire est désormais trouvée** (issue #195).
   `iam_no_root_access_key` — sévérité `high` — ne savait conclure sur aucune source. La
@@ -125,14 +140,18 @@ l'une ni l'autre appartient au `git log`.
   ancré sur **aucun schéma**, sans le dire. Les sauts sont désormais nommés localement, et
   la CI exige un schéma pour chaque fournisseur ayant un mapping Terraform. Un transform
   `to_bool` garde enfin un booléen booléen quelle que soit la source, au lieu de `false`
-  en live et `"false"` depuis un plan.
+  en live et `"false"` depuis un plan. La provenance distingue aussi un `false` explicite
+  d'une valeur dérivée de `null`, et ces deux cas d'un attribut inconnu ou non mappé.
 
 ### Corrigé
 
 - **Une réponse S3 de succès invalide n'est plus interprétée comme une liste de
   buckets vide**. Un statut HTTP réussi doit contenir un document
   `ListAllMyBucketsResult` lisible ; sinon la preuve est classée illisible, et non
-  comme un compte conforme.
+  comme un compte conforme. Les noms et les pages de continuation sont vérifiés,
+  les observations partielles conservées, et le contrôle transverse des étiquettes
+  suit les types configurés. `verify --re-derive` rejoue désormais les assouplissements
+  de la politique scellée.
 
 - **Le lien de documentation d'un finding désigne la page que la publication sert, et non une
   redirection**. Chaque finding imprimait `blog.stephane-robert.info/…`, qui répond `301` vers

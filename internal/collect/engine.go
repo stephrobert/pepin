@@ -433,8 +433,7 @@ func ProjectAttested(item any, mapping map[string]string, transforms map[string]
 				attest(attr, path, false, false)
 				continue
 			}
-			v = applyTransform(v, t)
-			derived = true
+			v, derived = applyTransformAttested(v, t)
 		}
 		if v == nil {
 			// Attribut absent de la source (l'API n'a rien renvoyé) : on ne le projette PAS,
@@ -448,6 +447,32 @@ func ProjectAttested(item any, mapping map[string]string, transforms map[string]
 		attest(attr, path, present, derived)
 	}
 	return attrs, prov
+}
+
+// applyTransformAttested distingue un défaut réellement appliqué d'un transform
+// qui recopie une valeur explicite, sans changer l'attestation des anciens transforms.
+func applyTransformAttested(v any, spec any) (any, bool) {
+	switch t := spec.(type) {
+	case []any:
+		derived := false
+		for _, step := range t {
+			var stepDerived bool
+			v, stepDerived = applyTransformAttested(v, step)
+			derived = derived || stepDerived
+		}
+		return v, derived
+	case string:
+		if strings.HasPrefix(t, "default_null:") && v != nil {
+			return v, false
+		}
+		if t == "to_bool" {
+			out := applyTransform(v, t)
+			_, fromString := v.(string)
+			_, toBool := out.(bool)
+			return out, fromString && toBool
+		}
+	}
+	return applyTransform(v, spec), true
 }
 
 // AttestConst atteste les attributs LITTÉRAUX d'une spec (`const:`). Ils ne viennent

@@ -66,3 +66,24 @@ func TestAnAttributeRealPlansDoCarryStaysSupported(t *testing.T) {
 		t.Fatal("plus aucune cellule terraform `supported` : la mesure a tout dégradé, ce qui n'est pas une correction")
 	}
 }
+
+func TestMultiTypeCoverageRequiresProjectedCorrelatedTypes(t *testing.T) {
+	m, err := BuildMatrix(repoRoot, "en")
+	if err != nil {
+		t.Fatalf("build coverage matrix: %v", err)
+	}
+	for _, row := range m.Rows {
+		if row.Code != "blockstorage_volume_snapshots_exist" {
+			continue
+		}
+		cell := row.Cells["outscale"][SourceTerraform]
+		if cell.Status != Partial {
+			t.Fatalf("outscale/terraform = %q, want %q", cell.Status, Partial)
+		}
+		if !strings.Contains(cell.Reason, "blockstorage_snapshot") {
+			t.Errorf("reason should name the unprojected correlated type: %s", cell.Reason)
+		}
+		return
+	}
+	t.Fatal("blockstorage_volume_snapshots_exist missing from the coverage matrix")
+}

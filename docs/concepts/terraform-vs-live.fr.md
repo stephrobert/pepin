@@ -258,22 +258,21 @@ couples, une source produit le type de ressource et son attribut décisif, et l'
 | Contrôle | Fournisseur | Observable uniquement via | Motif |
 |---|---|---|---|
 | `blockstorage_snapshot_not_public` | outscale | live | cette source ne produit aucune ressource de type « blockstorage_snapshot » |
-| `blockstorage_volume_snapshots_exist` | outscale | live | cette source ne produit aucune ressource de type « blockstorage_volume » |
+| `blockstorage_volume_snapshots_exist` | exoscale | live | la source ne projette pas le type corrélé « blockstorage_snapshot » : le contrôle rend « not-evaluated » plutôt que de conclure sans cette ressource |
+| `blockstorage_volume_snapshots_exist` | outscale | live | la source ne projette pas le type corrélé « blockstorage_snapshot » : le contrôle rend « not-evaluated » plutôt que de conclure sans cette ressource |
 | `compute_instance_deletion_protection` | outscale | live | attribut décisif « deletion_protection » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_no_secrets_in_user_data` | scaleway | terraform | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_no_secrets_in_user_data` | scaleway | terraform | attribut décisif « user_data » non projeté sur le type corrélé « compute_instance » : garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « nic_public_ips / public_ip » non projeté sur le type corrélé « compute_instance » : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_encryption_at_rest_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
-| `iam_accesskey_expiration_set` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
-| `iam_accesskey_rotated` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
+| `iam_accesskey_rotated` | outscale | live | attribut décisif « creation_date » non projeté sur le type corrélé « access_key » : garde de capacité, le scan rend « not-evaluated » |
 | `iam_account_mfa_enforced` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | scaleway | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | outscale | live | cette source ne produit aucune ressource de type « api_access_summary » |
-| `iam_no_root_access_key` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
-| `iam_no_root_access_key` | scaleway | live | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `iam_no_root_access_key` | scaleway | live | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté sur le type corrélé « access_key » : garde de capacité, le scan rend « not-evaluated » |
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | cette source ne produit aucune ressource de type « iam_policy » |
 | `iam_user_mfa_enabled` | exoscale | live | cette source ne produit aucune ressource de type « iam_user » |
 | `iam_user_mfa_enabled` | scaleway | live | cette source ne produit aucune ressource de type « iam_user » |
@@ -282,20 +281,20 @@ couples, une source produit le type de ressource et son attribut décisif, et l'
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_deletion_protection` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_not_publicly_accessible` | outscale | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
-| `loadbalancer_logging_enabled` | outscale | live | attribut décisif « access_log » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `loadbalancer_logging_enabled` | outscale | live | attribut décisif « access_log » non projeté sur le type corrélé « load_balancer » : garde de capacité, le scan rend « not-evaluated » |
 | `loadbalancer_ssl_listeners` | outscale | live | attribut décisif « load_balancer_type » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `network_peering_cross_organization` | outscale | live | cette source ne produit aucune ressource de type « network_peering » |
-| `network_securitygroup_default_restrict_traffic` | outscale | live | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `network_securitygroup_default_restrict_traffic` | outscale | live | attribut décisif « security_group_name » non projeté sur le type corrélé « security_group_rule » : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_default_encryption` | scaleway | live | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `objectstorage_bucket_kms_encryption` | scaleway | live | attribut décisif « sse_kms_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_default_encryption` | scaleway | live | attribut décisif « default_encryption_enabled » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_kms_encryption` | scaleway | live | attribut décisif « sse_kms_enabled » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_object_lock_enabled` | exoscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_object_lock_enabled` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_public_access` | exoscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_public_access` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_versioning_enabled` | exoscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_versioning_enabled` | outscale | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_versioning_enabled` | scaleway | live | attribut décisif « versioning » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_versioning_enabled` | scaleway | live | attribut décisif « versioning » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
 <!-- /pepin:gen single-source -->
 
 Les totaux par fournisseur, et le motif de chaque case non ✅, sont dans la

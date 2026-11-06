@@ -69,6 +69,12 @@ jobs:
       - name: Rego policy tests
         run: mise run test-rego
 
+      - name: Qualification comparison and evidence tests
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pepin-qualification-venv"
+          "$RUNNER_TEMP/pepin-qualification-venv/bin/python" -m pip install -r scripts/requirements.txt
+          PATH="$RUNNER_TEMP/pepin-qualification-venv/bin:$PATH" mise run qualify:selftest
+
       - name: Smoke test — providers
         run: ./pepin provider list
 

@@ -1,0 +1,84 @@
+{
+  "provider": "scaleway",
+  "source": "live",
+  "recorded_at": "2026-09-11T05:13:16Z",
+  "tool_version": "0.1.0-dev",
+  "tool_digest": "vcs:74ebd40a490ddf0905957982e814949a0eb20584+modified",
+  "report_sha256": "e61343c891f316daf8cae3ff3718588287630818445b6c4caac4773388f4213e",
+  "assessment_sha256": "3545c40fdf0ea3384b78169de40ef85a6ea27b9b3bb843b7728069638e111012",
+  "reevaluated_expected_sha256": "094c6d5add5f38462418d04315b181616f3b2f1445cb91a7e1d38797934cbbcc",
+  "observations": [
+    {
+      "control": "compute_instance_has_security_group",
+      "verdict": "pass"
+    },
+    {
+      "control": "compute_instance_public_ip_with_open_securitygroup",
+      "verdict": "fail"
+    },
+    {
+      "control": "governance_provider_sovereignty",
+      "verdict": "pass"
+    },
+    {
+      "control": "governance_resource_region_in_eu",
+      "verdict": "pass"
+    },
+    {
+      "control": "governance_resource_required_tags",
+      "verdict": "fail"
+    },
+    {
+      "control": "iam_accesskey_expiration_set",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_all_ports",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_default_deny",
+      "verdict": "fail"
+    },
+    {
+      "control": "network_securitygroup_unrestricted_egress",
+      "verdict": "fail"
+    },
+    {
+      "control": "objectstorage_bucket_default_encryption",
+      "verdict": "fail"
+    },
+    {
+      "control": "objectstorage_bucket_kms_encryption",
+      "verdict": "fail"
+    },
+    {
+      "control": "objectstorage_bucket_object_lock_enabled",
+      "verdict": "fail"
+    },
+    {
+      "control": "objectstorage_bucket_public_access",
+      "verdict": "fail"
+    },
+    {
+      "control": "objectstorage_bucket_versioning_enabled",
+      "verdict": "fail"
+    }
+  ]
+}

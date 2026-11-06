@@ -60,7 +60,7 @@ porte son motif :
 
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
-| outscale | terraform | ◐ `partial` | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| outscale | terraform | ◐ `partial` | attribut décisif « security_group_name » non projeté sur le type corrélé « security_group_rule » : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 

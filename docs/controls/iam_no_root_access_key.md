@@ -50,7 +50,7 @@ source".
 | Provider | Terraform plan | Live collection |
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
-| outscale | ✗ | ✅ |
+| outscale | ✅ | ✅ |
 | scaleway | ◐ | ✅ |
 | kubernetes | n/a | ✗ |
 
@@ -59,15 +59,14 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
-| outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
-| scaleway | terraform | ◐ `partial` | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| scaleway | terraform | ◐ `partial` | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
-| `fail` | a deviation was detected on a real resource | outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | the deciding data was collected, and it is compliant | outscale / live · scaleway / live |
+| `fail` | a deviation was detected on a real resource | outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | the deciding data was collected, and it is compliant | outscale / terraform · outscale / live · scaleway / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
 | `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | scaleway / terraform |
 
@@ -99,7 +98,7 @@ is, or a note anchored on the official documentation. See
 
 ```bash
 # from a Terraform plan: nothing is provisioned
-./pepin scan scaleway --terraform plan.json --format assessment
+./pepin scan outscale --terraform plan.json --format assessment
 
 # from the provider API: effective configuration
 ./pepin scan outscale --live --format assessment
@@ -108,10 +107,6 @@ is, or a note anchored on the official documentation. See
 In the `assessment` output, look for `"control": "iam_no_root_access_key"`: its `status` must be `pass`.
 If it stays `not-evaluated`, the deciding data was not collected and the fix is **not**
 demonstrated: the reasons table above says why.
-
-**One of the two sources cannot lift the `pass` lock** for this control: the provider
-quoted does produce the targeted type there, but the scan will return `not-evaluated`.
-The reasons table says which one, and why.
 
 ## See also
 
