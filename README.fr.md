@@ -84,7 +84,7 @@ Chaque artefact de release est couvert. Une commande pour chacun, et rien à cro
 sur parole.
 
 ```bash
-V=v0.3.0
+V=v0.4.0
 gh release download "$V" --repo stephrobert/pepin
 
 # 1. les sommes sont signées, et elles couvrent les binaires ET le SBOM
