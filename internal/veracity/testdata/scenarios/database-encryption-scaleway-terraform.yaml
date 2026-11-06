@@ -64,6 +64,26 @@ scenarios:
                 disable_backup: false
 
   - expect: not-evaluated
+    why: "base presente, chiffrement et identifiant inconnus apres apply : ne pas inventer false ni un verdict de conformite"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: scaleway_rdb_instance.pending
+              type: scaleway_rdb_instance
+              name: pending
+              values:
+                name: rdb-pending
+                disable_backup: false
+      resource_changes:
+        - address: scaleway_rdb_instance.pending
+          change:
+            after_unknown:
+              id: true
+              encryption_at_rest: true
+
+  - expect: not-evaluated
     why: "un plan qui ne cree AUCUNE base : il n'y a rien a juger, et se taire est la seule reponse juste"
     plan:
       format_version: "1.2"

@@ -124,6 +124,8 @@ d'API n'est pas celle d'un plan. Il est signalé ici pour ne pas être oublié.
 - La provenance distingue un défaut appliqué à `null` (`observed`, `derived`) d'un
   booléen explicite recopié (`observed`, non `derived`), et un champ inconnu d'un
   champ non mappé — *garde : `TestNullDefaultProvenanceDistinguishesExplicitAndDerivedValues`*.
+- La lecture du plan puis sa projection préservent ces distinctions, sans fabriquer
+  un identifiant inconnu — *garde : `TestNullDefaultPlanPreservesObservationProvenance`*.
 
 ## Validation
 
