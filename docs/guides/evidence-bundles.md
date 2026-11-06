@@ -62,7 +62,7 @@ raises a version number and gets a CHANGELOG line.
   "tool": {
     "name": "pepin",
     "version": "<version>",
-    "digest": "sha256:<sha256>"
+    "digest": "<binary-digest>"
   },
   "ruleset": {
     "name": "pepin-config",

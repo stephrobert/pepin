@@ -64,7 +64,7 @@ et un changement de cette forme incrémente un numéro de version et reçoit sa 
   "tool": {
     "name": "pepin",
     "version": "<version>",
-    "digest": "sha256:<sha256>"
+    "digest": "<binary-digest>"
   },
   "ruleset": {
     "name": "pepin-config",
