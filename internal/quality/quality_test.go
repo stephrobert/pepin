@@ -127,28 +127,6 @@ func TestNoPublishedFigureFlattersTheMeasure(t *testing.T) {
 	}
 }
 
-// TestLiveValidationNeedsAnAuthenticatedRecord : le zéro de « validé en live » est
-// DÉRIVÉ, pas écrit. Un relevé de canari est non authentifié : il atteste qu'un
-// endpoint refuse, jamais qu'un droit suffisant rende 200 sur un tenant réel. Si ce
-// compteur pouvait monter sur un relevé non authentifié, la carte publierait comme
-// « validé en live » ce qui n'est qu'une accessibilité d'endpoint.
-func TestLiveValidationNeedsAnAuthenticatedRecord(t *testing.T) {
-	s := embedded(t)
-	authenticated := false
-	for _, c := range s.Canary {
-		if c.Authenticated {
-			authenticated = true
-		}
-	}
-	if authenticated {
-		t.Skip("un relevé authentifié existe désormais : ce test ne mesure plus le cas nominal")
-	}
-	if s.LiveValidated != 0 {
-		t.Errorf("« validé en live » vaut %d alors qu'aucun relevé n'est authentifié : "+
-			"un refus non authentifié ne vaut pas validation d'un contrôle", s.LiveValidated)
-	}
-}
-
 // TestNoFigurePathIsAbsolute : l'instantané est committé et embarqué. Un chemin
 // absolu y porterait le disque du mainteneur — inutile à un lecteur, et un
 // renseignement gratuit sur sa machine.

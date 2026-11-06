@@ -21,7 +21,21 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-06
+
 ### Added
+
+- **The quality map counts authenticated live verdicts per control and
+  provider**, from verified anonymized records. It distinguishes historical
+  Scaleway and Exoscale evidence from unauthenticated canaries and preserves the
+  version of the binary actually run. Evidence expires after 90 days and does
+  not alter the veracity ledger.
+
+- **`pepin diff` compares two evidence bundles** after checking their internal
+  checksums. It separates fixes, regressions, and lost or restored visibility,
+  compares resource inventories, and reports provenance changes; JSON output is
+  available with `--format json`. It does not authenticate detached signatures:
+  use `pepin verify --pubkey` when signer authenticity is required.
 
 - **Scaleway: the organisation's API-key expiry policy is read** (issue #196).
   `iam_apiaccesspolicy_max_key_expiration` was active for Outscale only. Scaleway has the
@@ -62,6 +76,14 @@ belongs in `git log`.
   readable environment — and confirmed by a `--plan-only` qualification run, GO, with
   **nothing created and nothing billed**.
 
+- **Outscale plans now evaluate access-key expiry and account ownership** (issue #203).
+  `iam_accesskey_expiration_set` and `iam_no_root_access_key` were unevaluated even
+  though the plan carries `expiration_date` and distinguishes an account key from an
+  EIM user's key: `user_name` is null only for the former. The mapping derives
+  `root_owned` from that explicit null, so an ordinary user's key is not mislabeled.
+  The checked-in qualification plan now pins the missing-expiry key and the root key
+  separately, with the other keys as counterexamples.
+
 - **Scaleway live: a root-owned API key is now found** (issue #195).
   `iam_no_root_access_key` — severity `high` — could not conclude on either source. The
   data was in the API-key listing the collector **already calls**: `user_id`, and
@@ -88,7 +110,39 @@ belongs in `git log`.
   its destruction proven. The inventory format moves to `v10`: a pure addition, the new
   `security_group` type.
 
+- **Four guards around Terraform default declarations** (issue #243, ADR-0024).
+  The existing `default:` transform was already used by security-group rules feeding a
+  CRITICAL control, undocumented and unsourced. It also replaces empty strings, so the new
+  `default_null:` transform handles a present null without changing existing mappings.
+
+  - A default on a **`computed`** attribute is refused: its silence goes to
+    `after_unknown`, so the plan does not know it, and declaring it would fabricate an
+    absent datum (ADR-0014).
+  - A default on a **`required`** attribute is refused: it can never fire. Four such
+    declarations existed on `action`, written from documentation and never checked against
+    the schema — a misleading no-op, now removed.
+  - Every default declaration in `mapping_terraform` **cites its provider source**,
+    checked mechanically. A wrong declaration does not look wrong: it produces a plausible
+    verdict.
+  - `TestNoSpecFabricatesAnAttributeFromNothing` now covers the **Terraform mapping**, which
+    it never did — the projection path the issue was about was outside the gate.
+
+  Also: `TestProviderMappingsMatchSchema` silently skipped any provider whose example
+  directory was not initialized, so the Outscale mapping was anchored on **no schema at
+  all**, and said nothing. Skips are now named locally, and CI requires a schema for every
+  provider with a Terraform mapping. A new `to_bool` transform keeps a boolean a boolean
+  whichever source it comes from, rather than `false` live and `"false"` from a plan.
+  Provenance also distinguishes an explicit `false` from a value derived from `null`,
+  while an unknown or unmapped attribute remains distinguishable from both.
+
 ### Fixed
+
+- **An invalid S3 success response is no longer reported as an empty bucket list**.
+  A successful HTTP status must contain a readable `ListAllMyBucketsResult`;
+  otherwise the evidence is classified as unreadable, not as a clean account. Bucket
+  names and continuation pages are checked, partial observations are retained, and
+  cross-resource tagging follows the configured resource types. Sealed assessments
+  with a custom policy now replay its relaxations during `verify --re-derive`.
 
 - **A finding's documentation link points at the page the publication serves, not at a
   redirect**. Every finding printed `blog.stephane-robert.info/…`, which answers `301`
@@ -96,6 +150,30 @@ belongs in `git log`.
   link still arrived, but an archived report carried a host nobody controls any more, and
   a redirect that disappears takes the evidence of an audited control with it. The base
   URL is now the served host.
+
+- **A Terraform plan that writes the answer by its silence is now read** (issue #243).
+  `database_encryption_at_rest_enabled` returned `not-evaluated` on every Scaleway plan
+  that leaves `encryption_at_rest` unwritten — while the plan proves the database will be
+  created unencrypted. Measured end to end on the `ducklake` reference tenant:
+
+  ```
+  before : not-evaluated — "attribut « encryption_at_rest » non collecté (garde de capacité)"
+  after  : fail          — "Base de données managée « ducklake » sans chiffrement au repos."
+  ```
+
+  Terraform distinguishes two silences and Pépin conflated them. An optional argument the
+  author did not write appears in `planned_values` with the value `null`; a value known
+  only after apply is **absent** from that block entirely. Measured across the repository's
+  complete plans, cross-checked attribute by attribute against the providers' schemas: 62
+  null values, every one of them on an `optional` attribute that is not `computed`, **zero
+  counterexamples**.
+
+  What a null *means* is not in the plan — it is what the provider sends to the API when
+  the argument is omitted, and that is read in its code. For this one:
+  `internal/services/rdb/instance.go` declares `encryption_at_rest` as `TypeBool, Optional`
+  with no `Default`, and create always sends
+  `Encryption: &rdb.EncryptionAtRest{Enabled: d.Get(...)}` — so an omitted argument sends
+  `false` explicitly.
 
 - **A throttled object-storage scan no longer reads as an outage, and an unknown key no longer
   as a missing right** (issue #96). `Classify` recognizes third-party SDK errors through two
@@ -277,6 +355,11 @@ belongs in `git log`.
   committable without it. `mise.toml` follows `go.mod`, which is where CI reads
   its own version from, and `osv-scanner.toml` says which version its exception
   was measured under.
+
+- **Credential-file secrets stay out of normalized inventories.** A regression
+  test exercises Scaleway and Outscale credential files, authenticates against
+  a local API, and verifies that neither the credential value nor an unprojected
+  secret field in the response enters the normalized inventory.
 
 ## [0.4.0] - 2026-09-10
 

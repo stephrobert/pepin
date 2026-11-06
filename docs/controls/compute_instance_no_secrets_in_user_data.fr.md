@@ -58,7 +58,7 @@ porte son motif :
 
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
-| scaleway | live | ◐ `partial` | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| scaleway | live | ◐ `partial` | attribut décisif « user_data » non projeté sur le type corrélé « compute_instance » : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 

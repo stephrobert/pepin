@@ -192,7 +192,10 @@ import (
 //	lire « service indisponible » à dix-huit endpoints Outscale qui répondaient tous
 //	(issue #91). Le bump existe pour cette raison : un contrat gelé dont les VALEURS
 //	bougent en silence est un contrat cassé sans avertissement (ADR-0003).
-const InventoryFormat = "pepin-inventory/v14"
+//
+// v15 : `root_owned` est ajouté à `access_key` pour distinguer, dans un plan
+// Terraform, la clé du compte appelant de celles des utilisateurs EIM.
+const InventoryFormat = "pepin-inventory/v15"
 
 // InventorySchemaVersion extrait le N du suffixe `/vN`. Comme pour le bundle, la
 // constante et le signal sur le fil sont la même chose : impossible de faire

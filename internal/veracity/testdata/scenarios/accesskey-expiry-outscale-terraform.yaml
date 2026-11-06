@@ -1,0 +1,42 @@
+# Expiration de clés d'accès sur un plan Terraform Outscale.
+control: iam_accesskey_expiration_set
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "la clé EIM n'a pas d'expiration dans le plan"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_access_key.no_expiry
+              type: outscale_access_key
+              name: no_expiry
+              values:
+                user_name: pepin-qual-user
+                state: INACTIVE
+
+  - expect: pass
+    why: "la clé EIM possède une expiration future"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_access_key.expiring
+              type: outscale_access_key
+              name: expiring
+              values:
+                user_name: pepin-qual-user
+                expiration_date: "2099-01-01T00:00:00Z"
+                state: INACTIVE
+
+  - expect: not-evaluated
+    why: "le plan ne contient aucune clé d'accès à évaluer"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources: []

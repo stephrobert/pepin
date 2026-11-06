@@ -15,7 +15,7 @@ la [matrice de couverture](docs/coverage.fr.md) pour ce qui est mesurable contr�
 contrôle. Cette page ne les recopie pas.
 
 <!-- pepin:gen roadmap-status-heading -->
-## Où en est Pépin, v0.4.0
+## Où en est Pépin, v0.5.0
 <!-- /pepin:gen roadmap-status-heading -->
 
 Quatre fournisseurs enregistrés : trois clouds souverains, plus un collecteur

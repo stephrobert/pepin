@@ -253,21 +253,21 @@ source produces the resource type and its deciding attribute, and the other does
 | Control | Provider | Observable only through | Reason |
 |---|---|---|---|
 | `blockstorage_snapshot_not_public` | outscale | live | this source produces no resource of type "blockstorage_snapshot" |
-| `blockstorage_volume_snapshots_exist` | outscale | live | this source produces no resource of type "blockstorage_volume" |
+| `blockstorage_volume_snapshots_exist` | exoscale | live | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
+| `blockstorage_volume_snapshots_exist` | outscale | live | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
 | `compute_instance_deletion_protection` | outscale | live | deciding attribute "deletion_protection" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_no_secrets_in_user_data` | scaleway | terraform | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_no_secrets_in_user_data` | scaleway | terraform | deciding attribute "user_data" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
-| `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
-| `iam_accesskey_rotated` | outscale | live | this source produces no resource of type "access_key" |
+| `iam_accesskey_rotated` | outscale | live | deciding attribute "creation_date" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 | `iam_account_mfa_enforced` | outscale | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | scaleway | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | outscale | live | this source produces no resource of type "api_access_summary" |
-| `iam_no_root_access_key` | outscale | live | this source produces no resource of type "access_key" |
-| `iam_no_root_access_key` | scaleway | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `iam_no_root_access_key` | scaleway | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | exoscale | live | this source produces no resource of type "iam_user" |
 | `iam_user_mfa_enabled` | scaleway | live | this source produces no resource of type "iam_user" |
@@ -276,20 +276,20 @@ source produces the resource type and its deciding attribute, and the other does
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_not_publicly_accessible` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
-| `loadbalancer_logging_enabled` | outscale | live | deciding attribute "access_log" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `loadbalancer_logging_enabled` | outscale | live | deciding attribute "access_log" not projected on correlated type "load_balancer": a capability guard, so the scan returns "not-evaluated" |
 | `loadbalancer_ssl_listeners` | outscale | live | deciding attribute "load_balancer_type" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `network_peering_cross_organization` | outscale | live | this source produces no resource of type "network_peering" |
-| `network_securitygroup_default_restrict_traffic` | outscale | live | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `network_securitygroup_default_restrict_traffic` | outscale | live | deciding attribute "security_group_name" not projected on correlated type "security_group_rule": a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | outscale | live | this source produces no resource of type "object_storage_bucket" |
-| `objectstorage_bucket_default_encryption` | scaleway | live | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `objectstorage_bucket_kms_encryption` | scaleway | live | deciding attribute "sse_kms_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_default_encryption` | scaleway | live | deciding attribute "default_encryption_enabled" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_kms_encryption` | scaleway | live | deciding attribute "sse_kms_enabled" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_object_lock_enabled` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_object_lock_enabled` | outscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_public_access` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_public_access` | outscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_versioning_enabled` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_versioning_enabled` | outscale | live | this source produces no resource of type "object_storage_bucket" |
-| `objectstorage_bucket_versioning_enabled` | scaleway | live | deciding attribute "versioning" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_versioning_enabled` | scaleway | live | deciding attribute "versioning" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 <!-- /pepin:gen single-source -->
 
 Per-provider totals, and the reason for every non-✅ cell, are in the

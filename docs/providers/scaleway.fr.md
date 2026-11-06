@@ -162,7 +162,7 @@ pepin scan scaleway --terraform plan.json
 <!-- pepin:gen provider-scaleway-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 8 | 2 | 31 |
+| terraform | 18 | 7 | 2 | 31 |
 | live | 20 | 2 | 2 | 34 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
@@ -187,17 +187,18 @@ fournisseur.
 <!-- pepin:gen provider-scaleway-onesource -->
 | Contrôle | Observable uniquement via | Motif du côté aveugle |
 |---|---|---|
-| `compute_instance_no_secrets_in_user_data` | terraform | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_no_secrets_in_user_data` | terraform | attribut décisif « user_data » non projeté sur le type corrélé « compute_instance » : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » non projeté sur le type corrélé « compute_instance » : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | terraform | cette source ne produit aucune ressource de type « managed_database » |
+| `database_encryption_at_rest_enabled` | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `iam_apiaccesspolicy_max_key_expiration` | live | cette source ne produit aucune ressource de type « api_access_policy » |
-| `iam_no_root_access_key` | live | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `iam_no_root_access_key` | live | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté sur le type corrélé « access_key » : garde de capacité, le scan rend « not-evaluated » |
 | `iam_policy_no_privilege_escalation` | terraform | cette source ne produit aucune ressource de type « iam_policy » |
 | `iam_user_mfa_enabled` | live | cette source ne produit aucune ressource de type « iam_user » |
-| `objectstorage_bucket_default_encryption` | live | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `objectstorage_bucket_kms_encryption` | live | attribut décisif « sse_kms_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
-| `objectstorage_bucket_versioning_enabled` | live | attribut décisif « versioning » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_default_encryption` | live | attribut décisif « default_encryption_enabled » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_kms_encryption` | live | attribut décisif « sse_kms_enabled » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_versioning_enabled` | live | attribut décisif « versioning » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
 <!-- /pepin:gen provider-scaleway-onesource -->
 
 C'est le tableau à lire avant de comparer un scan de plan et un scan live du même tenant :

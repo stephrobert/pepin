@@ -1,0 +1,50 @@
+# Clé du compte appelant, sur un plan Terraform Outscale.
+#
+# `user_name` est null pour la clé du compte et renseigné pour une clé EIM ; le
+# mapping réel dérive `root_owned` de cette distinction sans supposer que toutes
+# les clés d'utilisateur sont des clés root.
+control: iam_no_root_access_key
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: fail
+    why: "user_name explicitement null : la clé appartient au compte appelant"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_access_key.root
+              type: outscale_access_key
+              name: root
+              values:
+                user_name: null
+                state: INACTIVE
+
+  - expect: pass
+    why: "user_name renseigné : la clé appartient à un utilisateur EIM, pas au compte root"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_access_key.member
+              type: outscale_access_key
+              name: member
+              values:
+                user_name: pepin-qual-user
+                state: INACTIVE
+
+  - expect: not-evaluated
+    why: "le plan ne porte pas user_name : l'appartenance de la clé est inconnue"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_access_key.unknown
+              type: outscale_access_key
+              name: unknown
+              values:
+                state: INACTIVE

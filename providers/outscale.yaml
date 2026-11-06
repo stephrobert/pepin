@@ -699,7 +699,36 @@ mapping_terraform:
         # Le transform de la RÉGION se déclare sous le nom du champ source : elle n'est
         # pas un attribut de `map`, donc sans nom commun sous lequel l'indexer.
         placement_subregion_name: region_of_zone
-  
+
+    # Clés d'accès. Le plan distingue la clé d'un utilisateur EIM (user_name renseigné)
+    # de la clé du compte appelant (user_name explicitement null). `matches:^$` dérive
+    # root_owned de cette valeur observée ; il ne présume pas que toute clé sans
+    # expiration est une clé root.
+    - tf_type: outscale_access_key
+      type: access_key
+      id: access_key_id
+      map:
+        access_key_id: access_key_id
+        expiration_date: expiration_date
+        state: state
+        root_owned: user_name
+      transforms:
+        root_owned: "matches:^$"
+
+    # Volumes block. Le plan connaît la sous-région et les étiquettes, mais pas l'état
+    # calculé du volume ; les contrôles de sauvegarde restent donc non évalués sur cette
+    # source tant que l'état n'est pas observable.
+    - tf_type: outscale_volume
+      type: blockstorage_volume
+      region: subregion_name
+      id: volume_id
+      map:
+        volume_id: volume_id
+        tags: tags
+      transforms:
+        subregion_name: region_of_zone
+        tags: kv
+
     - tf_type: outscale_policy
       type: iam_policy
       id: policy_name

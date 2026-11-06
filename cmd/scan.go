@@ -26,6 +26,7 @@ import (
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
+	"github.com/stephrobert/pepin/internal/policy"
 	"github.com/stephrobert/pepin/internal/profile"
 	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/internal/scoring"
@@ -172,10 +173,13 @@ var scanCmd = &cobra.Command{
 			// appliquerait la politique du jour à un dossier d'hier.
 			if _, present := m["config"]; !present {
 				m["config"] = cfg.Resolved
-			} else {
-				cfg.Resolved = replayedConfig(m["config"], cfg.Resolved)
 			}
 		}
+		cfg.Resolved, err = resolvedConfigOf(input)
+		if err != nil {
+			return err
+		}
+		cfg.Relaxations = policy.Relaxations(cfg.Resolved, referentiel.ConfigConstraintsByControl(), controlReferences())
 
 		// L'ÉTAT DE COLLECTE et le relevé de capacités, AVANT toute évaluation. Le
 		// relevé dit ce que ce scan a pu observer et ce qu'il n'a pas pu, et il le dit
@@ -185,7 +189,7 @@ var scanCmd = &cobra.Command{
 		// alors un rapport que le rapport ne tiendrait pas.
 		coll := collectionOf(input)
 		naReasons := providerNAReasons(name)
-		degraded := assess.DegradedControls(coll, controlTypes(), scanScope(name, naReasons))
+		degraded := assess.DegradedControls(coll, controlTypes(), scanScope(name, naReasons), cfg.Resolved.Tagging.ResourceTypes)
 		// Les droits minimaux déclarés au descripteur : ce qui permet de NOMMER la
 		// permission manquante plutôt que de laisser l'utilisateur la chercher.
 		grants := genprovider.Grants(name)

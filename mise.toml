@@ -381,9 +381,16 @@ run = "python3 tools/qualification/qualify.py run ${PROVIDER:-scaleway} --plan-o
 description = "Recompare le dernier run de qualification à expected.yaml (ou à un autre fichier : EXPECTED=…)"
 run = "python3 tools/qualification/qualify.py compare --run-dir release-gate/qualification-${PROVIDER:-scaleway} ${EXPECTED:+--expected $EXPECTED}"
 
+[tasks."qualify:record"]
+description = "Dérive sur stdout un relevé de qualification live anonymisé après vérification du bundle"
+run = "python3 tools/qualification/qualify.py record --run-dir release-gate/qualification-${PROVIDER:-scaleway}"
+
 [tasks."qualify:selftest"]
 description = "La comparaison de la porte de qualification se prouve sur des cas synthétiques (faux vert, faux positif, couverture déplacée)"
-run = "python3 tools/qualification/qualify.py selftest"
+run = [
+  "python3 tools/qualification/qualify.py selftest",
+  "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/qualification -p 'test_*.py'",
+]
 
 [tasks."falsify:lint"]
 description = "Les specs de falsification visent-elles encore du code qui existe"

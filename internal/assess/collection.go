@@ -49,7 +49,7 @@ import (
 // Fonction UNIQUE, appelée deux fois : par le relevé de capacités, imprimé AVANT
 // tout verdict, et par la dégradation elle-même. Deux définitions divergeraient,
 // et le relevé annoncerait alors un nombre que le rapport ne tiendrait pas.
-func DegradedControls(coll model.Collection, controlType map[string]string, scope map[string]bool) map[string]model.CollectionUnit {
+func DegradedControls(coll model.Collection, controlType map[string]string, scope map[string]bool, taggedTypes []string) map[string]model.CollectionUnit {
 	out := map[string]model.CollectionUnit{}
 	incomplete := coll.IncompleteTypes()
 	if len(incomplete) == 0 {
@@ -65,6 +65,9 @@ func DegradedControls(coll model.Collection, controlType map[string]string, scop
 		// conclure sur une exposition dont la donnée n'était jamais arrivée.
 		// L'incomplétude de n'importe lequel dégrade (ADR-0006).
 		types := genprovider.ControlTypes(code)
+		if code == "governance_resource_required_tags" {
+			types = taggedTypes
+		}
 		if len(types) == 0 {
 			// Un contrôle transverse qui ne lit AUCUN type : aucune unité ne le porte,
 			// donc aucune ne peut prouver qu'il est dégradé. Ne pas le compter est

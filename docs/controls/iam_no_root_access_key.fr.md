@@ -51,7 +51,7 @@ déclaré, ou type absent de cette source ».
 | Fournisseur | Plan Terraform | Collecte live |
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
-| outscale | ✗ | ✅ |
+| outscale | ✅ | ✅ |
 | scaleway | ◐ | ✅ |
 | kubernetes | sans objet | ✗ |
 
@@ -60,15 +60,14 @@ porte son motif :
 
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
-| outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
-| scaleway | terraform | ◐ `partial` | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| scaleway | terraform | ◐ `partial` | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté sur le type corrélé « access_key » : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 
 | Statut | Ce que le statut affirme | Atteignable depuis |
 |---|---|---|
-| `fail` | un écart a été détecté sur une ressource réelle | outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / live · scaleway / live |
+| `fail` | un écart a été détecté sur une ressource réelle | outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | la donnée décisive a été collectée, et elle est conforme | outscale / terraform · outscale / live · scaleway / live |
 | `not-applicable` | le contrat du fournisseur déclare le contrôle non testable, avec sa justification | aucun |
 | `not-evaluated` | le contrôle est implémenté, mais la donnée dont il dépend n'a pas été confirmée | scaleway / terraform |
 
@@ -100,7 +99,7 @@ tel quel, ou une note ancrée sur la documentation officielle. Voir
 
 ```bash
 # depuis un plan Terraform : aucune ressource n'est créée
-./pepin scan scaleway --terraform plan.json --format assessment
+./pepin scan outscale --terraform plan.json --format assessment
 
 # depuis l'API du fournisseur : configuration effective
 ./pepin scan outscale --live --format assessment
@@ -109,10 +108,6 @@ tel quel, ou une note ancrée sur la documentation officielle. Voir
 Dans la sortie `assessment`, chercher `"control": "iam_no_root_access_key"` : son `status` doit être
 `pass`. S'il reste `not-evaluated`, la donnée décisive n'a pas été collectée, et la
 correction n'est **pas** démontrée : le tableau des motifs ci-dessus dit pourquoi.
-
-**Une des deux sources ne sait pas lever le verrou du « pass »** pour ce contrôle :
-le fournisseur cité y produit bien le type visé, mais le scan y rendra `not-evaluated`.
-Le tableau des motifs dit laquelle, et pourquoi.
 
 ## Voir aussi
 

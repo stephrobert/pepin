@@ -18,6 +18,7 @@ import (
 	"github.com/stephrobert/pepin/internal/exempt"
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
+	"github.com/stephrobert/pepin/internal/policy"
 	"github.com/stephrobert/pepin/internal/provider"
 	"github.com/stephrobert/pepin/referentiel"
 	"github.com/stephrobert/scankit/assessment"
@@ -159,6 +160,10 @@ func reDerive(ctx context.Context, dir string) error {
 	if err := json.Unmarshal(inputRaw, &input); err != nil {
 		return fmt.Errorf(tr("input.json invalide : %w", "invalid input.json: %w"), err)
 	}
+	resolved, err := resolvedConfigOf(input)
+	if err != nil {
+		return err
+	}
 	name := sealed.Run.Target.Provider
 	if _, ok := provider.Get(name); !ok {
 		return fmt.Errorf(tr("re-dérivation : provider %q du bundle inconnu de ce binaire",
@@ -188,7 +193,7 @@ func reDerive(ctx context.Context, dir string) error {
 	// qu'un vérificateur puisse rendre. On rejoue donc dans les deux langues : ce qui est
 	// comparé (statuts, sujets, références, provenance) est identique, seule la
 	// formulation change, et une seule concordance suffit à établir la fidélité.
-	got, matched := reDeriveInEitherLanguage(name, findings, input, sealed.Run, string(sealedJSON), sealedPolicy)
+	got, matched := reDeriveInEitherLanguage(name, findings, input, sealed.Run, string(sealedJSON), sealedPolicy, resolved)
 	if !matched {
 		return errors.New(tr(
 			"re-dérivation DIVERGE de l'assessment scellé : le bundle n'atteste PAS fidèlement input.json (résultat fabriqué ou config différente)",
@@ -218,7 +223,7 @@ func reDerive(ctx context.Context, dir string) error {
 // l'autre, et rend le premier qui coïncide avec les résultats scellés. Le second retour
 // dit si l'une des deux a coïncidé ; à défaut, le premier essai est rendu pour que
 // l'appelant dispose d'un assessment non nul.
-func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any, run assessment.Run, sealedJSON string, pol exempt.Policy) (assessment.Assessment, bool) {
+func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any, run assessment.Run, sealedJSON string, pol exempt.Policy, resolved policy.Resolved) (assessment.Assessment, bool) {
 	restore := i18n.Current()
 	defer i18n.Set(restore)
 
@@ -251,13 +256,14 @@ func reDeriveInEitherLanguage(name string, findings []finding.Finding, input any
 		// scellé, et déclarerait falsifié un bundle qui disait la vérité.
 		coll := collectionOf(input)
 		got, _ = assess.Degrade(got,
-			assess.DegradedControls(coll, controlTypes(), scanScope(name, naReasons)),
+			assess.DegradedControls(coll, controlTypes(), scanScope(name, naReasons), resolved.Tagging.ResourceTypes),
 			genprovider.Grants(name))
 		at, terr := time.Parse(time.RFC3339, run.Timestamp)
 		if terr != nil {
 			at = time.Now().UTC()
 		}
 		got, _ = exempt.Apply(got, pol, at, subjectsOf(input), knownControls())
+		got = assess.WithRelaxations(got, policy.Relaxations(resolved, referentiel.ConfigConstraintsByControl(), controlReferences()))
 		b, _ := json.Marshal(assess.Canonical(got).Results)
 		if string(b) == sealedJSON {
 			return got, true

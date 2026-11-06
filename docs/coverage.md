@@ -42,7 +42,7 @@ and the report says so on every scan, control by control, with the reason.
 
 | Family | Controls | exoscale | outscale | scaleway |
 |---|---:|---|---|---|
-| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 1 · ∅ 1 · ✗ 3 |
+| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 3 · ◐ 0 · ∅ 1 · ✗ 3 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
 | `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 5 · ◐ 0 · ∅ 0 · ✗ 10 |
@@ -56,25 +56,25 @@ and the report says so on every scan, control by control, with the reason.
 |---|---|---|:-:|:-:|:-:|:-:|:-:|:-:|
 | `blockstorage_snapshot_not_public` | high | CLD-STO-2 | ∅ | ∅ | ✗ | ✅ | ∅ | ∅ |
 | `blockstorage_volume_encryption` | high | CLD-CHF-2 | ✅ | ✅ | ∅ | ∅ | ∅ | ∅ |
-| `blockstorage_volume_snapshots_exist` | high | CLD-STO-3 | ✅ | ✅ | ✗ | ✅ | ✗ | ✗ |
+| `blockstorage_volume_snapshots_exist` | high | CLD-STO-3 | ◐ | ✅ | ◐ | ✅ | ✗ | ✗ |
 | `compute_image_not_public` | high | CLD-STO-2 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `compute_instance_deletion_protection` | medium | CLD-CMP-10 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `compute_instance_has_security_group` | critical | CLD-CMP-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `compute_instance_no_secrets_in_user_data` | high | CLD-CMP-9 | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ |
 | `compute_instance_public_ip_with_open_securitygroup` | critical | CLD-NET-3 | ✅ | ✅ | ◐ | ✅ | ◐ | ✅ |
 | `database_backup_enabled` | high | CLD-STO-3 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
-| `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ |
+| `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `database_service_not_open_to_internet` | high | CLD-NET-1 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `governance_provider_sovereignty` | high | CLD-GVN-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `governance_resource_required_tags` | medium | CLD-GVN-1 | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |
-| `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✅ | ✅ |
-| `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
+| `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✅ | ✅ | ✅ | ✅ |
+| `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `iam_account_mfa_enforced` | high | CLD-IAM-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✅ |
 | `iam_apiaccessrule_defined` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_no_public_cidr` | high | CLD-IAM-4 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
-| `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✗ | ✅ | ◐ | ✅ |
+| `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ◐ | ✅ |
 | `iam_policy_no_administrative_privileges` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_policy_no_notaction_notresource` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_policy_no_privilege_escalation` | high | CLD-IAM-12 | ✗ | ✗ | ✅ | ✅ | ✅ | ✗ |
@@ -130,13 +130,13 @@ already shows them, and they add nothing.
 | `blockstorage_volume_encryption` | outscale | live | ∅ `not-applicable` | osc-sdk-go/v2 Volume exposes no encryption field; encryption at rest is guest-side (EncFS/LUKS), a customer responsibility, hence unobservable on the platform side (CHF-2). |
 | `blockstorage_volume_encryption` | scaleway | terraform | ∅ `not-applicable` | Encryption at rest of block volumes is guest-side (LUKS/Cryptsetup), a customer responsibility (shared responsibility model); the block API exposes no encryption field, hence unobservable on the platform side (CHF-2). |
 | `blockstorage_volume_encryption` | scaleway | live | ∅ `not-applicable` | Encryption at rest of block volumes is guest-side (LUKS/Cryptsetup), a customer responsibility (shared responsibility model); the block API exposes no encryption field, hence unobservable on the platform side (CHF-2). |
-| `blockstorage_volume_snapshots_exist` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "blockstorage_volume" |
+| `blockstorage_volume_snapshots_exist` | exoscale | terraform | ◐ `partial` | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
+| `blockstorage_volume_snapshots_exist` | outscale | terraform | ◐ `partial` | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
 | `compute_instance_deletion_protection` | outscale | terraform | ◐ `partial` | deciding attribute "deletion_protection" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_no_secrets_in_user_data` | scaleway | live | ◐ `partial` | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_no_secrets_in_user_data` | scaleway | live | ◐ `partial` | deciding attribute "user_data" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | deciding attribute "nic_public_ips / public_ip" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
-| `database_encryption_at_rest_enabled` | scaleway | terraform | ◐ `partial` | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `database_encryption_at_rest_enabled` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "managed_database" |
 | `governance_resource_required_tags` | exoscale | terraform | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
@@ -145,14 +145,12 @@ already shows them, and they add nothing.
 | `governance_resource_required_tags` | outscale | live | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 | `governance_resource_required_tags` | scaleway | terraform | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 | `governance_resource_required_tags` | scaleway | live | ◐ `partial` | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
-| `iam_accesskey_expiration_set` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
-| `iam_accesskey_rotated` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
+| `iam_accesskey_rotated` | outscale | terraform | ◐ `partial` | deciding attribute "creation_date" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 | `iam_account_mfa_enforced` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | scaleway | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "api_access_summary" |
-| `iam_no_root_access_key` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
-| `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | scaleway | live | ✗ `unsupported` | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | exoscale | terraform | ✗ `unsupported` | this source produces no resource of type "iam_user" |
 | `iam_user_mfa_enabled` | outscale | terraform | ∅ `not-applicable` | resource type "iam_user" absent from the outscale API |
@@ -169,7 +167,7 @@ already shows them, and they add nothing.
 | `loadbalancer_http_redirect_to_https` | outscale | live | ∅ `not-applicable` | The Outscale LBU cannot redirect: `ListenerRule.Action` is documented as "always forward" in the OAPI contract (no redirect action), and no redirect attribute exists on `Listener`. The mechanism does not exist, so the control is not applicable (CHF-1). |
 | `loadbalancer_logging_enabled` | exoscale | terraform | ∅ `not-applicable` | resource type "load_balancer" absent from the exoscale API |
 | `loadbalancer_logging_enabled` | exoscale | live | ∅ `not-applicable` | resource type "load_balancer" absent from the exoscale API |
-| `loadbalancer_logging_enabled` | outscale | terraform | ◐ `partial` | deciding attribute "access_log" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `loadbalancer_logging_enabled` | outscale | terraform | ◐ `partial` | deciding attribute "access_log" not projected on correlated type "load_balancer": a capability guard, so the scan returns "not-evaluated" |
 | `loadbalancer_ssl_listeners` | exoscale | terraform | ∅ `not-applicable` | resource type "load_balancer" absent from the exoscale API |
 | `loadbalancer_ssl_listeners` | exoscale | live | ∅ `not-applicable` | resource type "load_balancer" absent from the exoscale API |
 | `loadbalancer_ssl_listeners` | outscale | terraform | ◐ `partial` | deciding attribute "load_balancer_type" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
@@ -178,21 +176,21 @@ already shows them, and they add nothing.
 | `network_peering_cross_organization` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "network_peering" |
 | `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | terraform | ∅ `not-applicable` | An Exoscale security group rule has no "all protocols" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case. |
 | `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | live | ∅ `not-applicable` | An Exoscale security group rule has no "all protocols" value: the provider schema (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) and the v2 API (security-group-rule) accept only ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. The any/any conjunction this control measures cannot be expressed, and the port-family controls (CLD-NET-1) cover the real case. |
-| `network_securitygroup_default_restrict_traffic` | outscale | terraform | ◐ `partial` | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `network_securitygroup_default_restrict_traffic` | outscale | terraform | ◐ `partial` | deciding attribute "security_group_name" not projected on correlated type "security_group_rule": a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
-| `objectstorage_bucket_default_encryption` | scaleway | terraform | ◐ `partial` | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_default_encryption` | scaleway | terraform | ◐ `partial` | deciding attribute "default_encryption_enabled" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_kms_encryption` | exoscale | terraform | ∅ `not-applicable` | SOS encrypts at rest by default (SSE-SOS, keys managed by Exoscale, SSE-S3 style) but exposes no customer-managed BYOK/KMS key at the bucket level (SSE-C stays per-object and unobservable), so the BYOK-at-bucket control is moot (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | exoscale | live | ∅ `not-applicable` | SOS encrypts at rest by default (SSE-SOS, keys managed by Exoscale, SSE-S3 style) but exposes no customer-managed BYOK/KMS key at the bucket level (SSE-C stays per-object and unobservable), so the BYOK-at-bucket control is moot (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | outscale | terraform | ∅ `not-applicable` | OOS encrypts server-side in AES256 with a PROVIDER key; there is neither a KMS service nor a customer-managed master key, so there is no BYOK to audit at the bucket level (CHF-4). Note: enabling SSE itself is opt-in and observable, which is a separate control, not this N/A. |
 | `objectstorage_bucket_kms_encryption` | outscale | live | ∅ `not-applicable` | OOS encrypts server-side in AES256 with a PROVIDER key; there is neither a KMS service nor a customer-managed master key, so there is no BYOK to audit at the bucket level (CHF-4). Note: enabling SSE itself is opt-in and observable, which is a separate control, not this N/A. |
-| `objectstorage_bucket_kms_encryption` | scaleway | terraform | ◐ `partial` | deciding attribute "sse_kms_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_kms_encryption` | scaleway | terraform | ◐ `partial` | deciding attribute "sse_kms_enabled" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_object_lock_enabled` | exoscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_object_lock_enabled` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_public_access` | exoscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_public_access` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_versioning_enabled` | exoscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_versioning_enabled` | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
-| `objectstorage_bucket_versioning_enabled` | scaleway | terraform | ◐ `partial` | deciding attribute "versioning" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_versioning_enabled` | scaleway | terraform | ◐ `partial` | deciding attribute "versioning" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 
 ## Different-scope provider: `kubernetes` (in-cluster)
 
@@ -211,10 +209,10 @@ the other's scope. One source only: live collection through a kubeconfig.
 
 | Provider | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 19 | 2 | 6 | 31 |
+| exoscale | terraform | 18 | 3 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 18 | 6 | 4 | 30 |
+| outscale | terraform | 20 | 8 | 4 | 26 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | terraform | 18 | 7 | 2 | 31 |
 | scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

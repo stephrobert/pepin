@@ -59,6 +59,8 @@ var sha64 = regexp.MustCompile(`[0-9a-f]{64}`)
 // vcsDigest repère l'empreinte de provenance du binaire (`vcs:<commit>[+modified]`).
 var vcsDigest = regexp.MustCompile(`vcs:[0-9a-f]+(\+modified)?`)
 
+var toolDigestField = regexp.MustCompile(`(?s)("tool":\s*\{\s*"name":\s*"pepin",\s*"version":\s*"[^"]+",\s*"digest":\s*)"[^"]+"`)
+
 // rfc3339 repère un horodatage UTC.
 var rfc3339 = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`)
 
@@ -190,6 +192,7 @@ func captureBundle(r Runner, tmp, version string) (bundleCaptures, error) {
 func normalizeBundleText(s, tmp, version string) string {
 	s = strings.ReplaceAll(s, tmp+string(os.PathSeparator), "")
 	s = strings.ReplaceAll(s, tmp, "")
+	s = toolDigestField.ReplaceAllString(s, `${1}"<binary-digest>"`)
 	// Le manifest porte la version NUE (`"version": "0.3.0"`), comme toute surface
 	// parsable ; `version` arrive ici telle que `pepin version` l'imprime, donc
 	// préfixée. Comparer les deux sans dépréfixer laissait passer la version réelle

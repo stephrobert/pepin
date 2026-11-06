@@ -235,6 +235,7 @@ keys for an EIM user, that is the next thing to measure; `ReadAccessKeys` shows 
 <!-- pepin:gen provider-outscale-terraform -->
 | Terraform resource | Normalized type | Exploded block |
 |---|---|---|
+| `outscale_access_key` | `access_key` | — |
 | `outscale_api_access_rule` | `api_access_rule` | — |
 | `outscale_image_launch_permission` | `compute_image` | — |
 | `outscale_load_balancer` | `load_balancer` | — |
@@ -244,6 +245,7 @@ keys for an EIM user, that is the next thing to measure; `ReadAccessKeys` shows 
 | `outscale_security_group_rule` | `security_group_rule` | `rules[*]` |
 | `outscale_subnet` | `subnet` | — |
 | `outscale_vm` | `compute_instance` | — |
+| `outscale_volume` | `blockstorage_volume` | — |
 <!-- /pepin:gen provider-outscale-terraform -->
 
 ```bash
@@ -261,7 +263,7 @@ API returns a boolean. The rules normalize both
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 18 | 6 | 4 | 30 |
+| terraform | 20 | 8 | 4 | 26 |
 | live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
@@ -285,23 +287,21 @@ truth is the [coverage matrix](../coverage.md).
 | Control | Observable only through | Reason on the blind side |
 |---|---|---|
 | `blockstorage_snapshot_not_public` | live | this source produces no resource of type "blockstorage_snapshot" |
-| `blockstorage_volume_snapshots_exist` | live | this source produces no resource of type "blockstorage_volume" |
+| `blockstorage_volume_snapshots_exist` | live | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
 | `compute_instance_deletion_protection` | live | deciding attribute "deletion_protection" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
-| `iam_accesskey_expiration_set` | live | this source produces no resource of type "access_key" |
-| `iam_accesskey_rotated` | live | this source produces no resource of type "access_key" |
+| `iam_accesskey_rotated` | live | deciding attribute "creation_date" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 | `iam_account_mfa_enforced` | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | live | this source produces no resource of type "api_access_summary" |
-| `iam_no_root_access_key` | live | this source produces no resource of type "access_key" |
 | `kubernetes_cluster_auto_upgrade_enabled` | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_control_plane_highly_available` | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_not_publicly_accessible` | live | this source produces no resource of type "kubernetes_cluster" |
-| `loadbalancer_logging_enabled` | live | deciding attribute "access_log" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `loadbalancer_logging_enabled` | live | deciding attribute "access_log" not projected on correlated type "load_balancer": a capability guard, so the scan returns "not-evaluated" |
 | `loadbalancer_ssl_listeners` | live | deciding attribute "load_balancer_type" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `network_peering_cross_organization` | live | this source produces no resource of type "network_peering" |
-| `network_securitygroup_default_restrict_traffic` | live | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `network_securitygroup_default_restrict_traffic` | live | deciding attribute "security_group_name" not projected on correlated type "security_group_rule": a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_object_lock_enabled` | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_public_access` | live | this source produces no resource of type "object_storage_bucket" |

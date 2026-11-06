@@ -11,9 +11,13 @@ dist/
 # pepin's examples only need the .tf sources, the sanitized plan.json and inventory.json.
 **/.terraform/
 **/.terraform.lock.hcl
-# Exception : le lockfile du tenant de QUALIFICATION est versionné. Il épingle les
-# empreintes du provider validé — la régression de destruction (#4338 amont) est
-# arrivée par une contrainte flottante, et un lockfile absent la laisse revenir.
+# Les exemples gardent leurs versions et empreintes de providers pour que la porte
+# CI puisse ancrer les mappings Terraform sur des schémas reproductibles.
+!examples/exoscale/terraform/.terraform.lock.hcl
+!examples/outscale/terraform/.terraform.lock.hcl
+!examples/scaleway/terraform/.terraform.lock.hcl
+# Le lockfile du tenant de QUALIFICATION épingle les empreintes du provider validé —
+# la régression de destruction (#4338 amont) est arrivée par une contrainte flottante.
 !references/qualification/*/.terraform.lock.hcl
 *.tfstate
 *.tfstate.*

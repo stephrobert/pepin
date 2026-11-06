@@ -65,7 +65,6 @@ but they will never confirm compliance.
 <!-- pepin:gen never-pass -->
 | Control | Severity | Reason |
 |---|---|---|
-| `database_encryption_at_rest_enabled` | high | deciding attribute "encryption_at_rest" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `governance_resource_required_tags` | medium | no targeted resource type, and the control does not read the provider descriptor: the "pass" lock cannot be lifted, so the scan returns "not-evaluated" as long as no deviation is detected |
 <!-- /pepin:gen never-pass -->
 
@@ -85,21 +84,21 @@ actually decide them. The reason given is the one that applies to the source tha
 | Control | Provider | Observable only through | Reason |
 |---|---|---|---|
 | `blockstorage_snapshot_not_public` | outscale | live | this source produces no resource of type "blockstorage_snapshot" |
-| `blockstorage_volume_snapshots_exist` | outscale | live | this source produces no resource of type "blockstorage_volume" |
+| `blockstorage_volume_snapshots_exist` | exoscale | live | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
+| `blockstorage_volume_snapshots_exist` | outscale | live | the source does not project correlated type "blockstorage_snapshot": the control returns "not-evaluated" rather than conclude without that resource |
 | `compute_instance_deletion_protection` | outscale | live | deciding attribute "deletion_protection" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_no_secrets_in_user_data` | scaleway | terraform | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_no_secrets_in_user_data` | scaleway | terraform | deciding attribute "user_data" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | live | deciding attribute "nic_public_ips / public_ip" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | deciding attribute "nic_public_ips / public_ip" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | scaleway | terraform | this source produces no resource of type "managed_database" |
-| `iam_accesskey_expiration_set` | outscale | live | this source produces no resource of type "access_key" |
-| `iam_accesskey_rotated` | outscale | live | this source produces no resource of type "access_key" |
+| `iam_accesskey_rotated` | outscale | live | deciding attribute "creation_date" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 | `iam_account_mfa_enforced` | outscale | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccesspolicy_max_key_expiration` | scaleway | live | this source produces no resource of type "api_access_policy" |
 | `iam_apiaccessrule_defined` | outscale | live | this source produces no resource of type "api_access_summary" |
-| `iam_no_root_access_key` | outscale | live | this source produces no resource of type "access_key" |
-| `iam_no_root_access_key` | scaleway | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `iam_no_root_access_key` | scaleway | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | scaleway | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | exoscale | live | this source produces no resource of type "iam_user" |
 | `iam_user_mfa_enabled` | scaleway | live | this source produces no resource of type "iam_user" |
@@ -108,20 +107,20 @@ actually decide them. The reason given is the one that applies to the source tha
 | `kubernetes_cluster_control_plane_highly_available` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_deletion_protection` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
 | `kubernetes_cluster_not_publicly_accessible` | outscale | live | this source produces no resource of type "kubernetes_cluster" |
-| `loadbalancer_logging_enabled` | outscale | live | deciding attribute "access_log" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `loadbalancer_logging_enabled` | outscale | live | deciding attribute "access_log" not projected on correlated type "load_balancer": a capability guard, so the scan returns "not-evaluated" |
 | `loadbalancer_ssl_listeners` | outscale | live | deciding attribute "load_balancer_type" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns "not-evaluated" |
 | `network_peering_cross_organization` | outscale | live | this source produces no resource of type "network_peering" |
-| `network_securitygroup_default_restrict_traffic` | outscale | live | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `network_securitygroup_default_restrict_traffic` | outscale | live | deciding attribute "security_group_name" not projected on correlated type "security_group_rule": a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_default_encryption` | outscale | live | this source produces no resource of type "object_storage_bucket" |
-| `objectstorage_bucket_default_encryption` | scaleway | live | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `objectstorage_bucket_kms_encryption` | scaleway | live | deciding attribute "sse_kms_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_default_encryption` | scaleway | live | deciding attribute "default_encryption_enabled" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_kms_encryption` | scaleway | live | deciding attribute "sse_kms_enabled" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 | `objectstorage_bucket_object_lock_enabled` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_object_lock_enabled` | outscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_public_access` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_public_access` | outscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_versioning_enabled` | exoscale | live | this source produces no resource of type "object_storage_bucket" |
 | `objectstorage_bucket_versioning_enabled` | outscale | live | this source produces no resource of type "object_storage_bucket" |
-| `objectstorage_bucket_versioning_enabled` | scaleway | live | deciding attribute "versioning" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_versioning_enabled` | scaleway | live | deciding attribute "versioning" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 <!-- /pepin:gen single-source -->
 
 Two structural asymmetries explain most of these rows.
@@ -149,11 +148,11 @@ Per provider and per source, over all controls in the reference:
 <!-- pepin:gen coverage-totals -->
 | Provider | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 19 | 2 | 6 | 31 |
+| exoscale | terraform | 18 | 3 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 18 | 6 | 4 | 30 |
+| outscale | terraform | 20 | 8 | 4 | 26 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | terraform | 18 | 7 | 2 | 31 |
 | scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |
 <!-- /pepin:gen coverage-totals -->
@@ -208,10 +207,10 @@ What is not yet proven is **counted**, not hidden:
 <!-- pepin:gen veracity-debt -->
 | Figure | Count |
 |---|---:|
-| Control x provider x source paths on which Pépin concludes | 186 |
-| Paths whose every reachable verdict is proven end to end | 34 |
-| Verdicts to prove in total | 470 |
-| Verdicts left to prove | 369 |
+| Control x provider x source paths on which Pépin concludes | 190 |
+| Paths whose every reachable verdict is proven end to end | 38 |
+| Verdicts to prove in total | 478 |
+| Verdicts left to prove | 367 |
 <!-- /pepin:gen veracity-debt -->
 
 The remainder is listed path by path in `internal/veracity/testdata/debt.txt`. That ledger is a
@@ -392,6 +391,20 @@ that status at all, and with that code.
 The same holds for every value in a recording: they are minted by the emulator at startup, not
 returned by a cloud. They are safe to commit for exactly that reason, and useless as evidence
 about a provider's contract for exactly that reason too.
+
+### S3 bucket-list compatibility is not established for every provider
+
+The collector accepts an empty bucket list only when a successful response contains a readable
+`ListAllMyBucketsResult` with a `Buckets` element; an `Owner` element and a particular
+`Content-Type` are not required. Unreadable pages, missing bucket names, repeated continuation
+tokens, responses above 64 MiB, or a list exceeding 1,000 pages leave the unit incomplete.
+Previously observed buckets and failures are retained, but a successful verdict depending on
+the incomplete unit is withdrawn.
+
+The valid-empty counterexample and pagination are tested against a simulated S3 endpoint, not
+against empty accounts at Scaleway, Outscale and Exoscale. If a provider omits `Buckets` on a
+legitimate empty response, Pépin will conservatively report it as unreadable. Compatibility of
+this discriminant with all three real services remains to be measured.
 
 ### A finding's file and line need the `.tf` sources beside the plan
 

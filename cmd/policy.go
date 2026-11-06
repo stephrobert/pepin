@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -167,22 +168,39 @@ func renderRelaxations(w io.Writer, cfg scanConfig) {
 	}
 }
 
-// replayedConfig relit la configuration DÉJÀ PRÉSENTE dans un input (rejeu de
-// l'input.json d'un bundle scellé). Le dossier a été rendu sous cette
-// configuration-là, pas sous celle du jour : la rejouer est ce qui rend
-// `verify --re-derive` fidèle. Défensif — l'input peut venir d'un tiers : une
-// configuration illisible retombe sur celle du scan courant plutôt que de faire
-// paniquer un vérificateur.
-func replayedConfig(raw any, fallback policy.Resolved) policy.Resolved {
+// resolvedConfigOf suit les mêmes défauts que les règles pour un ancien input
+// partiel, tout en préservant une liste explicitement vide.
+func resolvedConfigOf(input any) (policy.Resolved, error) {
+	out := policy.Defaults()
+	m, ok := input.(map[string]any)
+	if !ok {
+		return policy.Resolved{}, errors.New(tr("inventaire invalide : objet attendu", "invalid inventory: expected an object"))
+	}
+	raw, present := m["config"]
+	if !present {
+		return out, nil
+	}
 	b, err := json.Marshal(raw)
 	if err != nil {
-		return fallback
+		return policy.Resolved{}, fmt.Errorf(tr("configuration illisible : %w", "unreadable configuration: %w"), err)
 	}
-	var out policy.Resolved
+	var sections map[string]json.RawMessage
+	if err := json.Unmarshal(b, &sections); err != nil || sections == nil {
+		return policy.Resolved{}, errors.New(tr("configuration invalide : objet attendu", "invalid configuration: expected an object"))
+	}
+	if tagging, present := sections["tagging"]; present {
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(tagging, &fields); err != nil || fields == nil {
+			return policy.Resolved{}, errors.New(tr("configuration tagging invalide : objet attendu", "invalid tagging configuration: expected an object"))
+		}
+		if string(fields["resource_types"]) == "null" {
+			return policy.Resolved{}, errors.New(tr("tagging.resource_types invalide : liste attendue", "invalid tagging.resource_types: expected a list"))
+		}
+	}
 	if err := json.Unmarshal(b, &out); err != nil {
-		return fallback
+		return policy.Resolved{}, fmt.Errorf(tr("configuration invalide : %w", "invalid configuration: %w"), err)
 	}
-	return out
+	return out, nil
 }
 
 // jsonConfig rend la configuration pour `--format json` : l'empreinte de la

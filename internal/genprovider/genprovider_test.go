@@ -35,13 +35,15 @@ func TestProvidersValid(t *testing.T) {
 }
 
 // TestProviderMappingsMatchSchema ANCRE le mapping Terraform de chaque provider
-// sur le schéma réel du provider Terraform (anti-invention §2). Ignoré par
-// provider si terraform/le schéma ne sont pas disponibles.
+// sur le schéma réel du provider Terraform (anti-invention §2). En CI, chaque
+// mapping doit être vérifié ; localement, un schéma indisponible est signalé.
 func TestProviderMappingsMatchSchema(t *testing.T) {
+	requireSchema := os.Getenv("PEPIN_REQUIRE_TF_SCHEMA") == "1"
 	entries, err := os.ReadDir(providersDir)
 	if err != nil {
-		t.Skipf("dossier providers indisponible : %v", err)
+		t.Fatalf("dossier providers indisponible : %v", err)
 	}
+	checked := 0
 	for _, e := range entries {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
 			continue
@@ -52,13 +54,26 @@ func TestProviderMappingsMatchSchema(t *testing.T) {
 			t.Errorf("%s : %v", name, err)
 			continue
 		}
-		missing, ok := tfmap.CheckSchema(filepath.Join("../../examples", name, "terraform"), desc.MappingTerraform)
-		if !ok {
+		if len(desc.MappingTerraform.Resources) == 0 {
+			t.Logf("%s : aucun mapping Terraform déclaré", name)
 			continue
 		}
+		missing, ok := tfmap.CheckSchema(filepath.Join("../../examples", name, "terraform"), desc.MappingTerraform)
+		if !ok {
+			if requireSchema {
+				t.Errorf("%s : schéma Terraform non disponible; la porte CI doit ancrer chaque mapping", name)
+			} else {
+				t.Logf("%s : schéma Terraform ignoré localement (initialiser examples/%s/terraform pour l'ancrer)", name, name)
+			}
+			continue
+		}
+		checked++
 		for _, m := range missing {
 			t.Errorf("%s : %s", name, m)
 		}
+	}
+	if checked == 0 && !requireSchema {
+		t.Skip("aucun schéma Terraform initialisé; l'ancrage des mappings n'a pas été mesuré")
 	}
 }
 

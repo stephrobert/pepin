@@ -62,7 +62,7 @@ porte son motif :
 | Fournisseur | Source | Statut | Motif |
 |---|---|---|---|
 | outscale | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
-| scaleway | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| scaleway | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » non projeté sur le type corrélé « compute_instance » : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 
