@@ -10,13 +10,12 @@
 # contre-exemple est une règle high/critical ajoutée sans sa preuve de
 # précision, et la CI la refuse.
 #
-# high/critical actifs : 43 · avec contre-exemple : 19 · restants : 24
+# high/critical actifs : 43 · avec contre-exemple : 20 · restants : 23
 
 blockstorage_snapshot_not_public
 blockstorage_volume_encryption
 blockstorage_volume_snapshots_exist
 compute_instance_has_security_group
-database_encryption_at_rest_enabled
 governance_provider_sovereignty
 governance_resource_region_in_eu
 iam_account_mfa_enforced

@@ -102,6 +102,31 @@ l'une ni l'autre appartient au `git log`.
   de qualification sur un compte réel, GO avec sa destruction prouvée. Le format
   d'inventaire passe en `v10` : un ajout pur, le nouveau type `security_group`.
 
+- **Quatre gardes autour des déclarations de défaut Terraform** (issue #243, ADR-0024).
+  Le transform `default:` existait déjà sur les règles de groupe de sécurité qui alimentent
+  un contrôle CRITICAL, sans documentation ni source. Il remplace aussi les chaînes vides :
+  le nouveau transform `default_null:` traite uniquement un nul présent, sans modifier les
+  mappings existants.
+
+  - Un défaut sur un attribut **`computed`** est refusé : son silence part en
+    `after_unknown`, donc le plan ne le connaît pas, et le déclarer fabriquerait une donnée
+    absente (ADR-0014).
+  - Un défaut sur un attribut **`required`** est refusé : il ne peut jamais tirer. Quatre
+    déclarations de ce genre existaient sur `action`, écrites depuis la documentation et
+    jamais vérifiées contre le schéma — un no-op trompeur, retiré.
+  - Toute déclaration de défaut dans `mapping_terraform` **cite sa source provider**, vérifiée
+    mécaniquement. Une déclaration fausse n'a pas l'air fausse : elle produit un verdict
+    plausible.
+  - `TestNoSpecFabricatesAnAttributeFromNothing` couvre désormais le **mapping Terraform**,
+    ce qu'il ne faisait pas — le chemin de projection visé par l'issue était hors de la porte.
+
+  Au passage : `TestProviderMappingsMatchSchema` sautait silencieusement tout fournisseur
+  dont le dossier d'exemple n'était pas initialisé, si bien que le mapping Outscale n'était
+  ancré sur **aucun schéma**, sans le dire. Les sauts sont désormais nommés localement, et
+  la CI exige un schéma pour chaque fournisseur ayant un mapping Terraform. Un transform
+  `to_bool` garde enfin un booléen booléen quelle que soit la source, au lieu de `false`
+  en live et `"false"` depuis un plan.
+
 ### Corrigé
 
 - **Une réponse S3 de succès invalide n'est plus interprétée comme une liste de
@@ -115,6 +140,29 @@ l'une ni l'autre appartient au `git log`.
   quand même, mais un rapport archivé portait un hôte que plus personne ne maîtrise, et une
   redirection qui disparaît emporte avec elle la preuve du contrôle audité. L'URL de base est
   désormais l'hôte servi.
+
+- **Un plan Terraform qui écrit la réponse par son silence est désormais lu** (issue #243).
+  `database_encryption_at_rest_enabled` rendait `not-evaluated` sur tout plan Scaleway
+  laissant `encryption_at_rest` non écrit — alors que le plan prouve que la base sera créée
+  non chiffrée. Mesuré de bout en bout sur le tenant de référence `ducklake` :
+
+  ```
+  avant : not-evaluated — « attribut « encryption_at_rest » non collecté (garde de capacité) »
+  après : fail          — « Base de données managée « ducklake » sans chiffrement au repos. »
+  ```
+
+  Terraform distingue deux silences, et Pépin les confondait. Un argument optionnel que
+  l'auteur n'a pas écrit apparaît dans `planned_values` avec la valeur `null` ; une valeur
+  connue seulement après l'apply est **absente** de ce bloc. Mesuré sur les plans complets du
+  dépôt, recoupé attribut par attribut avec les schémas des providers : 62 valeurs nulles,
+  toutes portées par un attribut `optional` non `computed`, **zéro contre-exemple**.
+
+  Ce qu'un nul *vaut* n'est pas dans le plan : c'est ce que le provider envoie à l'API quand
+  l'argument est omis, et cela se lit dans son code. Pour celui-ci :
+  `internal/services/rdb/instance.go` déclare `encryption_at_rest` en `TypeBool, Optional`
+  sans `Default`, et la création envoie toujours
+  `Encryption: &rdb.EncryptionAtRest{Enabled: d.Get(...)}` — un argument omis envoie donc
+  `false` explicitement.
 
 - **Un scan de stockage objet plafonné ne se lit plus comme une panne, ni une clé inconnue comme
   un droit manquant** (issue #96). `Classify` reconnaît les erreurs des SDK tiers par deux

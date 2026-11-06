@@ -824,12 +824,12 @@ func lookup(v any, path string) any {
 // knownBareTransforms : noms de transforms de valeur sans préfixe (liste fermée).
 var knownBareTransforms = map[string]bool{
 	"lower": true, "upper": true, "first": true, "range_from": true, "range_to": true,
-	"iampolicy": true, "list": true, "kv": true, "to_int": true, "nonempty": true,
+	"iampolicy": true, "list": true, "kv": true, "to_int": true, "to_bool": true, "nonempty": true,
 	"snake_keys": true, "region_of_zone": true, "duration_seconds": true,
 }
 
 // knownTransformPrefixes : préfixes de transforms paramétrés (`default:val`, `equals:val`…).
-var knownTransformPrefixes = []string{"equals:", "default:", "pluck:", "contains:", "matches:"}
+var knownTransformPrefixes = []string{"equals:", "default:", "default_null:", "pluck:", "contains:", "matches:"}
 
 // ValidateTransform retourne les noms de transforms INCONNUS d'une spec (chaîne, chaînage
 // []any, ou table de remplacement map). Un transform inconnu (typo `lowercase`) serait un
@@ -879,6 +879,12 @@ func applyTransform(v any, spec any) any {
 			}
 			return v
 		}
+		if def, ok := strings.CutPrefix(t, "default_null:"); ok {
+			if v == nil {
+				return def
+			}
+			return v
+		}
 		if field, ok := strings.CutPrefix(t, "pluck:"); ok {
 			arr, _ := v.([]any)
 			out := make([]any, 0, len(arr))
@@ -917,7 +923,7 @@ func applyTransform(v any, spec any) any {
 		// Garde nil : un transform SCALAIRE appliqué à une source absente renvoie nil, pour NE PAS
 		// fabriquer une valeur concrète (0, "") qui court-circuiterait le nil-skip de Project —
 		// celui-là même qui fonde les gardes de capacité `"k" in object.keys(attrs)`. Les préfixes
-		// de dérivation (default:/equals:/contains:/pluck:) sont déjà traités au-dessus ; `nonempty`
+		// de dérivation (default:/default_null:/equals:/contains:/pluck:) sont déjà traités au-dessus ; `nonempty`
 		// dérive un booléen d'absence ; `kv`/`list` produisent une COLLECTION vide (l'attribut EST
 		// collecté, juste vide) — sémantique légitime à préserver (ex. tags[] présents mais vides).
 		if v == nil && t != "nonempty" && t != "kv" && t != "list" {
@@ -999,6 +1005,30 @@ func applyTransform(v any, spec any) any {
 		case "to_int":
 			if n, err := strconv.ParseInt(toStr(v), 10, 64); err == nil {
 				return n
+			}
+			return v
+		case "to_bool":
+			// Un booléen reste un booléen, quelle que soit la SOURCE.
+			//
+			// `default_null:false` rend une chaîne, parce que le défaut est écrit en YAML.
+			// Sans conversion, le même attribut sortirait `false` depuis la collecte
+			// live et `"false"` depuis un plan Terraform — deux types pour un attribut
+			// que l'inventaire déclare gelé (ADR-0003), et un consommateur qui compare
+			// des types casse sur la seconde forme sans que rien ne l'ait annoncé.
+			//
+			// Une valeur qui n'est NI un booléen ni « true »/« false » est rendue telle
+			// quelle : la convertir de force reviendrait à décider à la place de la
+			// source, ce qui est exactement ce qu'ADR-0014 refuse.
+			switch x := v.(type) {
+			case bool:
+				return x
+			case string:
+				switch x {
+				case "true":
+					return true
+				case "false":
+					return false
+				}
 			}
 			return v
 		case "snake_keys":

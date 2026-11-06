@@ -264,6 +264,7 @@ couples, une source produit le type de ressource et son attribut décisif, et l'
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_public_ip_with_open_securitygroup` | scaleway | live | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
+| `database_encryption_at_rest_enabled` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | terraform | cette source ne produit aucune ressource de type « managed_database » |
 | `iam_accesskey_expiration_set` | outscale | live | cette source ne produit aucune ressource de type « access_key » |
 | `iam_accesskey_rotated` | outscale | live | cette source ne produit aucune ressource de type « access_key » |

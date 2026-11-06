@@ -35,8 +35,8 @@ func TestProvidersValid(t *testing.T) {
 }
 
 // TestProviderMappingsMatchSchema ANCRE le mapping Terraform de chaque provider
-// sur le schéma réel du provider Terraform (anti-invention §2). Ignoré par
-// provider si terraform/le schéma ne sont pas disponibles.
+// sur le schéma réel du provider Terraform (anti-invention §2). En CI, chaque
+// mapping doit être vérifié ; localement, un schéma indisponible est signalé.
 func TestProviderMappingsMatchSchema(t *testing.T) {
 	requireSchema := os.Getenv("PEPIN_REQUIRE_TF_SCHEMA") == "1"
 	entries, err := os.ReadDir(providersDir)
