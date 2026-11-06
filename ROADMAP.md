@@ -15,7 +15,7 @@ CI: [known limitations](docs/known-limitations.md) for the blind spots, and the
 page does not restate them.
 
 <!-- pepin:gen roadmap-status-heading -->
-## Where Pépin stands, v0.4.0
+## Where Pépin stands, v0.5.0
 <!-- /pepin:gen roadmap-status-heading -->
 
 Four registered providers: three sovereign clouds, plus an in-cluster Kubernetes

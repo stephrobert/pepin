@@ -22,6 +22,8 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Non publié]
 
+## [0.5.0] - 2026-11-06
+
 ### Ajouté
 
 - **Scaleway : la politique d'expiration des clés d'API de l'organisation est lue**
@@ -290,6 +292,11 @@ l'une ni l'autre appartient au `git log`.
   rien n'était committable sans cela. `mise.toml` suit `go.mod`, d'où la CI tire
   sa propre version, et `osv-scanner.toml` dit sous quelle version son exception
   a été mesurée.
+
+- **Les secrets des fichiers d'identifiants restent hors des inventaires normalisés.**
+  Un test de régression couvre les fichiers d'identifiants Scaleway et Outscale,
+  s'authentifie auprès d'une API locale et vérifie que ni la valeur de l'identifiant
+  ni un champ secret non projeté de la réponse n'entre dans l'inventaire normalisé.
 
 ## [0.4.0] - 2026-09-10
 

@@ -21,6 +21,8 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-06
+
 ### Added
 
 - **Scaleway: the organisation's API-key expiry policy is read** (issue #196).
@@ -277,6 +279,11 @@ belongs in `git log`.
   committable without it. `mise.toml` follows `go.mod`, which is where CI reads
   its own version from, and `osv-scanner.toml` says which version its exception
   was measured under.
+
+- **Credential-file secrets stay out of normalized inventories.** A regression
+  test exercises Scaleway and Outscale credential files, authenticates against
+  a local API, and verifies that neither the credential value nor an unprojected
+  secret field in the response enters the normalized inventory.
 
 ## [0.4.0] - 2026-09-10
 
