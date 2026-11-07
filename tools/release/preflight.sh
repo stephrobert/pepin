@@ -302,7 +302,7 @@ fi
 # `\(`, awk émet « escape sequence treated as plain ( » et la parenthèse devient
 # un GROUPE — le motif ne matche plus aucun nom de job, et le preflight conclut
 # « la CI est 'null' » au lieu de lire son état.
-ci_jobs='^(Build \\+ Test|golangci-lint|Audit \\(gosec \\+ govulncheck\\)|Analyze \\(go\\)|Dependency Review|Secret scanning|Secret scanning \\(pattern-based\\)|The image scans for real|The action installs only what it verified)$'
+ci_jobs='^(Build \\+ Test|golangci-lint|Audit \\(gosec \\+ govulncheck\\)|Analyze \\(go\\)|Dependency Review|Secret scanning|Secret scanning \\(pattern-based\\)|The image scans for real|The action installs only what it verified|Plumber \\(trust policy\\))$'
 if git remote | grep -q . && command -v gh >/dev/null 2>&1; then
   sha="$(git rev-parse HEAD)"
   if runs="$(gh api "repos/{owner}/{repo}/commits/$sha/check-runs?per_page=100" \
@@ -315,6 +315,15 @@ if git remote | grep -q . && command -v gh >/dev/null 2>&1; then
       "")        ko "aucun run de CI trouvé pour ce commit" "le pousser et attendre la CI" ;;
       *)         ko "la CI est '$state' sur ce commit" "on ne tague pas ce que la CI refuse" ;;
     esac
+    plumber_state="$(printf '%s\n' "$runs" \
+                     | awk -F'\t' '$1 == "Plumber (trust policy)" { print $2 }' \
+                     | sort -u | paste -sd, -)"
+    if [ "$plumber_state" = success ]; then
+      ok "Plumber a validé la politique de confiance sur ce commit"
+    else
+      ko "Plumber est '${plumber_state:-absent}' sur ce commit" \
+         "attendre le job Plumber (trust policy) sur main ; un job absent ou sauté ne valide pas la livraison"
+    fi
   else
     ko "impossible d'interroger la CI sur ce commit" "gh api a échoué : vérifier l'authentification, pas le commit"
   fi
