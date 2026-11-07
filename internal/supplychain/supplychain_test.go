@@ -280,6 +280,9 @@ func TestOSVPRScanRejectsIncompleteResults(t *testing.T) {
 	if !strings.Contains(body, "persist-credentials: false") {
 		t.Fatal("OSV PR checkout must not persist credentials")
 	}
+	if regexp.MustCompile(`(?m)^\s+scan-args:\s+--`).MatchString(body) {
+		t.Fatal("OSV Docker actions require newline-separated scan arguments, not one combined argument")
+	}
 	block := regexp.MustCompile(`(?s)- name: Require two completed scans\n        run: \|\n(.*?)(?:\n      - name:)`).
 		FindStringSubmatch(body)
 	if block == nil {

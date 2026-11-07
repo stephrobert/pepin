@@ -53,7 +53,11 @@ jobs:
         env:
           GOTOOLCHAIN: auto
         with:
-          scan-args: --format=json --output=old-results.json -r ./
+          scan-args: |-
+            --format=json
+            --output=old-results.json
+            -r
+            ./
 
       - name: Checkout current revision
         env:
@@ -71,7 +75,11 @@ jobs:
         env:
           GOTOOLCHAIN: auto
         with:
-          scan-args: --format=json --output=new-results.json -r ./
+          scan-args: |-
+            --format=json
+            --output=new-results.json
+            -r
+            ./
 
       - name: Require two completed scans
         run: |
@@ -85,7 +93,12 @@ jobs:
       - name: Report new vulnerabilities
         uses: google/osv-scanner-action/osv-reporter-action@0a65f82af05cd58cf587827b0bb0489548c18346 # v2.7.0
         with:
-          scan-args: --output=results.sarif --old=old-results.json --new=new-results.json --gh-annotations=true --fail-on-vuln=true
+          scan-args: |-
+            --output=results.sarif
+            --old=old-results.json
+            --new=new-results.json
+            --gh-annotations=true
+            --fail-on-vuln=true
 
       - name: Upload scan results
         if: ${{ !cancelled() }}
