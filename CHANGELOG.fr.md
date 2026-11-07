@@ -52,6 +52,7 @@ l'une ni l'autre appartient au `git log`.
   CLI bilingue reflète la nouvelle présentation de l'aide des options.
 - Aligner la fusion sur la politique mono-mainteneur de Feint : PR et CI restent
   obligatoires, sans approbation formelle ni revue CODEOWNER bloquante.
+  Plumber applique la même politique sans désactiver la protection de branche.
 
 ### Corrigé
 
