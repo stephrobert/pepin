@@ -78,20 +78,41 @@ cryptographique ne justifie pas de mettre tous ces critères en N/A.
   appelle `crypto/hmac` avec SHA-256 ; SigV4 utilise le signataire du SDK AWS.
   Pépin implémente le format de requête, pas un nouveau hachage ou MAC. Voir
   [authentification](internal/collect/auth.go).
-- Le [client Kubernetes](internal/kubeauth/kubeauth.go) vérifie la CA configurée
-  et exige TLS 1.2 ou ultérieur. L'accord de clés et l'aléatoire TLS viennent de
-  Go ; Pépin ne fournit pas de générateur aléatoire personnalisé.
+- La [politique TLS commune](internal/tlspolicy/tlspolicy.go) s'applique à
+  Kubernetes, aux collecteurs REST (dont EIM et OKS) et à S3. Elle impose TLS 1.2
+  ou ultérieur, les suites TLS 1.2 AEAD/ECDHE, des clés RSA d'au moins 2048 bits,
+  EC d'au moins 224 bits, ou Ed25519. Go fournit TLS 1.3, l'accord de clés et
+  l'aléatoire. Go vérifie toujours le nom du serveur, l'expiration et la confiance.
+  Tous les certificats d'au moins une chaîne serveur vérifiée respectent la
+  politique, CA comprise. Tous les certificats d'une chaîne client fournie par
+  l'opérateur sont vérifiés au chargement. Les refus sont explicites ; les échecs
+  de collecte restent enregistrés, jamais transformés en inventaires vides réussis.
+  Un cluster privé utilisant RSA 1024 doit renouveler ses clés.
 - Les signatures des bundles sont vérifiées séparément de leurs empreintes.
   Une intégrité vérifiée sans signature ne prouve pas l'auteur ; exiger la
   signature lorsque l'appelant a besoin d'une preuve authentifiée.
 - Pépin n'authentifie pas d'utilisateurs externes par une base locale de mots de
   passe. Les identifiants des fournisseurs servent à l'authentification sortante.
-- **Limite de robustesse des clés :** Pépin n'impose actuellement aucune taille
-  minimale aux clés TLS client fournies par l'opérateur. Fournir des clés RSA
-  d'au moins 2048 bits ou des clés de courbe elliptique d'au moins 224 bits, et
-  suivre la politique d'identifiants du fournisseur. Cette recommandation
-  n'est pas une vérification implémentée et ne suffit pas à établir le critère
-  OpenSSF `crypto_keylength`.
+
+#### Périmètre cryptographique et preuves restantes
+
+| Mécanisme | Paramètres et responsabilité | Vérification / limite |
+|---|---|---|
+| Empreintes d'inventaire, politique et bundle | SHA-256, choisi par Pépin | Empreinte de 256 bits, bibliothèque standard |
+| MAC de requêtes EXO2 et SigV4 | HMAC-SHA256 ; secret émis par le fournisseur ou l'opérateur S3 local | SHA-256 imposé ; robustesse du secret non mesurée ni imposée |
+| TLS Kubernetes, REST, EIM, OKS et S3 | TLS Go avec la politique commune ci-dessus | Clés client et chaînes serveur vérifiées ; RSA 1024 refusé |
+| Signatures de release/bundle | Outillage Cosign/Sigstore et identité de signature fournie | Vérification de signature distincte ; la garde TLS ne valide pas les clés de signature |
+| Jetons porteurs et identifiants en en-tête | Identifiants sortants fournis par le fournisseur/opérateur | Non générés par Pépin ; leur longueur ne prouve pas leur entropie |
+| Endpoints HTTP, dont MinIO local | Transport existant sans TLS | Toujours accepté par compatibilité ; aucune confidentialité ni garde TLS |
+
+Les [tests](internal/tlspolicy/collectors_test.go) exercent de vraies connexions
+TLS locales pour REST et S3, avec les [tests Kubernetes](internal/kubeauth/kubeauth_test.go) :
+RSA 1024 est refusé, RSA 2048 et P-256 restent acceptés, et un refus REST est
+enregistré comme incomplet avant l'arrivée de toute requête HTTP authentifiée.
+Ces témoins prouvent le comportement de Pépin, pas la génération d'identifiants
+du fournisseur. La réponse OpenSSF `crypto_keylength` reste **Unmet** tant que
+le périmètre restant des secrets et clés de signature n'est pas établi ;
+la preuve TLS seule ne suffit pas.
 
 ## Bonnes pratiques d'usage
 

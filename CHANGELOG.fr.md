@@ -22,6 +22,15 @@ l'une ni l'autre appartient au `git log`.
 
 ## [Non publié]
 
+### Sécurité
+
+- Kubernetes, REST et S3 partagent une politique TLS 1.2+ : les clés RSA de
+  moins de 2048 bits et EC de moins de 224 bits sont refusées dans les chaînes
+  client et serveur vérifiées. TLS 1.2 n'accepte que les suites AEAD/ECDHE.
+  Les clusters privés faibles doivent renouveler leurs clés ; HTTP reste accepté
+  sans protection TLS. Les preuves OpenSSF sont actualisées sans prétendre
+  vérifier les secrets API ou les clés de signature.
+
 ## [0.5.0] - 2026-11-06
 
 ### Ajouté

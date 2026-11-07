@@ -95,7 +95,7 @@ Avant d'implémenter, établir si A, B et C ont cessé d'être vraies.
 | Tests, preuve, véracité | [0010](0010-dette-de-veracite-comptee.md) |
 | Bundle de preuve, persistance | [0018](0018-ce-quun-bundle-prouve-de-lui-meme.md) |
 | Langue, documentation | [0011](0011-bilinguisme-francais-normatif.md) |
-| Sécurité de la mesure, identifiants | [0012](0012-aucun-identifiant-en-ci.md), [0016](0016-chaine-dapprovisionnement-verifiable.md), [0021](0021-une-regle-chargee-a-lexecution-est-du-code-non-fiable.md) |
+| Sécurité de la mesure, identifiants | [0012](0012-aucun-identifiant-en-ci.md), [0016](0016-chaine-dapprovisionnement-verifiable.md), [0021](0021-une-regle-chargee-a-lexecution-est-du-code-non-fiable.md), [0025](0025-une-politique-tls-commune.md) |
 | Compatibilité des consommateurs | [0013](0013-un-code-de-controle-ne-se-renomme-pas.md) |
 
 Chaque ADR porte aussi un `scope:` en tête, pour que cette identification soit

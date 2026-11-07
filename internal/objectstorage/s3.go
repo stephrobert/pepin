@@ -26,6 +26,7 @@ import (
 
 	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/model"
+	"github.com/stephrobert/pepin/internal/tlspolicy"
 )
 
 const (
@@ -52,9 +53,14 @@ const (
 // « non évalué », et le contrôle d'étiquetage se tait — au lieu de crier sur chaque
 // bucket avec une remédiation que l'API ignore.
 func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, secretKey string, sseKMS, tagsPersisted bool) ([]model.Resource, error) {
+	transport, err := tlspolicy.Transport()
+	if err != nil {
+		return nil, err
+	}
 	cfg, err := awsconfig.LoadDefaultConfig(ctx,
 		awsconfig.WithRegion(region),
 		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
+		awsconfig.WithHTTPClient(&http.Client{Transport: transport}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("configuration S3 : %w", err)
@@ -64,9 +70,6 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 		return nil, fmt.Errorf("endpoint S3 : %w", err)
 	}
 	httpClient := cfg.HTTPClient
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
 	cfg.HTTPClient = listBucketsHTTPClient{next: httpClient, path: listBucketsPath}
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		if endpoint != "" {
