@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 
+	"github.com/stephrobert/pepin/internal/cryptopolicy"
 	"github.com/stephrobert/pepin/internal/i18n"
 )
 
@@ -31,6 +32,9 @@ type SigV4Auth struct {
 
 // Apply signe la requête en place (en-têtes Authorization + X-Amz-Date).
 func (a SigV4Auth) Apply(req *http.Request) error {
+	if err := cryptopolicy.ValidateHMACSecret(a.Secret); err != nil {
+		return err
+	}
 	hash, err := payloadHash(req)
 	if err != nil {
 		return err
@@ -65,6 +69,9 @@ type ExoscaleAuth struct {
 // Apply signe la requête en place (en-tête Authorization). L'expiration vaut
 // l'instant + 10 minutes, comme le SDK Exoscale.
 func (a ExoscaleAuth) Apply(req *http.Request) error {
+	if err := cryptopolicy.ValidateHMACSecret(a.Secret); err != nil {
+		return err
+	}
 	expiration := time.Now().UTC().Add(10 * time.Minute).Unix()
 
 	var sigParts, headerParts []string

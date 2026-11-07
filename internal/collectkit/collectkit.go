@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/cryptopolicy"
 	"github.com/stephrobert/pepin/internal/eimpolicy"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/model"
@@ -51,6 +52,19 @@ type OKS struct {
 // `hc` permet à un provider d'imposer son propre client (ex. mTLS d'un kubeconfig) ;
 // nil = client par défaut borné par httpTimeout.
 func Run(ctx context.Context, name string, spec collect.Spec, auth collect.Auth, vars map[string]string, s3 S3, oksCfg OKS, eimCfg EIM, hc *http.Client) (model.Inventory, error) {
+	for _, secret := range []struct {
+		enabled bool
+		value   string
+	}{
+		{s3.Endpoint != "", s3.Secret},
+		{oksCfg.Endpoint != "", oksCfg.Secret},
+	} {
+		if secret.enabled {
+			if err := cryptopolicy.ValidateHMACSecret(secret.value); err != nil {
+				return model.Inventory{}, err
+			}
+		}
+	}
 	if hc == nil {
 		transport, err := tlspolicy.Transport()
 		if err != nil {

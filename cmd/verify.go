@@ -3,18 +3,22 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/stephrobert/pepin/internal/assess"
 	"github.com/stephrobert/pepin/internal/commonrules"
+	"github.com/stephrobert/pepin/internal/cryptopolicy"
 	"github.com/stephrobert/pepin/internal/exempt"
 	"github.com/stephrobert/pepin/internal/genprovider"
 	"github.com/stephrobert/pepin/internal/i18n"
@@ -66,7 +70,7 @@ var verifyCmd = &cobra.Command{
 					"--require-signature: no signature verified. An internally consistent bundle only proves the absence of ACCIDENTAL corruption — whoever forges it regenerates files and digests together. Provide --pubkey."))
 			}
 		} else {
-			if err := verifyCosign(dir, verifyPubKey, verifyBundle); err != nil {
+			if err := verifyCosign(cmd.Context(), dir, verifyPubKey, verifyBundle); err != nil {
 				return err
 			}
 			_, _ = fmt.Fprintf(os.Stdout, tr(
@@ -308,10 +312,43 @@ func short(d string) string {
 // verifyCosign vérifie la signature cosign de checksums.txt via le binaire `cosign` (shell-out :
 // pas de dépendance lourde embarquée). Échoue clairement si cosign est absent ou la signature
 // invalide/absente.
-func verifyCosign(dir, pubKey, bundlePath string) error {
+func verifyCosign(ctx context.Context, dir, pubKey, bundlePath string) error {
+	if strings.Contains(pubKey, "://") {
+		return errors.New(tr(
+			"clé publique PEM locale requise ; exporter d'abord la clé publique distante/KMS",
+			"a local PEM public key is required; export the remote/KMS public key first"))
+	}
+	data, err := os.ReadFile(pubKey) // #nosec G304 -- clé publique locale choisie explicitement par l'opérateur.
+	if err != nil {
+		return fmt.Errorf(tr("lecture de la clé publique locale : %w", "reading the local public key: %w"), err)
+	}
+	key, err := cryptopolicy.ParsePublicKey(data)
+	if err != nil {
+		return fmt.Errorf(tr("clé de signature refusée : %w", "signature key rejected: %w"), err)
+	}
+	der, err := x509.MarshalPKIXPublicKey(key)
+	if err != nil {
+		return fmt.Errorf(tr("encodage de la clé publique : %w", "encoding the public key: %w"), err)
+	}
+	data = pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})
 	if _, err := exec.LookPath("cosign"); err != nil {
 		return errors.New(tr("cosign introuvable dans le PATH — requis pour --pubkey",
 			"cosign not found in PATH — required for --pubkey"))
+	}
+	// Cosign lit un instantané validé, pas un chemin remplaçable après la garde.
+	snapshot, err := os.CreateTemp("", "pepin-verify-key-*.pub")
+	if err != nil {
+		return fmt.Errorf(tr("instantané de clé publique : %w", "public key snapshot: %w"), err)
+	}
+	defer func() {
+		_ = snapshot.Close()
+		_ = os.Remove(snapshot.Name())
+	}()
+	if _, err := snapshot.Write(data); err != nil {
+		return fmt.Errorf(tr("écriture de la clé publique : %w", "writing the public key: %w"), err)
+	}
+	if err := snapshot.Close(); err != nil {
+		return fmt.Errorf(tr("fermeture de la clé publique : %w", "closing the public key: %w"), err)
 	}
 	checksums := filepath.Join(dir, "checksums.txt")
 	if bundlePath == "" {
@@ -324,15 +361,15 @@ func verifyCosign(dir, pubKey, bundlePath string) error {
 			bundlePath, bundlePath, checksums)
 	}
 	// #nosec G204 -- arguments issus des options CLI de l'opérateur, pas d'une source distante.
-	out, err := exec.Command("cosign", "verify-blob", "--key", pubKey, "--bundle", bundlePath, checksums).CombinedOutput()
+	out, err := exec.CommandContext(ctx, "cosign", "verify-blob", "--key", snapshot.Name(), "--bundle", bundlePath, checksums).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf(tr("signature cosign INVALIDE : %s", "INVALID cosign signature: %s"), string(out))
+		return fmt.Errorf(tr("signature cosign INVALIDE : %w\n%s", "INVALID cosign signature: %w\n%s"), err, string(out))
 	}
 	return nil
 }
 
 func init() {
-	verifyCmd.Flags().StringVar(&verifyPubKey, "pubkey", "", "clé publique cosign pour vérifier la signature de checksums.txt")
+	verifyCmd.Flags().StringVar(&verifyPubKey, "pubkey", "", "fichier PEM local de clé publique cosign pour vérifier la signature de checksums.txt")
 	verifyCmd.Flags().StringVar(&verifyBundle, "bundle", "", "bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)")
 	verifyCmd.Flags().BoolVar(&verifyReDerive, "re-derive", false, "rejouer les règles sur input.json et vérifier que l'assessment scellé en découle (opposabilité forte)")
 	// OPT-IN : changer le défaut ferait échouer, en silence, des chaînes qui passent

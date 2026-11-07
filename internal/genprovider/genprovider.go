@@ -22,6 +22,7 @@ import (
 
 	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/collectkit"
+	"github.com/stephrobert/pepin/internal/cryptopolicy"
 	"github.com/stephrobert/pepin/internal/i18n"
 	"github.com/stephrobert/pepin/internal/kubeauth"
 	"github.com/stephrobert/pepin/internal/model"
@@ -388,6 +389,11 @@ func (g GenericProvider) GovernanceResourceIn(region string) (model.Resource, bo
 // buildAuth construit le signer selon le schéma déclaré.
 func (g GenericProvider) buildAuth(creds map[string]string) (collect.Auth, error) {
 	a := g.desc.Auth
+	if a.Type == "sigv4" || a.Type == "exoscale-hmac" {
+		if err := cryptopolicy.ValidateHMACSecret(creds["secret_key"]); err != nil {
+			return nil, fmt.Errorf(i18n.T("provider %s : %w", "provider %s: %w"), g.desc.Name, err)
+		}
+	}
 	switch a.Type {
 	case "header":
 		return collect.HeaderAuth{Header: a.Header, Value: subst(a.Value, creds)}, nil

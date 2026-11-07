@@ -25,6 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 
 	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/cryptopolicy"
 	"github.com/stephrobert/pepin/internal/model"
 	"github.com/stephrobert/pepin/internal/tlspolicy"
 )
@@ -53,6 +54,9 @@ const (
 // « non évalué », et le contrôle d'étiquetage se tait — au lieu de crier sur chaque
 // bucket avec une remédiation que l'API ignore.
 func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, secretKey string, sseKMS, tagsPersisted bool) ([]model.Resource, error) {
+	if err := cryptopolicy.ValidateHMACSecret(secretKey); err != nil {
+		return nil, err
+	}
 	transport, err := tlspolicy.Transport()
 	if err != nil {
 		return nil, err

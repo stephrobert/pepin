@@ -11,26 +11,27 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stephrobert/pepin/internal/cryptopolicy"
 	"github.com/stephrobert/pepin/internal/i18n"
 )
 
 func TestKeyStrengthBoundaries(t *testing.T) {
 	for _, bits := range []int{1024, 2047, 2048, 3072} {
 		key := &rsa.PublicKey{N: new(big.Int).Lsh(big.NewInt(1), uint(bits-1)), E: 65537}
-		if err := validatePublicKey(key); (err == nil) != (bits >= 2048) {
+		if err := cryptopolicy.ValidatePublicKey(key); (err == nil) != (bits >= 2048) {
 			t.Fatalf("RSA %d : %v", bits, err)
 		}
 	}
 	for _, curve := range []elliptic.Curve{elliptic.P224(), elliptic.P256(), elliptic.P384(), elliptic.P521()} {
-		if err := validatePublicKey(&ecdsa.PublicKey{Curve: curve}); err != nil {
+		if err := cryptopolicy.ValidatePublicKey(&ecdsa.PublicKey{Curve: curve}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := validatePublicKey(make(ed25519.PublicKey, ed25519.PublicKeySize)); err != nil {
+	if err := cryptopolicy.ValidatePublicKey(make(ed25519.PublicKey, ed25519.PublicKeySize)); err != nil {
 		t.Fatal(err)
 	}
 	for _, key := range []any{nil, (*rsa.PublicKey)(nil), &rsa.PublicKey{}, (*ecdsa.PublicKey)(nil), &ecdsa.PublicKey{}, ed25519.PublicKey{1}} {
-		if err := validatePublicKey(key); err == nil {
+		if err := cryptopolicy.ValidatePublicKey(key); err == nil {
 			t.Fatalf("clé invalide acceptée : %T", key)
 		}
 	}
@@ -95,9 +96,9 @@ func TestPolicyIsIndependentAndDoesNotDisableTrust(t *testing.T) {
 func TestRefusalsAreBilingual(t *testing.T) {
 	before := i18n.Current()
 	t.Cleanup(func() { i18n.Set(before) })
-	for lang, expected := range map[i18n.Lang]string{i18n.FR: "politique TLS : clé RSA inférieure à 2048 bits", i18n.EN: "TLS policy: RSA key below 2048 bits"} {
+	for lang, expected := range map[i18n.Lang]string{i18n.FR: "politique cryptographique : clé RSA inférieure à 2048 bits", i18n.EN: "cryptographic policy: RSA key below 2048 bits"} {
 		i18n.Set(lang)
-		err := validatePublicKey(&rsa.PublicKey{})
+		err := cryptopolicy.ValidatePublicKey(&rsa.PublicKey{})
 		if err == nil || err.Error() != expected {
 			t.Fatalf("%s : %v", lang, err)
 		}

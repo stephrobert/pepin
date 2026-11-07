@@ -228,8 +228,8 @@ func localize() {
 			"is verified (non-repudiation) — the operator having sealed the bundle with (cosign 3.x):\n"+
 			"  cosign sign-blob --key cosign.key --bundle checksums.txt.bundle checksums.txt")
 	setUsage(verifyCmd, "pubkey", tr(
-		"clé publique cosign pour vérifier la signature de checksums.txt",
-		"cosign public key used to verify the signature of checksums.txt"))
+		"fichier PEM local de clé publique cosign pour vérifier la signature de checksums.txt",
+		"local PEM cosign public key file used to verify the signature of checksums.txt"))
 	setUsage(verifyCmd, "bundle", tr(
 		"bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)",
 		"cosign signature bundle (default: <directory>/checksums.txt.bundle)"))

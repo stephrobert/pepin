@@ -28,8 +28,15 @@ l'une ni l'autre appartient au `git log`.
   moins de 2048 bits et EC de moins de 224 bits sont refusées dans les chaînes
   client et serveur vérifiées. TLS 1.2 n'accepte que les suites AEAD/ECDHE.
   Les clusters privés faibles doivent renouveler leurs clés ; HTTP reste accepté
-  sans protection TLS. Les preuves OpenSSF sont actualisées sans prétendre
-  vérifier les secrets API ou les clés de signature.
+  sans protection TLS.
+- L'authentification HMAC (EXO2, SigV4 et S3) refuse les secrets de moins de 14
+  octets d'entrée effectifs (112 bits). Les secrets S3 locaux trop courts doivent
+  être remplacés. `verify --pubkey` applique les mêmes tailles de clés publiques
+  que TLS et exige un fichier PEM local ; exporter d'abord les clés distantes/KMS.
+  Cosign vérifie un instantané temporaire validé pour empêcher le remplacement de
+  la clé après la garde. La taille n'est pas une estimation d'entropie.
+  La proposition OpenSSF couvre désormais tous les chemins cryptographiques,
+  avec des tests de signature natifs.
 
 ## [0.5.0] - 2026-11-06
 

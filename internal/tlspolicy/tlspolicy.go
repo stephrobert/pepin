@@ -3,15 +3,13 @@
 package tlspolicy
 
 import (
-	"crypto/ecdsa"
-	"crypto/ed25519"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/stephrobert/pepin/internal/cryptopolicy"
 	"github.com/stephrobert/pepin/internal/i18n"
 )
 
@@ -60,7 +58,7 @@ func ValidateClientCertificate(pair tls.Certificate) error {
 		if err != nil {
 			return fmt.Errorf(i18n.T("politique TLS, certificat client : %w", "TLS policy, client certificate: %w"), err)
 		}
-		if err := validatePublicKey(cert.PublicKey); err != nil {
+		if err := cryptopolicy.ValidatePublicKey(cert.PublicKey); err != nil {
 			return err
 		}
 	}
@@ -77,7 +75,7 @@ func verifyConnection(state tls.ConnectionState) error {
 		}
 		var err error
 		for _, cert := range chain {
-			if err = validatePublicKey(cert.PublicKey); err != nil {
+			if err = cryptopolicy.ValidatePublicKey(cert.PublicKey); err != nil {
 				break
 			}
 		}
@@ -90,24 +88,4 @@ func verifyConnection(state tls.ConnectionState) error {
 		return refus
 	}
 	return errors.New(i18n.T("politique TLS : aucune chaîne de confiance vérifiée", "TLS policy: no verified trust chain"))
-}
-
-func validatePublicKey(key any) error {
-	switch pub := key.(type) {
-	case *rsa.PublicKey:
-		if pub != nil && pub.N != nil && pub.N.BitLen() >= 2048 {
-			return nil
-		}
-		return errors.New(i18n.T("politique TLS : clé RSA inférieure à 2048 bits", "TLS policy: RSA key below 2048 bits"))
-	case *ecdsa.PublicKey:
-		if pub != nil && pub.Curve != nil && pub.Curve.Params().BitSize >= 224 {
-			return nil
-		}
-		return errors.New(i18n.T("politique TLS : clé EC inférieure à 224 bits", "TLS policy: EC key below 224 bits"))
-	case ed25519.PublicKey:
-		if len(pub) == ed25519.PublicKeySize {
-			return nil
-		}
-	}
-	return errors.New(i18n.T("politique TLS : type de clé non pris en charge", "TLS policy: unsupported key type"))
 }

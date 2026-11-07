@@ -13,7 +13,8 @@ import (
 // signature AUTO-COHÉRENTE : on rejoue le calcul à partir de l'expiration émise.
 func TestExoscaleAuthSignature(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "https://api-ch-gva-2.exoscale.com/v2/instance?zone=ch-gva-2", nil)
-	auth := ExoscaleAuth{Key: "EXOabc", Secret: "s3cr3t"}
+	secret := strings.Repeat("x", 14)
+	auth := ExoscaleAuth{Key: "EXOabc", Secret: secret}
 	if err := auth.Apply(req); err != nil {
 		t.Fatalf("Apply : %v", err)
 	}
@@ -42,7 +43,7 @@ func TestExoscaleAuthSignature(t *testing.T) {
 		"",                 // en-têtes signés : aucun
 		parts["expires"],
 	}, "\n")
-	mac := hmac.New(sha256.New, []byte("s3cr3t"))
+	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte(sig))
 	want := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 	if parts["signature"] != want {
@@ -54,7 +55,7 @@ func TestExoscaleAuthSignature(t *testing.T) {
 // scope service/région) via le signer officiel aws-sdk-go-v2.
 func TestSigV4AuthHeaders(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "https://api.eu-west-2.outscale.com/api/v1/ReadVms", nil)
-	auth := SigV4Auth{Key: "AKID", Secret: "SECRET", Service: "oapi", Region: "eu-west-2"}
+	auth := SigV4Auth{Key: "AKID", Secret: strings.Repeat("x", 14), Service: "oapi", Region: "eu-west-2"}
 	if err := auth.Apply(req); err != nil {
 		t.Fatalf("Apply : %v", err)
 	}

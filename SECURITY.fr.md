@@ -91,28 +91,51 @@ cryptographique ne justifie pas de mettre tous ces critères en N/A.
 - Les signatures des bundles sont vérifiées séparément de leurs empreintes.
   Une intégrité vérifiée sans signature ne prouve pas l'auteur ; exiger la
   signature lorsque l'appelant a besoin d'une preuve authentifiée.
+- La [politique de clés commune](internal/cryptopolicy/keys.go) refuse aussi les
+  secrets HMAC EXO2, SigV4 et S3 de moins de 14 octets UTF-8 effectifs (112 bits
+  de matériau). La préparation du fournisseur, les signatures directes et le
+  chemin SDK appliquent cette garde, sans dérogation. C'est une vérification
+  de taille, **pas une estimation d'entropie** : utiliser les secrets émis par
+  le fournisseur ou du matériau généré cryptographiquement.
+- `verify --pubkey` exige une clé publique PEM locale (PKIX ou RSA PKCS#1).
+  Les mêmes seuils RSA/EC/Ed25519 sont vérifiés avant Cosign. Celui-ci reçoit
+  un instantané temporaire à permissions privées de la clé validée, pas le
+  chemin original remplaçable après la garde. Exporter d'abord les clés publiques
+  KMS en PEM ; les références distantes ne sont pas acceptées sans contrôle.
 - Pépin n'authentifie pas d'utilisateurs externes par une base locale de mots de
   passe. Les identifiants des fournisseurs servent à l'authentification sortante.
 
-#### Périmètre cryptographique et preuves restantes
+#### Périmètre cryptographique et tailles imposées
 
 | Mécanisme | Paramètres et responsabilité | Vérification / limite |
 |---|---|---|
 | Empreintes d'inventaire, politique et bundle | SHA-256, choisi par Pépin | Empreinte de 256 bits, bibliothèque standard |
-| MAC de requêtes EXO2 et SigV4 | HMAC-SHA256 ; secret émis par le fournisseur ou l'opérateur S3 local | SHA-256 imposé ; robustesse du secret non mesurée ni imposée |
+| MAC de requêtes EXO2, SigV4 et S3 | HMAC-SHA256 ; secret émis par le fournisseur ou l'opérateur S3 local | Au moins 14 octets d'entrée, vérifiés avant signature ; empreinte SHA-256 |
 | TLS Kubernetes, REST, EIM, OKS et S3 | TLS Go avec la politique commune ci-dessus | Clés client et chaînes serveur vérifiées ; RSA 1024 refusé |
-| Signatures de release/bundle | Outillage Cosign/Sigstore et identité de signature fournie | Vérification de signature distincte ; la garde TLS ne valide pas les clés de signature |
-| Jetons porteurs et identifiants en en-tête | Identifiants sortants fournis par le fournisseur/opérateur | Non générés par Pépin ; leur longueur ne prouve pas leur entropie |
+| Signatures de bundle | Clé publique PEM de l'opérateur et Cosign | Même garde RSA/EC/Ed25519, instantané validé, puis vérification réelle de signature |
+| Signatures de release | Cosign v3.1.3 épinglé, défaut keyless | Clé éphémère ECDSA P-256/SHA-256 ; la CI refuse la substitution de clé/algorithme |
+| Jetons porteurs et identifiants en en-tête | Identifiants d'authentification sortante, pas des clés choisies pour une primitive cryptographique | Non générés par Pépin ; leur longueur n'est pas une estimation d'entropie |
 | Endpoints HTTP, dont MinIO local | Transport existant sans TLS | Toujours accepté par compatibilité ; aucune confidentialité ni garde TLS |
 
 Les [tests](internal/tlspolicy/collectors_test.go) exercent de vraies connexions
 TLS locales pour REST et S3, avec les [tests Kubernetes](internal/kubeauth/kubeauth_test.go) :
 RSA 1024 est refusé, RSA 2048 et P-256 restent acceptés, et un refus REST est
 enregistré comme incomplet avant l'arrivée de toute requête HTTP authentifiée.
-Ces témoins prouvent le comportement de Pépin, pas la génération d'identifiants
-du fournisseur. La réponse OpenSSF `crypto_keylength` reste **Unmet** tant que
-le périmètre restant des secrets et clés de signature n'est pas établi ;
-la preuve TLS seule ne suffit pas.
+Les tests HMAC refusent 13 octets et acceptent 14. Les tests de signature
+refusent RSA 1024 avant Cosign et exercent le vrai binaire avec des signatures
+RSA 2048/P-256 et des données altérées. Le témoin natif est explicite :
+
+```bash
+PEPIN_COSIGN_INTEGRATION=1 mise exec -- go test ./cmd -run '^TestNativeCosignKeyStrengthAndSignature$' -v -count=1
+```
+
+Il génère ses clés de test, sans identifiant cloud ; Cosign peut contacter son
+service public de transparence. Les suites par défaut testent les gardes sans
+réseau. Le défaut de release épinglé est vérifié dans
+[la génération de clés Cosign](https://github.com/sigstore/cosign/blob/v3.1.3/pkg/cosign/keys.go).
+Ces gardes établissent la taille des clés, pas la qualité de l'aléatoire du
+fournisseur. La proposition OpenSSF `crypto_keylength` est désormais **Met** ;
+publication et enregistrement du questionnaire sont des étapes distinctes.
 
 ## Bonnes pratiques d'usage
 

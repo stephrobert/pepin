@@ -24,7 +24,7 @@ func inventoryFromUnreadableS3(t *testing.T) string {
 	}))
 	defer srv.Close()
 	inv, err := collectkit.Run(context.Background(), "scaleway", collect.Spec{}, nil, nil,
-		collectkit.S3{Endpoint: srv.URL, Region: "fr-par", Key: "test-key", Secret: "test-secret", TagsPersisted: true},
+		collectkit.S3{Endpoint: srv.URL, Region: "fr-par", Key: "test-key", Secret: "synthetic-test-secret", TagsPersisted: true},
 		collectkit.OKS{}, collectkit.EIM{}, nil)
 	if err != nil {
 		t.Fatal(err)
