@@ -29,6 +29,7 @@ l'une ni l'autre appartient au `git log`.
   client et serveur vérifiées. TLS 1.2 n'accepte que les suites AEAD/ECDHE.
   Les clusters privés faibles doivent renouveler leurs clés ; HTTP reste accepté
   sans protection TLS.
+  S3 conserve les CA personnalisées du SDK et les réglages de proxy.
 - L'authentification HMAC (EXO2, SigV4 et S3) refuse les secrets de moins de 14
   octets d'entrée effectifs (112 bits). Les secrets S3 locaux trop courts doivent
   être remplacés. `verify --pubkey` applique les mêmes tailles de clés publiques
@@ -37,6 +38,8 @@ l'une ni l'autre appartient au `git log`.
   la clé après la garde. La taille n'est pas une estimation d'entropie.
   La proposition OpenSSF couvre désormais tous les chemins cryptographiques,
   avec des tests de signature natifs.
+  Une annulation ou un délai dépassé après le démarrage de Cosign conserve
+  l'erreur de contexte au lieu d'être présenté comme une signature invalide.
 
 ## [0.5.0] - 2026-11-06
 

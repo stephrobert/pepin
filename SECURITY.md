@@ -85,6 +85,8 @@ criterion N/A merely because this is not a cryptographic library.
   Every certificate in an operator-supplied client chain is checked at load time.
   Weak keys fail explicitly; collection failures remain recorded, not successful
   empty inventories. Private clusters using RSA 1024 must rotate their keys.
+  S3 keeps SDK custom trust roots (`AWS_CA_BUNDLE` or a profile's `ca_bundle`)
+  and proxy configuration; custom CAs do not bypass the key-strength policy.
 - Bundle signatures are verified separately from their SHA-256 digests.
   Unsigned integrity checking is not proof of authorship; use the signature
   requirement when the caller needs authenticated evidence.
@@ -98,6 +100,8 @@ criterion N/A merely because this is not a cryptographic library.
   Cosign receives a private-permission temporary snapshot of the validated key,
   not the original path that could be replaced after validation. Export KMS
   public keys to PEM first; remote key references are not accepted unchecked.
+  Cancellation and deadlines remain context errors, including after Cosign
+  starts; an interrupted verification is not reported as an invalid signature.
 - Pépin does not authenticate external users with a local password database.
   Provider credentials are outbound credentials, not password hashes.
 

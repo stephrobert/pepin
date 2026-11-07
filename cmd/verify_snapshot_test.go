@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestCosignReadsTheValidatedKeySnapshot(t *testing.T) {
@@ -88,5 +89,59 @@ func TestCancelledSignatureVerificationIsNotSuccess(t *testing.T) {
 	}
 	if err := verifyCosign(context.Background(), dir, "https://example.org/key.pub", ""); err == nil || !strings.Contains(err.Error(), "local") {
 		t.Fatal("référence distante non contrôlée acceptée")
+	}
+}
+
+func TestSignatureVerificationPreservesCancellationAfterCosignStarts(t *testing.T) {
+	for _, mode := range []string{"cancel", "deadline"} {
+		t.Run(mode, func(t *testing.T) {
+			dir := t.TempDir()
+			key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			if err != nil {
+				t.Fatal(err)
+			}
+			der, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+			if err != nil {
+				t.Fatal(err)
+			}
+			public := filepath.Join(dir, "key.pub")
+			started := filepath.Join(dir, "started")
+			for path, data := range map[string][]byte{
+				public: pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der}),
+				filepath.Join(dir, "checksums.txt.bundle"): []byte("{}"),
+				filepath.Join(dir, "cosign"):               []byte("#!/bin/sh\nprintf '%s' \"$3\" > \"$COSIGN_STARTED\"\nexec sleep 30\n"),
+			} {
+				if err := os.WriteFile(path, data, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+			t.Setenv("COSIGN_STARTED", started)
+			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+			defer cancel()
+			result := make(chan error, 1)
+			go func() { result <- verifyCosign(ctx, dir, public, "") }()
+			until := time.Now().Add(time.Second)
+			for {
+				if _, err := os.Stat(started); err == nil {
+					break
+				} else if !os.IsNotExist(err) {
+					t.Fatal(err)
+				}
+				if time.Now().After(until) {
+					t.Fatal("le sous-processus Cosign n'a pas démarré")
+				}
+				time.Sleep(5 * time.Millisecond)
+			}
+			want := context.DeadlineExceeded
+			if mode == "cancel" {
+				want = context.Canceled
+				cancel()
+			}
+			err = <-result
+			if !errors.Is(err, want) || strings.Contains(strings.ToLower(err.Error()), "invalid") {
+				t.Fatalf("interruption après démarrage mal rapportée : %v (attendu %v)", err, want)
+			}
+		})
 	}
 }

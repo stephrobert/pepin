@@ -14,6 +14,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -50,6 +52,11 @@ func TestRESTAndS3UseTheSameTLSKeyPolicy(t *testing.T) {
 				t.Fatal(err)
 			}
 			certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+			caPath := filepath.Join(t.TempDir(), "ca.pem")
+			if err := os.WriteFile(caPath, certPEM, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("AWS_CA_BUNDLE", caPath)
 			private, err := x509.MarshalPKCS8PrivateKey(key)
 			if err != nil {
 				t.Fatal(err)

@@ -62,9 +62,12 @@ Elle ne modifie pas le défaut de vérification d'intégrité non authentifiée 
 - Cosign lit l'instantané validé, nettoyé après usage :
   `TestCosignReadsTheValidatedKeySnapshot`.
 - Un vérificateur annulé ne réussit pas :
-  `TestCancelledSignatureVerificationIsNotSuccess`.
+  `TestCancelledSignatureVerificationIsNotSuccess`. Annulation et délai dépassé
+  restent identifiables après le démarrage du sous-processus :
+  `TestSignatureVerificationPreservesCancellationAfterCosignStarts`.
 - La release conserve ses clés keyless par défaut :
-  `TestReleaseUsesDefaultKeylessCosignKeys`.
+  `TestReleaseUsesDefaultKeylessCosignKeys`, y compris les options sur des lignes
+  continuées : `TestKeylessGuardChecksContinuedSigningOptions`.
 - Le binaire vérifie de vraies signatures RSA 2048/P-256 et refuse leur altération :
   `TestNativeCosignKeyStrengthAndSignature`, témoin opt-in sans identifiant cloud.
 

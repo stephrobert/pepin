@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -64,7 +65,15 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 	cfg, err := awsconfig.LoadDefaultConfig(ctx,
 		awsconfig.WithRegion(region),
 		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
-		awsconfig.WithHTTPClient(&http.Client{Transport: transport}),
+		awsconfig.WithHTTPClient(awshttp.NewBuildableClient().WithTransportOptions(func(t *http.Transport) {
+			policy := transport.TLSClientConfig.Clone()
+			if t.TLSClientConfig != nil {
+				policy.MinVersion = max(policy.MinVersion, t.TLSClientConfig.MinVersion)
+				policy.CurvePreferences = t.TLSClientConfig.CurvePreferences
+			}
+			t.TLSClientConfig = policy
+			t.Proxy = transport.Proxy
+		})),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("configuration S3 : %w", err)

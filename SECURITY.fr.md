@@ -88,6 +88,8 @@ cryptographique ne justifie pas de mettre tous ces critères en N/A.
   l'opérateur sont vérifiés au chargement. Les refus sont explicites ; les échecs
   de collecte restent enregistrés, jamais transformés en inventaires vides réussis.
   Un cluster privé utilisant RSA 1024 doit renouveler ses clés.
+  S3 conserve les CA personnalisées du SDK (`AWS_CA_BUNDLE` ou `ca_bundle` du
+  profil) et le proxy ; ces CA ne contournent pas la politique de robustesse.
 - Les signatures des bundles sont vérifiées séparément de leurs empreintes.
   Une intégrité vérifiée sans signature ne prouve pas l'auteur ; exiger la
   signature lorsque l'appelant a besoin d'une preuve authentifiée.
@@ -102,6 +104,8 @@ cryptographique ne justifie pas de mettre tous ces critères en N/A.
   un instantané temporaire à permissions privées de la clé validée, pas le
   chemin original remplaçable après la garde. Exporter d'abord les clés publiques
   KMS en PEM ; les références distantes ne sont pas acceptées sans contrôle.
+  Annulation et délai dépassé restent des erreurs de contexte, même après le
+  démarrage de Cosign ; une vérification interrompue n'est pas dite invalide.
 - Pépin n'authentifie pas d'utilisateurs externes par une base locale de mots de
   passe. Les identifiants des fournisseurs servent à l'authentification sortante.
 

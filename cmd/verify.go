@@ -362,6 +362,9 @@ func verifyCosign(ctx context.Context, dir, pubKey, bundlePath string) error {
 	}
 	// #nosec G204 -- arguments issus des options CLI de l'opérateur, pas d'une source distante.
 	out, err := exec.CommandContext(ctx, "cosign", "verify-blob", "--key", snapshot.Name(), "--bundle", bundlePath, checksums).CombinedOutput()
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return fmt.Errorf(tr("vérification cosign interrompue : %w", "cosign verification interrupted: %w"), ctxErr)
+	}
 	if err != nil {
 		return fmt.Errorf(tr("signature cosign INVALIDE : %w\n%s", "INVALID cosign signature: %w\n%s"), err, string(out))
 	}
