@@ -19,13 +19,16 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 
 	"github.com/stephrobert/pepin/internal/collect"
+	"github.com/stephrobert/pepin/internal/cryptopolicy"
 	"github.com/stephrobert/pepin/internal/model"
+	"github.com/stephrobert/pepin/internal/tlspolicy"
 )
 
 const (
@@ -52,9 +55,25 @@ const (
 // « non évalué », et le contrôle d'étiquetage se tait — au lieu de crier sur chaque
 // bucket avec une remédiation que l'API ignore.
 func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, secretKey string, sseKMS, tagsPersisted bool) ([]model.Resource, error) {
+	if err := cryptopolicy.ValidateHMACSecret(secretKey); err != nil {
+		return nil, err
+	}
+	transport, err := tlspolicy.Transport()
+	if err != nil {
+		return nil, err
+	}
 	cfg, err := awsconfig.LoadDefaultConfig(ctx,
 		awsconfig.WithRegion(region),
 		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
+		awsconfig.WithHTTPClient(awshttp.NewBuildableClient().WithTransportOptions(func(t *http.Transport) {
+			policy := transport.TLSClientConfig.Clone()
+			if t.TLSClientConfig != nil {
+				policy.MinVersion = max(policy.MinVersion, t.TLSClientConfig.MinVersion)
+				policy.CurvePreferences = t.TLSClientConfig.CurvePreferences
+			}
+			t.TLSClientConfig = policy
+			t.Proxy = transport.Proxy
+		})),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("configuration S3 : %w", err)
@@ -64,9 +83,6 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 		return nil, fmt.Errorf("endpoint S3 : %w", err)
 	}
 	httpClient := cfg.HTTPClient
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
 	cfg.HTTPClient = listBucketsHTTPClient{next: httpClient, path: listBucketsPath}
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		if endpoint != "" {

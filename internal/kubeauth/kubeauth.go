@@ -23,6 +23,7 @@ import (
 	yaml "go.yaml.in/yaml/v3"
 
 	"github.com/stephrobert/pepin/internal/i18n"
+	"github.com/stephrobert/pepin/internal/tlspolicy"
 )
 
 // Config est le résultat utile d'un kubeconfig : l'URL du serveur d'API et un client
@@ -76,7 +77,8 @@ func Load(path string, timeout time.Duration) (Config, error) {
 	if len(ca) > 0 && !pool.AppendCertsFromPEM(ca) {
 		return Config{}, errors.New(i18n.T("kubeconfig : CA du cluster illisible", "kubeconfig: unreadable cluster CA"))
 	}
-	tlsCfg := &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
+	tlsCfg := tlspolicy.Config()
+	tlsCfg.RootCAs = pool
 
 	var bearer string
 	if len(kc.Users) > 0 {
@@ -94,6 +96,9 @@ func Load(path string, timeout time.Duration) (Config, error) {
 			pair, err := tls.X509KeyPair(certPEM, keyPEM)
 			if err != nil {
 				return Config{}, fmt.Errorf("kubeconfig, paire certificat/clé : %w", err)
+			}
+			if err := tlspolicy.ValidateClientCertificate(pair); err != nil {
+				return Config{}, fmt.Errorf(i18n.T("kubeconfig, clé client : %w", "kubeconfig, client key: %w"), err)
 			}
 			tlsCfg.Certificates = []tls.Certificate{pair}
 		}

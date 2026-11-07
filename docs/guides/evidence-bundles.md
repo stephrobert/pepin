@@ -203,6 +203,13 @@ Exit code 2, and the file is named. A verification that could not do this would 
 
 ### Level 2 — signature, for non-repudiation
 
+`--pubkey` takes a **local PEM public key**, PKIX or RSA PKCS#1. RSA keys below
+2048 bits and EC keys below 224 bits are refused before Cosign; Ed25519 is also
+accepted by the key policy. Export a remote/KMS public key to PEM first.
+Cosign verifies a validated temporary snapshot, preventing replacement of the
+original key between validation and verification. These are key-size checks,
+not measurements of the key generator's entropy.
+
 `--pubkey` verifies the cosign signature over `checksums.txt`, which transitively covers every
 file it lists. It shells out to the `cosign` binary, which must be in `PATH`.
 

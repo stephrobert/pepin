@@ -209,6 +209,13 @@ décorative.
 
 ### Niveau 2 : la signature, pour la non-répudiation
 
+`--pubkey` prend une **clé publique PEM locale**, PKIX ou RSA PKCS#1. Les clés
+RSA de moins de 2048 bits et EC de moins de 224 bits sont refusées avant Cosign ;
+Ed25519 est également accepté par la politique de clés. Exporter d'abord la
+clé publique distante/KMS en PEM. Cosign vérifie un instantané temporaire validé,
+empêchant le remplacement du fichier original entre la garde et la vérification.
+Ces gardes portent sur la taille, pas sur l'entropie du générateur de clés.
+
 `--pubkey` vérifie la signature cosign de `checksums.txt`, qui couvre transitivement chacun des
 fichiers qu'il nomme. Elle passe par le binaire `cosign`, qui doit être dans le `PATH`.
 

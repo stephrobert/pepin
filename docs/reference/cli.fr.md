@@ -200,7 +200,7 @@ pepin verify <dossier-bundle> [flags]
 Drapeaux:
       --bundle string                    bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)
   -h, --help[=true|false]                aide pour verify
-      --pubkey string                    clé publique cosign pour vérifier la signature de checksums.txt
+      --pubkey string                    fichier PEM local de clé publique cosign pour vérifier la signature de checksums.txt
       --re-derive[=true|false]           rejouer les règles sur input.json et vérifier que l'assessment scellé en découle (opposabilité forte)
       --require-signature[=true|false]   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
 

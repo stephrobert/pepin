@@ -199,7 +199,7 @@ pepin verify <dossier-bundle> [flags]
 Flags:
       --bundle string                    cosign signature bundle (default: <directory>/checksums.txt.bundle)
   -h, --help[=true|false]                help for verify
-      --pubkey string                    cosign public key used to verify the signature of checksums.txt
+      --pubkey string                    local PEM cosign public key file used to verify the signature of checksums.txt
       --re-derive[=true|false]           replay the rules on input.json and check that the sealed assessment follows from it (strong defensibility)
       --require-signature[=true|false]   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
 

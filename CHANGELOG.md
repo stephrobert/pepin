@@ -21,6 +21,23 @@ belongs in `git log`.
 
 ## [Unreleased]
 
+### Security
+
+- Kubernetes, REST and S3 share a TLS 1.2+ policy: RSA keys below 2048 bits
+  and EC keys below 224 bits are refused in client and verified server chains.
+  TLS 1.2 allows only AEAD/ECDHE suites. Weak private clusters must rotate keys;
+  HTTP endpoints remain supported without TLS protection.
+  S3 retains SDK custom CA bundles and proxy settings.
+- HMAC authentication (EXO2, SigV4 and S3) refuses secrets shorter than 14 actual
+  input bytes (112 bits). Existing short local S3 secrets must be replaced.
+  `verify --pubkey` enforces the same public-key sizes as TLS and requires a local
+  PEM public key; export remote/KMS keys first. Cosign verifies a validated
+  temporary snapshot to prevent replacement of the input key after validation.
+  Key-size enforcement is not an entropy estimate. The OpenSSF key-length
+  proposal now covers all cryptographic paths and includes native signature tests.
+  Cancellation or deadlines after Cosign starts retain their context error
+  rather than being reported as an invalid signature.
+
 ## [0.5.0] - 2026-11-06
 
 ### Added
