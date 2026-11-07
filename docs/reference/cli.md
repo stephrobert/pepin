@@ -97,8 +97,8 @@ Available Commands:
   version     Print the version
 
 Flags:
-  -h, --help          help for pepin
-      --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
+  -h, --help[=true|false]   help for pepin
+      --lang string         interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
 
 Use "pepin [command] --help" for more information about a command.
 ```
@@ -119,21 +119,21 @@ pepin scan <provider> [export.json] [flags]
 
 
 Flags:
-      --exceptions file                  exemptions YAML file (control, justification, expires_at, owner, approved_by) — a covered deviation becomes exempted, never compliant
-  -f, --format string                    output format: table | json | assessment | oscal | sarif (default "table")
-      --gate string                      GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
-  -h, --help                             help for scan
-      --kubeconfig string                path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (requires --live; use READ-ONLY, short-lived access — never cluster-admin)
-      --live                             collect the inventory live through the provider API (credentials required)
-      --policy file                      policy YAML file: control settings (`controls:`) AND exemptions (`exceptions:`) — one single file, the modern name of --exceptions
-  -p, --policy-dir stringArray           directory of external rules (.rego), repeatable — loaded without recompiling
-      --profile string                   credentials profile for the live collection (e.g. ~/.osc/config.json)
-      --redact                           redact the sensitive values (user-data, policies) from the bundle's input.json — for sharing with a third party; INCOMPATIBLE with verify --re-derive
-      --region string                    target region for the live collection
-      --s3-endpoint string               custom S3 endpoint for object storage (live collection; e.g. MinIO http://localhost:9000)
-      --seal string                      write a defensible evidence bundle (assessment + OSCAL + manifest + checksums) into this directory
-      --strict                           strict CI gate: non-zero exit code if no control is measured (governance aside), if medium/low deviations remain, or if a relaxed setting dropped a normative mapping
-  -t, --terraform terraform show -json   audit a Terraform plan (terraform show -json) instead of an inventory export
+      --exceptions file          exemptions YAML file (control, justification, expires_at, owner, approved_by) — a covered deviation becomes exempted, never compliant
+  -f, --format string            output format: table | json | assessment | oscal | sarif (default "table")
+      --gate string              GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
+  -h, --help[=true|false]        help for scan
+      --kubeconfig string        path to a kubeconfig to audit the state INSIDE a Kubernetes cluster (requires --live; use READ-ONLY, short-lived access — never cluster-admin)
+      --live[=true|false]        collect the inventory live through the provider API (credentials required)
+      --policy file              policy YAML file: control settings (`controls:`) AND exemptions (`exceptions:`) — one single file, the modern name of --exceptions
+  -p, --policy-dir stringArray   directory of external rules (.rego), repeatable — loaded without recompiling
+      --profile string           credentials profile for the live collection (e.g. ~/.osc/config.json)
+      --redact[=true|false]      redact the sensitive values (user-data, policies) from the bundle's input.json — for sharing with a third party; INCOMPATIBLE with verify --re-derive
+      --region string            target region for the live collection
+      --s3-endpoint string       custom S3 endpoint for object storage (live collection; e.g. MinIO http://localhost:9000)
+      --seal string              write a defensible evidence bundle (assessment + OSCAL + manifest + checksums) into this directory
+      --strict[=true|false]      strict CI gate: non-zero exit code if no control is measured (governance aside), if medium/low deviations remain, or if a relaxed setting dropped a normative mapping
+  -t, --terraform[=true|false]   audit a Terraform plan (terraform show -json) instead of an inventory export
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -197,11 +197,11 @@ pepin verify <dossier-bundle> [flags]
 
 
 Flags:
-      --bundle string       cosign signature bundle (default: <directory>/checksums.txt.bundle)
-  -h, --help                help for verify
-      --pubkey string       cosign public key used to verify the signature of checksums.txt
-      --re-derive           replay the rules on input.json and check that the sealed assessment follows from it (strong defensibility)
-      --require-signature   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
+      --bundle string                    cosign signature bundle (default: <directory>/checksums.txt.bundle)
+  -h, --help[=true|false]                help for verify
+      --pubkey string                    cosign public key used to verify the signature of checksums.txt
+      --re-derive[=true|false]           replay the rules on input.json and check that the sealed assessment follows from it (strong defensibility)
+      --require-signature[=true|false]   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -236,7 +236,7 @@ Available Commands:
   validate    Validate the providers of a directory (default: providers/) against the contract
 
 Flags:
-  -h, --help   help for provider
+  -h, --help[=true|false]   help for provider
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -258,7 +258,7 @@ Aliases:
   list, ls
 
 Flags:
-  -h, --help   help for list
+  -h, --help[=true|false]   help for list
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -290,7 +290,7 @@ pepin provider validate [dossier] [flags]
 
 
 Flags:
-  -h, --help   help for validate
+  -h, --help[=true|false]   help for validate
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -307,7 +307,7 @@ pepin provider new <nom> [flags]
 
 
 Flags:
-  -h, --help   help for new
+  -h, --help[=true|false]   help for new
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -328,8 +328,8 @@ pepin scsl [flags]
 
 
 Flags:
-  -h, --help           help for scsl
-      --index string   path to the SCSL API (the framework's api/v1/exigences.json)
+  -h, --help[=true|false]   help for scsl
+      --index string        path to the SCSL API (the framework's api/v1/exigences.json)
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -351,7 +351,7 @@ Available Commands:
   explain     Explain where a control's verdict comes from, and what tests it
 
 Flags:
-  -h, --help   help for control
+  -h, --help[=true|false]   help for control
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -396,8 +396,8 @@ pepin control explain <code> [flags]
 
 
 Flags:
-  -h, --help              help for explain
-      --provider string   limit the explanation to one provider
+  -h, --help[=true|false]   help for explain
+      --provider string     limit the explanation to one provider
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
@@ -414,7 +414,7 @@ pepin version [flags]
 
 
 Flags:
-  -h, --help   help for version
+  -h, --help[=true|false]   help for version
 
 Global Flags:
       --lang string   interface language: fr | en (default: PEPIN_LANG, then LC_ALL/LANG, otherwise en)
