@@ -29,6 +29,8 @@ jobs:
       actions: read
       security-events: write
       contents: read
+    env:
+      OSV_IMAGE: ghcr.io/google/osv-scanner-action@sha256:d54770fe0b09493894e76a02aaed9f51a0513fa57c5186452a755d257b0068a6 # v2.7.0
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -50,16 +52,16 @@ jobs:
 
       - name: Scan existing code
         id: scan-old
-        uses: google/osv-scanner-action/osv-scanner-action@0a65f82af05cd58cf587827b0bb0489548c18346 # v2.7.0
-        continue-on-error: true
-        env:
-          GOTOOLCHAIN: auto
-        with:
-          scan-args: |-
-            --format=json
-            --output=old-results.json
-            -r
-            ./
+        run: |
+          status=0
+          docker run --rm -e GOTOOLCHAIN=auto \
+            -v "$GITHUB_WORKSPACE:/github/workspace" -w /github/workspace \
+            --entrypoint /root/osv-scanner "$OSV_IMAGE" \
+            scan source --format=json --output-file=old-results.json -r ./ || status=$?
+          case "$status" in
+            0|1) ;;
+            *) echo "::error::OSV scan failed with exit $status; partial results cannot be compared."; exit "$status" ;;
+          esac
 
       - name: Checkout current revision
         env:
@@ -72,16 +74,16 @@ jobs:
 
       - name: Scan new code
         id: scan-new
-        uses: google/osv-scanner-action/osv-scanner-action@0a65f82af05cd58cf587827b0bb0489548c18346 # v2.7.0
-        continue-on-error: true
-        env:
-          GOTOOLCHAIN: auto
-        with:
-          scan-args: |-
-            --format=json
-            --output=new-results.json
-            -r
-            ./
+        run: |
+          status=0
+          docker run --rm -e GOTOOLCHAIN=auto \
+            -v "$GITHUB_WORKSPACE:/github/workspace" -w /github/workspace \
+            --entrypoint /root/osv-scanner "$OSV_IMAGE" \
+            scan source --format=json --output-file=new-results.json -r ./ || status=$?
+          case "$status" in
+            0|1) ;;
+            *) echo "::error::OSV scan failed with exit $status; partial results cannot be compared."; exit "$status" ;;
+          esac
 
       - name: Require two completed scans
         run: |
@@ -93,14 +95,12 @@ jobs:
           done
 
       - name: Report new vulnerabilities
-        uses: google/osv-scanner-action/osv-reporter-action@0a65f82af05cd58cf587827b0bb0489548c18346 # v2.7.0
-        with:
-          scan-args: |-
-            --output=results.sarif
-            --old=old-results.json
-            --new=new-results.json
-            --gh-annotations=true
-            --fail-on-vuln=true
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/github/workspace" \
+            -w /github/workspace --entrypoint /root/osv-reporter "$OSV_IMAGE" \
+            --output-files=sarif:results.sarif \
+            --old=old-results.json --new=new-results.json \
+            --output-files=gh-annotations:#stderr --fail-on-vuln=true
 
       - name: Upload scan results
         if: ${{ !cancelled() }}

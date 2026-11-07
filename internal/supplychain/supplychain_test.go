@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -279,6 +280,52 @@ func TestPlumberJobKeepsItsTrustBoundaryAndScoreGate(t *testing.T) {
 
 	if strings.Contains(job, "continue-on-error:") || strings.Contains(job, "soft-fail:") {
 		t.Fatal("Plumber gate must not be weakened")
+	}
+}
+
+func TestOSVScanExitCodesRejectPartialExtraction(t *testing.T) {
+	bash, err := exec.LookPath("bash")
+	if err != nil {
+		t.Skip("bash is required to exercise OSV exit-code handling")
+	}
+	body := workflows(t)["osv-scanner.yml"]
+	if strings.Contains(body, "continue-on-error:") {
+		t.Fatal("OSV scan errors must not be suppressed")
+	}
+	if !regexp.MustCompile(`OSV_IMAGE:\s+\S+@sha256:[0-9a-f]{64}\b`).MatchString(body) {
+		t.Fatal("OSV scanner and reporter image must be pinned by digest")
+	}
+	for _, step := range []string{"Scan existing code", "Scan new code"} {
+		block := regexp.MustCompile(`(?s)- name: ` + regexp.QuoteMeta(step) +
+			`\n.*?        run: \|\n(.*?)(?:\n      - name:)`).FindStringSubmatch(body)
+		if block == nil {
+			t.Fatalf("%s must capture the scanner exit code", step)
+		}
+		for _, code := range []int{0, 1, 2, 127, 255} {
+			t.Run(step+"/"+strconv.Itoa(code), func(t *testing.T) {
+				dir := t.TempDir()
+				output := filepath.Join(dir, "partial.json")
+				cmd := exec.Command(bash, "-c", `
+set -eu
+docker() {
+  printf '{"results":[]}' > "$FIXTURE_OUTPUT"
+  return "$FIXTURE_EXIT"
+}
+`+block[1])
+				cmd.Env = append(os.Environ(),
+					"GITHUB_WORKSPACE="+dir, "OSV_IMAGE=fixture-image",
+					"FIXTURE_OUTPUT="+output, "FIXTURE_EXIT="+strconv.Itoa(code))
+				out, err := cmd.CombinedOutput()
+				data, readErr := os.ReadFile(output)
+				if readErr != nil || string(data) != `{"results":[]}` {
+					t.Fatalf("scanner fixture did not produce partial JSON: %v\n%s", readErr, out)
+				}
+				wantPassed := code == 0 || code == 1
+				if (err == nil) != wantPassed {
+					t.Fatalf("exit %d: passed=%t, want %t: %v\n%s", code, err == nil, wantPassed, err, out)
+				}
+			})
+		}
 	}
 }
 
