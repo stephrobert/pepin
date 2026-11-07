@@ -10,4 +10,4 @@ github:
         - securego/gosec
         - softprops/action-gh-release
     branchMustBeProtected:
-      codeOwnerApprovalRequired: true
+      codeOwnerApprovalRequired: false

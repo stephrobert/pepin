@@ -2,10 +2,51 @@ package supplychain_test
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+
+	"go.yaml.in/yaml/v3"
 )
+
+func TestPlumberMatchesSingleMaintainerProtectionPolicy(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join(repoRoot(t), ".plumber.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config struct {
+		Extends string `yaml:"extends"`
+		GitHub  struct {
+			Controls struct {
+				Branch struct {
+					CodeOwnerApprovalRequired *bool `yaml:"codeOwnerApprovalRequired"`
+				} `yaml:"branchMustBeProtected"`
+			} `yaml:"controls"`
+		} `yaml:"github"`
+	}
+	if err := yaml.Unmarshal(raw, &config); err != nil {
+		t.Fatal(err)
+	}
+	required := config.GitHub.Controls.Branch.CodeOwnerApprovalRequired
+	if config.Extends != "plumber:default" || required == nil || *required {
+		t.Fatal("Plumber doit conserver ses contrôles par défaut sans approbation CODEOWNER obligatoire")
+	}
+	raw, err = os.ReadFile(filepath.Join(repoRoot(t), "tools", "release", "apply-branch-ruleset.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, setting := range []string{
+		`"type": "pull_request"`,
+		`"required_approving_review_count": 0`,
+		`"require_code_owner_review": false`,
+	} {
+		if !strings.Contains(string(raw), setting) {
+			t.Fatalf("le ruleset doit rester cohérent avec Plumber : %s", setting)
+		}
+	}
+}
 
 func TestReleaseUsesDefaultKeylessCosignKeys(t *testing.T) {
 	body := workflows(t)["release.yml"]

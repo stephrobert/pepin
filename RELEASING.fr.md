@@ -58,6 +58,10 @@ altération des octets signés est refusée alors que l'intégrité non signée 
    limité aux PR et peut aussi contourner les checks ; il ne prouve pas que
    la CI a réussi.
 
+   Plumber conserve le contrôle de protection de branche, sans exiger une
+   approbation CODEOWNER. Supprimer les branches de préparation fusionnées ;
+   une branche `release/*` conservée durablement doit être protégée.
+
 3. **Ré-enregistrer les GIF de démonstration** à la version publiée, pour
    qu'aucune des deux pages d'accueil ne montre durablement un produit
    antérieur :

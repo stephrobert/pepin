@@ -48,6 +48,7 @@ belongs in `git log`.
   CLI reference reflects the updated flag help.
 - Align main's single-maintainer merge policy with Feint: PRs and CI remain
   required, but formal approval and blocking CODEOWNER review are not required.
+  Plumber follows the same policy without disabling branch-protection checks.
 
 ### Fixed
 

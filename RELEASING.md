@@ -57,6 +57,10 @@ signed bytes is refused while unsigned bundle integrity still passes.
    review requests. The administrator bypass is restricted to PRs and can
    also bypass checks; it is not evidence that CI passed.
 
+   Plumber retains branch-protection checks without requiring CODEOWNER approval.
+   Delete merged preparation branches; a long-lived `release/*` branch must be
+   protected.
+
 3. **Re-record the demo GIFs** at the version being released, so neither
    README's front page keeps showing an older product:
 
