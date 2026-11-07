@@ -625,13 +625,13 @@ rc=0; {dist}/pepin-linux-amd64 scan scaleway examples/scaleway/inventory-ok.json
 
 
 def check_bloc_verification_readme():
-    """Le bloc « Verify what you downloaded » du README, exécuté TEL QU'IL EST ÉCRIT.
+    """Le bloc du README vérifie la chaîne du dernier tag déjà publié.
 
     Recopier ces commandes ici prouverait que ma copie marche. Les extraire prouve que
-    la PAGE marche — et c'est exactement ce que l'ADR-0016 exige : la documentation
-    nomme la commande qui vérifie, donc cette commande doit vérifier.
+    la PAGE marche. Comme pour l'image, seul le tag préparé est substitué par le
+    tag publié avant la coupe ; la preuve consigne cette substitution.
     """
-    nom = "le bloc de vérification du README s'exécute tel qu'il est écrit"
+    nom = "le bloc de vérification du README vérifie la chaîne publiée"
     bloc = bloc_shell_sous("README.md", "Verify what you downloaded")
     if bloc is None:
         return controle(nom, NOGO,
@@ -639,29 +639,34 @@ def check_bloc_verification_readme():
                         "la page a été réorganisée et la porte ne sait plus quoi rejouer")
     if (motif := outil_absent("gh", "cosign", "sha256sum")):
         return saute(nom, motif)
-    tmp = SORTIE / "stage2-readme"
-    return shell(nom, f"rm -rf {tmp} && mkdir -p {tmp} && cd {tmp}\n" + bloc,
-                 "la chaîne publiée ne se vérifie plus avec les commandes du README")
-
-
-def check_bloc_readme_pointe_le_dernier_tag():
-    """Le bloc épingle-t-il encore le dernier tag publié ?
-
-    Une page qui montre `V=v0.1.0` fait vérifier à un lecteur une release que personne
-    n'utilise, et elle le fait avec l'aplomb d'une instruction officielle. C'est la
-    même famille que le défaut #H, sur une autre page.
-    """
-    nom = "le bloc de vérification du README épingle le dernier tag publié"
-    bloc = bloc_shell_sous("README.md", "Verify what you downloaded")
-    v = version_du_bloc(bloc)
     prec = tag_precedent()
     if not prec:
-        return saute(nom, "aucun tag antérieur : rien à comparer")
+        return saute(nom, "aucun tag antérieur : aucune chaîne publiée à vérifier")
+    bloc, substituees = vers_le_tag_publie(bloc, prec)
+    tmp = SORTIE / "stage2-readme"
+    c = shell(nom, f"rm -rf {tmp} && mkdir -p {tmp} && cd {tmp}\n" + bloc,
+              "la chaîne publiée ne se vérifie plus avec les commandes du README")
+    if substituees and c["verdict"] == GO:
+        c["evidence"] = (f"vérifié sur {prec}, le dernier tag publié — le README épingle "
+                         f"{', '.join(substituees)}, substitué pour cette vérification")
+    return c
+
+
+def check_bloc_readme_pointe_le_tag(version):
+    """Le bloc épingle-t-il le tag dont on prépare la release ?
+
+    Une page qui montre `V=v0.1.0` fait vérifier à un lecteur une release que personne
+    n'utilise. Exiger le tag précédent empêcherait de mettre le README à jour avant
+    publication ; l'exécution de la chaîne précédente est mesurée séparément.
+    """
+    nom = "le bloc de vérification du README épingle le tag de release"
+    bloc = bloc_shell_sous("README.md", "Verify what you downloaded")
+    v = version_du_bloc(bloc)
     if v is None:
         return controle(nom, NOGO, "le bloc n'épingle aucune version (`V=vX.Y.Z` attendu)")
-    if v != prec:
+    if v != version:
         return controle(nom, NOGO,
-                        f"le README fait vérifier {v}, le dernier tag publié est {prec}")
+                        f"le README fait vérifier {v}, le tag de release demandé est {version}")
     return controle(nom, GO, f"V={v}")
 
 
@@ -798,7 +803,7 @@ def etape2(version):
     return [
         check_binaires_de_release(version),
         check_bloc_verification_readme(),
-        check_bloc_readme_pointe_le_dernier_tag(),
+        check_bloc_readme_pointe_le_tag(version),
         check_image_publiee(),
         check_installeur(),
         check_template_gitlab(),
@@ -1000,6 +1005,36 @@ def selftest():
          version_du_bloc("V=v0.3.0\ngh release download \"$V\""), "v0.3.0")
     veut("un bloc sans version rend None", version_du_bloc("gh release download"), None)
     veut("un bloc absent ne fait pas planter", version_du_bloc(None), None)
+
+    from unittest.mock import patch
+
+    commandes = []
+
+    def shell_temoin(nom, script, echec):
+        commandes.append(script)
+        return controle(nom, GO, "")
+
+    with patch.dict(globals(), {
+        "bloc_shell_sous": lambda *_: 'V=v0.5.1\ngh release download "$V"',
+        "tag_precedent": lambda: "v0.5.0",
+        "outil_absent": lambda *_: None,
+        "shell": shell_temoin,
+    }):
+        veut("le README épingle la release préparée",
+             check_bloc_readme_pointe_le_tag("v0.5.1")["verdict"], GO)
+        veut("un tag de release différent est refusé",
+             check_bloc_readme_pointe_le_tag("v0.5.2")["verdict"], NOGO)
+        mesure = check_bloc_verification_readme()
+        veut("la chaîne du README est vérifiée", mesure["verdict"], GO)
+        veut("la commande porte le tag publié", "V=v0.5.0" in commandes[0], True)
+        veut("le tag non publié n'est pas exécuté", "V=v0.5.1" in commandes[0], False)
+        veut("la substitution est consignée", "v0.5.1" in mesure["evidence"], True)
+        with patch.dict(globals(), {"bloc_shell_sous": lambda *_: "gh release download"}):
+            veut("un README sans épinglage est refusé",
+                 check_bloc_readme_pointe_le_tag("v0.5.1")["verdict"], NOGO)
+        with patch.dict(globals(), {"shell": lambda *_: controle("témoin", NOGO, "refus réel")}):
+            veut("un refus de la chaîne publiée reste rouge",
+                 check_bloc_verification_readme()["verdict"], NOGO)
 
     # ── Le verdict final ───────────────────────────────────────────────────────
     veut("toutes vertes", verdict_final([{"verdict": GO}, {"verdict": GO}]), GO)

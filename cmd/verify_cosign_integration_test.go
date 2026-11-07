@@ -24,7 +24,15 @@ func TestNativeCosignKeyStrengthAndSignature(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("COSIGN_PASSWORD", rand.Text())
-	bin := buildPepin(t)
+	bin := os.Getenv("PEPIN_COSIGN_BINARY")
+	if bin == "" {
+		bin = buildPepin(t)
+	} else {
+		bin, err = filepath.Abs(bin)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	for _, bits := range []int{2048, 0, 1024} {
 		t.Run(map[int]string{2048: "RSA2048", 0: "P256", 1024: "RSA1024"}[bits], func(t *testing.T) {
 			dir := sceller(t, bin)
@@ -86,12 +94,56 @@ func TestNativeCosignKeyStrengthAndSignature(t *testing.T) {
 			if out, err := exec.CommandContext(ctx, bin, "verify", dir, "--pubkey", pubFile, "--require-signature").CombinedOutput(); err != nil {
 				t.Fatalf("le binaire refuse la signature conforme : %v\n%s", err, out)
 			}
-			if err := os.WriteFile(blob, []byte("tampered"), 0o600); err != nil {
-				t.Fatal(err)
+			reorderSignedChecksums(t, blob)
+			if out, err := exec.CommandContext(ctx, bin, "verify", dir).CombinedOutput(); err != nil {
+				t.Fatalf("le témoin altéré doit garder une intégrité valide : %v\n%s", err, out)
 			}
-			if err := verifyCosign(ctx, dir, pubFile, ""); err == nil {
-				t.Fatal("signature altérée acceptée")
+			if err := verifyCosign(ctx, dir, pubFile, ""); err == nil ||
+				(!strings.Contains(err.Error(), "signature cosign INVALIDE") && !strings.Contains(err.Error(), "INVALID cosign signature")) {
+				t.Fatalf("Cosign doit refuser la signature altérée : %v", err)
+			}
+			out, err := exec.CommandContext(ctx, bin, "verify", dir, "--pubkey", pubFile, "--require-signature").CombinedOutput()
+			if err == nil ||
+				(!strings.Contains(string(out), "signature cosign INVALIDE") && !strings.Contains(string(out), "INVALID cosign signature")) {
+				t.Fatalf("le binaire doit refuser la signature, pas l'intégrité : %v\n%s", err, out)
 			}
 		})
+	}
+}
+
+func reorderSignedChecksums(t *testing.T, path string) {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(string(raw), "\n")
+	if len(lines) < 2 || lines[0] == "" || lines[1] == "" || lines[0] == lines[1] {
+		t.Fatal("deux sommes distinctes sont nécessaires au témoin")
+	}
+	lines[0], lines[1] = lines[1], lines[0]
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSignatureTamperingWitnessKeepsBundleIntegrity(t *testing.T) {
+	bin := buildPepin(t)
+	dir := sceller(t, bin)
+	path := filepath.Join(dir, "checksums.txt")
+	before, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reorderSignedChecksums(t, path)
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(before) == string(after) {
+		t.Fatal("les octets signés n'ont pas changé")
+	}
+	if out, err := exec.CommandContext(t.Context(), bin, "verify", dir).CombinedOutput(); err != nil {
+		t.Fatalf("la permutation doit conserver l'intégrité du bundle : %v\n%s", err, out)
 	}
 }

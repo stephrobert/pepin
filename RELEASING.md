@@ -38,6 +38,11 @@ the Python tooling must still be able to cut a release.
    The tag builds from that commit, and a published release cannot be
    replayed.
 
+   The single-maintainer policy requires a PR and passing checks, not a
+   formal approval or a blocking CODEOWNER review. CODEOWNERS still routes
+   review requests. The administrator bypass is restricted to PRs and can
+   also bypass checks; it is not evidence that CI passed.
+
 3. **Re-record the demo GIFs** at the version being released, so neither
    README's front page keeps showing an older product:
 
@@ -115,6 +120,12 @@ the Python tooling must still be able to cut a release.
    [ADR-0016](./docs/adr/0016-chaine-dapprovisionnement-verifiable.md) — "the
    documentation names the command that verifies". A reorganised page therefore turns
    the gate red rather than passing silently.
+
+   The README must name the tag being prepared, like the installation pages.
+   Before that tag exists, the gate substitutes the previous published tag in
+   the extracted README and image commands, and records the substitution in
+   its evidence. It verifies the published chain without requiring an artefact
+   that the pending tag will create.
 
    Every check in this stage knows how to **skip** when its tool is missing, and says
    so. And a stage whose measuring checks were all skipped is reported as SKIPPED,

@@ -37,6 +37,12 @@ l'outillage Python doit pouvoir couper une release.
 2. **Merger vers `main` par une pull request, et attendre une CI verte.** Le
    tag se construit depuis ce commit, et une release publiée ne se rejoue pas.
 
+   Avec un mainteneur unique, la politique exige une PR et les checks verts,
+   pas une approbation formelle ni une revue CODEOWNER bloquante. CODEOWNERS
+   continue à adresser les demandes de revue. Le bypass administrateur est
+   limité aux PR et peut aussi contourner les checks ; il ne prouve pas que
+   la CI a réussi.
+
 3. **Ré-enregistrer les GIF de démonstration** à la version publiée, pour
    qu'aucune des deux pages d'accueil ne montre durablement un produit
    antérieur :
@@ -116,6 +122,12 @@ l'outillage Python doit pouvoir couper une release.
    [l'ADR-0016](./docs/adr/0016-chaine-dapprovisionnement-verifiable.md) — « la
    documentation nomme la commande qui vérifie ». Une page réorganisée fait donc rougir
    la porte plutôt que de la faire passer en silence.
+
+   Le README doit nommer le tag préparé, comme les pages d'installation.
+   Avant l'existence de ce tag, la porte substitue le tag déjà publié dans
+   les commandes extraites du README et de l'image, et consigne la substitution.
+   Elle vérifie la chaîne publiée sans exiger un artefact que le tag à venir
+   doit encore produire.
 
    Chaque contrôle de cette étape sait se **sauter** quand son outil manque, en le
    disant. Et une étape dont tout ce qui mesure a été sauté est déclarée SAUTÉE, jamais
