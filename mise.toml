@@ -23,6 +23,7 @@ osv-scanner = "2.7.0" # ALIGNÉ sur l'action épinglée dans osv-scanner.yml. Il
                       # formule Homebrew figée en 2.3.8 passait devant, si bien que
                       # l'audit local scannait avec un outil que le dépôt n'a jamais
                       # choisi. Le shim de mise, lui, prime.
+cosign = "3.1.3"      # ALIGNÉ sur release.yml ; configuration Rekor v2 authentifiée par TUF.
 
 [tasks.build]
 description = "Compile le binaire (version injectée)"

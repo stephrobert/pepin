@@ -82,6 +82,8 @@ exempted one is not either.
 ## Verify what you downloaded
 
 Every release artefact is covered. One command each, and nothing to trust on faith.
+Use Cosign 3.1.3, pinned by this project: releases from v0.5.1 use Rekor v2,
+and the same verification commands also accept earlier Rekor v1 releases.
 
 ```bash
 V=v0.5.1

@@ -35,6 +35,8 @@ la clé publique en PEM. La vérification de signature reste confiée à Cosign.
 La release conserve son Cosign keyless épinglé : son défaut P-256/SHA-256 est
 vérifié dans le code public de la version utilisée et protégé contre une
 substitution de clé ou d'algorithme dans le workflow.
+Sa configuration Rekor v2 est authentifiée par TUF et partagée avec le témoin
+natif (ADR-0016). Ce choix de journal ne change pas la clé de signature P-256.
 
 Cette décision complète ADR-0025 sans changer son choix de compatibilité HTTP.
 Elle ne modifie pas le défaut de vérification d'intégrité non authentifiée :

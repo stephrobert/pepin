@@ -43,6 +43,11 @@ l'une ni l'autre appartient au `git log`.
 
 ### Modifié
 
+- Migrer les signatures de release et les témoins natifs vers Rekor v2 avec
+  Cosign 3.1.3 et une configuration authentifiée par TUF, sans repli v1.
+  Les signatures des empreintes et de l'image sont vérifiées avant de créer
+  la GitHub Release. Les commandes de vérification restent inchangées ;
+  les anciennes signatures v1 restent prises en charge.
 - Mettre à jour les dépendances S3 du SDK AWS. Passer `pflag` à 1.1.0 ; la référence
   CLI bilingue reflète la nouvelle présentation de l'aide des options.
 - Aligner la fusion sur la politique mono-mainteneur de Feint : PR et CI restent

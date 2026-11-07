@@ -108,6 +108,12 @@ cryptographique ne justifie pas de mettre tous ces critères en N/A.
   démarrage de Cosign ; une vérification interrompue n'est pas dite invalide.
 - Pépin n'authentifie pas d'utilisateurs externes par une base locale de mots de
   passe. Les identifiants des fournisseurs servent à l'authentification sortante.
+- À partir de v0.5.1, les signatures de release utilisent Rekor v2. Cosign
+  authentifie la configuration par le TUF de Sigstore ; le script partagé retire
+  le repli v1. Le workflow vérifie la signature des empreintes et le digest de
+  l'image contre son identité GitHub exacte et son émetteur avant de créer la
+  GitHub Release. Aucun contrôle de transparence ou de confiance n'est désactivé.
+  Cosign 3.1.3 vérifie aussi les anciennes signatures v1 avec son TUF standard.
 
 #### Périmètre cryptographique et tailles imposées
 

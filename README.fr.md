@@ -82,6 +82,9 @@ partiel non plus, un résultat dérogé non plus.
 
 Chaque artefact de release est couvert. Une commande pour chacun, et rien à croire
 sur parole.
+Utilisez Cosign 3.1.3, épinglé par le projet : les releases à partir de v0.5.1
+utilisent Rekor v2, et les mêmes commandes vérifient aussi les anciennes releases
+Rekor v1.
 
 ```bash
 V=v0.5.1

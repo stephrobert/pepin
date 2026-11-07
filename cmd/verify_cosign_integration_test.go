@@ -24,6 +24,11 @@ func TestNativeCosignKeyStrengthAndSignature(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("COSIGN_PASSWORD", rand.Text())
+	signingConfig := filepath.Join(t.TempDir(), "rekor-v2.json")
+	configCommand := exec.CommandContext(t.Context(), "bash", "../tools/release/rekor-v2-config.sh", signingConfig)
+	if out, err := configCommand.CombinedOutput(); err != nil {
+		t.Fatalf("configuration Rekor v2 authentifiée : %v\n%s", err, out)
+	}
 	bin := os.Getenv("PEPIN_COSIGN_BINARY")
 	if bin == "" {
 		bin = buildPepin(t)
@@ -80,7 +85,7 @@ func TestNativeCosignKeyStrengthAndSignature(t *testing.T) {
 				t.Fatalf("génération synthétique : %v\n%s", err, out)
 			}
 			args := []string{"sign-blob", "--yes", "--key", privFile,
-				"--bundle", blob + ".bundle", "--use-signing-config=false", "--oidc-disable-ambient-providers"}
+				"--bundle", blob + ".bundle", "--signing-config", signingConfig, "--oidc-disable-ambient-providers"}
 			if bits == 2048 {
 				args = append(args, "--signing-algorithm", "rsa-sign-pkcs1-2048-sha256")
 			}

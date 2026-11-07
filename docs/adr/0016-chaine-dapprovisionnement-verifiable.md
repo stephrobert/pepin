@@ -108,10 +108,20 @@ a survécu à trois releases.
 - Tout artefact publié figure dans `checksums.txt`, donc sous la signature.
 - La documentation donne, pour chaque artefact, la commande qui le vérifie.
 - Aucun secret de fournisseur n'entre en CI (ADR-0012).
+- Les signatures utilisent la configuration Rekor v2 authentifiée par Cosign/TUF,
+  sans URL de journal figée ni repli v1 : `tools/release/rekor-v2-config.sh`.
+  Les autres services et sélecteurs de confiance restent inchangés.
+- Les deux signatures sont vérifiées contre l'identité exacte du workflow GitHub
+  et son émetteur OIDC. La GitHub Release attend aussi la réussite du job image.
+  Aucun contrôle de transparence ou de confiance n'est désactivé.
 
 *Gardes : `TestEveryPublishedArtefactIsChecksummed`,
 `TestEveryActionIsPinnedToAFullSHA` et `TestEveryInstallerActionPinsItsTool` ; le préflight rejoue la vérification avant tout
 tag.*
+
+`TestRekorV2ConfigPreservesTrustAndRefusesFallback`,
+`TestReleaseUsesAuthenticatedRekorV2` et
+`TestReleaseVerifiesSignaturesBeforePublication` protègent ces chemins.
 
 ## Validation
 

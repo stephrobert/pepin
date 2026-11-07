@@ -10,8 +10,12 @@ récent, c'est-à-dire un binaire que personne ne sait nommer après coup.
 
 ## Le binaire publié
 
-Demande `cosign` (ou `gh`, plus bas) et rien d'autre. Chaque fichier est
+Demande Cosign 3.1.3 (ou `gh`, plus bas) et rien d'autre. Chaque fichier est
 téléchargé sur disque et vérifié avant d'être exécuté.
+Depuis v0.5.1, les sommes et les images sont signées avec Rekor v2. Cosign obtient
+les clés de vérification par Sigstore TUF ; les commandes ci-dessous vérifient
+aussi les anciennes releases Rekor v1. Aucune racine personnalisée ni désactivation
+du contrôle de transparence n'est nécessaire.
 
 ```bash
 base=https://github.com/stephrobert/pepin/releases/download/v0.5.1

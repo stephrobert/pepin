@@ -278,13 +278,20 @@ jobs:
         if: ${{ !github.event.repository.private }}
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
-        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+          CERTIFICATE_IDENTITY: https://github.com/${{ github.workflow_ref }}
+        run: |
+          bash tools/release/rekor-v2-config.sh "$RUNNER_TEMP/rekor-v2.json"
+          cosign sign --yes --signing-config "$RUNNER_TEMP/rekor-v2.json" "${IMAGE}@${DIGEST}"
+          cosign verify \
+            --certificate-identity "$CERTIFICATE_IDENTITY" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "${IMAGE}@${DIGEST}"
 
   release:
     name: Create release
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    needs: binaries
+    needs: [binaries, image]
     permissions:
       contents: write      # créer la release et ses assets
       id-token: write      # provenance SLSA et signature keyless (OIDC)
@@ -382,7 +389,16 @@ jobs:
       - name: Sign checksums (keyless)
         if: ${{ !github.event.repository.private }}
         working-directory: dist
-        run: cosign sign-blob --yes --bundle checksums.txt.cosign.bundle checksums.txt
+        env:
+          CERTIFICATE_IDENTITY: https://github.com/${{ github.workflow_ref }}
+        run: |
+          bash ../tools/release/rekor-v2-config.sh "$RUNNER_TEMP/rekor-v2.json"
+          cosign sign-blob --yes --signing-config "$RUNNER_TEMP/rekor-v2.json" \
+            --bundle checksums.txt.cosign.bundle checksums.txt
+          cosign verify-blob --bundle checksums.txt.cosign.bundle \
+            --certificate-identity "$CERTIFICATE_IDENTITY" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            checksums.txt
 
       # provenance.intoto.jsonl attaché à la release est ce que le contrôle
       # Signed-Releases d'OpenSSF Scorecard cherche ; l'attestation enregistrée

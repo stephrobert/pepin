@@ -40,6 +40,10 @@ belongs in `git log`.
 
 ### Changed
 
+- Move release signing and native signature witnesses to Rekor v2 using
+  Cosign 3.1.3 and TUF-authenticated configuration, without v1 fallback.
+  Checksum and image signatures are verified before creating the GitHub Release.
+  Verification commands remain unchanged; older v1 signatures remain supported.
 - Update the AWS SDK S3 dependencies. Upgrade `pflag` to 1.1.0; the bilingual
   CLI reference reflects the updated flag help.
 - Align main's single-maintainer merge policy with Feint: PRs and CI remain

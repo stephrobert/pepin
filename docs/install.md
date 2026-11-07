@@ -10,8 +10,11 @@ afterwards.
 
 ## The released binary
 
-Needs `cosign` (or `gh`, below) and nothing else. Every file is fetched to
+Needs Cosign 3.1.3 (or `gh`, below) and nothing else. Every file is fetched to
 disk and verified before anything runs it.
+From v0.5.1, checksum and image signatures use Rekor v2. Cosign obtains the
+verification keys through Sigstore TUF; the commands below also verify earlier
+Rekor v1 releases. No custom trust root or disabled transparency check is needed.
 
 ```bash
 base=https://github.com/stephrobert/pepin/releases/download/v0.5.1

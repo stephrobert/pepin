@@ -27,6 +27,21 @@ l'outillage Python doit pouvoir couper une release.
 
 ## En couper une
 
+Les signatures des empreintes et de l'image utilisent Rekor v2 avec l'OIDC
+keyless de GitHub. Les deux jobs appellent `tools/release/rekor-v2-config.sh` :
+Cosign 3.1.3 authentifie la configuration v2 de Sigstore par TUF, puis le script
+retire les entrées de repli v1. Aucune URL de journal ni clé publique n'est
+figée dans le dépôt. L'absence de métadonnées v2, une signature ou une
+vérification échouée bloque la GitHub Release ; les contrôles de transparence
+restent actifs. La même configuration pilote le témoin natif opt-in :
+
+```bash
+PEPIN_COSIGN_INTEGRATION=1 mise exec -- go test ./cmd -run '^TestNativeCosignKeyStrengthAndSignature$' -count=1 -v
+```
+
+Il signe du matériau synthétique RSA2048/P256, refuse RSA1024 et vérifie qu'une
+altération des octets signés est refusée alors que l'intégrité non signée passe.
+
 1. **Déplacer les entrées `Unreleased`** de [CHANGELOG.md](./CHANGELOG.md)
    **et** de [CHANGELOG.fr.md](./CHANGELOG.fr.md) sous un nouveau titre
    `## [X.Y.Z]`, dans les deux fichiers. Le workflow de release lit la section
