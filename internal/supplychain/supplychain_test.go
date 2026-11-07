@@ -274,6 +274,9 @@ func TestOSVPRScanRejectsIncompleteResults(t *testing.T) {
 		t.Skip("jq is required to exercise the OSV result guard")
 	}
 	body := workflows(t)["osv-scanner.yml"]
+	if !strings.Contains(body, "\n  osv-scan:\n") {
+		t.Fatal("OSV job ID must preserve the historical Code Scanning analysis key")
+	}
 	if strings.Contains(body, "osv-scanner-reusable-pr.yml@") {
 		t.Fatal("upstream PR checkout persists credentials; use the local scan steps")
 	}

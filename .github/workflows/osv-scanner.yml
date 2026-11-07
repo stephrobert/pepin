@@ -19,7 +19,9 @@ permissions:
 
 jobs:
   # Scan de PR : ne casse le build que si la PR introduit une nouvelle vuln.
-  scan-pr:
+  # Conserve l'identifiant SARIF historique du workflow Google réutilisé.
+  osv-scan:
+    name: scan-pr
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
