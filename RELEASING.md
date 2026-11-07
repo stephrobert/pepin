@@ -190,7 +190,8 @@ downloaded.
   this repository with Administration, Actions and Contents **read** permissions;
   never put it in source or a pull-request workflow. The CI job
   `Plumber (trust policy)` verifies the pinned Plumber binary's attestation,
-  requires 100/100 and publishes the score. The preflight requires this job to
+  requires 100/100, rejects warnings about incomplete verification and publishes
+  the score. The preflight requires this job to
   succeed on the exact release commit; a missing, pending or skipped job is refused.
 - Moving the CHANGELOG entries is writing, not generation, in both languages.
 - **The canary scan** (below): a maintainer's gesture, run locally, whose

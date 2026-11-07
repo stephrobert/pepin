@@ -192,7 +192,8 @@ téléchargée.
   jeton GitHub finement limité à ce dépôt, avec Administration, Actions et Contents
   en **lecture** ; jamais dans le code ni dans un workflow de pull request.
   Le job CI `Plumber (trust policy)` vérifie l'attestation du binaire Plumber épinglé,
-  exige 100/100 et publie le score. Le preflight exige sa réussite sur le commit
+  exige 100/100, refuse les avertissements de vérification incomplète et publie
+  le score. Le preflight exige sa réussite sur le commit
   exact de la release ; un job absent, en attente ou sauté est refusé.
 - Déplacer les entrées de CHANGELOG est de l'écriture, pas de la génération,
   dans les deux langues.

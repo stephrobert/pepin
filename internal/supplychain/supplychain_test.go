@@ -269,6 +269,7 @@ func TestPlumberJobKeepsItsTrustBoundaryAndScoreGate(t *testing.T) {
 		"persist-credentials: false",
 		"secrets.PLUMBER_ADMIN_TOKEN",
 		"verify-attestation: 'true'",
+		"fail-warnings: 'true'",
 		"config-file: .plumber.yaml",
 		"min-points: '100'",
 		"score-push: 'true'",

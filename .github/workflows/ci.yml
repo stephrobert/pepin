@@ -255,6 +255,7 @@ jobs:
         with:
           version: v0.7.23
           verify-attestation: 'true'
+          fail-warnings: 'true'
           github-token: ${{ secrets.PLUMBER_ADMIN_TOKEN }}
           metadata-token: ${{ github.token }}
           config-file: .plumber.yaml
