@@ -24,7 +24,15 @@ func TestNativeCosignKeyStrengthAndSignature(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("COSIGN_PASSWORD", rand.Text())
-	bin := buildPepin(t)
+	bin := os.Getenv("PEPIN_COSIGN_BINARY")
+	if bin == "" {
+		bin = buildPepin(t)
+	} else {
+		bin, err = filepath.Abs(bin)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	for _, bits := range []int{2048, 0, 1024} {
 		t.Run(map[int]string{2048: "RSA2048", 0: "P256", 1024: "RSA1024"}[bits], func(t *testing.T) {
 			dir := sceller(t, bin)
@@ -91,6 +99,9 @@ func TestNativeCosignKeyStrengthAndSignature(t *testing.T) {
 			}
 			if err := verifyCosign(ctx, dir, pubFile, ""); err == nil {
 				t.Fatal("signature altérée acceptée")
+			}
+			if out, err := exec.CommandContext(ctx, bin, "verify", dir, "--pubkey", pubFile, "--require-signature").CombinedOutput(); err == nil {
+				t.Fatalf("le binaire accepte le bundle altéré :\n%s", out)
 			}
 		})
 	}

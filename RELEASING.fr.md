@@ -117,6 +117,12 @@ l'outillage Python doit pouvoir couper une release.
    documentation nomme la commande qui vérifie ». Une page réorganisée fait donc rougir
    la porte plutôt que de la faire passer en silence.
 
+   Le README doit nommer le tag préparé, comme les pages d'installation.
+   Avant l'existence de ce tag, la porte substitue le tag déjà publié dans
+   les commandes extraites du README et de l'image, et consigne la substitution.
+   Elle vérifie la chaîne publiée sans exiger un artefact que le tag à venir
+   doit encore produire.
+
    Chaque contrôle de cette étape sait se **sauter** quand son outil manque, en le
    disant. Et une étape dont tout ce qui mesure a été sauté est déclarée SAUTÉE, jamais
    GO : un vert qui n'a rien mesuré est le défaut que ce produit reproche aux autres.

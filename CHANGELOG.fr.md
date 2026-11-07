@@ -20,7 +20,7 @@ leur utilisateur à expliquer à un auditeur un changement qu'il n'a pas fait,
 et c'est ici que cette explication commence. Un refactor qui ne change ni
 l'une ni l'autre appartient au `git log`.
 
-## [Non publié]
+## [0.5.1] - 2026-11-07
 
 ### Sécurité
 
@@ -40,6 +40,21 @@ l'une ni l'autre appartient au `git log`.
   avec des tests de signature natifs.
   Une annulation ou un délai dépassé après le démarrage de Cosign conserve
   l'erreur de contexte au lieu d'être présenté comme une signature invalide.
+
+### Modifié
+
+- Mettre à jour les dépendances S3 du SDK AWS. Passer `pflag` à 1.1.0 ; la référence
+  CLI bilingue reflète la nouvelle présentation de l'aide des options.
+
+### Corrigé
+
+- La porte de release accepte le tag préparé dans le README et vérifie sa
+  procédure sur la release déjà publiée, avec une substitution consignée.
+
+### Retiré
+
+- Retirer la vignette SecNumCloud des deux README ; les mappings normatifs
+  restent documentés sans revendiquer de certification.
 
 ## [0.5.0] - 2026-11-06
 

@@ -19,7 +19,7 @@ second makes their user explain to an auditor a change they did not make, and
 this file is where that explanation starts. A refactor that changes neither
 belongs in `git log`.
 
-## [Unreleased]
+## [0.5.1] - 2026-11-07
 
 ### Security
 
@@ -37,6 +37,21 @@ belongs in `git log`.
   proposal now covers all cryptographic paths and includes native signature tests.
   Cancellation or deadlines after Cosign starts retain their context error
   rather than being reported as an invalid signature.
+
+### Changed
+
+- Update the AWS SDK S3 dependencies. Upgrade `pflag` to 1.1.0; the bilingual
+  CLI reference reflects the updated flag help.
+
+### Fixed
+
+- The release gate allows the README to name the prepared tag while verifying
+  its procedure against the previous published release, with explicit evidence.
+
+### Removed
+
+- Remove the SecNumCloud badge from both READMEs; normative mappings remain
+  documented without claiming certification.
 
 ## [0.5.0] - 2026-11-06
 

@@ -116,6 +116,12 @@ the Python tooling must still be able to cut a release.
    documentation names the command that verifies". A reorganised page therefore turns
    the gate red rather than passing silently.
 
+   The README must name the tag being prepared, like the installation pages.
+   Before that tag exists, the gate substitutes the previous published tag in
+   the extracted README and image commands, and records the substitution in
+   its evidence. It verifies the published chain without requiring an artefact
+   that the pending tag will create.
+
    Every check in this stage knows how to **skip** when its tool is missing, and says
    so. And a stage whose measuring checks were all skipped is reported as SKIPPED,
    never GO: a green that measured nothing is the defect this product holds against
