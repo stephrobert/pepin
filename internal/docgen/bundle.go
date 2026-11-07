@@ -59,6 +59,12 @@ var sha64 = regexp.MustCompile(`[0-9a-f]{64}`)
 // vcsDigest repère l'empreinte de provenance du binaire (`vcs:<commit>[+modified]`).
 var vcsDigest = regexp.MustCompile(`vcs:[0-9a-f]+(\+modified)?`)
 
+// toolDigest repère l'empreinte du binaire dans une propriété OSCAL.
+var toolDigest = regexp.MustCompile(`(?s)("name":\s*"tool-digest",\s*"value":\s*")[^"]+(")`)
+
+// componentDigest repère l'empreinte du binaire dans un composant d'assessment.
+var componentDigest = regexp.MustCompile(`(?s)("tool":\s*\{[^}]*"digest":\s*")[^"]+(")`)
+
 var toolDigestField = regexp.MustCompile(`(?s)("tool":\s*\{\s*"name":\s*"pepin",\s*"version":\s*"[^"]+",\s*"digest":\s*)"[^"]+"`)
 
 // rfc3339 repère un horodatage UTC.
@@ -76,6 +82,8 @@ var uuidRe = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 // horodatage, identifiants dérivés de cet horodatage, empreinte de provenance du binaire.
 // Ce qui décrit la POSTURE, lui, reste intact — c'est ce que la page doit montrer.
 func normalizeVolatile(s string) string {
+	s = toolDigest.ReplaceAllString(s, `${1}<provenance>${2}`)
+	s = componentDigest.ReplaceAllString(s, `${1}<provenance>${2}`)
 	s = vcsDigest.ReplaceAllString(s, "<provenance>")
 	s = rfc3339.ReplaceAllString(s, "<timestamp>")
 	return uuidRe.ReplaceAllString(s, "<uuid>")
@@ -192,7 +200,6 @@ func captureBundle(r Runner, tmp, version string) (bundleCaptures, error) {
 func normalizeBundleText(s, tmp, version string) string {
 	s = strings.ReplaceAll(s, tmp+string(os.PathSeparator), "")
 	s = strings.ReplaceAll(s, tmp, "")
-	s = toolDigestField.ReplaceAllString(s, `${1}"<binary-digest>"`)
 	// Le manifest porte la version NUE (`"version": "0.3.0"`), comme toute surface
 	// parsable ; `version` arrive ici telle que `pepin version` l'imprime, donc
 	// préfixée. Comparer les deux sans dépréfixer laissait passer la version réelle
@@ -201,6 +208,8 @@ func normalizeBundleText(s, tmp, version string) string {
 	if nue := strings.TrimPrefix(version, "v"); nue != "" {
 		s = strings.ReplaceAll(s, `"`+nue+`"`, `"<version>"`)
 	}
+	s = componentDigest.ReplaceAllString(s, `${1}<provenance>${2}`)
+	s = toolDigestField.ReplaceAllString(s, `${1}"<binary-digest>"`)
 	s = vcsDigest.ReplaceAllString(s, "<provenance>")
 	s = sha64.ReplaceAllString(s, "<sha256>")
 	s = rfc3339.ReplaceAllString(s, "<timestamp>")

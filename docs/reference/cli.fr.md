@@ -98,8 +98,8 @@ Commandes disponibles:
   version     Afficher la version
 
 Drapeaux:
-  -h, --help          aide pour pepin
-      --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
+  -h, --help[=true|false]   aide pour pepin
+      --lang string         langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
 
 Lancer « pepin [commande] --help » pour en savoir plus sur une commande.
 ```
@@ -120,21 +120,21 @@ pepin scan <provider> [export.json] [flags]
 
 
 Drapeaux:
-      --exceptions fichier               fichier YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme
-  -f, --format string                    format de sortie : table | json | assessment | oscal | sarif (default "table")
-      --gate string                      GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
-  -h, --help                             aide pour scan
-      --kubeconfig string                chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (exige --live ; utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)
-      --live                             collecter l'inventaire en direct via l'API du provider (identifiants requis)
-      --policy fichier                   fichier YAML de politique : réglages des contrôles (`controls:`) ET dérogations (`exceptions:`) — un seul fichier, nom moderne de --exceptions
-  -p, --policy-dir stringArray           répertoire de règles externes (.rego), répétable — chargé sans recompilation
-      --profile string                   profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)
-      --redact                           caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive
-      --region string                    région cible pour la collecte live
-      --s3-endpoint string               endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)
-      --seal string                      écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier
-      --strict                           porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance), s'il subsiste un écart medium/low, ou si un réglage assoupli a fait tomber une correspondance normative
-  -t, --terraform terraform show -json   auditer un plan Terraform (terraform show -json) au lieu d'un export d'inventaire
+      --exceptions fichier       fichier YAML de dérogations (control, justification, expires_at, owner, approved_by) : un écart couvert passe au statut exempted, jamais conforme
+  -f, --format string            format de sortie : table | json | assessment | oscal | sarif (default "table")
+      --gate string              GATE profile (all | security | compliance | sovereignty): what weighs in the exit code. The report stays COMPLETE whatever the profile; a critical/high deviation set aside yields 3, never 0 (default "all")
+  -h, --help[=true|false]        aide pour scan
+      --kubeconfig string        chemin d'un kubeconfig pour auditer l'état DANS un cluster Kubernetes (exige --live ; utiliser un accès en LECTURE SEULE, TTL court — jamais cluster-admin)
+      --live[=true|false]        collecter l'inventaire en direct via l'API du provider (identifiants requis)
+      --policy fichier           fichier YAML de politique : réglages des contrôles (`controls:`) ET dérogations (`exceptions:`) — un seul fichier, nom moderne de --exceptions
+  -p, --policy-dir stringArray   répertoire de règles externes (.rego), répétable — chargé sans recompilation
+      --profile string           profil d'identifiants pour la collecte live (ex. ~/.osc/config.json)
+      --redact[=true|false]      caviarder les valeurs sensibles (user-data, policies) de l'input.json du bundle — pour partage à un tiers ; INCOMPATIBLE avec verify --re-derive
+      --region string            région cible pour la collecte live
+      --s3-endpoint string       endpoint S3 custom pour le stockage objet (collecte live ; ex. MinIO http://localhost:9000)
+      --seal string              écrire un bundle de preuve opposable (assessment + OSCAL + manifest + checksums) dans ce dossier
+      --strict[=true|false]      porte CI stricte : code de sortie ≠ 0 si aucun contrôle n'est mesuré (hors gouvernance), s'il subsiste un écart medium/low, ou si un réglage assoupli a fait tomber une correspondance normative
+  -t, --terraform[=true|false]   auditer un plan Terraform (terraform show -json) au lieu d'un export d'inventaire
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -198,11 +198,11 @@ pepin verify <dossier-bundle> [flags]
 
 
 Drapeaux:
-      --bundle string       bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)
-  -h, --help                aide pour verify
-      --pubkey string       fichier PEM local de clé publique cosign pour vérifier la signature de checksums.txt
-      --re-derive           rejouer les règles sur input.json et vérifier que l'assessment scellé en découle (opposabilité forte)
-      --require-signature   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
+      --bundle string                    bundle de signature cosign (défaut : <dossier>/checksums.txt.bundle)
+  -h, --help[=true|false]                aide pour verify
+      --pubkey string                    fichier PEM local de clé publique cosign pour vérifier la signature de checksums.txt
+      --re-derive[=true|false]           rejouer les règles sur input.json et vérifier que l'assessment scellé en découle (opposabilité forte)
+      --require-signature[=true|false]   fail when no signature was verified: a bundle that is "internally consistent" but unsigned is not defensible
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -237,7 +237,7 @@ Commandes disponibles:
   validate    Valider les providers d'un dossier (défaut : providers/) contre le contrat
 
 Drapeaux:
-  -h, --help   aide pour provider
+  -h, --help[=true|false]   aide pour provider
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -259,7 +259,7 @@ Alias:
   list, ls
 
 Drapeaux:
-  -h, --help   aide pour list
+  -h, --help[=true|false]   aide pour list
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -291,7 +291,7 @@ pepin provider validate [dossier] [flags]
 
 
 Drapeaux:
-  -h, --help   aide pour validate
+  -h, --help[=true|false]   aide pour validate
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -308,7 +308,7 @@ pepin provider new <nom> [flags]
 
 
 Drapeaux:
-  -h, --help   aide pour new
+  -h, --help[=true|false]   aide pour new
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -329,8 +329,8 @@ pepin scsl [flags]
 
 
 Drapeaux:
-  -h, --help           aide pour scsl
-      --index string   chemin de l'API SCSL (api/v1/exigences.json du framework)
+  -h, --help[=true|false]   aide pour scsl
+      --index string        chemin de l'API SCSL (api/v1/exigences.json du framework)
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -352,7 +352,7 @@ Commandes disponibles:
   explain     Expliquer d'où vient le verdict d'un contrôle, et ce qui l'éprouve
 
 Drapeaux:
-  -h, --help   aide pour control
+  -h, --help[=true|false]   aide pour control
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -398,8 +398,8 @@ pepin control explain <code> [flags]
 
 
 Drapeaux:
-  -h, --help              aide pour explain
-      --provider string   limiter l'explication à un fournisseur
+  -h, --help[=true|false]   aide pour explain
+      --provider string     limiter l'explication à un fournisseur
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
@@ -416,7 +416,7 @@ pepin version [flags]
 
 
 Drapeaux:
-  -h, --help   aide pour version
+  -h, --help[=true|false]   aide pour version
 
 Drapeaux globaux:
       --lang string   langue de l'interface : fr | en (défaut : PEPIN_LANG, puis LC_ALL/LANG, sinon en)
