@@ -9,6 +9,7 @@
 
 [![CI](https://github.com/stephrobert/pepin/actions/workflows/ci.yml/badge.svg)](https://github.com/stephrobert/pepin/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/stephrobert/pepin/actions/workflows/codeql.yml/badge.svg)](https://github.com/stephrobert/pepin/actions/workflows/codeql.yml)
+[![Conformité Plumber](https://score.getplumber.io/github.com/stephrobert/pepin.svg)](https://score.getplumber.io/github.com/stephrobert/pepin)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/stephrobert/pepin/badge)](https://securityscorecards.dev/viewer/?uri=github.com/stephrobert/pepin)
 [![Licence : Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](go.mod)
@@ -84,7 +85,7 @@ Chaque artefact de release est couvert. Une commande pour chacun, et rien à cro
 sur parole.
 
 ```bash
-V=v0.3.0
+V=v0.4.0
 gh release download "$V" --repo stephrobert/pepin
 
 # 1. les sommes sont signées, et elles couvrent les binaires ET le SBOM

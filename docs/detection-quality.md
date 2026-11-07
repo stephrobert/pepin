@@ -7,7 +7,7 @@
 What Pépin can PROVE about its own verdicts, and what it cannot.
 Every figure on this page is derived from the repository's artefacts —
 obligations computed from the coverage matrix, veracity scenarios, reference
-tenants, canary records. None is typed in.
+tenants, canary and qualification records. None is typed in.
 
 ## The rule
 
@@ -16,7 +16,7 @@ with no measurement behind it is a false green moved into a dashboard, and it is
 worse there than anywhere else: nobody re-reads a dashboard.
 
 The figures are therefore ugly, and that is the point. "58 controls" says nothing
-about the quality of a detection; "101 verdicts proven out of 470" says where the
+about the quality of a detection; "111 verdicts proven out of 478" says where the
 product stands, and shrinks the right way with every scenario written.
 
 ## The figures
@@ -24,10 +24,10 @@ product stands, and shrinks the right way with every scenario written.
 | Figure | Count |
 |---|---:|
 | Controls in the reference | 58 |
-| Control x provider x source paths on which Pépin concludes | 186 |
-| Paths whose EVERY reachable verdict is proven end to end | 34 |
-| Verdicts to prove in total | 470 |
-| Verdicts proven | 101 |
+| Control x provider x source paths on which Pépin concludes | 190 |
+| Paths whose EVERY reachable verdict is proven end to end | 38 |
+| Verdicts to prove in total | 478 |
+| Verdicts proven | 111 |
 
 ## Veracity coverage, by verdict
 
@@ -37,11 +37,11 @@ inventing a non-applicability.
 
 | Verdict | What it stages | To prove | Proven | % |
 |---|---|---:|---:|---:|
-| `fail` | a vulnerable configuration is detected | 142 | 26 | 18 |
-| `pass` | a genuinely correct configuration is confirmed | 142 | 38 | 26 |
-| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 162 | 25 | 15 |
+| `fail` | a vulnerable configuration is detected | 144 | 29 | 20 |
+| `pass` | a genuinely correct configuration is confirmed | 144 | 41 | 28 |
+| `not-evaluated` | the deciding attribute is missing, and the scan refuses to conclude | 166 | 29 | 17 |
 | `not-applicable` | the provider's contract declares the mechanism non-existent | 24 | 12 | 50 |
-| **Total** | | **470** | **101** | **21** |
+| **Total** | | **478** | **111** | **23** |
 
 ## Validated live
 
@@ -50,14 +50,33 @@ it proves an endpoint exists and refuses, never that a *sufficient* right return
 `200` on a real tenant. It therefore does not count as live validation of a
 control.
 
-This counter only moves on an **authenticated** record, and none exists. The zero
-is derived, not written: the day a maintainer records an authenticated run, it
-will rise on its own.
+A path counts when at least one required `pass` or `fail` verdict was explicitly
+compared on an authenticated tenant for that control and provider. This does
+not prove all verdicts on the path or change the veracity ledger. Silent
+counterexamples, outside-tenant expectations and known defects do not prove a
+`pass`.
+
+Records are historical facts re-evaluated against the expectations whose hash
+is recorded. They identify the binary actually run, not the release binary.
+A bundle verifies integrity, not the identity of its author.
+A tenant we wrote does not prove a rule universally correct; third-party
+tenants complement it.
+
+Historical snapshot as of 2026-09-11T07:34:27Z. Each record expires 90 days after its timestamp;
+the binary excludes expired evidence at runtime and the preflight rejects a
+provider whose recorded evidence is all stale.
 
 | Figure | Count |
 |---|---:|
 | Paths whose source is a live collection | 104 |
-| Validated live | **0 %** |
+| Paths with at least one validated live verdict | 40 |
+| Distinct verdicts validated live | 40 |
+| Validated live | **38 %** |
+
+| Provider | Recorded | Expires at (UTC) | Qualified binary | Record |
+|---|---|---|---|---|
+| `exoscale` | 2026-09-11T07:34:27Z | 2026-12-10T07:34:27Z | `0.1.0-dev` (`vcs:2cf48ca9cd0967a16aa6b2f5396749503a6a04dd+modified`) | [JSON](../references/qualification/evidence/exoscale-2026-09-11.json) |
+| `scaleway` | 2026-09-11T05:13:16Z | 2026-12-10T05:13:16Z | `0.1.0-dev` (`vcs:74ebd40a490ddf0905957982e814949a0eb20584+modified`) | [JSON](../references/qualification/evidence/scaleway-2026-09-11.json) |
 
 ## What the real control planes answered
 
@@ -84,8 +103,8 @@ in `internal/veracity/testdata/counterexamples-debt.txt`.
 | Figure | Count |
 |---|---:|
 | Active high/critical controls | 43 |
-| Of which a detection path is proven end to end | 21 |
-| Of which a legitimate counterexample is proven | 19 |
+| Of which a detection path is proven end to end | 22 |
+| Of which a legitimate counterexample is proven | 20 |
 | False positives measured on the counter-witnesses | 0 |
 
 There is no "false negatives" row, and its absence is the most honest figure on

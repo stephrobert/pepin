@@ -59,7 +59,7 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
-| outscale | terraform | ◐ `partial` | deciding attribute "security_group_name" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| outscale | terraform | ◐ `partial` | deciding attribute "security_group_name" not projected on correlated type "security_group_rule": a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 

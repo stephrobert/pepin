@@ -4,6 +4,7 @@
     PEPIN_GATE_LIVE=1 python3 tools/qualification/qualify.py run scaleway
     python3 tools/qualification/qualify.py run scaleway --plan-only
     python3 tools/qualification/qualify.py compare --run-dir release-gate/qualification-scaleway
+    python3 tools/qualification/qualify.py record --run-dir release-gate/qualification-scaleway
     python3 tools/qualification/qualify.py selftest
 
 Une stack Terraform par fournisseur, committée sous references/qualification/<p>/,
@@ -44,6 +45,7 @@ par git : ces artefacts portent les identifiants de ressources d'un compte réel
 import argparse
 import copy
 import datetime as dt
+import hashlib
 import json
 import os
 import pathlib
@@ -332,6 +334,32 @@ def load_results(path):
     doc = json.loads(pathlib.Path(path).read_text())
     return [{"control": r["control"], "status": r["status"], "subject": r.get("subject", "")}
             for r in doc.get("results", [])]
+
+
+def proven_live_observations(expected, results, exit_code, outputs, prefix, owned, known_defects=()):
+    """Verdicts épinglés et vérifiés sur le tenant, sans sujets ni données privées."""
+    known = set(known_defects)
+    by_control = {}
+    for r in results:
+        by_control.setdefault(r["control"], []).append(r)
+    observations = []
+    for code, spec in sorted((expected.get("controls") or {}).items()):
+        want = spec.get("live") if isinstance(spec, dict) else None
+        if code in known or defaut_connu(want):
+            continue
+        if isinstance(want, dict):
+            if want.get("perimeter") in ("organisation", "organization"):
+                continue
+            verdict = "fail" if want.get("fail") else want.get("status")
+        else:
+            verdict = want
+        if verdict not in ("pass", "fail"):
+            continue
+        one = {"exit_codes": expected.get("exit_codes", {}), "controls": {code: spec}}
+        measured = compare(one, by_control.get(code, []), "live", exit_code, outputs, prefix, owned)
+        if measured.ok:
+            observations.append({"control": code, "verdict": verdict})
+    return observations
 
 
 def falsify(expected, results, source, exit_code, outputs, prefix, owned=None):
@@ -997,21 +1025,35 @@ def selftest():
     ok, outcomes = falsify(expected, good, "live", 1, outputs, prefix)
     failures += not ok
     print(f"  {'✔' if ok else '✘'} la falsification rend NO-GO sur {len(outcomes)} mutations")
+    observations = proven_live_observations(
+        expected, good, 1, outputs, prefix, owned_identifiers(outputs))
+    pairs = {(o["control"], o["verdict"]) for o in observations}
+    want_pairs = {("a_fail", "fail"), ("c_pass", "pass"), ("h_inc", "fail"),
+                  ("i_both", "fail"), ("j_fail", "fail")}
+    ok = pairs == want_pairs
+    failures += not ok
+    print(f"  {'✔' if ok else '✘'} seuls les verdicts épinglés, hors défaut connu, sont retenus")
+    broken = mutate(lambda r: r.__setitem__(0, {"control": "a_fail", "status": "pass", "subject": "scaleway"}))
+    observations = proven_live_observations(
+        expected, broken, 1, outputs, prefix, owned_identifiers(outputs), known_defects={"j_fail"})
+    pairs = {(o["control"], o["verdict"]) for o in observations}
+    ok = ("a_fail", "fail") not in pairs and ("j_fail", "fail") not in pairs and ("c_pass", "pass") in pairs
+    failures += not ok
+    print(f"  {'✔' if ok else '✘'} un écart manquant ou connu ne devient pas une preuve")
     if failures:
         print(f"\n{failures} cas en échec : la comparaison ne mesure pas ce qu'elle prétend", file=sys.stderr)
         return 1
-    print(f"\n{len(cases) + 8} cas, tous conformes.")
+    print(f"\n{len(cases) + 10} cas, tous conformes.")
     return 0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def cmd_compare(args):
-    run_dir = pathlib.Path(args.run_dir).resolve()
-    provider = args.provider or run_dir.name.replace("qualification-", "")
+def comparison_context(run_dir, provider, expected_path=None):
     tenant_dir = ROOT / "references" / "qualification" / provider
     tenant = yaml.safe_load((tenant_dir / "tenant.yaml").read_text())
-    expected = yaml.safe_load(pathlib.Path(args.expected or tenant_dir / "expected.yaml").read_text())
+    expected_path = pathlib.Path(expected_path or tenant_dir / "expected.yaml")
+    expected = yaml.safe_load(expected_path.read_text())
     outputs, plan = {}, None
     if (run_dir / "plan.json").exists():
         plan = json.loads((run_dir / "plan.json").read_text())
@@ -1019,7 +1061,15 @@ def cmd_compare(args):
     if (run_dir / "outputs.json").exists():
         outputs = json.loads((run_dir / "outputs.json").read_text())
     owned = owned_identifiers(outputs, plan)
-    report = json.loads((run_dir.parent / f"qualification-{provider}.json").read_text()) if (run_dir.parent / f"qualification-{provider}.json").exists() else {}
+    report_path = run_dir.parent / f"qualification-{provider}.json"
+    report = json.loads(report_path.read_text()) if report_path.exists() else {}
+    return tenant, expected, expected_path, outputs, owned, report, report_path
+
+
+def cmd_compare(args):
+    run_dir = pathlib.Path(args.run_dir).resolve()
+    provider = args.provider or run_dir.name.replace("qualification-", "")
+    tenant, expected, _, outputs, owned, report, _ = comparison_context(run_dir, provider, args.expected)
     rcs = {s: v.get("exit_code") for s, v in report.get("comparison", {}).items()}
     problems = 0
     for source, fname in (("live", "assessment-live.json"), ("terraform", "assessment-terraform.json")):
@@ -1036,6 +1086,94 @@ def cmd_compare(args):
     return 0 if not problems else 1
 
 
+def cmd_record(args):
+    run_dir = pathlib.Path(args.run_dir).resolve()
+    provider = args.provider or run_dir.name.replace("qualification-", "")
+    if not re.fullmatch(r"[a-z][a-z0-9_]*", provider):
+        raise ValueError("nom de fournisseur invalide")
+    tenant, expected, expected_path, outputs, owned, report, report_path = comparison_context(run_dir, provider)
+    if (report.get("stage") != f"qualification-{provider}" or report.get("plan_only") is not False
+            or report.get("verdict") != "GO" or report.get("regression_contract") != "GO"
+            or report.get("destroyed") is not True):
+        raise ValueError("un relevé exige une qualification live GO et une destruction confirmée")
+    leftovers = report.get("leftovers")
+    if not isinstance(leftovers, dict) or any(
+            not isinstance(leftovers.get(k), (dict, list)) or leftovers[k] for k in ("tagged", "delta")):
+        raise ValueError("preuve de destruction absente ou ressources restantes")
+    live = report.get("comparison", {}).get("live", {})
+    if live.get("ok") is not True or live.get("problems") or live.get("exit_code") is None:
+        raise ValueError("comparaison live absente ou non concluante")
+    stage_list = report.get("stages", [])
+    if (not isinstance(stage_list, list)
+            or any(not isinstance(s, dict) or s.get("rc") != 0 for s in stage_list)):
+        raise ValueError("une étape de la qualification est invalide ou en échec")
+    stages = {s.get("name"): s.get("rc") for s in stage_list}
+    if len(stages) != len(stage_list):
+        raise ValueError("étapes de qualification dupliquées")
+    required = (
+        "apply", "scan --live, 5 formats, bundle scellé",
+        "bundle : verify --re-derive, refus de l'altération", "destroy",
+        "preuve de destruction : listing par famille + delta",
+        "comparaison à expected.yaml, et falsification de la porte",
+    )
+    if any(stages.get(name) != 0 for name in required):
+        raise ValueError("une étape obligatoire de la qualification est absente ou en échec")
+
+    assessment_path = run_dir / "assessment-live.json"
+    bundle_path = run_dir / "bundle"
+    sealed_path = bundle_path / "assessment.json"
+    verified = subprocess.run([str(ROOT / "pepin"), "verify", str(bundle_path)],
+                              capture_output=True, text=True, timeout=120, check=False)
+    if verified.returncode != 0:
+        raise ValueError(f"bundle incohérent (code {verified.returncode}) ; lancer pepin verify localement pour le détail")
+    results = load_results(assessment_path)
+    sealed_results = load_results(sealed_path)
+    key = lambda r: (r["control"], r["status"], r["subject"])
+    if sorted(results, key=key) != sorted(sealed_results, key=key) or live.get("results") != len(results):
+        raise ValueError("l'assessment live ne correspond pas au bundle ou au rapport")
+    assessment = json.loads(sealed_path.read_text())
+    standalone = json.loads(assessment_path.read_text())
+    run = assessment.get("run", {})
+    if run != standalone.get("run"):
+        raise ValueError("les métadonnées du scan diffèrent entre l'assessment et le bundle")
+    if run.get("source") != "live-api" or run.get("target", {}).get("provider") != provider:
+        raise ValueError("l'assessment n'est pas issu d'une collecte live du fournisseur demandé")
+    scan_time = dt.datetime.fromisoformat(run["timestamp"].replace("Z", "+00:00"))
+    started = dt.datetime.fromisoformat(report["started"].replace("Z", "+00:00"))
+    if scan_time.tzinfo is None or started.tzinfo is None:
+        raise ValueError("horodatage de qualification sans fuseau")
+    end = started + dt.timedelta(seconds=float(report["duration_seconds"]) + 5)
+    if not started <= scan_time <= end or scan_time > dt.datetime.now(dt.timezone.utc):
+        raise ValueError("date du scan incompatible avec le rapport")
+    tool = run.get("tool", {})
+    version, digest = tool.get("version", ""), tool.get("digest", "")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,80}", version):
+        raise ValueError("version du binaire absente ou invalide")
+    if not re.fullmatch(r"(?:vcs:[a-f0-9]{7,64}(?:\+modified)?|sha256:[a-f0-9]{64})", digest):
+        raise ValueError("empreinte du binaire absente ou invalide")
+    defects = {d.get("control") for d in live.get("known_defects", [])}
+    observations = proven_live_observations(
+        expected, results, live["exit_code"], outputs, tenant["name_prefix"], owned, defects)
+    if not observations:
+        raise ValueError("aucun verdict de tenant vérifié par les attentes actuelles")
+    if any(not re.fullmatch(r"[a-z][a-z0-9_]*", o["control"]) for o in observations):
+        raise ValueError("identifiant de contrôle invalide")
+    sha256 = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    public = {
+        "provider": provider,
+        "source": "live",
+        "recorded_at": scan_time.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
+        "tool_version": version,
+        "tool_digest": digest,
+        "report_sha256": sha256(report_path),
+        "assessment_sha256": sha256(sealed_path),
+        "reevaluated_expected_sha256": sha256(expected_path),
+        "observations": observations,
+    }
+    print(json.dumps(public, indent=2, ensure_ascii=False))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1047,6 +1185,9 @@ def main():
     c.add_argument("--run-dir", required=True)
     c.add_argument("--expected")
     c.add_argument("--provider")
+    record = sub.add_parser("record", help="dérive un relevé public anonymisé d'un run live vérifié")
+    record.add_argument("--run-dir", required=True)
+    record.add_argument("--provider")
     sub.add_parser("selftest", help="la comparaison se prouve sur des cas synthétiques")
     args = ap.parse_args()
 
@@ -1054,6 +1195,12 @@ def main():
         return selftest()
     if args.cmd == "compare":
         return cmd_compare(args)
+    if args.cmd == "record":
+        try:
+            return cmd_record(args)
+        except (OSError, ValueError, KeyError, TypeError, yaml.YAMLError, subprocess.TimeoutExpired) as err:
+            print(f"relevé de qualification refusé : {err}", file=sys.stderr)
+            return 1
     if not args.plan_only and os.environ.get("PEPIN_GATE_LIVE") != "1":
         print("refus : appliquer un tenant de qualification sur un compte réel est opt-in — "
               "PEPIN_GATE_LIVE=1, ou --plan-only pour ne rien créer", file=sys.stderr)

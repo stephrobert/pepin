@@ -60,6 +60,22 @@ func (e *TruncatedError) Error() string {
 		e.MaxPages, e.Call)
 }
 
+// UnreadableError reports a successful response that did not contain the
+// document the collector needs in order to make a complete observation.
+type UnreadableError struct {
+	Call string
+	Err  error
+}
+
+func (e *UnreadableError) Error() string {
+	if e.Err != nil {
+		return fmt.Sprintf("unreadable response on %s: %v", e.Call, e.Err)
+	}
+	return fmt.Sprintf("unreadable response on %s", e.Call)
+}
+
+func (e *UnreadableError) Unwrap() error { return e.Err }
+
 // Classify range une erreur de collecte dans sa classe et rend un DÉTAIL
 // factuel, non traduit.
 //
@@ -96,6 +112,10 @@ func Classify(err error) (model.CollectionOutcome, string) {
 	var te *TruncatedError
 	if errors.As(err, &te) {
 		return model.OutcomeTruncated, detailf("pagination bound %d · %s", te.MaxPages, te.Call)
+	}
+	var unreadableErr *UnreadableError
+	if errors.As(err, &unreadableErr) {
+		return model.OutcomeUnreadable, detailf("%s", unreadableErr.Error())
 	}
 
 	// Les SDK tiers (le client S3 de l'AWS SDK, ici) n'exposent pas leurs types
@@ -153,8 +173,8 @@ func Classify(err error) (model.CollectionOutcome, string) {
 		return model.OutcomeTimeout, detailf("%s", err.Error())
 	}
 	var se *json.SyntaxError
-	var ue *json.UnmarshalTypeError
-	if errors.As(err, &se) || errors.As(err, &ue) {
+	var typeErr *json.UnmarshalTypeError
+	if errors.As(err, &se) || errors.As(err, &typeErr) {
 		return model.OutcomeUnreadable, detailf("%s", err.Error())
 	}
 	return model.OutcomeUnavailable, detailf("%s", err.Error())

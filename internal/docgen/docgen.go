@@ -143,7 +143,11 @@ func Generate(root, bin string) (map[string]string, error) {
 	}
 	out[quality.SnapshotFile] = string(rawSnap)
 	for _, page := range qualityPages {
-		out[page] = qualityPage(langOf(page), snap)
+		body, qerr := qualityPage(langOf(page), snap)
+		if qerr != nil {
+			return nil, qerr
+		}
+		out[page] = body
 	}
 	// Le catalogue des contrôles : une page par contrôle et par langue, plus son index.
 	// La liste des pages n'est pas énumérée ici — elle EST le référentiel, donc un contrôle

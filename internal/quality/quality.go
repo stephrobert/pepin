@@ -23,20 +23,21 @@
 // control explain` n'a pas le dépôt sous la main : les scénarios, les tenants et
 // le registre de dette vivent dans le dépôt, pas dans l'exécutable.
 //
-// # Ce que « validé en live » compte, et pourquoi c'est zéro
+// # Ce que « validé en live » compte
 //
 // Un scan canari interroge le vrai plan de contrôle d'un fournisseur SANS
 // identifiant : il prouve qu'un endpoint existe et refuse, jamais qu'un droit
 // suffisant rende 200 sur un tenant réel. Il ne vaut donc pas validation live d'un
-// contrôle. Le compteur ne s'incrémente que sur un relevé AUTHENTIFIÉ, et il n'en
-// existe aucun — d'où zéro, dérivé et non écrit. Le jour où un mainteneur consigne
-// un relevé authentifié, le chiffre montera tout seul.
+// contrôle. Le compteur ne s'incrémente que pour un verdict explicitement vérifié
+// par une qualification authentifiée, sur le même contrôle et le même fournisseur.
+// Une preuve périmée ne compte plus.
 package quality
 
 import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/stephrobert/pepin/internal/canary"
 	"github.com/stephrobert/pepin/internal/veracity"
@@ -101,14 +102,17 @@ type Snapshot struct {
 	Verdicts map[string]VerdictCount `json:"verdicts"`
 	// LivePaths : chemins dont la source est une collecte live.
 	// LiveValidated : ceux qu'un relevé AUTHENTIFIÉ atteste. Voir l'en-tête du paquet.
-	LivePaths     int `json:"live_paths"`
-	LiveValidated int `json:"live_validated"`
+	LivePaths     int    `json:"live_paths"`
+	LiveValidated int    `json:"live_validated"`
+	LiveVerdicts  int    `json:"live_verdicts"`
+	LiveAsOf      string `json:"live_as_of,omitempty"`
 	// Counterwitnesses : tenants tiers déclarés durcis sur lesquels Pépin ne relève
 	// aucun écart critical/high. C'est le seul endroit du dépôt où un faux positif
 	// se voit, et le seul chiffre de faux positifs qui soit MESURÉ.
 	Counterwitnesses int                     `json:"counterwitnesses"`
 	Tenants          int                     `json:"tenants"`
 	Canary           []CanaryProvider        `json:"canary"`
+	Qualifications   []Qualification         `json:"qualifications,omitempty"`
 	ByControl        map[string]ControlProof `json:"by_control"`
 	// Precision : ce que la carte peut dire de la précision des règles high/critical.
 	Precision Precision `json:"precision"`
@@ -170,6 +174,8 @@ type Inputs struct {
 	Controls int
 	// Records : les relevés de canari.
 	Records []canary.Record
+	// Qualifications : les verdicts vérifiés sur des tenants authentifiés.
+	Qualifications []Qualification
 	// ScenariosByPath : les fichiers de scénarios qui couvrent un chemin.
 	ScenariosByPath map[veracity.Path][]string
 	// TenantsByPath : les tenants de référence qui prouvent un verdict sur un chemin.
@@ -192,7 +198,20 @@ type Inputs struct {
 }
 
 // Compute dérive la carte. Rien n'y est saisi : chaque champ vient d'un artefact.
-func Compute(in Inputs) Snapshot {
+func Compute(in Inputs) (Snapshot, error) {
+	var asOf time.Time
+	for _, q := range in.Qualifications {
+		if err := q.validate(); err != nil {
+			return Snapshot{}, fmt.Errorf("qualification %s : %w", q.RecordFile, err)
+		}
+		recorded, err := q.ObservedAt()
+		if err != nil {
+			return Snapshot{}, err
+		}
+		if recorded.After(asOf) {
+			asOf = recorded
+		}
+	}
 	obligations := veracity.Obligations(in.Cells)
 	counts := veracity.Count(obligations, in.Covered)
 
@@ -205,6 +224,7 @@ func Compute(in Inputs) Snapshot {
 		Verdicts:         map[string]VerdictCount{},
 		Counterwitnesses: in.Counterwitnesses,
 		Tenants:          in.TenantsTotal,
+		Qualifications:   in.Qualifications,
 		ByControl:        map[string]ControlProof{},
 	}
 
@@ -227,17 +247,11 @@ func Compute(in Inputs) Snapshot {
 		}
 	}
 
-	// Un relevé AUTHENTIFIÉ est le seul qui atteste qu'un droit suffisant a rendu
-	// 200 sur un vrai tenant. Aucun n'existe : le compteur est dérivé, pas écrit.
-	authenticated := map[string]bool{}
 	for _, r := range in.Records {
 		s.Canary = append(s.Canary, CanaryProvider{
 			Provider: r.Provider, Recorded: r.Recorded, Authenticated: r.Authenticated,
 			Answered: r.Summary.Answered, Moved: r.Summary.Moved, Unreachable: r.Summary.Unreachable,
 		})
-		if r.Authenticated {
-			authenticated[r.Provider] = true
-		}
 	}
 	sort.Slice(s.Canary, func(i, j int) bool { return s.Canary[i].Provider < s.Canary[j].Provider })
 
@@ -267,9 +281,6 @@ func Compute(in Inputs) Snapshot {
 		}
 		if path.Source == "live" {
 			s.LivePaths++
-			if authenticated[path.Provider] {
-				s.LiveValidated++
-			}
 		}
 		byControl[path.Control] = append(byControl[path.Control], p)
 	}
@@ -302,7 +313,11 @@ func Compute(in Inputs) Snapshot {
 		sort.Strings(proof.Tenants)
 		s.ByControl[code] = proof
 	}
-	return s
+	if !asOf.IsZero() {
+		s.LiveAsOf = asOf.Format(time.RFC3339Nano)
+		s = s.At(asOf)
+	}
+	return s, nil
 }
 
 // Encode rend l'instantané sous sa forme committée : JSON indenté et trié, pour
@@ -321,6 +336,11 @@ func Decode(raw []byte) (Snapshot, error) {
 	var s Snapshot
 	if err := json.Unmarshal(raw, &s); err != nil {
 		return Snapshot{}, fmt.Errorf("carte de qualité illisible : %w", err)
+	}
+	for _, q := range s.Qualifications {
+		if err := q.validate(); err != nil {
+			return Snapshot{}, fmt.Errorf("qualification %s dans la carte : %w", q.RecordFile, err)
+		}
 	}
 	return s, nil
 }

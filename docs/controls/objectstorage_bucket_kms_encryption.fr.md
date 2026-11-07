@@ -63,7 +63,7 @@ porte son motif :
 | exoscale | live | ∅ `not-applicable` | SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4). |
 | outscale | terraform | ∅ `not-applicable` | OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A. |
 | outscale | live | ∅ `not-applicable` | OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A. |
-| scaleway | terraform | ◐ `partial` | attribut décisif « sse_kms_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| scaleway | terraform | ◐ `partial` | attribut décisif « sse_kms_enabled » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 

@@ -1,29 +1,31 @@
 {
   "controls": 58,
-  "paths": 186,
-  "paths_proven": 34,
-  "obligations": 470,
-  "proven": 101,
+  "paths": 190,
+  "paths_proven": 38,
+  "obligations": 478,
+  "proven": 111,
   "verdicts": {
     "fail": {
-      "required": 142,
-      "proven": 26
+      "required": 144,
+      "proven": 29
     },
     "not-applicable": {
       "required": 24,
       "proven": 12
     },
     "not-evaluated": {
-      "required": 162,
-      "proven": 25
+      "required": 166,
+      "proven": 29
     },
     "pass": {
-      "required": 142,
-      "proven": 38
+      "required": 144,
+      "proven": 41
     }
   },
   "live_paths": 104,
-  "live_validated": 0,
+  "live_validated": 40,
+  "live_verdicts": 40,
+  "live_as_of": "2026-09-11T07:34:27Z",
   "counterwitnesses": 2,
   "tenants": 6,
   "canary": [
@@ -50,6 +52,198 @@
       "answered": 7,
       "moved": 0,
       "unreachable": 0
+    }
+  ],
+  "qualifications": [
+    {
+      "provider": "exoscale",
+      "source": "live",
+      "recorded_at": "2026-09-11T07:34:27Z",
+      "tool_version": "0.1.0-dev",
+      "tool_digest": "vcs:2cf48ca9cd0967a16aa6b2f5396749503a6a04dd+modified",
+      "report_sha256": "a91afd146b7857ad5dd429eef7f4154174b43991130a1e8b2c05bc6f70952b87",
+      "assessment_sha256": "484b5e4b1967161408a043df72492922afd3e846b7cc3e87bc24c4f5052d596a",
+      "reevaluated_expected_sha256": "d655e8534ed6fe7398720a292083d25dad9587d9fa9acf37df945ee3a50e3ed7",
+      "observations": [
+        {
+          "control": "blockstorage_volume_encryption",
+          "verdict": "pass"
+        },
+        {
+          "control": "blockstorage_volume_snapshots_exist",
+          "verdict": "fail"
+        },
+        {
+          "control": "compute_instance_has_security_group",
+          "verdict": "pass"
+        },
+        {
+          "control": "compute_instance_no_secrets_in_user_data",
+          "verdict": "fail"
+        },
+        {
+          "control": "compute_instance_public_ip_with_open_securitygroup",
+          "verdict": "fail"
+        },
+        {
+          "control": "governance_provider_sovereignty",
+          "verdict": "fail"
+        },
+        {
+          "control": "governance_resource_region_in_eu",
+          "verdict": "pass"
+        },
+        {
+          "control": "iam_role_key_lifetime_bounded",
+          "verdict": "fail"
+        },
+        {
+          "control": "iam_role_no_admin_privileges",
+          "verdict": "fail"
+        },
+        {
+          "control": "iam_role_source_ip_restricted",
+          "verdict": "fail"
+        },
+        {
+          "control": "kubernetes_cluster_audit_logging_enabled",
+          "verdict": "fail"
+        },
+        {
+          "control": "kubernetes_cluster_auto_upgrade_enabled",
+          "verdict": "fail"
+        },
+        {
+          "control": "kubernetes_cluster_control_plane_highly_available",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_documented",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_flow_matrix_documented",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_unrestricted_egress",
+          "verdict": "fail"
+        },
+        {
+          "control": "objectstorage_bucket_object_lock_enabled",
+          "verdict": "fail"
+        },
+        {
+          "control": "objectstorage_bucket_public_access",
+          "verdict": "fail"
+        },
+        {
+          "control": "objectstorage_bucket_versioning_enabled",
+          "verdict": "fail"
+        }
+      ],
+      "record_file": "references/qualification/evidence/exoscale-2026-09-11.json"
+    },
+    {
+      "provider": "scaleway",
+      "source": "live",
+      "recorded_at": "2026-09-11T05:13:16Z",
+      "tool_version": "0.1.0-dev",
+      "tool_digest": "vcs:74ebd40a490ddf0905957982e814949a0eb20584+modified",
+      "report_sha256": "e61343c891f316daf8cae3ff3718588287630818445b6c4caac4773388f4213e",
+      "assessment_sha256": "3545c40fdf0ea3384b78169de40ef85a6ea27b9b3bb843b7728069638e111012",
+      "reevaluated_expected_sha256": "094c6d5add5f38462418d04315b181616f3b2f1445cb91a7e1d38797934cbbcc",
+      "observations": [
+        {
+          "control": "compute_instance_has_security_group",
+          "verdict": "pass"
+        },
+        {
+          "control": "compute_instance_public_ip_with_open_securitygroup",
+          "verdict": "fail"
+        },
+        {
+          "control": "governance_provider_sovereignty",
+          "verdict": "pass"
+        },
+        {
+          "control": "governance_resource_region_in_eu",
+          "verdict": "pass"
+        },
+        {
+          "control": "governance_resource_required_tags",
+          "verdict": "fail"
+        },
+        {
+          "control": "iam_accesskey_expiration_set",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_all_ports",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_high_risk_tcp_ports",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_high_risk_udp_ports",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_22",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_allow_ingress_from_internet_to_tcp_port_3389",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_default_deny",
+          "verdict": "fail"
+        },
+        {
+          "control": "network_securitygroup_unrestricted_egress",
+          "verdict": "fail"
+        },
+        {
+          "control": "objectstorage_bucket_default_encryption",
+          "verdict": "fail"
+        },
+        {
+          "control": "objectstorage_bucket_kms_encryption",
+          "verdict": "fail"
+        },
+        {
+          "control": "objectstorage_bucket_object_lock_enabled",
+          "verdict": "fail"
+        },
+        {
+          "control": "objectstorage_bucket_public_access",
+          "verdict": "fail"
+        },
+        {
+          "control": "objectstorage_bucket_versioning_enabled",
+          "verdict": "fail"
+        }
+      ],
+      "record_file": "references/qualification/evidence/scaleway-2026-09-11.json"
     }
   ],
   "by_control": {
@@ -204,10 +398,8 @@
         {
           "provider": "exoscale",
           "source": "terraform",
-          "status": "supported",
+          "status": "partial",
           "required": [
-            "fail",
-            "pass",
             "not-evaluated"
           ]
         },
@@ -220,7 +412,21 @@
             "pass",
             "not-evaluated"
           ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/volume-snapshot-outscale-terraform.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/blockstorage_volume_snapshots_exist_test.rego",
@@ -558,14 +764,21 @@
         {
           "provider": "scaleway",
           "source": "terraform",
-          "status": "partial",
+          "status": "supported",
           "required": [
+            "fail",
+            "pass",
             "not-evaluated"
           ],
           "proven": [
+            "fail",
+            "pass",
             "not-evaluated"
           ]
         }
+      ],
+      "scenarios": [
+        "internal/veracity/testdata/scenarios/database-encryption-scaleway-terraform.yaml"
       ],
       "tenants": [
         "scaleway/ducklake"
@@ -856,6 +1069,21 @@
           ]
         },
         {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
           "provider": "scaleway",
           "source": "live",
           "status": "supported",
@@ -881,7 +1109,8 @@
         }
       ],
       "scenarios": [
-        "internal/veracity/testdata/scenarios/accesskey-expiration-scaleway-terraform.yaml"
+        "internal/veracity/testdata/scenarios/accesskey-expiration-scaleway-terraform.yaml",
+        "internal/veracity/testdata/scenarios/accesskey-expiry-outscale-terraform.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/iam_accesskey_expiration_set_test.rego"
@@ -903,10 +1132,22 @@
             "pass",
             "not-evaluated"
           ]
+        },
+        {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "partial",
+          "required": [
+            "not-evaluated"
+          ],
+          "proven": [
+            "not-evaluated"
+          ]
         }
       ],
       "scenarios": [
-        "internal/veracity/testdata/scenarios/accesskey-rotation-outscale-live.yaml"
+        "internal/veracity/testdata/scenarios/accesskey-rotation-outscale-live.yaml",
+        "internal/veracity/testdata/scenarios/accesskey-rotation-outscale-terraform.yaml"
       ],
       "rego_tests": [
         "internal/commonrules/rules/iam_accesskey_rotated_test.rego"
@@ -1021,6 +1262,21 @@
           ]
         },
         {
+          "provider": "outscale",
+          "source": "terraform",
+          "status": "supported",
+          "required": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ],
+          "proven": [
+            "fail",
+            "pass",
+            "not-evaluated"
+          ]
+        },
+        {
           "provider": "scaleway",
           "source": "live",
           "status": "supported",
@@ -1044,6 +1300,7 @@
         }
       ],
       "scenarios": [
+        "internal/veracity/testdata/scenarios/root-access-key-outscale-terraform.yaml",
         "internal/veracity/testdata/scenarios/root-access-key-scaleway-live.yaml"
       ],
       "rego_tests": [
@@ -2702,8 +2959,8 @@
   },
   "precision": {
     "controls": 43,
-    "detection_proven": 21,
-    "with_counterexample": 19,
+    "detection_proven": 22,
+    "with_counterexample": 20,
     "false_positives": 0,
     "counterwitnesses": 2
   }

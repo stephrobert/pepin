@@ -574,8 +574,8 @@ func TestProjectDistinguishesAbsentFromEmptyCollection(t *testing.T) {
 func TestValidateTransform(t *testing.T) {
 	// Connus : bare, préfixés, chaînage, table de remplacement.
 	for _, ok := range []any{
-		"lower", "range_from", "list", "nonempty",
-		"default:0.0.0.0/0", "contains:iam", "equals:x", "pluck:ip",
+		"lower", "range_from", "list", "nonempty", "to_bool",
+		"default:0.0.0.0/0", "default_null:false", "contains:iam", "equals:x", "pluck:ip",
 		[]any{"default:accept", "lower"},
 		map[string]any{"any": "all"},
 	} {
@@ -589,6 +589,66 @@ func TestValidateTransform(t *testing.T) {
 	}
 	if bad := ValidateTransform([]any{"lower", "nope"}); len(bad) != 1 || bad[0] != "nope" {
 		t.Errorf("typo dans un chaînage non détectée : %v", bad)
+	}
+}
+
+func TestToBoolConvertsOnlyCanonicalStrings(t *testing.T) {
+	tests := []struct {
+		name string
+		in   any
+		want any
+	}{
+		{"true boolean", true, true},
+		{"false boolean", false, false},
+		{"true string", "true", true},
+		{"false string", "false", false},
+		{"numeric string", "1", "1"},
+		{"short string", "t", "t"},
+		{"uppercase string", "TRUE", "TRUE"},
+		{"number", 1, 1},
+		{"nil", nil, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := applyTransform(tt.in, "to_bool"); got != tt.want {
+				t.Errorf("to_bool(%#v) = %#v; want %#v", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDefaultBoolProjectionDistinguishesAbsentFromNull(t *testing.T) {
+	tests := []struct {
+		name    string
+		item    map[string]any
+		want    any
+		present bool
+	}{
+		{"absent", map[string]any{}, nil, false},
+		{"null", map[string]any{"encrypted": nil}, false, true},
+		{"true", map[string]any{"encrypted": true}, true, true},
+		{"false", map[string]any{"encrypted": false}, false, true},
+		{"empty string", map[string]any{"encrypted": ""}, "", true},
+		{"invalid string", map[string]any{"encrypted": "1"}, "1", true},
+	}
+	mapping := map[string]string{"encrypted": "encrypted"}
+	transforms := map[string]any{"encrypted": []any{"default_null:false", "to_bool"}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, present := Project(tt.item, mapping, transforms)["encrypted"]
+			if present != tt.present || got != tt.want {
+				t.Errorf("projection = %#v, present=%t; want %#v, present=%t",
+					got, present, tt.want, tt.present)
+			}
+		})
+	}
+}
+
+func TestDefaultStillReplacesEmptyString(t *testing.T) {
+	for _, input := range []any{nil, ""} {
+		if got := applyTransform(input, "default:fallback"); got != "fallback" {
+			t.Errorf("default(%#v) = %#v; want fallback", input, got)
+		}
 	}
 }
 

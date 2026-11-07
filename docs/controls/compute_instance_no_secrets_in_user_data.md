@@ -57,7 +57,7 @@ reason:
 
 | Provider | Source | Status | Reason |
 |---|---|---|---|
-| scaleway | live | ◐ `partial` | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| scaleway | live | ◐ `partial` | deciding attribute "user_data" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 

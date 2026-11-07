@@ -61,7 +61,7 @@ reason:
 |---|---|---|---|
 | exoscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
 | outscale | terraform | ✗ `unsupported` | this source produces no resource of type "object_storage_bucket" |
-| scaleway | terraform | ◐ `partial` | deciding attribute "versioning" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| scaleway | terraform | ◐ `partial` | deciding attribute "versioning" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 
 ## What Pépin can conclude
 

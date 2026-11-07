@@ -159,7 +159,7 @@ pepin scan scaleway --terraform plan.json
 <!-- pepin:gen provider-scaleway-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 17 | 8 | 2 | 31 |
+| terraform | 18 | 7 | 2 | 31 |
 | live | 20 | 2 | 2 | 34 |
 <!-- /pepin:gen provider-scaleway-coverage -->
 
@@ -183,17 +183,18 @@ A `not-applicable` is a claim, so it carries its justification, taken from the p
 <!-- pepin:gen provider-scaleway-onesource -->
 | Control | Observable only through | Reason on the blind side |
 |---|---|---|
-| `compute_instance_no_secrets_in_user_data` | terraform | deciding attribute "user_data" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `compute_instance_public_ip_with_open_securitygroup` | live | deciding attribute "nic_public_ips / public_ip" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_no_secrets_in_user_data` | terraform | deciding attribute "user_data" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
+| `compute_instance_public_ip_with_open_securitygroup` | live | deciding attribute "nic_public_ips / public_ip" not projected on correlated type "compute_instance": a capability guard, so the scan returns "not-evaluated" |
 | `database_backup_enabled` | terraform | this source produces no resource of type "managed_database" |
+| `database_encryption_at_rest_enabled` | terraform | this source produces no resource of type "managed_database" |
 | `database_service_not_open_to_internet` | terraform | this source produces no resource of type "managed_database" |
 | `iam_apiaccesspolicy_max_key_expiration` | live | this source produces no resource of type "api_access_policy" |
-| `iam_no_root_access_key` | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `iam_no_root_access_key` | live | deciding attribute "owner_application_id / owner_user_id / root_owned / scope" not projected on correlated type "access_key": a capability guard, so the scan returns "not-evaluated" |
 | `iam_policy_no_privilege_escalation` | terraform | this source produces no resource of type "iam_policy" |
 | `iam_user_mfa_enabled` | live | this source produces no resource of type "iam_user" |
-| `objectstorage_bucket_default_encryption` | live | deciding attribute "default_encryption_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `objectstorage_bucket_kms_encryption` | live | deciding attribute "sse_kms_enabled" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
-| `objectstorage_bucket_versioning_enabled` | live | deciding attribute "versioning" not projected by this source: a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_default_encryption` | live | deciding attribute "default_encryption_enabled" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_kms_encryption` | live | deciding attribute "sse_kms_enabled" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
+| `objectstorage_bucket_versioning_enabled` | live | deciding attribute "versioning" not projected on correlated type "object_storage_bucket": a capability guard, so the scan returns "not-evaluated" |
 <!-- /pepin:gen provider-scaleway-onesource -->
 
 This is the table to read before comparing a plan scan with a live scan of the same tenant:

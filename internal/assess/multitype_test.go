@@ -28,7 +28,7 @@ func TestAnIncompleteSecondTypeDegradesTheControl(t *testing.T) {
 	}}}
 	scope := map[string]bool{"compute_instance_public_ip_with_open_securitygroup": true}
 
-	got := DegradedControls(coll, nil, scope)
+	got := DegradedControls(coll, nil, scope, nil)
 	unit, ok := got["compute_instance_public_ip_with_open_securitygroup"]
 	if !ok {
 		t.Fatal("un contrôle qui corrèle security_group_rule n'est pas dégradé quand cette " +
@@ -51,7 +51,32 @@ func TestOnlyTheTypesAControlReadsDegradeIt(t *testing.T) {
 	}}}
 	scope := map[string]bool{"compute_instance_public_ip_with_open_securitygroup": true}
 
-	if got := DegradedControls(coll, nil, scope); len(got) != 0 {
+	if got := DegradedControls(coll, nil, scope, nil); len(got) != 0 {
 		t.Fatalf("un contrôle qui ne lit pas ce type ne doit pas être dégradé, obtenu %v", got)
+	}
+}
+
+func TestTaggingDegradationUsesOnlyConfiguredResourceTypes(t *testing.T) {
+	coll := model.Collection{Units: []model.CollectionUnit{{
+		Unit: "object_storage_bucket", Types: []string{"object_storage_bucket"},
+		Attempted: true, Error: model.OutcomeUnreadable,
+	}}}
+	scope := map[string]bool{"governance_resource_required_tags": true}
+	for _, tt := range []struct {
+		name  string
+		types []string
+		want  bool
+	}{
+		{"includes incomplete type", []string{"compute_instance", "object_storage_bucket"}, true},
+		{"excludes incomplete type", []string{"compute_instance"}, false},
+		{"explicitly empty", []string{}, false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := DegradedControls(coll, nil, scope, tt.types)
+			unit, found := got["governance_resource_required_tags"]
+			if found != tt.want || (found && unit.Unit != "object_storage_bucket") {
+				t.Fatalf("dégradation = %v ; attendue = %t", got, tt.want)
+			}
+		})
 	}
 }

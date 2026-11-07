@@ -7,18 +7,30 @@
 package objectstorage
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 
+	"github.com/stephrobert/pepin/internal/collect"
 	"github.com/stephrobert/pepin/internal/model"
+)
+
+const (
+	maxListBucketsPages = 1000
+	maxListBucketsBytes = 64 << 20
 )
 
 // CollectBuckets liste les buckets d'un endpoint S3-compatible et projette
@@ -47,6 +59,15 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 	if err != nil {
 		return nil, fmt.Errorf("configuration S3 : %w", err)
 	}
+	listBucketsPath, err := endpointPath(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("endpoint S3 : %w", err)
+	}
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	cfg.HTTPClient = listBucketsHTTPClient{next: httpClient, path: listBucketsPath}
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		if endpoint != "" {
 			o.BaseEndpoint = &endpoint
@@ -54,18 +75,102 @@ func CollectBuckets(ctx context.Context, provider, endpoint, region, accessKey, 
 		o.UsePathStyle = true // requis par les endpoints S3-compatibles souverains.
 	})
 
-	listed, err := client.ListBuckets(ctx, &s3.ListBucketsInput{})
-	if err != nil {
-		return nil, fmt.Errorf("ListBuckets : %w", err)
-	}
 	var out []model.Resource
-	for _, b := range listed.Buckets {
-		if b.Name == nil {
-			continue
+	var token *string
+	seenTokens := map[string]bool{}
+	for page := 0; page < maxListBucketsPages; page++ {
+		listed, err := client.ListBuckets(ctx, &s3.ListBucketsInput{ContinuationToken: token})
+		if err != nil {
+			return out, fmt.Errorf("ListBuckets : %w", err)
 		}
-		out = append(out, collectBucket(ctx, client, provider, region, *b.Name, sseKMS, tagsPersisted))
+		for _, b := range listed.Buckets {
+			if b.Name == nil || strings.TrimSpace(*b.Name) == "" {
+				return out, &collect.UnreadableError{
+					Call: "s3:ListBuckets", Err: fmt.Errorf("bucket sans nom"),
+				}
+			}
+			out = append(out, collectBucket(ctx, client, provider, region, *b.Name, sseKMS, tagsPersisted))
+		}
+		if listed.ContinuationToken == nil || *listed.ContinuationToken == "" {
+			return out, nil
+		}
+		next := *listed.ContinuationToken
+		if seenTokens[next] {
+			return out, &collect.UnreadableError{
+				Call: "s3:ListBuckets", Err: fmt.Errorf("jeton de pagination répété"),
+			}
+		}
+		seenTokens[next] = true
+		token = &next
 	}
-	return out, nil
+	return out, &collect.TruncatedError{Call: "s3:ListBuckets", MaxPages: maxListBucketsPages}
+}
+
+type listBucketsHTTPClient struct {
+	next aws.HTTPClient
+	path string
+}
+
+func (c listBucketsHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	resp, err := c.next.Do(req)
+	if err != nil || resp == nil || req.Method != http.MethodGet ||
+		strings.TrimRight(req.URL.Path, "/") != strings.TrimRight(c.path, "/") ||
+		resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return resp, err
+	}
+
+	if resp.Body == nil {
+		return nil, &collect.UnreadableError{Call: "s3:ListBuckets", Err: fmt.Errorf("corps absent")}
+	}
+	body, err := readListBucketsBody(resp.Body, maxListBucketsBytes)
+	_ = resp.Body.Close()
+	if err != nil {
+		return nil, &collect.UnreadableError{Call: "s3:ListBuckets", Err: err}
+	}
+	if err := validateListBucketsResponse(body); err != nil {
+		return nil, &collect.UnreadableError{Call: "s3:ListBuckets", Err: err}
+	}
+	resp.Body = io.NopCloser(bytes.NewReader(body))
+	return resp, nil
+}
+
+func readListBucketsBody(body io.Reader, limit int64) ([]byte, error) {
+	raw, err := io.ReadAll(io.LimitReader(body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(raw)) > limit {
+		return nil, fmt.Errorf("réponse ListBuckets supérieure à %d octets", limit)
+	}
+	return raw, nil
+}
+
+func endpointPath(endpoint string) (string, error) {
+	if endpoint == "" {
+		return "/", nil
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return "", err
+	}
+	if !u.IsAbs() || u.Host == "" {
+		return "", fmt.Errorf("URL absolue attendue")
+	}
+	return "/" + strings.Trim(u.Path, "/"), nil
+}
+
+func validateListBucketsResponse(body []byte) error {
+	var response struct {
+		XMLName xml.Name  `xml:"ListAllMyBucketsResult"`
+		Buckets *struct{} `xml:"Buckets"`
+	}
+	if err := xml.Unmarshal(body, &response); err != nil {
+		return fmt.Errorf("réponse ListBuckets illisible (XML invalide) : %w", err)
+	}
+	if response.XMLName.Local != "ListAllMyBucketsResult" || response.Buckets == nil {
+		return fmt.Errorf("réponse ListBuckets illisible : document S3 ListAllMyBucketsResult avec Buckets attendu")
+	}
+	return nil
 }
 
 // collectBucket interroge ACL, versioning, policy et tags d'un bucket (best

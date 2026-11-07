@@ -1,0 +1,19 @@
+# L'âge d'une clé sur un plan Terraform Outscale.
+control: iam_accesskey_rotated
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: not-evaluated
+    why: "creation_date est calculée après apply et n'est pas présente dans le plan"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_access_key.member
+              type: outscale_access_key
+              name: member
+              values:
+                user_name: pepin-qual-user
+                state: INACTIVE

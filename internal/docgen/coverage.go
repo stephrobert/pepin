@@ -185,6 +185,7 @@ func BuildMatrix(root, lang string) (Matrix, error) {
 	}
 
 	required := assess.RequiredAttrs()
+	requiredByType := assess.DecidingAttrsByType()
 	all := referentiel.All()
 	codes := make([]string, 0, len(all))
 	for code := range all {
@@ -210,7 +211,8 @@ func BuildMatrix(root, lang string) (Matrix, error) {
 		for name := range descs {
 			row.Cells[name] = map[Source]Cell{}
 			for _, src := range []Source{SourceTerraform, SourceLive} {
-				row.Cells[name][src] = cellStatus(l, name, ctl, src, projections[name][src], required[code])
+				row.Cells[name][src] = cellStatus(
+					l, name, ctl, src, projections[name][src], required[code], requiredByType[code])
 			}
 		}
 		rows = append(rows, row)
@@ -223,7 +225,15 @@ func BuildMatrix(root, lang string) (Matrix, error) {
 // source, verrou `verifie` du contrat, puis projection de l'attribut décisif. Toute
 // divergence avec cmd/scan.go se verrait comme une case verte que le scan rend
 // « non évaluée » : c'est pourquoi le verrou lui-même (assess.Verified) est partagé.
-func cellStatus(l i18n.Lang, provider string, ctl referentiel.Control, src Source, proj projection, required []string) Cell {
+func cellStatus(
+	l i18n.Lang,
+	provider string,
+	ctl referentiel.Control,
+	src Source,
+	proj projection,
+	required []string,
+	requiredByType map[string][]string,
+) Cell {
 	code := ctl.Code
 	if reason := genprovider.NonApplicableReasonIn(l, provider, code); reason != "" {
 		return Cell{Status: NotApplicable, Reason: reason}
@@ -249,7 +259,45 @@ func cellStatus(l i18n.Lang, provider string, ctl referentiel.Control, src Sourc
 			"contrat du fournisseur : le type « "+typ+" » n'est pas déclaré `verifie` ("+etatLabel(l, provider, typ)+")",
 			"provider contract: type \""+typ+"\" is not declared `verifie` ("+etatLabel(l, provider, typ)+")")}
 	}
-	if len(required) > 0 && !anyProjected(proj.attrs[typ], required) {
+	if typ == "" && len(required) > 0 && !anyProjected(proj.attrs[typ], required) {
+		return Cell{Status: Partial, Reason: i18n.TIn(l,
+			"attribut décisif « "+strings.Join(required, " / ")+" » non projeté par cette source : garde de capacité, le scan rend « not-evaluated »",
+			"deciding attribute \""+strings.Join(required, " / ")+"\" not projected by this source: a capability guard, so the scan returns \"not-evaluated\"")}
+	}
+	if typ != "" {
+		requiredTypes := make([]string, 0, len(requiredByType))
+		for requiredType := range requiredByType {
+			requiredTypes = append(requiredTypes, requiredType)
+		}
+		sort.Strings(requiredTypes)
+		for _, requiredType := range requiredTypes {
+			if requiredType == "" {
+				continue
+			}
+			attrs := requiredByType[requiredType]
+			if !proj.types[requiredType] {
+				return Cell{Status: Partial, Reason: i18n.TIn(l,
+					"la source ne projette pas le type corrélé « "+requiredType+" » : le contrôle rend « not-evaluated » plutôt que de conclure sans cette ressource",
+					"the source does not project correlated type \""+requiredType+"\": the control returns \"not-evaluated\" rather than conclude without that resource")}
+			}
+			if genprovider.TypeEtat(provider, requiredType) != "verifie" {
+				return Cell{Status: Partial, Reason: i18n.TIn(l,
+					"contrat du fournisseur : le type corrélé « "+requiredType+" » n'est pas déclaré `verifie` ("+etatLabel(l, provider, requiredType)+")",
+					"provider contract: correlated type \""+requiredType+"\" is not declared `verifie` ("+etatLabel(l, provider, requiredType)+")")}
+			}
+			if len(attrs) > 0 && !anyProjected(proj.attrs[requiredType], attrs) {
+				if proj.measured[requiredType] && anyProjected(proj.declared[requiredType], attrs) {
+					return Cell{Status: Partial, Reason: i18n.TIn(l,
+						"attribut décisif « "+strings.Join(attrs, " / ")+" » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated »",
+						"deciding attribute \""+strings.Join(attrs, " / ")+"\" declared by the mapping but ABSENT from the reference plans: either the value exists only after `apply`, or the argument is optional and real-world HCL does not write it — a capability guard, so the scan returns \"not-evaluated\"")}
+				}
+				return Cell{Status: Partial, Reason: i18n.TIn(l,
+					"attribut décisif « "+strings.Join(attrs, " / ")+" » non projeté sur le type corrélé « "+requiredType+" » : garde de capacité, le scan rend « not-evaluated »",
+					"deciding attribute \""+strings.Join(attrs, " / ")+"\" not projected on correlated type \""+requiredType+"\": a capability guard, so the scan returns \"not-evaluated\"")}
+			}
+		}
+	}
+	if typ != "" && len(requiredByType) == 0 && len(required) > 0 && !anyProjected(proj.attrs[typ], required) {
 		// Deux motifs distincts, et la nuance vaut la peine : « le mapping ne le
 		// nomme pas » se corrige en écrivant le mapping ; « le mapping le nomme mais
 		// aucun plan ne le porte » ne se corrige pas ainsi, parce que la valeur

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/stephrobert/pepin/internal/canary"
 	"github.com/stephrobert/pepin/internal/quality"
@@ -39,6 +40,10 @@ func BuildQuality(root string, m Matrix) (quality.Snapshot, error) {
 		return quality.Snapshot{}, err
 	}
 	records, err := canary.Load(root)
+	if err != nil {
+		return quality.Snapshot{}, err
+	}
+	qualifications, err := quality.LoadQualifications(root)
 	if err != nil {
 		return quality.Snapshot{}, err
 	}
@@ -106,6 +111,7 @@ func BuildQuality(root string, m Matrix) (quality.Snapshot, error) {
 		Covered:            veracity.Merge(veracity.Covered(files), fromTenants),
 		Controls:           len(referentiel.All()),
 		Records:            records,
+		Qualifications:     qualifications,
 		ScenariosByPath:    scenariosByPath,
 		TenantsByPath:      tenantsByPath,
 		RegoTestsByControl: regoTests,
@@ -117,7 +123,7 @@ func BuildQuality(root string, m Matrix) (quality.Snapshot, error) {
 		HighSeverityControls: hautes,
 		CounterexamplePairs:  veracity.CounterexamplePairs(files),
 		FalsePositives:       faussesAlertes,
-	}), nil
+	})
 }
 
 // regoTestsByControl rend, par code de contrôle, les fichiers `*_test.rego` qui le
@@ -188,19 +194,20 @@ func verdictRows(lang string) []verdictRow {
 
 // qualityText porte les libellés de la page, dans une langue.
 type qualityText struct {
-	title, intro, ruleTitle, ruleBody                      string
-	figures, colFigure, colCount                           string
-	controls, paths, pathsProven, obligations, provenWord  string
-	veracityTitle, veracityIntro                           string
-	colVerdict, colMeaning, colRequired, colProven, colPct string
-	liveTitle, liveBody, liveRow                           string
-	canaryTitle, canaryIntro                               string
-	colProvider, colRecorded, colAnswered, colMoved, colUn string
-	fpTitle, fpBody, counterwitnesses, tenantsWord         string
-	precTitle, precBody, precControls, precDetect          string
-	precCounter, precFP, precNoFN                          string
-	blindTitle, blindBody                                  string
-	generated                                              string
+	title, intro, ruleTitle, ruleBody                         string
+	figures, colFigure, colCount                              string
+	controls, paths, pathsProven, obligations, provenWord     string
+	veracityTitle, veracityIntro                              string
+	colVerdict, colMeaning, colRequired, colProven, colPct    string
+	liveTitle, liveBody, liveRow, liveValidated, liveVerdicts string
+	liveAsOf, colExpiry, colBinary, colEvidence               string
+	canaryTitle, canaryIntro                                  string
+	colProvider, colRecorded, colAnswered, colMoved, colUn    string
+	fpTitle, fpBody, counterwitnesses, tenantsWord            string
+	precTitle, precBody, precControls, precDetect             string
+	precCounter, precFP, precNoFN                             string
+	blindTitle, blindBody                                     string
+	generated                                                 string
 }
 
 func qualityStrings(lang string) qualityText {
@@ -208,7 +215,7 @@ func qualityStrings(lang string) qualityText {
 		return qualityText{
 			title: "Carte de qualité de détection",
 			intro: "Ce que Pépin peut PROUVER de ses propres verdicts, et ce qu'il ne peut pas.\n" +
-				"Chaque chiffre de cette page est dérivé des artefacts du dépôt — obligations\ncalculées depuis la matrice de couverture, scénarios de véracité, tenants de\nréférence, relevés de canari. Aucun n'est saisi.",
+				"Chaque chiffre de cette page est dérivé des artefacts du dépôt — obligations\ncalculées depuis la matrice de couverture, scénarios de véracité, tenants de\nréférence, relevés de canari et de qualification. Aucun n'est saisi.",
 			ruleTitle: "La règle",
 			ruleBody: "**Aucun chiffre publié ici ne peut être meilleur que ce qui est mesuré.** Un\n" +
 				"pourcentage sans mesure derrière est un faux vert déplacé dans un tableau de\nbord, et il y est pire qu'ailleurs : personne ne relit un tableau de bord.\n\n" +
@@ -226,8 +233,17 @@ func qualityStrings(lang string) qualityText {
 			liveTitle: "Validé en live",
 			liveBody: "Un scan canari interroge le VRAI plan de contrôle d'un fournisseur, mais **sans\n" +
 				"identifiant** : il prouve qu'un endpoint existe et refuse, jamais qu'un droit\n*suffisant* rende `200` sur un tenant réel. Il ne vaut donc pas validation live\nd'un contrôle.\n\n" +
-				"Ce compteur ne s'incrémente que sur un relevé **authentifié**, et il n'en existe\naucun. Le zéro est dérivé, pas écrit : le jour où un mainteneur consigne un\nrelevé authentifié, il montera tout seul.",
-			liveRow:     "Chemins dont la source est une collecte live",
+				"Un chemin compte lorsqu'au moins un verdict `pass` ou `fail` requis a été\n" +
+				"explicitement comparé sur un tenant authentifié, pour ce contrôle et ce\nfournisseur. Cela ne prouve pas tous les verdicts de ce chemin et ne modifie\npas le registre de véracité. Les contre-exemples silencieux, attentes hors tenant\net défauts connus ne constituent pas une preuve de `pass`.\n\n" +
+				"Les relevés sont des faits historiques réévalués avec les attentes dont le\n" +
+				"hachage est consigné. Ils indiquent le binaire réellement exécuté, pas celui\nde la release. Le bundle vérifie l'intégrité, pas l'identité de son auteur.\n" +
+				"Un tenant que nous avons écrit ne prouve pas la justesse universelle d'une\nrègle ; les tenants tiers la complètent.",
+			liveRow:       "Chemins dont la source est une collecte live",
+			liveValidated: "Chemins avec au moins un verdict live validé",
+			liveVerdicts:  "Verdicts distincts validés en live",
+			liveAsOf: "Instantané historique au %s. Chaque relevé expire 90 jours après son\n" +
+				"horodatage ; le binaire retire les preuves périmées au moment de l'exécution ;\nle préflight refuse un fournisseur dont les relevés sont tous non frais.",
+			colExpiry: "Expire à (UTC)", colBinary: "Binaire qualifié", colEvidence: "Relevé",
 			canaryTitle: "Ce que les vrais plans de contrôle ont répondu",
 			canaryIntro: "Une requête non authentifiée par endpoint déclaré, à la qualification de release.\n" +
 				"Un endpoint qui répond existe et se résout ; un `moved` (404) dit qu'il a bougé.",
@@ -256,7 +272,7 @@ func qualityStrings(lang string) qualityText {
 	return qualityText{
 		title: "Detection quality map",
 		intro: "What Pépin can PROVE about its own verdicts, and what it cannot.\n" +
-			"Every figure on this page is derived from the repository's artefacts —\nobligations computed from the coverage matrix, veracity scenarios, reference\ntenants, canary records. None is typed in.",
+			"Every figure on this page is derived from the repository's artefacts —\nobligations computed from the coverage matrix, veracity scenarios, reference\ntenants, canary and qualification records. None is typed in.",
 		ruleTitle: "The rule",
 		ruleBody: "**No figure published here can be better than what is measured.** A percentage\n" +
 			"with no measurement behind it is a false green moved into a dashboard, and it is\nworse there than anywhere else: nobody re-reads a dashboard.\n\n" +
@@ -274,8 +290,17 @@ func qualityStrings(lang string) qualityText {
 		liveTitle: "Validated live",
 		liveBody: "A canary scan queries a provider's REAL control plane, but **with no credential**:\n" +
 			"it proves an endpoint exists and refuses, never that a *sufficient* right returns\n`200` on a real tenant. It therefore does not count as live validation of a\ncontrol.\n\n" +
-			"This counter only moves on an **authenticated** record, and none exists. The zero\nis derived, not written: the day a maintainer records an authenticated run, it\nwill rise on its own.",
-		liveRow:     "Paths whose source is a live collection",
+			"A path counts when at least one required `pass` or `fail` verdict was explicitly\n" +
+			"compared on an authenticated tenant for that control and provider. This does\nnot prove all verdicts on the path or change the veracity ledger. Silent\ncounterexamples, outside-tenant expectations and known defects do not prove a\n`pass`.\n\n" +
+			"Records are historical facts re-evaluated against the expectations whose hash\n" +
+			"is recorded. They identify the binary actually run, not the release binary.\nA bundle verifies integrity, not the identity of its author.\n" +
+			"A tenant we wrote does not prove a rule universally correct; third-party\ntenants complement it.",
+		liveRow:       "Paths whose source is a live collection",
+		liveValidated: "Paths with at least one validated live verdict",
+		liveVerdicts:  "Distinct verdicts validated live",
+		liveAsOf: "Historical snapshot as of %s. Each record expires 90 days after its timestamp;\n" +
+			"the binary excludes expired evidence at runtime and the preflight rejects a\nprovider whose recorded evidence is all stale.",
+		colExpiry: "Expires at (UTC)", colBinary: "Qualified binary", colEvidence: "Record",
 		canaryTitle: "What the real control planes answered",
 		canaryIntro: "One unauthenticated request per declared endpoint, at release qualification.\n" +
 			"An endpoint that answers exists and resolves; a `moved` (404) says it has shifted.",
@@ -305,7 +330,7 @@ func qualityStrings(lang string) qualityText {
 // qualityPage rend la page entière depuis l'instantané. Aucune prose n'y décrit un
 // chiffre : chaque nombre est lu dans le Snapshot, donc la page ne peut pas mentir
 // sans que l'instantané mente d'abord — et lui est gardé par la porte de fraîcheur.
-func qualityPage(lang string, s quality.Snapshot) string {
+func qualityPage(lang string, s quality.Snapshot) (string, error) {
 	t := qualityStrings(lang)
 	var b strings.Builder
 	label := "🇬🇧 English · [🇫🇷 Français](detection-quality.fr.md)"
@@ -340,9 +365,24 @@ func qualityPage(lang string, s quality.Snapshot) string {
 		blockText(lang).totalWord, s.Obligations, s.Proven, quality.Percent(s.Proven, s.Obligations))
 
 	b.WriteString("## " + t.liveTitle + "\n\n" + t.liveBody + "\n\n")
+	b.WriteString(fmt.Sprintf(t.liveAsOf, s.LiveAsOf) + "\n\n")
 	b.WriteString("| " + t.colFigure + " | " + t.colCount + " |\n|---|---:|\n")
 	row(t.liveRow, s.LivePaths)
+	row(t.liveValidated, s.LiveValidated)
+	row(t.liveVerdicts, s.LiveVerdicts)
 	_, _ = fmt.Fprintf(&b, "| %s | **%d %%** |\n\n", t.liveTitle, quality.Percent(s.LiveValidated, s.LivePaths))
+	b.WriteString("| " + t.colProvider + " | " + t.colRecorded + " | " + t.colExpiry + " | " + t.colBinary +
+		" | " + t.colEvidence + " |\n|---|---|---|---|---|\n")
+	for _, q := range s.Qualifications {
+		expires, err := q.ExpiresAt()
+		if err != nil {
+			return "", err
+		}
+		_, _ = fmt.Fprintf(&b, "| `%s` | %s | %s | `%s` (`%s`) | [JSON](../%s) |\n",
+			q.Provider, q.RecordedAt, expires.Format(time.RFC3339Nano),
+			q.ToolVersion, q.ToolDigest, q.RecordFile)
+	}
+	b.WriteString("\n")
 
 	b.WriteString("## " + t.canaryTitle + "\n\n" + t.canaryIntro + "\n\n")
 	b.WriteString("| " + t.colProvider + " | " + t.colRecorded + " | " + t.colAnswered +
@@ -368,5 +408,5 @@ func qualityPage(lang string, s quality.Snapshot) string {
 	b.WriteString("\n")
 
 	b.WriteString("## " + t.blindTitle + "\n\n" + t.blindBody + "\n")
-	return b.String()
+	return b.String(), nil
 }

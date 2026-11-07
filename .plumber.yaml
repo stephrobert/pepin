@@ -1,0 +1,13 @@
+version: "2.0"
+extends: plumber:default
+
+github:
+  controls:
+    githubActionMustComeFromAuthorizedSources:
+      includePlumberDefaults: true
+      trustedGithubActions:
+        - jdx/mise-action
+        - securego/gosec
+        - softprops/action-gh-release
+    branchMustBeProtected:
+      codeOwnerApprovalRequired: true

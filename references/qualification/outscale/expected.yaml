@@ -71,14 +71,19 @@ controls:
     live:
       fail: ["${output.api_key_root}"]
       silent: ["${output.api_key_no_expiry}", "${output.api_key_expiring}"]
-    # `outscale_access_key` n'est pas mappé sur le plan (#203).
-    terraform: not-evaluated
+    # #203 : dans le plan, `user_name` est null pour la clé du compte appelant et
+    # renseigné pour les clés EIM ; le mapping dérive root_owned de cette distinction.
+    terraform:
+      fail: [outscale_access_key.root]
+      silent: [outscale_access_key.no_expiry, outscale_access_key.expiring]
 
   iam_accesskey_expiration_set:
     live:
       fail: ["${output.api_key_no_expiry}"]
       silent: ["${output.api_key_expiring}", "${output.api_key_root}"]
-    terraform: not-evaluated
+    terraform:
+      fail: [outscale_access_key.no_expiry]
+      silent: [outscale_access_key.expiring, outscale_access_key.root]
 
   iam_accesskey_rotated:
     # Une date de création ne s'antidate pas : aucune clé du tenant n'a 90 jours. Le
@@ -346,7 +351,7 @@ controls:
       silent: ["${output.vm_exposed_id}", "${output.root_volume_exposed_id}", "${output.volume_snapshotted_id}", "${output.snapshot_private_id}", "${output.image_private_id}", "${output.bucket_hardened}", "${output.lb_http_name}"]
     terraform:
       fail: ['outscale_vm.public["untagged"]']
-      silent: ['outscale_vm.public["exposed"]']
+      silent: ['outscale_vm.public["exposed"]', outscale_volume.unsnapshotted, outscale_volume.snapshotted]
 
   governance_resource_region_in_eu:
     live: pass

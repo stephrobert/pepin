@@ -20,6 +20,7 @@ de drapeaux viennent de la surface gelée ; chaque aide ci-dessous est la sortie
 |---|---|
 | `pepin control` | _(aucun drapeau propre)_ |
 | `pepin control explain` | `--provider` |
+| `pepin diff` | `--format` |
 | `pepin provider` | _(aucun drapeau propre)_ |
 | `pepin provider list` | _(aucun drapeau propre)_ |
 | `pepin provider new` | _(aucun drapeau propre)_ |
@@ -39,11 +40,11 @@ séparément :
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v7** |
+| `cli` | verbes, drapeaux et codes de sortie | **v8** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
-| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v14** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v15** |
 <!-- /pepin:gen surface-versions -->
 
 Un numéro monte à **tout** changement de forme, ajout compris : il signifie « la surface a
@@ -88,6 +89,7 @@ Utilisation:
 Commandes disponibles:
   completion  Generate the autocompletion script for the specified shell
   control     Inspecter les contrôles du référentiel commun
+  diff        Comparer deux bundles de preuve
   help        Aide sur n'importe quelle commande
   provider    Gérer les providers déclaratifs (lister, valider, créer)
   scan        Évaluer la posture d'un cloud contre les politiques

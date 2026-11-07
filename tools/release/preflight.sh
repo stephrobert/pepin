@@ -149,6 +149,15 @@ else
   fi
 fi
 
+# Les qualifications authentifiées ne sont pas des canaris. Un historique ancien
+# reste conservé, mais chaque fournisseur qui en a un doit posséder au moins un
+# relevé encore frais ; le même code Go sert au compteur embarqué et à cette porte.
+if qualification_report="$(mise exec -- go run ./tools/release/qualification_preflight.go 2>&1)"; then
+  ok "$qualification_report"
+else
+  ko "qualifications authentifiées absentes, invalides ou périmées" "$qualification_report"
+fi
+
 # --- les promesses que le README publie, éprouvées en les déclenchant ---------
 #
 # Les codes de sortie et le bundle sont la surface que les CI des consommateurs
@@ -293,7 +302,7 @@ fi
 # `\(`, awk émet « escape sequence treated as plain ( » et la parenthèse devient
 # un GROUPE — le motif ne matche plus aucun nom de job, et le preflight conclut
 # « la CI est 'null' » au lieu de lire son état.
-ci_jobs='^(Build \\+ Test|golangci-lint|Audit \\(gosec \\+ govulncheck\\)|Analyze \\(go\\)|Dependency Review|Secret scanning|Secret scanning \\(pattern-based\\)|The image scans for real|The action installs only what it verified)$'
+ci_jobs='^(Build \\+ Test|golangci-lint|Audit \\(gosec \\+ govulncheck\\)|Analyze \\(go\\)|Dependency Review|Secret scanning|Secret scanning \\(pattern-based\\)|The image scans for real|The action installs only what it verified|Plumber \\(trust policy\\))$'
 if git remote | grep -q . && command -v gh >/dev/null 2>&1; then
   sha="$(git rev-parse HEAD)"
   if runs="$(gh api "repos/{owner}/{repo}/commits/$sha/check-runs?per_page=100" \
@@ -306,11 +315,21 @@ if git remote | grep -q . && command -v gh >/dev/null 2>&1; then
       "")        ko "aucun run de CI trouvé pour ce commit" "le pousser et attendre la CI" ;;
       *)         ko "la CI est '$state' sur ce commit" "on ne tague pas ce que la CI refuse" ;;
     esac
+    plumber_state="$(printf '%s\n' "$runs" \
+                     | awk -F'\t' '$1 == "Plumber (trust policy)" { print $2 }' \
+                     | sort -u | paste -sd, -)"
+    if [ "$plumber_state" = success ]; then
+      ok "Plumber a validé la politique de confiance sur ce commit"
+    else
+      ko "Plumber est '${plumber_state:-absent}' sur ce commit" \
+         "attendre le job Plumber (trust policy) sur main ; un job absent ou sauté ne valide pas la livraison"
+    fi
   else
     ko "impossible d'interroger la CI sur ce commit" "gh api a échoué : vérifier l'authentification, pas le commit"
   fi
 else
-  printf "  %s·%s CI non vérifiée (pas de remote, ou gh absent)\n" "$DIM" "$OFF"
+  ko "CI non vérifiée (pas de remote, ou gh absent)" \
+     "configurer origin et installer gh ; la livraison exige un résultat Plumber vérifié sur ce commit"
 fi
 
 echo

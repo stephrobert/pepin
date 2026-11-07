@@ -51,14 +51,29 @@ jobs:
       - name: Build
         run: mise run build
 
+      - name: Initialize pinned Terraform provider schemas
+        run: |
+          for provider in exoscale outscale scaleway; do
+            mise exec -- terraform -chdir="examples/$provider/terraform" init \
+              -backend=false -input=false -lockfile=readonly
+          done
+
       - name: Vet
         run: mise run vet
 
       - name: Go unit tests
+        env:
+          PEPIN_REQUIRE_TF_SCHEMA: "1"
         run: mise run test-go
 
       - name: Rego policy tests
         run: mise run test-rego
+
+      - name: Qualification comparison and evidence tests
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pepin-qualification-venv"
+          "$RUNNER_TEMP/pepin-qualification-venv/bin/python" -m pip install -r scripts/requirements.txt
+          PATH="$RUNNER_TEMP/pepin-qualification-venv/bin:$PATH" mise run qualify:selftest
 
       - name: Smoke test — providers
         run: ./pepin provider list
@@ -203,3 +218,48 @@ jobs:
 
       - name: Rejouer toutes les specs
         run: python3 tools/falsify/falsify.py --all tools/falsify/specs
+
+  plumber:
+    name: Plumber (trust policy)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: security
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+      id-token: write
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Require the governance read token
+        env:
+          GH_TOKEN: ${{ secrets.PLUMBER_ADMIN_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Set PLUMBER_ADMIN_TOKEN in the main-only security environment (Administration, Actions and Contents: read)."
+            exit 1
+          fi
+
+      - name: Plumber compliance scan
+        uses: getplumber/plumber@ec8cb3a7edd6a324b33e85109b627b2df6023d94 # v0.7.23
+        with:
+          version: v0.7.23
+          verify-attestation: 'true'
+          fail-warnings: 'true'
+          github-token: ${{ secrets.PLUMBER_ADMIN_TOKEN }}
+          metadata-token: ${{ github.token }}
+          config-file: .plumber.yaml
+          min-points: '100'
+          score-push: 'true'
+          upload-sarif: 'true'
+          upload-artifacts: 'true'

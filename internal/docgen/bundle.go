@@ -65,6 +65,8 @@ var toolDigest = regexp.MustCompile(`(?s)("name":\s*"tool-digest",\s*"value":\s*
 // componentDigest repère l'empreinte du binaire dans un composant d'assessment.
 var componentDigest = regexp.MustCompile(`(?s)("tool":\s*\{[^}]*"digest":\s*")[^"]+(")`)
 
+var toolDigestField = regexp.MustCompile(`(?s)("tool":\s*\{\s*"name":\s*"pepin",\s*"version":\s*"[^"]+",\s*"digest":\s*)"[^"]+"`)
+
 // rfc3339 repère un horodatage UTC.
 var rfc3339 = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`)
 
@@ -207,6 +209,7 @@ func normalizeBundleText(s, tmp, version string) string {
 		s = strings.ReplaceAll(s, `"`+nue+`"`, `"<version>"`)
 	}
 	s = componentDigest.ReplaceAllString(s, `${1}<provenance>${2}`)
+	s = toolDigestField.ReplaceAllString(s, `${1}"<binary-digest>"`)
 	s = vcsDigest.ReplaceAllString(s, "<provenance>")
 	s = sha64.ReplaceAllString(s, "<sha256>")
 	s = rfc3339.ReplaceAllString(s, "<timestamp>")

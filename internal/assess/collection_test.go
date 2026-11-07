@@ -109,7 +109,7 @@ func TestOnlyTheTypesOfAnIncompleteUnitAreDegraded(t *testing.T) {
 		"objectstorage_bucket_public_access":   true,
 		"control_not_declared_for_this_tenant": false, // hors périmètre du fournisseur
 	}
-	got := DegradedControls(coll, controlType, scope)
+	got := DegradedControls(coll, controlType, scope, nil)
 
 	if len(got) != 1 {
 		t.Fatalf("un seul contrôle dépend de l'unité incomplète, %d dégradés : %v", len(got), SortedCodes(got))
@@ -126,7 +126,7 @@ func TestACompleteCollectionDegradesNothing(t *testing.T) {
 	coll := model.Collection{}
 	coll.Record(model.CollectionUnit{Unit: "compute_instance", Types: []string{"compute_instance"},
 		Attempted: true, Complete: true})
-	got := DegradedControls(coll, map[string]string{"c": "compute_instance"}, map[string]bool{"c": true})
+	got := DegradedControls(coll, map[string]string{"c": "compute_instance"}, map[string]bool{"c": true}, nil)
 	if len(got) != 0 {
 		t.Errorf("une collecte complète ne dégrade rien, obtenu %v", SortedCodes(got))
 	}

@@ -26,11 +26,11 @@ See [Exit codes](exit-codes.md).
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v7** |
+| `cli` | verbs, flags and exit codes | **v8** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
-| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v14** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v15** |
 <!-- /pepin:gen surface-versions -->
 
 "Frozen" means a test fails when the shape moves and its version has not: field paths and JSON
@@ -372,7 +372,7 @@ The same assessment, rendered as an OSCAL 1.1.2 `assessment-results` document.
         },
         {
           "name": "tool-digest",
-          "value": "<provenance>",
+          "value": "<binary-digest>",
           "ns": "https://github.com/stephrobert/scankit/ns/oscal"
         },
 […]

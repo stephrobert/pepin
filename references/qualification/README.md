@@ -77,6 +77,31 @@ The output goes to `release-gate/` (ignored by git): `qualification-<provider>.j
 artifact. Those artifacts carry the resource identifiers of a real account: nothing
 enters the repository from there without reading it.
 
+## Public live-verdict record
+
+After a `GO` live run, destroy and verify the resources as above, then build the
+binary and derive a record without account or resource identifiers:
+
+```bash
+mise run build
+PROVIDER=scaleway mise run qualify:record > /tmp/scaleway-evidence.json
+```
+
+The generator rejects a plan-only run, an unproven destroy, a failed historical
+comparison, or a bundle whose integrity `pepin verify` rejects. It compares each
+control against the **current expectations**, excludes known defects, and keeps
+only `pass` or `fail` verdicts explicitly expected and verified on the tenant. A
+silent counterexample does not prove a `pass`. Review the JSON before adding it
+to `evidence/`, then run `mise run gen-docs`.
+
+The record preserves the exact timestamp and digest of the binary actually used, along with
+hashes of the report, assessment, and **re-evaluated** expectations
+(`reevaluated_expected_sha256`). It does not claim that the release binary was
+qualified. An unsigned bundle verifies integrity, not the identity of its author.
+The [quality map](../../docs/detection-quality.md) publishes the historical
+snapshot and expiry dates; at runtime, future evidence and evidence older than 90
+days no longer count.
+
 ## What NO-GO means
 
 | Difference | What it is |

@@ -20,6 +20,7 @@ by running the binary. A public flag that is missing here fails
 |---|---|
 | `pepin control` | _(no flag of its own)_ |
 | `pepin control explain` | `--provider` |
+| `pepin diff` | `--format` |
 | `pepin provider` | _(no flag of its own)_ |
 | `pepin provider list` | _(no flag of its own)_ |
 | `pepin provider new` | _(no flag of its own)_ |
@@ -39,11 +40,11 @@ independently:
 <!-- pepin:gen surface-versions -->
 | Surface | What is frozen | Version |
 |---|---|:-:|
-| `cli` | verbs, flags and exit codes | **v7** |
+| `cli` | verbs, flags and exit codes | **v8** |
 | `findings` | shape of `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | shape of the `--format assessment` document | **v1** |
 | `bundle` | shape of the evidence bundle (files, roles, manifest) | **v3** |
-| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v14** |
+| `inventory` | shape of the normalized inventory (envelope, resource, types and attributes) | **v15** |
 <!-- /pepin:gen surface-versions -->
 
 A version rises on **any** shape change, additions included: the number means "the surface has
@@ -87,6 +88,7 @@ Usage:
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
   control     Inspect the controls of the common reference
+  diff        Compare two evidence bundles
   help        Help about any command
   provider    Manage the declarative providers (list, validate, create)
   scan        Assess the posture of a cloud against the policies

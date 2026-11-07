@@ -49,23 +49,21 @@ source".
 | Provider | Terraform plan | Live collection |
 |---|:-:|:-:|
 | exoscale | ✗ | ✗ |
-| outscale | ✗ | ✅ |
+| outscale | ✅ | ✅ |
 | scaleway | ✅ | ✅ |
 | kubernetes | n/a | ✗ |
 
 Every cell that is not ✅ **while the control is declared for that provider** carries its
 reason:
 
-| Provider | Source | Status | Reason |
-|---|---|---|---|
-| outscale | terraform | ✗ `unsupported` | this source produces no resource of type "access_key" |
+_None: every declared cell is fully observable._
 
 ## What Pépin can conclude
 
 | Status | What the status asserts | Reachable from |
 |---|---|---|
-| `fail` | a deviation was detected on a real resource | outscale / live · scaleway / terraform · scaleway / live |
-| `pass` | the deciding data was collected, and it is compliant | outscale / live · scaleway / terraform · scaleway / live |
+| `fail` | a deviation was detected on a real resource | outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
+| `pass` | the deciding data was collected, and it is compliant | outscale / terraform · outscale / live · scaleway / terraform · scaleway / live |
 | `not-applicable` | the provider contract declares the control untestable, with its justification | — |
 | `not-evaluated` | the control is implemented, but the data it depends on was not confirmed | — |
 
@@ -96,7 +94,7 @@ is, or a note anchored on the official documentation. See
 
 ```bash
 # from a Terraform plan: nothing is provisioned
-./pepin scan scaleway --terraform plan.json --format assessment
+./pepin scan outscale --terraform plan.json --format assessment
 
 # from the provider API: effective configuration
 ./pepin scan outscale --live --format assessment

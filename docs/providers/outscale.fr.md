@@ -242,6 +242,7 @@ n'en montre aucune.
 <!-- pepin:gen provider-outscale-terraform -->
 | Ressource Terraform | Type normalisé | Bloc éclaté |
 |---|---|---|
+| `outscale_access_key` | `access_key` | — |
 | `outscale_api_access_rule` | `api_access_rule` | — |
 | `outscale_image_launch_permission` | `compute_image` | — |
 | `outscale_load_balancer` | `load_balancer` | — |
@@ -251,6 +252,7 @@ n'en montre aucune.
 | `outscale_security_group_rule` | `security_group_rule` | `rules[*]` |
 | `outscale_subnet` | `subnet` | — |
 | `outscale_vm` | `compute_instance` | — |
+| `outscale_volume` | `blockstorage_volume` | — |
 <!-- /pepin:gen provider-outscale-terraform -->
 
 ```bash
@@ -268,7 +270,7 @@ rend un booléen. Les règles normalisent les deux
 <!-- pepin:gen provider-outscale-coverage -->
 | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---:|---:|---:|---:|
-| terraform | 18 | 6 | 4 | 30 |
+| terraform | 20 | 8 | 4 | 26 |
 | live | 40 | 1 | 4 | 13 |
 <!-- /pepin:gen provider-outscale-coverage -->
 
@@ -292,23 +294,21 @@ source de vérité est la [matrice de couverture](../coverage.fr.md).
 | Contrôle | Observable uniquement via | Motif du côté aveugle |
 |---|---|---|
 | `blockstorage_snapshot_not_public` | live | cette source ne produit aucune ressource de type « blockstorage_snapshot » |
-| `blockstorage_volume_snapshots_exist` | live | cette source ne produit aucune ressource de type « blockstorage_volume » |
+| `blockstorage_volume_snapshots_exist` | live | la source ne projette pas le type corrélé « blockstorage_snapshot » : le contrôle rend « not-evaluated » plutôt que de conclure sans cette ressource |
 | `compute_instance_deletion_protection` | live | attribut décisif « deletion_protection » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_public_ip_with_open_securitygroup` | live | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
-| `iam_accesskey_expiration_set` | live | cette source ne produit aucune ressource de type « access_key » |
-| `iam_accesskey_rotated` | live | cette source ne produit aucune ressource de type « access_key » |
+| `iam_accesskey_rotated` | live | attribut décisif « creation_date » non projeté sur le type corrélé « access_key » : garde de capacité, le scan rend « not-evaluated » |
 | `iam_account_mfa_enforced` | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | live | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | live | cette source ne produit aucune ressource de type « api_access_summary » |
-| `iam_no_root_access_key` | live | cette source ne produit aucune ressource de type « access_key » |
 | `kubernetes_cluster_auto_upgrade_enabled` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_control_plane_highly_available` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_deletion_protection` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
 | `kubernetes_cluster_not_publicly_accessible` | live | cette source ne produit aucune ressource de type « kubernetes_cluster » |
-| `loadbalancer_logging_enabled` | live | attribut décisif « access_log » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `loadbalancer_logging_enabled` | live | attribut décisif « access_log » non projeté sur le type corrélé « load_balancer » : garde de capacité, le scan rend « not-evaluated » |
 | `loadbalancer_ssl_listeners` | live | attribut décisif « load_balancer_type » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `network_peering_cross_organization` | live | cette source ne produit aucune ressource de type « network_peering » |
-| `network_securitygroup_default_restrict_traffic` | live | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `network_securitygroup_default_restrict_traffic` | live | attribut décisif « security_group_name » non projeté sur le type corrélé « security_group_rule » : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_object_lock_enabled` | live | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_public_access` | live | cette source ne produit aucune ressource de type « object_storage_bucket » |

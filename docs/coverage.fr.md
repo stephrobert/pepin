@@ -43,7 +43,7 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 
 | Famille | Contrôles | exoscale | outscale | scaleway |
 |---|---:|---|---|---|
-| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 2 · ◐ 1 · ∅ 1 · ✗ 3 |
+| `chiffrement` | 7 | ✅ 1 · ◐ 0 · ∅ 3 · ✗ 3 | ✅ 2 · ◐ 0 · ∅ 3 · ✗ 2 | ✅ 3 · ◐ 0 · ∅ 1 · ✗ 3 |
 | `compute` | 9 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 5 | ✅ 7 · ◐ 0 · ∅ 0 · ✗ 2 | ✅ 2 · ◐ 0 · ∅ 0 · ✗ 7 |
 | `gouvernance` | 3 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 | ✅ 2 · ◐ 1 · ∅ 0 · ✗ 0 |
 | `iam` | 15 | ✅ 4 · ◐ 0 · ∅ 0 · ✗ 11 | ✅ 11 · ◐ 0 · ∅ 1 · ✗ 3 | ✅ 5 · ◐ 0 · ∅ 0 · ✗ 10 |
@@ -57,25 +57,25 @@ et le rapport le dit à chaque scan, contrôle par contrôle, avec le motif.
 |---|---|---|:-:|:-:|:-:|:-:|:-:|:-:|
 | `blockstorage_snapshot_not_public` | high | CLD-STO-2 | ∅ | ∅ | ✗ | ✅ | ∅ | ∅ |
 | `blockstorage_volume_encryption` | high | CLD-CHF-2 | ✅ | ✅ | ∅ | ∅ | ∅ | ∅ |
-| `blockstorage_volume_snapshots_exist` | high | CLD-STO-3 | ✅ | ✅ | ✗ | ✅ | ✗ | ✗ |
+| `blockstorage_volume_snapshots_exist` | high | CLD-STO-3 | ◐ | ✅ | ◐ | ✅ | ✗ | ✗ |
 | `compute_image_not_public` | high | CLD-STO-2 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `compute_instance_deletion_protection` | medium | CLD-CMP-10 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `compute_instance_has_security_group` | critical | CLD-CMP-1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `compute_instance_no_secrets_in_user_data` | high | CLD-CMP-9 | ✅ | ✅ | ✅ | ✅ | ✅ | ◐ |
 | `compute_instance_public_ip_with_open_securitygroup` | critical | CLD-NET-3 | ✅ | ✅ | ◐ | ✅ | ◐ | ✅ |
 | `database_backup_enabled` | high | CLD-STO-3 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
-| `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ |
+| `database_encryption_at_rest_enabled` | high | CLD-CHF-2 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `database_service_not_open_to_internet` | high | CLD-NET-1 | ✗ | ✗ | ✗ | ✗ | ✅ | ✗ |
 | `governance_provider_sovereignty` | high | CLD-GVN-4 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `governance_resource_region_in_eu` | high | CLD-GVN-3 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `governance_resource_required_tags` | medium | CLD-GVN-1 | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |
-| `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✅ | ✅ |
-| `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
+| `iam_accesskey_expiration_set` | critical | CLD-IAM-2 | ✗ | ✗ | ✅ | ✅ | ✅ | ✅ |
+| `iam_accesskey_rotated` | high | CLD-IAM-2 | ✗ | ✗ | ◐ | ✅ | ✗ | ✗ |
 | `iam_account_mfa_enforced` | high | CLD-IAM-3 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccesspolicy_max_key_expiration` | medium | CLD-IAM-2 | ✗ | ✗ | ✗ | ✅ | ✗ | ✅ |
 | `iam_apiaccessrule_defined` | high | CLD-IAM-4 | ✗ | ✗ | ✗ | ✅ | ✗ | ✗ |
 | `iam_apiaccessrule_no_public_cidr` | high | CLD-IAM-4 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
-| `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✗ | ✅ | ◐ | ✅ |
+| `iam_no_root_access_key` | high | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ◐ | ✅ |
 | `iam_policy_no_administrative_privileges` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_policy_no_notaction_notresource` | critical | CLD-IAM-1 | ✗ | ✗ | ✅ | ✅ | ✗ | ✗ |
 | `iam_policy_no_privilege_escalation` | high | CLD-IAM-12 | ✗ | ✗ | ✅ | ✅ | ✅ | ✗ |
@@ -131,13 +131,13 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `blockstorage_volume_encryption` | outscale | live | ∅ `not-applicable` | osc-sdk-go/v2 Volume n'expose aucun champ de chiffrement ; le chiffrement au repos est côté invité (EncFS/LUKS), responsabilité du client → non observable côté plateforme (CHF-2). |
 | `blockstorage_volume_encryption` | scaleway | terraform | ∅ `not-applicable` | Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2). |
 | `blockstorage_volume_encryption` | scaleway | live | ∅ `not-applicable` | Chiffrement au repos des volumes block côté invité (LUKS/Cryptsetup), responsabilité du client (responsabilité partagée) ; l'API block n'expose aucun champ de chiffrement → non observable côté plateforme (CHF-2). |
-| `blockstorage_volume_snapshots_exist` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « blockstorage_volume » |
+| `blockstorage_volume_snapshots_exist` | exoscale | terraform | ◐ `partial` | la source ne projette pas le type corrélé « blockstorage_snapshot » : le contrôle rend « not-evaluated » plutôt que de conclure sans cette ressource |
+| `blockstorage_volume_snapshots_exist` | outscale | terraform | ◐ `partial` | la source ne projette pas le type corrélé « blockstorage_snapshot » : le contrôle rend « not-evaluated » plutôt que de conclure sans cette ressource |
 | `compute_instance_deletion_protection` | outscale | terraform | ◐ `partial` | attribut décisif « deletion_protection » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_no_secrets_in_user_data` | scaleway | live | ◐ `partial` | attribut décisif « user_data » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_no_secrets_in_user_data` | scaleway | live | ◐ `partial` | attribut décisif « user_data » non projeté sur le type corrélé « compute_instance » : garde de capacité, le scan rend « not-evaluated » |
 | `compute_instance_public_ip_with_open_securitygroup` | outscale | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
-| `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `compute_instance_public_ip_with_open_securitygroup` | scaleway | terraform | ◐ `partial` | attribut décisif « nic_public_ips / public_ip » non projeté sur le type corrélé « compute_instance » : garde de capacité, le scan rend « not-evaluated » |
 | `database_backup_enabled` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |
-| `database_encryption_at_rest_enabled` | scaleway | terraform | ◐ `partial` | attribut décisif « encryption_at_rest » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
 | `database_encryption_at_rest_enabled` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |
 | `database_service_not_open_to_internet` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « managed_database » |
 | `governance_resource_required_tags` | exoscale | terraform | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
@@ -146,14 +146,12 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `governance_resource_required_tags` | outscale | live | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
 | `governance_resource_required_tags` | scaleway | terraform | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
 | `governance_resource_required_tags` | scaleway | live | ◐ `partial` | aucun type de ressource visé et le contrôle ne lit pas le descripteur du fournisseur : le verrou du « pass » ne peut pas être levé, le scan rend « not-evaluated » tant qu'aucun écart n'est détecté |
-| `iam_accesskey_expiration_set` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
-| `iam_accesskey_rotated` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
+| `iam_accesskey_rotated` | outscale | terraform | ◐ `partial` | attribut décisif « creation_date » non projeté sur le type corrélé « access_key » : garde de capacité, le scan rend « not-evaluated » |
 | `iam_account_mfa_enforced` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccesspolicy_max_key_expiration` | scaleway | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_policy » |
 | `iam_apiaccessrule_defined` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « api_access_summary » |
-| `iam_no_root_access_key` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « access_key » |
-| `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `iam_no_root_access_key` | scaleway | terraform | ◐ `partial` | attribut décisif « owner_application_id / owner_user_id / root_owned / scope » non projeté sur le type corrélé « access_key » : garde de capacité, le scan rend « not-evaluated » |
 | `iam_policy_no_privilege_escalation` | scaleway | live | ✗ `unsupported` | cette source ne produit aucune ressource de type « iam_policy » |
 | `iam_user_mfa_enabled` | exoscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « iam_user » |
 | `iam_user_mfa_enabled` | outscale | terraform | ∅ `not-applicable` | type de ressource « iam_user » absent de l'API outscale |
@@ -170,7 +168,7 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `loadbalancer_http_redirect_to_https` | outscale | live | ∅ `not-applicable` | Le LBU Outscale ne peut pas rediriger : `ListenerRule.Action` est documenté « always forward » au contrat OAPI (aucune action de redirection), et aucun attribut de redirection n'existe sur `Listener`. Le mécanisme est inexistant → contrôle non applicable (CHF-1). |
 | `loadbalancer_logging_enabled` | exoscale | terraform | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
 | `loadbalancer_logging_enabled` | exoscale | live | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
-| `loadbalancer_logging_enabled` | outscale | terraform | ◐ `partial` | attribut décisif « access_log » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `loadbalancer_logging_enabled` | outscale | terraform | ◐ `partial` | attribut décisif « access_log » non projeté sur le type corrélé « load_balancer » : garde de capacité, le scan rend « not-evaluated » |
 | `loadbalancer_ssl_listeners` | exoscale | terraform | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
 | `loadbalancer_ssl_listeners` | exoscale | live | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
 | `loadbalancer_ssl_listeners` | outscale | terraform | ◐ `partial` | attribut décisif « load_balancer_type » déclaré par le mapping mais ABSENT des plans de référence : soit la valeur n'existe qu'après `apply`, soit l'argument est optionnel et le HCL réel ne l'écrit pas — garde de capacité, le scan rend « not-evaluated » |
@@ -179,21 +177,21 @@ ici : la matrice les montre déjà, et elles n'apprennent rien de plus.
 | `network_peering_cross_organization` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « network_peering » |
 | `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | terraform | ∅ `not-applicable` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
 | `network_securitygroup_allow_ingress_from_internet_to_all_ports` | exoscale | live | ∅ `not-applicable` | Une règle de security group Exoscale n'a pas de valeur « tous protocoles » : le schéma du provider (exoscale/exoscale 0.71.0, exoscale_security_group_rule.protocol) et l'API v2 (security-group-rule) n'acceptent que ah, esp, gre, icmp, icmpv6, ipip, tcp, udp. La conjonction any/any que ce contrôle mesure ne peut donc pas être déclarée, et les familles de ports (CLD-NET-1) couvrent le cas réel. |
-| `network_securitygroup_default_restrict_traffic` | outscale | terraform | ◐ `partial` | attribut décisif « security_group_name » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `network_securitygroup_default_restrict_traffic` | outscale | terraform | ◐ `partial` | attribut décisif « security_group_name » non projeté sur le type corrélé « security_group_rule » : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_default_encryption` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_default_encryption` | scaleway | terraform | ◐ `partial` | attribut décisif « default_encryption_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_default_encryption` | scaleway | terraform | ◐ `partial` | attribut décisif « default_encryption_enabled » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_kms_encryption` | exoscale | terraform | ∅ `not-applicable` | SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | exoscale | live | ∅ `not-applicable` | SOS chiffre au repos par défaut (SSE-SOS, clés gérées par Exoscale, type SSE-S3) mais n'expose pas de BYOK/KMS géré par le client au niveau bucket (SSE-C reste par-objet, non observable) → le contrôle BYOK-au-bucket est sans objet (CHF-4). |
 | `objectstorage_bucket_kms_encryption` | outscale | terraform | ∅ `not-applicable` | OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A. |
 | `objectstorage_bucket_kms_encryption` | outscale | live | ∅ `not-applicable` | OOS chiffre côté serveur en AES256 avec une clé FOURNISSEUR ; il n'existe ni service KMS ni clé maître gérée par le client, donc pas de BYOK à auditer au niveau bucket (CHF-4). NB : l'activation du SSE elle-même est opt-in et observable — elle relève d'un contrôle distinct, pas de ce N/A. |
-| `objectstorage_bucket_kms_encryption` | scaleway | terraform | ◐ `partial` | attribut décisif « sse_kms_enabled » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_kms_encryption` | scaleway | terraform | ◐ `partial` | attribut décisif « sse_kms_enabled » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
 | `objectstorage_bucket_object_lock_enabled` | exoscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_object_lock_enabled` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_public_access` | exoscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_public_access` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_versioning_enabled` | exoscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
 | `objectstorage_bucket_versioning_enabled` | outscale | terraform | ✗ `unsupported` | cette source ne produit aucune ressource de type « object_storage_bucket » |
-| `objectstorage_bucket_versioning_enabled` | scaleway | terraform | ◐ `partial` | attribut décisif « versioning » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| `objectstorage_bucket_versioning_enabled` | scaleway | terraform | ◐ `partial` | attribut décisif « versioning » non projeté sur le type corrélé « object_storage_bucket » : garde de capacité, le scan rend « not-evaluated » |
 
 ## Fournisseur d'une autre portée : `kubernetes` (in-cluster)
 
@@ -212,10 +210,10 @@ deux ne peut couvrir la portée de l'autre. Une seule source : la collecte live 
 
 | Fournisseur | Source | ✅ `supported` | ◐ `partial` | ∅ `not-applicable` | ✗ `unsupported` |
 |---|---|---:|---:|---:|---:|
-| exoscale | terraform | 19 | 2 | 6 | 31 |
+| exoscale | terraform | 18 | 3 | 6 | 31 |
 | exoscale | live | 24 | 1 | 6 | 27 |
-| outscale | terraform | 18 | 6 | 4 | 30 |
+| outscale | terraform | 20 | 8 | 4 | 26 |
 | outscale | live | 40 | 1 | 4 | 13 |
-| scaleway | terraform | 17 | 8 | 2 | 31 |
+| scaleway | terraform | 18 | 7 | 2 | 31 |
 | scaleway | live | 20 | 2 | 2 | 34 |
 | kubernetes | live | 4 | 0 | 0 | 54 |

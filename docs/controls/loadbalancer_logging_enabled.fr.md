@@ -61,7 +61,7 @@ porte son motif :
 |---|---|---|---|
 | exoscale | terraform | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
 | exoscale | live | ∅ `not-applicable` | type de ressource « load_balancer » absent de l'API exoscale |
-| outscale | terraform | ◐ `partial` | attribut décisif « access_log » non projeté par cette source : garde de capacité, le scan rend « not-evaluated » |
+| outscale | terraform | ◐ `partial` | attribut décisif « access_log » non projeté sur le type corrélé « load_balancer » : garde de capacité, le scan rend « not-evaluated » |
 
 ## Ce que Pépin peut conclure
 

@@ -19,6 +19,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -96,8 +97,7 @@ var controlExplainCmd = &cobra.Command{
 		for _, p := range providers {
 			explainProviderSection(out, ctl, p, snap)
 		}
-		explainProof(out, code, snap)
-		return nil
+		return explainProof(out, code, providers, snap, time.Now().UTC())
 	},
 }
 
@@ -290,7 +290,7 @@ func provenSummary(p quality.PathProof) string {
 
 // explainProof rend les artefacts qui éprouvent le contrôle, et la date de la
 // dernière validation live.
-func explainProof(out interface{ Write([]byte) (int, error) }, code string, snap quality.Snapshot) {
+func explainProof(out interface{ Write([]byte) (int, error) }, code string, providers []string, snap quality.Snapshot, now time.Time) error {
 	proof := snap.ByControl[code]
 	// Ces artefacts sont indexés par CONTRÔLE, pas par chemin : un scénario écrit
 	// pour un fournisseur éprouve la règle commune, qui est la même pour tous. Le
@@ -304,38 +304,50 @@ func explainProof(out interface{ Write([]byte) (int, error) }, code string, snap
 	_, _ = fmt.Fprintf(out, "  %s %s\n", muted.Render(tr("scénarios de véracité :", "veracity scenarios:")), orNone(proof.Scenarios))
 	_, _ = fmt.Fprintf(out, "  %s %s\n", muted.Render(tr("tenants de référence :", "reference tenants:")), orNone(proof.Tenants))
 
-	// La DATE DE DERNIÈRE VALIDATION LIVE. Un relevé de canari n'est PAS une
-	// validation live : il est non authentifié, donc il prouve qu'un endpoint refuse,
-	// jamais qu'un droit suffisant rende 200 sur un tenant réel. Le dire ici plutôt
-	// que d'afficher la date du canari est la différence entre une preuve et une
-	// apparence de preuve.
 	_, _ = fmt.Fprintln(out)
-	_, _ = fmt.Fprintln(out, titre.Render(tr("dernière validation live", "last live validation")))
-	var live string
-	for _, c := range snap.Canary {
-		if c.Authenticated {
-			live = c.Recorded
+	_, _ = fmt.Fprintln(out, titre.Render(tr("qualifications live de ce contrôle", "live qualifications for this control")))
+	found := false
+	for _, p := range snap.LiveProofs(code, now) {
+		q := p.Qualification
+		if !contains(providers, q.Provider) {
+			continue
 		}
+		expires, err := q.ExpiresAt()
+		if err != nil {
+			return err
+		}
+		found = true
+		state := tr("non fraîche", "not current")
+		if p.Fresh {
+			state = tr("fraîche", "current")
+		}
+		_, _ = fmt.Fprintf(out, "  %s %s — %s %s, %s %s (%s)\n",
+			q.Provider, q.RecordedAt, tr("verdict", "verdict"), p.Verdict,
+			tr("expire le", "expires"), expires.Format(time.RFC3339Nano), state)
+		_, _ = fmt.Fprintf(out, "    %s %s (%s) · %s\n",
+			tr("binaire", "binary"), q.ToolVersion, q.ToolDigest, q.RecordFile)
 	}
-	if live == "" {
+	if !found {
 		_, _ = fmt.Fprintln(out, "  "+tr(
-			"jamais — aucun scan authentifié contre un tenant réel n'est consigné.",
-			"never — no authenticated scan against a real tenant is recorded."))
+			"aucune preuve authentifiée pour ce contrôle et les fournisseurs sélectionnés.",
+			"no authenticated proof for this control and the selected providers."))
 		_, _ = fmt.Fprintln(out, "  "+muted.Render(tr(
 			"Les relevés de canari (references/canary/) interrogent les vrais plans de contrôle",
 			"The canary records (references/canary/) query the real control planes")))
 		_, _ = fmt.Fprintln(out, "  "+muted.Render(tr(
 			"SANS identifiant : ils attestent qu'un endpoint existe et refuse, pas un verdict.",
 			"WITHOUT a credential: they attest that an endpoint exists and refuses, not a verdict.")))
-	} else {
-		_, _ = fmt.Fprintf(out, "  %s\n", live)
 	}
 	for _, c := range snap.Canary {
+		if !contains(providers, c.Provider) {
+			continue
+		}
 		_, _ = fmt.Fprintf(out, "  %s %s %s\n", muted.Render(tr("canari", "canary")+" "+c.Provider),
 			c.Recorded, muted.Render(fmt.Sprintf(tr("(%d ont répondu, %d déplacés, %d injoignables)",
 				"(%d answered, %d moved, %d unreachable)"), c.Answered, c.Moved, c.Unreachable)))
 	}
 	_, _ = fmt.Fprintln(out)
+	return nil
 }
 
 // mark rend une pastille de condition. Une condition qui dépend du scan est rendue

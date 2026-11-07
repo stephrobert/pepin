@@ -1,6 +1,9 @@
 package quality
 
-import _ "embed"
+import (
+	_ "embed"
+	"time"
+)
 
 // snapshotJSON embarque la carte de qualité committée.
 //
@@ -15,4 +18,10 @@ import _ "embed"
 var snapshotJSON []byte
 
 // Embedded rend la carte compilée dans ce binaire.
-func Embedded() (Snapshot, error) { return Decode(snapshotJSON) }
+func Embedded() (Snapshot, error) {
+	s, err := Decode(snapshotJSON)
+	if err != nil {
+		return Snapshot{}, err
+	}
+	return s.At(time.Now().UTC()), nil
+}

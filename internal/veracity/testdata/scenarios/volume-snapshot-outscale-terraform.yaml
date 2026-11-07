@@ -1,0 +1,21 @@
+# Fraîcheur des snapshots sur un plan Terraform Outscale.
+control: blockstorage_volume_snapshots_exist
+provider: outscale
+source: terraform
+
+scenarios:
+  - expect: not-evaluated
+    why: "le plan connaît la région du volume, mais pas son état calculé ni l'état des snapshots"
+    plan:
+      format_version: "1.2"
+      planned_values:
+        root_module:
+          resources:
+            - address: outscale_volume.data
+              type: outscale_volume
+              name: data
+              values:
+                subregion_name: eu-west-2a
+                tags:
+                  - key: Environment
+                    value: test

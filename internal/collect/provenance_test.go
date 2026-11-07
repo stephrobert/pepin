@@ -101,6 +101,50 @@ func TestProvenanceIsAbsentWithoutASource(t *testing.T) {
 	}
 }
 
+func TestNullDefaultProvenanceDistinguishesExplicitAndDerivedValues(t *testing.T) {
+	mapping := map[string]string{"encrypted": "encrypted"}
+	transforms := map[string]any{"encrypted": []any{"default_null:false", "to_bool"}}
+	src := Source{Origin: model.OriginTerraform, Ref: "scaleway_rdb_instance"}
+
+	for _, tt := range []struct {
+		name     string
+		item     map[string]any
+		value    any
+		present  bool
+		observed bool
+		derived  bool
+	}{
+		{"unknown", map[string]any{}, nil, false, false, false},
+		{"omitted argument", map[string]any{"encrypted": nil}, false, true, true, true},
+		{"explicit false", map[string]any{"encrypted": false}, false, true, true, false},
+		{"explicit true", map[string]any{"encrypted": true}, true, true, true, false},
+		{"string false", map[string]any{"encrypted": "false"}, false, true, true, true},
+		{"invalid string", map[string]any{"encrypted": "1"}, "1", true, true, false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			attrs, provenance := ProjectAttested(tt.item, mapping, transforms, src)
+			value, present := attrs["encrypted"]
+			if present != tt.present || value != tt.value {
+				t.Errorf("projection = %#v, present=%t; want %#v, present=%t",
+					value, present, tt.value, tt.present)
+			}
+			att, ok := provenance["encrypted"]
+			if !ok {
+				t.Fatal("attestation manquante")
+			}
+			if att.Origin != model.OriginTerraform || att.Source != src.Ref || att.Path != "encrypted" ||
+				att.Observed != tt.observed || att.Derived != tt.derived {
+				t.Errorf("attestation = %+v; want observed=%t derived=%t", att, tt.observed, tt.derived)
+			}
+		})
+	}
+
+	_, unmapped := ProjectAttested(map[string]any{"encrypted": nil}, nil, transforms, src)
+	if _, ok := unmapped["encrypted"]; ok {
+		t.Fatal("un attribut non mappé ne doit pas être attesté comme recherché")
+	}
+}
+
 // TestProjectStillProjectsExactlyTheSameAttributes : la refonte de Project en
 // ProjectAttested ne devait déplacer AUCUNE valeur. Les cas limites de la
 // projection (transform sur source absente, collection vide, coalescence) sont

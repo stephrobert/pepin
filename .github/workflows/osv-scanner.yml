@@ -19,13 +19,105 @@ permissions:
 
 jobs:
   # Scan de PR : ne casse le build que si la PR introduit une nouvelle vuln.
-  scan-pr:
+  # Conserve l'identifiant SARIF historique du workflow Google réutilisé.
+  osv-scan:
+    name: scan-pr
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       actions: read
       security-events: write
       contents: read
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+    env:
+      OSV_IMAGE: ghcr.io/google/osv-scanner-action@sha256:d54770fe0b09493894e76a02aaed9f51a0513fa57c5186452a755d257b0068a6 # v2.7.0
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout target revision
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          git checkout "$BASE_SHA"
+          rm -f old-results.json new-results.json
+
+      - name: Scan existing code
+        id: scan-old
+        run: |
+          status=0
+          docker run --rm -e GOTOOLCHAIN=auto \
+            -v "$GITHUB_WORKSPACE:/github/workspace" -w /github/workspace \
+            --entrypoint /root/osv-scanner "$OSV_IMAGE" \
+            scan source --format=json --output-file=old-results.json -r ./ || status=$?
+          case "$status" in
+            0|1) ;;
+            *) echo "::error::OSV scan failed with exit $status; partial results cannot be compared."; exit "$status" ;;
+          esac
+
+      - name: Checkout current revision
+        env:
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          cp old-results.json "$RUNNER_TEMP/pepin-osv-old-results.json"
+          git checkout -f "$HEAD_SHA"
+          rm -f old-results.json new-results.json
+          cp "$RUNNER_TEMP/pepin-osv-old-results.json" old-results.json
+
+      - name: Scan new code
+        id: scan-new
+        run: |
+          status=0
+          docker run --rm -e GOTOOLCHAIN=auto \
+            -v "$GITHUB_WORKSPACE:/github/workspace" -w /github/workspace \
+            --entrypoint /root/osv-scanner "$OSV_IMAGE" \
+            scan source --format=json --output-file=new-results.json -r ./ || status=$?
+          case "$status" in
+            0|1) ;;
+            *) echo "::error::OSV scan failed with exit $status; partial results cannot be compared."; exit "$status" ;;
+          esac
+
+      - name: Require two completed scans
+        run: |
+          for result in old-results.json new-results.json; do
+            if [ ! -s "$result" ] || ! jq -e 'type == "object" and (.results | type == "array")' "$result" >/dev/null; then
+              echo "::error::OSV scan did not produce valid $result; refusing to compare incomplete results."
+              exit 1
+            fi
+          done
+
+      - name: Report new vulnerabilities
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/github/workspace" \
+            -w /github/workspace --entrypoint /root/osv-reporter "$OSV_IMAGE" \
+            --output-files=sarif:results.sarif \
+            --old=old-results.json --new=new-results.json \
+            --output-files=gh-annotations:#stderr --fail-on-vuln=true
+
+      - name: Upload scan results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: OSV Scanner PR results
+          path: |
+            old-results.json
+            new-results.json
+            results.sarif
+          retention-days: 5
+
+      - name: Upload to code scanning
+        if: ${{ !cancelled() && hashFiles('results.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: results.sarif
 
   # Scan planifié/complet : rattrape les paquets reclassés MAL- après coup.
   scan-scheduled:

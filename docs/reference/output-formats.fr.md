@@ -26,11 +26,11 @@ verdict. Voir [Codes de sortie](exit-codes.fr.md).
 <!-- pepin:gen surface-versions -->
 | Surface | Ce qui est gelé | Version |
 |---|---|:-:|
-| `cli` | verbes, drapeaux et codes de sortie | **v7** |
+| `cli` | verbes, drapeaux et codes de sortie | **v8** |
 | `findings` | forme de `--format json` (`findings` + `summary`) | **v1** |
 | `assessment` | forme du document `--format assessment` | **v1** |
 | `bundle` | forme du bundle de preuve (fichiers, rôles, manifest) | **v3** |
-| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v14** |
+| `inventory` | forme de l'inventaire normalisé (enveloppe, ressource, types et attributs) | **v15** |
 <!-- /pepin:gen surface-versions -->
 
 « Gelé » signifie qu'un test échoue quand la forme bouge sans que sa version ait suivi : les
@@ -375,7 +375,7 @@ Le même assessment, rendu en document OSCAL 1.1.2 `assessment-results`.
         },
         {
           "name": "tool-digest",
-          "value": "<provenance>",
+          "value": "<binary-digest>",
           "ns": "https://github.com/stephrobert/scankit/ns/oscal"
         },
 […]
