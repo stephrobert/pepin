@@ -45,6 +45,8 @@ l'une ni l'autre appartient au `git log`.
 
 - Mettre à jour les dépendances S3 du SDK AWS. Passer `pflag` à 1.1.0 ; la référence
   CLI bilingue reflète la nouvelle présentation de l'aide des options.
+- Aligner la fusion sur la politique mono-mainteneur de Feint : PR et CI restent
+  obligatoires, sans approbation formelle ni revue CODEOWNER bloquante.
 
 ### Corrigé
 

@@ -37,6 +37,12 @@ l'outillage Python doit pouvoir couper une release.
 2. **Merger vers `main` par une pull request, et attendre une CI verte.** Le
    tag se construit depuis ce commit, et une release publiée ne se rejoue pas.
 
+   Avec un mainteneur unique, la politique exige une PR et les checks verts,
+   pas une approbation formelle ni une revue CODEOWNER bloquante. CODEOWNERS
+   continue à adresser les demandes de revue. Le bypass administrateur est
+   limité aux PR et peut aussi contourner les checks ; il ne prouve pas que
+   la CI a réussi.
+
 3. **Ré-enregistrer les GIF de démonstration** à la version publiée, pour
    qu'aucune des deux pages d'accueil ne montre durablement un produit
    antérieur :

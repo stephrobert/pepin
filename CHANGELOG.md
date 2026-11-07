@@ -42,6 +42,8 @@ belongs in `git log`.
 
 - Update the AWS SDK S3 dependencies. Upgrade `pflag` to 1.1.0; the bilingual
   CLI reference reflects the updated flag help.
+- Align main's single-maintainer merge policy with Feint: PRs and CI remain
+  required, but formal approval and blocking CODEOWNER review are not required.
 
 ### Fixed
 

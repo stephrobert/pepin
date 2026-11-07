@@ -38,6 +38,11 @@ the Python tooling must still be able to cut a release.
    The tag builds from that commit, and a published release cannot be
    replayed.
 
+   The single-maintainer policy requires a PR and passing checks, not a
+   formal approval or a blocking CODEOWNER review. CODEOWNERS still routes
+   review requests. The administrator bypass is restricted to PRs and can
+   also bypass checks; it is not evidence that CI passed.
+
 3. **Re-record the demo GIFs** at the version being released, so neither
    README's front page keeps showing an older product:
 
