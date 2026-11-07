@@ -328,7 +328,8 @@ if git remote | grep -q . && command -v gh >/dev/null 2>&1; then
     ko "impossible d'interroger la CI sur ce commit" "gh api a échoué : vérifier l'authentification, pas le commit"
   fi
 else
-  printf "  %s·%s CI non vérifiée (pas de remote, ou gh absent)\n" "$DIM" "$OFF"
+  ko "CI non vérifiée (pas de remote, ou gh absent)" \
+     "configurer origin et installer gh ; la livraison exige un résultat Plumber vérifié sur ce commit"
 fi
 
 echo

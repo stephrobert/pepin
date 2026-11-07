@@ -202,14 +202,18 @@ func TestReleaseRequiresSuccessfulPlumber(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
 		plumber    string
+		mode       string
 		wantPassed bool
 	}{
-		{"successful", "success", true},
-		{"failed", "failure", false},
-		{"skipped", "skipped", false},
-		{"pending", "null", false},
-		{"missing", "", false},
-		{"mixed attempts", "failure\nPlumber (trust policy)\tsuccess", false},
+		{"successful", "success", "", true},
+		{"failed", "failure", "", false},
+		{"skipped", "skipped", "", false},
+		{"pending", "null", "", false},
+		{"missing", "", "", false},
+		{"mixed attempts", "failure\nPlumber (trust policy)\tsuccess", "", false},
+		{"missing gh", "success", "no-gh", false},
+		{"missing remote", "success", "no-remote", false},
+		{"API error", "success", "api-error", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			runs := "Build + Test\tsuccess\n"
@@ -222,12 +226,25 @@ failures=0
 DIM="" OFF=""
 ok() { printf '%s\n' "$1"; }
 ko() { printf '%s: %s\n' "$1" "$2"; failures=$((failures + 1)); }
-git() { if [ "$1" = remote ]; then echo origin; else echo test-sha; fi; }
-gh() { printf '%s' "$FIXTURE_CHECK_RUNS"; }
+git() {
+  if [ "$1" = remote ]; then
+    if [ "$FIXTURE_MODE" != no-remote ]; then echo origin; fi
+  else
+    echo test-sha
+  fi
+}
+command() {
+  if [ "$FIXTURE_MODE" = no-gh ] && [ "$1" = -v ] && [ "$2" = gh ]; then return 1; fi
+  builtin command "$@"
+}
+gh() {
+  if [ "$FIXTURE_MODE" = api-error ]; then return 1; fi
+  printf '%s' "$FIXTURE_CHECK_RUNS"
+}
 `+check+`
 [ "$failures" -eq 0 ]
 `)
-			cmd.Env = append(os.Environ(), "FIXTURE_CHECK_RUNS="+runs)
+			cmd.Env = append(os.Environ(), "FIXTURE_CHECK_RUNS="+runs, "FIXTURE_MODE="+tc.mode)
 			out, err := cmd.CombinedOutput()
 			if (err == nil) != tc.wantPassed {
 				t.Fatalf("passed=%t, want %t: %v\n%s", err == nil, tc.wantPassed, err, out)
