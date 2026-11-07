@@ -16,6 +16,30 @@ mise run audit   # vet + lint (golangci-lint) + gosec + govulncheck + osv
 Do not submit a change if `mise run test` or `mise run audit` fails. `opa test`,
 `opa check --strict` and `opa fmt` must stay clean.
 
+## Test policy
+
+Every new feature and behavior change MUST include automated tests in the same
+pull request. A bug fix MUST add a regression test. Cover the successful path
+and relevant refusal, malformed-input and boundary cases; a fixture that only
+passes does not prove that a guard can reject an invalid input.
+
+`mise run test` runs the Go suite with the race detector and the Rego suite.
+`go test ./...` is the standard Go invocation; run the Rego tests as well when
+changing a rule. The veracity ledger measures control scenarios, not Go branch
+coverage: neither a green ledger nor statement coverage alone establishes that
+every input field and code branch has been tested.
+
+## OpenSSF questionnaire
+
+[.bestpractices.json](.bestpractices.json) contains evidence-backed proposals for
+the [project's questionnaire](https://www.bestpractices.dev/projects/16381).
+Update it when a documented practice changes. `?` means that confirmation is
+still required; `Unmet` records a gap, not an answer to hide.
+
+After the evidence and answers reach `main`, review them in the form and use
+**Save (and continue)** with the automation option, one section at a time.
+Committing the file does not submit the form or award a badge.
+
 ## Non-negotiable rules
 
 1. **Anchor on the API contract.** Never invent a provider's resource model: the

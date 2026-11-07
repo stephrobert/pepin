@@ -16,6 +16,33 @@ mise run audit   # vet + lint (golangci-lint) + gosec + govulncheck + osv
 Ne proposez pas de changement si `mise run test` ou `mise run audit` échoue.
 `opa test`, `opa check --strict` et `opa fmt` doivent rester propres.
 
+## Politique de tests
+
+Toute nouvelle fonctionnalité et tout changement de comportement DOIT inclure
+des tests automatisés dans la même pull request. Un correctif DOIT ajouter un
+test de régression. Couvrir le chemin nominal ainsi que les refus, entrées mal
+formées et cas limites pertinents : une fixture qui passe ne prouve pas qu'une
+garde peut refuser une entrée invalide.
+
+`mise run test` lance la suite Go avec le détecteur de courses de données et la
+suite Rego. `go test ./...` est la commande standard de Go ; lancer aussi les
+tests Rego lors d'un changement de règle. Le registre de véracité mesure des
+scénarios de contrôle, pas la couverture des branches Go : ni un registre vert
+ni la seule couverture des instructions ne prouve que chaque champ d'entrée et
+chaque branche a été testé.
+
+## Questionnaire OpenSSF
+
+[.bestpractices.json](.bestpractices.json) contient les propositions étayées pour
+le [questionnaire du projet](https://www.bestpractices.dev/projects/16381).
+Le mettre à jour lorsqu'une pratique documentée change. `?` indique une
+confirmation encore nécessaire ; `Unmet` déclare un écart, pas une réponse à
+masquer.
+
+Une fois les preuves et réponses sur `main`, les relire dans le formulaire puis
+utiliser **Save (and continue)** avec l'option d'automatisation, section par
+section. Commiter le fichier ne soumet pas le formulaire et n'attribue pas de badge.
+
 ## Règles non négociables
 
 1. **Ancrage sur le contrat de l'API.** Ne jamais inventer le modèle de ressources
