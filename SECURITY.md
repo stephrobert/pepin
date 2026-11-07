@@ -104,6 +104,12 @@ criterion N/A merely because this is not a cryptographic library.
   starts; an interrupted verification is not reported as an invalid signature.
 - Pépin does not authenticate external users with a local password database.
   Provider credentials are outbound credentials, not password hashes.
+- From v0.5.1, release signatures use Rekor v2. Cosign authenticates the signing
+  configuration through Sigstore TUF; the shared helper removes v1 fallback.
+  The workflow verifies the checksum signature and image digest against its
+  exact GitHub workflow identity and issuer before creating the GitHub Release.
+  No transparency or trust check is disabled. Cosign 3.1.3 also verifies older
+  v1 release signatures using its standard TUF trust.
 
 #### Cryptographic scope and enforced sizes
 

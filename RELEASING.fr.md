@@ -27,6 +27,21 @@ l'outillage Python doit pouvoir couper une release.
 
 ## En couper une
 
+Les signatures des empreintes et de l'image utilisent Rekor v2 avec l'OIDC
+keyless de GitHub. Les deux jobs appellent `tools/release/rekor-v2-config.sh` :
+Cosign 3.1.3 authentifie la configuration v2 de Sigstore par TUF, puis le script
+retire les entrées de repli v1. Aucune URL de journal ni clé publique n'est
+figée dans le dépôt. L'absence de métadonnées v2, une signature ou une
+vérification échouée bloque la GitHub Release ; les contrôles de transparence
+restent actifs. La même configuration pilote le témoin natif opt-in :
+
+```bash
+PEPIN_COSIGN_INTEGRATION=1 mise exec -- go test ./cmd -run '^TestNativeCosignKeyStrengthAndSignature$' -count=1 -v
+```
+
+Il signe du matériau synthétique RSA2048/P256, refuse RSA1024 et vérifie qu'une
+altération des octets signés est refusée alors que l'intégrité non signée passe.
+
 1. **Déplacer les entrées `Unreleased`** de [CHANGELOG.md](./CHANGELOG.md)
    **et** de [CHANGELOG.fr.md](./CHANGELOG.fr.md) sous un nouveau titre
    `## [X.Y.Z]`, dans les deux fichiers. Le workflow de release lit la section
@@ -36,6 +51,12 @@ l'outillage Python doit pouvoir couper une release.
 
 2. **Merger vers `main` par une pull request, et attendre une CI verte.** Le
    tag se construit depuis ce commit, et une release publiée ne se rejoue pas.
+
+   Avec un mainteneur unique, la politique exige une PR et les checks verts,
+   pas une approbation formelle ni une revue CODEOWNER bloquante. CODEOWNERS
+   continue à adresser les demandes de revue. Le bypass administrateur est
+   limité aux PR et peut aussi contourner les checks ; il ne prouve pas que
+   la CI a réussi.
 
 3. **Ré-enregistrer les GIF de démonstration** à la version publiée, pour
    qu'aucune des deux pages d'accueil ne montre durablement un produit
@@ -116,6 +137,12 @@ l'outillage Python doit pouvoir couper une release.
    [l'ADR-0016](./docs/adr/0016-chaine-dapprovisionnement-verifiable.md) — « la
    documentation nomme la commande qui vérifie ». Une page réorganisée fait donc rougir
    la porte plutôt que de la faire passer en silence.
+
+   Le README doit nommer le tag préparé, comme les pages d'installation.
+   Avant l'existence de ce tag, la porte substitue le tag déjà publié dans
+   les commandes extraites du README et de l'image, et consigne la substitution.
+   Elle vérifie la chaîne publiée sans exiger un artefact que le tag à venir
+   doit encore produire.
 
    Chaque contrôle de cette étape sait se **sauter** quand son outil manque, en le
    disant. Et une étape dont tout ce qui mesure a été sauté est déclarée SAUTÉE, jamais

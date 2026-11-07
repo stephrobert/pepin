@@ -27,6 +27,20 @@ the Python tooling must still be able to cut a release.
 
 ## Cutting one
 
+Checksum and image signatures use Rekor v2 with keyless GitHub OIDC. Both jobs
+call `tools/release/rekor-v2-config.sh`: Cosign 3.1.3 authenticates Sigstore's
+v2 signing configuration through TUF, and the helper removes v1 fallback entries.
+No log URL or public key is hardcoded in this repository. Missing v2 metadata,
+signing or verification failure stops publication; transparency checks stay enabled.
+The same configuration drives the opt-in native witness:
+
+```bash
+PEPIN_COSIGN_INTEGRATION=1 mise exec -- go test ./cmd -run '^TestNativeCosignKeyStrengthAndSignature$' -count=1 -v
+```
+
+It signs synthetic RSA2048/P256 material, rejects RSA1024, and checks that changing
+signed bytes is refused while unsigned bundle integrity still passes.
+
 1. **Move the `Unreleased` entries** of [CHANGELOG.md](./CHANGELOG.md) **and**
    [CHANGELOG.fr.md](./CHANGELOG.fr.md) under a new `## [X.Y.Z]` heading, in
    both files. The release workflow reads the English section for the body of
@@ -37,6 +51,11 @@ the Python tooling must still be able to cut a release.
 2. **Merge to `main` through a pull request, and wait for CI to be green.**
    The tag builds from that commit, and a published release cannot be
    replayed.
+
+   The single-maintainer policy requires a PR and passing checks, not a
+   formal approval or a blocking CODEOWNER review. CODEOWNERS still routes
+   review requests. The administrator bypass is restricted to PRs and can
+   also bypass checks; it is not evidence that CI passed.
 
 3. **Re-record the demo GIFs** at the version being released, so neither
    README's front page keeps showing an older product:
@@ -115,6 +134,12 @@ the Python tooling must still be able to cut a release.
    [ADR-0016](./docs/adr/0016-chaine-dapprovisionnement-verifiable.md) — "the
    documentation names the command that verifies". A reorganised page therefore turns
    the gate red rather than passing silently.
+
+   The README must name the tag being prepared, like the installation pages.
+   Before that tag exists, the gate substitutes the previous published tag in
+   the extracted README and image commands, and records the substitution in
+   its evidence. It verifies the published chain without requiring an artefact
+   that the pending tag will create.
 
    Every check in this stage knows how to **skip** when its tool is missing, and says
    so. And a stage whose measuring checks were all skipped is reported as SKIPPED,
