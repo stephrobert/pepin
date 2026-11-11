@@ -46,7 +46,7 @@ jobs:
           cache: false
 
       - name: Setup mise (outils + tâches)
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           # Épinglée, comme toute autre dépendance de la chaîne (ADR-0016). Sans
           # `version`, l'action résout vers la DERNIÈRE étiquette — et une étiquette
@@ -265,7 +265,7 @@ jobs:
 
       - name: Install Cosign
         if: ${{ !github.event.repository.private }}
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         with:
           # Figer l'OUTIL, pas seulement l'action qui l'installe (ADR-0016).
           # Un outil de signature dont la version est choisie par l'amont au
@@ -378,7 +378,7 @@ jobs:
 
       - name: Install Cosign
         if: ${{ !github.event.repository.private }}
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         with:
           # Figer l'OUTIL, pas seulement l'action qui l'installe (ADR-0016).
           # Un outil de signature dont la version est choisie par l'amont au
